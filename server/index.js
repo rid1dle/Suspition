@@ -7,7 +7,7 @@ import { exec } from 'node:child_process';
 import QRCode from 'qrcode';
 import { App } from './app.js';
 import { GM } from './gm.js';
-import { Store } from './store.js';
+import { Store, Archive } from './store.js';
 import { GameError } from './game.js';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -126,7 +126,8 @@ async function main() {
     playModel: process.env.DETECTIVE_PLAY_MODEL || undefined,
     log,
   });
-  const app = await new App({ gm, store: new Store(dataDir), log }).init();
+  const datasetDir = process.env.DETECTIVE_DATASET_DIR ? resolve(process.env.DETECTIVE_DATASET_DIR) : join(ROOT, 'dataset');
+  const app = await new App({ gm, store: new Store(dataDir), archive: new Archive(datasetDir), log }).init();
   if (process.argv.includes('--new')) await app.newGame(app.game.hostToken);
   const joinUrl = `http://${process.env.DETECTIVE_HOST || lanAddress()}:${port}/play`;
   const server = createServer(createHandler(app, { joinUrl }));

@@ -1,0 +1,556 @@
+{
+ "clues": [
+  {
+   "id": "c1",
+   "name": "The Brass Mooring Cleat",
+   "where": "Boathouse and Jetty, under the slipway planks",
+   "shows": "A heavy brass cleat unscrewed from the dock, hair and blood in the thread, and a separate smear of fresh blood on the opposite flange.",
+   "does_not_prove": "It carries no usable fingerprints and does not say whose hand bled on the other edge.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c2",
+   "name": "Nikhil's Stopped Wristwatch",
+   "where": "Boathouse and Jetty, on the body, logged by Inspector Save",
+   "shows": "The cheap watch flooded and stopped at 1:11am, more than five hours before the body was reported.",
+   "does_not_prove": "A watch can be knocked or reset; alone it only suggests a time.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c3",
+   "name": "Toxicology Slip",
+   "where": "With Inspector Hemant Save, folded into his notebook",
+   "shows": "Nikhil's blood holds a full dose of zolpidem. He had no prescription for it.",
+   "does_not_prove": "It does not say who gave the drug or whether he took it willingly.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c4",
+   "name": "Half-Drunk Thermos of Tea",
+   "where": "Boathouse and Jetty, on the window ledge",
+   "shows": "Nikhil's flask, the tea bitter with undissolved powder, two cups set out and only one used.",
+   "does_not_prove": "The second cup is unmarked and could have been set out for anybody.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c5",
+   "name": "Punched Zolpidem Strip",
+   "where": "Guest Wing Corridor, in the bin of the shared bathroom",
+   "shows": "A blister strip from Farid's travel kit with four tablets pushed out and his pharmacy label still attached.",
+   "does_not_prove": "The kit sat in an unlocked room all evening, so the strip does not prove Farid used it.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c6",
+   "name": "Boot Prints on the Mud Ramp",
+   "where": "Boathouse and Jetty, the ramp above the waterline",
+   "shows": "Size eleven hiking boots with Ben's distinctive worn heel, but a short stride and shallow pressure, as if worn by someone much lighter.",
+   "does_not_prove": "Boots are shareable; the prints name no wearer.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c7",
+   "name": "Ben's Boots, Still Wet",
+   "where": "Main Hall and Bonfire Pit, under the coat rack by the door",
+   "shows": "Ben's boots are soaked with lake silt inside and out, with a rolled woollen sock jammed in each toe as padding for a smaller foot.",
+   "does_not_prove": "Padding could be Ben's own habit, and wet boots implicate nobody by themselves.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c8",
+   "name": "Recorder File Marked 01:09",
+   "where": "With Asha, on the pocket recorder left running in the main hall",
+   "shows": "A door, then two voices by the water, one slurring \"you wrote it, Chitra, you sign it\", then a wet impact and footsteps leaving.",
+   "does_not_prove": "The audio is muffled and the name could be an appeal to a third person present.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c9",
+   "name": "The Page That Did Not Burn",
+   "where": "Main Hall and Bonfire Pit, caught in the ash rake",
+   "shows": "A scorched page in Meera's hand: \"C. says if I file the leak complaint she will put me off this roof.\"",
+   "does_not_prove": "An initial is not a name, and more than one guest has a C in their name.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c10",
+   "name": "Nikhil's Memorial Speech Draft",
+   "where": "Storeroom Office, in the desk tray beside the typewriter",
+   "shows": "A typed speech ending: \"At the memorial I will read Meera's last page and say who was on the terrace with her.\"",
+   "does_not_prove": "It names nobody and may have been a bluff to force a confession.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c11",
+   "name": "The 2011 Witness Statements",
+   "where": "Storeroom Office, archive box marked Lake Inquiry",
+   "shows": "Dev's statement and Chitra's share identical phrasing, both insist Meera drank alone, and both came off the same typewriter.",
+   "does_not_prove": "Shared phrasing could mean a law student helped her friends, not a cover-up.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c12",
+   "name": "Chitra's Bandaged Palm",
+   "where": "On Chitra herself, visible to Farid or anyone who looks",
+   "shows": "A fresh L-shaped cut across the right palm, the exact width of a cleat flange, explained away as a bonfire splinter.",
+   "does_not_prove": "People cut their hands at bonfires; the wound alone is not a weapon match.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c13",
+   "name": "The Alumni Fund Ledger",
+   "where": "Storeroom Office, in Lalita Pinto's cash drawer",
+   "shows": "Eleven lakh missing from the Meera Pinto Memorial Fund, every withdrawal countersigned by Dev.",
+   "does_not_prove": "Theft is not murder and a signature does not place Dev at the water.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c14",
+   "name": "Canoe Chain Log",
+   "where": "Boathouse and Jetty, on the watchman's clipboard",
+   "shows": "All four canoes chained and dry at dawn, oars racked, the padlock untouched since Friday evening.",
+   "does_not_prove": "It does not rule out a swimmer or someone coming on foot by the woods path.",
+   "importance": "useful",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c15",
+   "name": "The Folded Note",
+   "where": "With Jiya the caterer, who kept it from the dinner table",
+   "shows": "Block capitals: \"Boathouse, 1am, bring Meera's page. We will fix this quietly.\" Jiya watched Ben hand it to Nikhil.",
+   "does_not_prove": "Block capitals hide the writer, and Ben insists he only passed on what he was given.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c16",
+   "name": "The Lodge Owner's Receipt",
+   "where": "Water Tower Terrace, taped inside the access hatch",
+   "shows": "A 2011 payment slip from the lodge's owner to a police clerk, dated three days after Meera died.",
+   "does_not_prove": "A bribe to close an inquiry does not identify who pushed Meera.",
+   "importance": "useful",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c17",
+   "name": "The Unsent Email",
+   "where": "Storeroom Office, on Nikhil's laptop in the drawer",
+   "shows": "A draft to the alumni board attaching the fund audit and naming Dev, saved at 10:12pm Saturday and never sent.",
+   "does_not_prove": "It gives Dev a motive but no presence at the jetty and no weapon.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  }
+ ],
+ "hint_ladder": [
+  {
+   "text": "Everyone keeps saying the lake took him at dawn. Nothing on the body agrees with dawn.",
+   "is_false": false
+  },
+  {
+   "text": "Nikhil did not wander to the boathouse at night. Someone asked him to come, and someone else carried the asking without knowing what it was.",
+   "is_false": false
+  },
+  {
+   "text": "The killer came off the water by canoe, which is why nobody on the lawn saw a crossing. Find the second set of oars.",
+   "is_false": true
+  },
+  {
+   "text": "A man that size does not drop to one blow unless he was already slow. Check what was in his flask and whose travel kit is short of tablets.",
+   "is_false": false
+  },
+  {
+   "text": "The prints on the ramp fit a man's boots and a woman's walk. Ask who borrowed from the coat rack, and look inside the toe.",
+   "is_false": false
+  },
+  {
+   "text": "This murder is fifteen years old. Read what Nikhil meant to say at the memorial, then read the one diary page the fire missed.",
+   "is_false": false
+  },
+  {
+   "text": "Hold the L-shaped cut on a bandaged palm against the flange of the cleat under the slipway, then play the 1:09am file beside the two identical 2011 statements. One person is in all three.",
+   "is_false": false
+  }
+ ],
+ "key_deductions": [
+  {
+   "id": "k1",
+   "statement": "Nikhil was sedated with zolpidem taken from Farid's bag before he was struck, so the killer had access to the guest wing and to the pantry flask shelf.",
+   "clue_ids": [
+    "c3",
+    "c4",
+    "c5"
+   ]
+  },
+  {
+   "id": "k2",
+   "statement": "Nikhil died at about 1:10am at the jetty, not at dawn, so every alibi built around the morning is worthless.",
+   "clue_ids": [
+    "c2",
+    "c8",
+    "c14"
+   ]
+  },
+  {
+   "id": "k3",
+   "statement": "The killer wore Ben's borrowed boots and was smaller and lighter than Ben, whose only part was carrying a note he did not write.",
+   "clue_ids": [
+    "c6",
+    "c7",
+    "c15"
+   ]
+  },
+  {
+   "id": "k4",
+   "statement": "The motive comes from 2011: Nikhil had Meera's surviving diary and meant to name the person on the terrace at the memorial.",
+   "clue_ids": [
+    "c9",
+    "c10",
+    "c16"
+   ]
+  },
+  {
+   "id": "k5",
+   "statement": "Chitra typed the 2011 statements, is the C in Meera's diary, and bled on the cleat that killed Nikhil.",
+   "clue_ids": [
+    "c1",
+    "c11",
+    "c12",
+    "c8"
+   ]
+  },
+  {
+   "id": "k6",
+   "statement": "Dev's theft from the memorial fund and the old family bribe are real crimes, but neither puts anyone at the jetty at 1:10am.",
+   "clue_ids": [
+    "c13",
+    "c17",
+    "c16",
+    "c2"
+   ]
+  }
+ ],
+ "locations": [
+  {
+   "id": "l1",
+   "name": "Boathouse and Jetty",
+   "public_info": "A sagging timber boathouse over shallow reed water, where Nikhil Rao was found face down at 6:40am."
+  },
+  {
+   "id": "l2",
+   "name": "Main Hall and Bonfire Pit",
+   "public_info": "The reunion's centre: long tables, a coat rack by the door, and a fire pit still warm with Saturday night's ash."
+  },
+  {
+   "id": "l3",
+   "name": "Storeroom Office",
+   "public_info": "Nikhil's cluttered events office behind the kitchen, stacked with archive boxes pulled out during the renovation."
+  },
+  {
+   "id": "l4",
+   "name": "Guest Wing Corridor",
+   "public_info": "Twelve rooms with doors that do not latch properly and one shared bathroom at the end."
+  },
+  {
+   "id": "l5",
+   "name": "Water Tower Terrace",
+   "public_info": "The flat roof Meera Pinto fell from in 2011, officially closed, the hatch chain long rusted open."
+  },
+  {
+   "id": "l6",
+   "name": "Kitchen and Pantry",
+   "public_info": "The caterers' territory: the reunion cash tin, the flask shelf, and a window facing the jetty path."
+  }
+ ],
+ "npcs": [
+  {
+   "id": "n1",
+   "name": "Pramod Barve",
+   "role_title": "Night watchman",
+   "public_info": "A thin man of sixty who has patrolled Kestrel Lake Lodge since before any of the guests were students.",
+   "knows": "Near 1am he saw a figure in large hiking boots cross from the main hall to the jetty with short quick steps, a woman's gait in a man's boots. He also knows Nikhil sat in the storeroom every night that week.",
+   "secrets": "He was drunk and asleep from 2am, which is why the body lay there until 6:40am. He took money from Nikhil to keep the drain boxes instead of dumping them.",
+   "lies": "Says he walked a full round every hour and saw nobody at all.",
+   "reveals_freely": "That Nikhil was obsessed with something recovered from the old drain.",
+   "reveals_under_pressure": "The boots, the short steps, and that the figure came from the hall side, not off the water."
+  },
+  {
+   "id": "n2",
+   "name": "Lalita Pinto",
+   "role_title": "Lodge bookkeeper and Meera's younger sister",
+   "public_info": "She was fourteen when her sister died and took a job at the lodge to stay near the lake.",
+   "knows": "Nikhil showed her the diary on Friday and promised to read a page at the memorial. She keeps the fund ledger and knows the money is gone.",
+   "secrets": "She copied two diary pages by hand before giving the book back, and one copy names the exam leak. She has been sending anonymous letters to the judicial appointments board.",
+   "lies": "Denies ever touching the diary, because she fears being accused of forging her sister's words.",
+   "reveals_freely": "That the memorial fund is eleven lakh short and Dev signs every withdrawal.",
+   "reveals_under_pressure": "Her handwritten copy of the diary page about the leak complaint."
+  },
+  {
+   "id": "n3",
+   "name": "Inspector Hemant Save",
+   "role_title": "Local police inspector",
+   "public_info": "A tired officer with one jeep and a flooded road, who arrives calling the death an accidental fall.",
+   "knows": "He holds the toxicology slip, the watch time and the body's position, all of which contradict his own verdict.",
+   "secrets": "His predecessor took the 2011 bribe and the file sits in his own cabinet. Closing this case quickly protects the station's record more than anyone's guest.",
+   "lies": "Claims the toxicology is inconclusive and that the head wound matches a fall on the slipway.",
+   "reveals_freely": "The time the body was reported and that no outsider crossed the flooded road.",
+   "reveals_under_pressure": "The toxicology slip and the 2011 inquiry file, if confronted with the bribe receipt."
+  },
+  {
+   "id": "n4",
+   "name": "Jiya Kamble",
+   "role_title": "Caterer's assistant",
+   "public_info": "Nineteen, working her third weekend at the lodge, serving the reunion dinner and clearing the hall at midnight.",
+   "knows": "She saw Ben hand Nikhil a folded note at dinner, and she saw a woman in a long coat take boots from the coat rack after one in the morning.",
+   "secrets": "She skimmed two bottles of whisky from the bar stock and fears being blamed for anything missing, so she volunteers nothing.",
+   "lies": "Says she went to bed at eleven and saw no one on the lawn.",
+   "reveals_freely": "That the flasks were left unattended on the pantry shelf all evening.",
+   "reveals_under_pressure": "The note itself, the handover, and the coat rack sighting."
+  },
+  {
+   "id": "n5",
+   "name": "Professor Ira Dastur",
+   "role_title": "Retired faculty guest of honour",
+   "public_info": "The batch's old ethics professor, invited to speak at the memorial, sharp despite the hour.",
+   "knows": "In 2011 she received a written complaint from Meera about a paper leak and passed it to the examinations committee, where it vanished.",
+   "secrets": "She destroyed her own copy of the complaint after the lodge owner's lawyer visited her, and has carried the shame since.",
+   "lies": "Insists no complaint was ever filed, as the official record says.",
+   "reveals_freely": "That Nikhil called her twice this month asking about the 2011 examinations committee.",
+   "reveals_under_pressure": "That Meera's complaint named a classmate who was already clerking for a judge."
+  }
+ ],
+ "opening_scene": "Rain came off Kestrel Lake at four in the morning and has not stopped. At 6:40am the watchman's bell brings you all down to the jetty in borrowed raincoats. Nikhil Rao, the man who spent a year chasing every one of you into attending this reunion, lies face down in a foot of reed water with the back of his head opened. Inspector Hemant Save arrives at eight, looks at the drink stains on the hall tables, and says the word accident twice before he finishes his tea. The access road is under water until tomorrow. Fifteen years ago this lake took Meera Pinto and everyone agreed that was an accident too. Nikhil's memorial speech is still in the typewriter. You have until dawn.",
+ "phases": [
+  {
+   "name": "Cold Water, Warm Ashes",
+   "planned_beat": "Inspector Save files the death as an accidental fall and orders the jetty hosed down, the flooded road traps everyone, and a scorched diary page turns up in the bonfire rake."
+  },
+  {
+   "name": "The Page That Did Not Burn",
+   "planned_beat": "The storeroom office is broken into, the speech draft and the fund ledger vanish, Pramod Barve is found concussed at the tower hatch, and Asha realises her recorder was running at one in the morning."
+  },
+  {
+   "name": "Memorial at Dawn",
+   "planned_beat": "The water drops, a boat is ordered for one departing guest at first light, and Meera's memorial is held on the jetty, where the accusation must be made before anyone steps aboard."
+  }
+ ],
+ "players": [
+  {
+   "id": "p1",
+   "character_name": "Asha Varghese",
+   "role_title": "Investigative journalist, batch of 2011",
+   "public_info": "A crime reporter who built her career on the Kestrel Lake story and never arrives anywhere without a recorder in her pocket.",
+   "private_info": "In 2011 you stood on the stairs below the water tower and heard two women arguing above; one voice you were certain was Chitra's. You never printed it, because the accident version gave you your first front page and a staff job. Nikhil wrote to you last month saying he had found Meera's diary and wanted you to publish it. You left your recorder running in the main hall all Saturday night out of habit and have not listened back.",
+   "goal": "Name Nikhil's killer with evidence that would survive a lawyer, and publish the 2011 truth without admitting you sat on it for fifteen years.",
+   "side": "investigator",
+   "side_explanation": "Innocent of both deaths, but complicit in the silence that let the first one stand.",
+   "hidden_facts": [
+    {
+     "id": "h1",
+     "fact": "Her recorder captured the killing at 1:09am, including Nikhil using a name as he pleaded."
+    },
+    {
+     "id": "h2",
+     "fact": "Nikhil named her co-custodian of the Meera file and slipped a sealed envelope with a second diary page into the lining of her bag at dinner."
+    }
+   ],
+   "starting_knowledge": "She knows Nikhil claimed to have Meera's diary and planned something at the memorial."
+  },
+  {
+   "id": "p2",
+   "character_name": "Ben Kuriakose",
+   "role_title": "Schoolteacher and tireless batch organiser",
+   "public_info": "The man who runs every batch group chat, now teaching at a municipal school and visibly worn down.",
+   "private_info": "You are drowning in loans and on Saturday evening you took eighteen thousand rupees from the reunion cash tin in the pantry, meaning to replace it. You were in the kitchen alone between one and two in the morning counting what was left, which is the worst possible alibi. You did small favours for people all night, fetching drinks, passing messages, lending things from the coat rack. You loved Meera quietly in 2011 and have never believed she fell.",
+   "goal": "Find who killed Nikhil, and make sure the missing cash is covered or blamed on the caterers before the tin is counted.",
+   "side": "investigator",
+   "side_explanation": "Innocent, but his petty theft and solitary hour make him the easiest person to frame.",
+   "hidden_facts": [
+    {
+     "id": "h3",
+     "fact": "The folded note he passed to Nikhil at dinner is what lured Nikhil to the jetty at one in the morning."
+    },
+    {
+     "id": "h4",
+     "fact": "Chitra took his boots from the coat rack, padded the toes and wore them to the killing, then put them back wet."
+    }
+   ],
+   "starting_knowledge": "He knows he passed a note he did not read, and that someone asked him to leave his boots by the door."
+  },
+  {
+   "id": "p3",
+   "character_name": "Chitra Menon",
+   "role_title": "Senior advocate, candidate for judicial appointment",
+   "public_info": "The batch's success story, a litigator whose name is on a shortlist for the bench, here for two nights only.",
+   "private_info": "In 2011 you ran a paper leak and made money from it. When Meera Pinto said she would file a complaint you shoved her off the water tower, then typed the witness statements that closed the inquiry, including Dev's. On Saturday Nikhil told you he had her diary and asked you to confess at the memorial. You stole four zolpidem tablets from Farid's bag, dosed Nikhil's flask, had Ben carry an unsigned note to him, wore Ben's boots to the jetty at one and killed him with a cleat you unscrewed from the dock, cutting your palm. You burned the diary in the bonfire and believe nothing survived.",
+   "goal": "Leave on the first boat unnamed, with the fire pit raked, the cleat gone and someone else's secret filling the silence.",
+   "side": "culprit",
+   "side_explanation": "She killed Meera in 2011 and Nikhil this weekend; she is the only culprit and acted alone.",
+   "hidden_facts": [
+    {
+     "id": "h5",
+     "fact": "One diary page survived the bonfire, and Lalita Pinto had already copied two pages by hand."
+    },
+    {
+     "id": "h6",
+     "fact": "Asha heard her voice on the water tower stairs in 2011 and never printed it."
+    }
+   ],
+   "starting_knowledge": "She knows everything she did, and that Nikhil claimed a second copy existed somewhere."
+  },
+  {
+   "id": "p4",
+   "character_name": "Dev Pillai",
+   "role_title": "Fund treasurer and property consultant",
+   "public_info": "Treasurer of the Meera Pinto Memorial Fund and the man who booked the lodge for the weekend at a friendly rate.",
+   "private_info": "You have drained eleven lakh from the memorial fund to cover a collapsed land deal and intended to repay it after the next sale. Nikhil summoned you on Saturday evening and said the audit was done and the board would hear about it on Monday. You spent until half past midnight arguing in the storeroom, then drank until you blacked out in the hall armchair. You hate that the dead man's last words to you were a threat, and you need the ledger and the laptop gone before anyone opens them.",
+   "goal": "Find Nikhil's killer while destroying or retrieving the fund ledger and the audit file, and keep the theft from reaching the board.",
+   "side": "investigator",
+   "side_explanation": "A thief with an excellent motive who did not commit the murder, which makes him the loudest red herring.",
+   "hidden_facts": [
+    {
+     "id": "h7",
+     "fact": "His 2011 witness statement about Meera was typed for him by Chitra; he signed an account of a night he did not actually witness."
+    },
+    {
+     "id": "h8",
+     "fact": "Nikhil's email naming him to the board was written but never sent, and Esha has known about the missing money for a month."
+    }
+   ],
+   "starting_knowledge": "He knows the audit exists and that Nikhil threatened to report him on Monday."
+  },
+  {
+   "id": "p5",
+   "character_name": "Esha Fernandes",
+   "role_title": "Bank compliance officer, daughter of the lodge's old owner",
+   "public_info": "Grew up on these grounds while her father owned the lodge, and still treats the kitchen as her own.",
+   "private_info": "In 2011 your father paid a police clerk to close the inquiry into Meera's death, not to protect a killer but to protect the lodge's licence. The receipt is still taped inside the water tower hatch and you have never dared remove it. Through your bank's audit work you learned a month ago that Dev has emptied the memorial fund, and you have said nothing. If the 2011 file reopens, your father dies in a courtroom and your family loses everything.",
+   "goal": "Get the 2011 bribe receipt and the old inquiry file out of this lodge and destroyed, even if the murder is solved around you.",
+   "side": "wildcard",
+   "side_explanation": "She wants a killer named only if the 2011 cover-up stays buried, so she will obstruct the very history the case depends on.",
+   "hidden_facts": [
+    {
+     "id": "h9",
+     "fact": "Her father's bribe closed the inquiry into an actual murder, something he never knew."
+    },
+    {
+     "id": "h10",
+     "fact": "Nikhil had already photographed the hatch receipt and the photograph is on the laptop in the storeroom."
+    }
+   ],
+   "starting_knowledge": "She knows where the bribe receipt is hidden and that Dev stole the fund money."
+  },
+  {
+   "id": "p6",
+   "character_name": "Farid Qureshi",
+   "role_title": "Physician, Meera's boyfriend in 2011",
+   "public_info": "A hospital physician who almost did not come, and who has asked the inspector three times to order a proper post mortem.",
+   "private_info": "You were Meera's boyfriend and you have never accepted the accident verdict. Your 2011 alibi was a lie: you were buying pills off a hostel dealer, not studying, and you let a friend cover for you rather than admit it. You still travel with sedatives for your own insomnia and left the kit open in your room on Saturday. You told Nikhil on Friday that if he had proof you would go to the police with him, whatever it cost anyone here.",
+   "goal": "Prove who killed Nikhil and finally prove who killed Meera, without your own false 2011 alibi destroying your credibility.",
+   "side": "investigator",
+   "side_explanation": "Innocent of both killings, though his drugs and his old lie put him squarely in the frame.",
+   "hidden_facts": [
+    {
+     "id": "h11",
+     "fact": "The zolpidem that sedated Nikhil came from four tablets taken out of his own travel kit on Saturday night."
+    },
+    {
+     "id": "h12",
+     "fact": "The friend who covered his 2011 alibi was Chitra, who used the favour to keep him from questioning her own account."
+    }
+   ],
+   "starting_knowledge": "He knows Nikhil claimed to have proof about Meera and promised to act on Sunday."
+  }
+ ],
+ "setting_summary": "Kestrel Lake Lodge, a damp hill-country resort hosting the fifteen year reunion of one college batch. It is the same lodge where Meera Pinto fell from the water tower in 2011 and the inquiry closed in nine days. This weekend the renovation turned up boxes from the old drains, the organiser spent every night reading them, and now he is dead in the shallows. The road is flooded, the police want the simplest verdict, and almost everyone here signed something in 2011.",
+ "title": "The Water Tower Reunion",
+ "truth": {
+  "summary": "Fifteen years ago Chitra Menon shoved Meera Pinto from the water tower terrace to stop her filing a complaint about an exam paper leak Chitra ran and profited from, then typed the witness statements that made it an accident. At this reunion Nikhil Rao, the lodge's events manager, recovered Meera's diary from a renovated drain and told Chitra he would read it at the Sunday memorial. On Saturday night Chitra stole zolpidem from Farid's bag, dosed Nikhil's tea flask, had Ben deliver an unsigned note calling Nikhil to the boathouse at one, borrowed Ben's boots from the coat rack, and killed Nikhil with a cleat unscrewed from the jetty, cutting her own palm as she swung. She burned the diary in the bonfire, but one page survived in the ash and Lalita Pinto had already copied two.",
+  "timeline": [
+   {
+    "time": "2011, 1 August",
+    "event": "Meera confronts Chitra on the water tower terrace about the leaked paper. Chitra shoves her. Asha hears the argument from the stairs below."
+   },
+   {
+    "time": "2011, 4 August",
+    "event": "Chitra types identical witness statements for herself and Dev. Esha's father pays a police clerk to close the inquiry."
+   },
+   {
+    "time": "2026, Tuesday",
+    "event": "Renovation workers pull a tin box from the old drain. Nikhil finds Meera's diary and writes to Asha."
+   },
+   {
+    "time": "Saturday 20:30",
+    "event": "Nikhil privately tells Chitra he knows, and asks her to confess at the memorial."
+   },
+   {
+    "time": "Saturday 21:50",
+    "event": "Nikhil confronts Dev with the completed fund audit and threatens to report him on Monday."
+   },
+   {
+    "time": "Saturday 22:40",
+    "event": "Chitra takes four zolpidem tablets from Farid's open travel kit in the guest wing."
+   },
+   {
+    "time": "Saturday 23:15",
+    "event": "Chitra writes the block capital note and asks Ben to pass it to Nikhil as a surprise toast arrangement. Jiya sees the handover."
+   },
+   {
+    "time": "Saturday 23:50",
+    "event": "Chitra doses the flask on the unattended pantry shelf. Ben takes cash from the tin. Dev drinks himself unconscious in the hall."
+   },
+   {
+    "time": "Sunday 00:55",
+    "event": "Chitra takes Ben's boots from the coat rack, pads the toes, and crosses the lawn. Pramod notices the gait."
+   },
+   {
+    "time": "Sunday 01:09",
+    "event": "At the jetty a slurring Nikhil refuses to hand over the page. Asha's recorder catches both voices."
+   },
+   {
+    "time": "Sunday 01:11",
+    "event": "Chitra strikes him with the unscrewed cleat, cutting her palm, and rolls him into the shallows. His watch floods and stops."
+   },
+   {
+    "time": "Sunday 01:40",
+    "event": "She burns the diary in the bonfire, returns the wet boots to the rack and bandages her hand."
+   },
+   {
+    "time": "Sunday 06:40",
+    "event": "Pramod wakes from his drunken sleep, finds the body and rings the bell."
+   }
+  ],
+  "culprit_ids": [
+   "p3"
+  ],
+  "method": "Zolpidem in the victim's tea flask to slow him, a one o'clock meeting arranged through an unwitting friend's hand, then a single blow with a brass mooring cleat unscrewed from the jetty, followed by drowning in shallow reed water, with the diary burned afterwards.",
+  "motive": "Nikhil intended to read Meera's diary at the memorial and name Chitra as the person on the terrace in 2011, which would end her judicial appointment and expose her as a killer.",
+  "ambiguities": "Dev's theft, the unsent email and his dictated 2011 statement give him two motives. Farid's sedatives and his false old alibi point at him. Esha's family bribe explains a cover-up without explaining a murder. Ben cannot account for the note, the boots or his solitary hour in the kitchen, and the police verdict of accident is never formally withdrawn."
+ },
+ "twists": [
+  {
+   "name": "The unwitting accomplice",
+   "description": "Ben carried the note that drew Nikhil to the jetty and his boots were worn by the killer, both arranged by Chitra as ordinary favours. Ben knows neither fact. Jiya's sighting, the padded toes and the short stride in the mud reveal them, and Ben will fight the suggestion that he was involved at all."
+  },
+  {
+   "name": "The false trail off the water",
+   "description": "The third hint claims the killer arrived by canoe, which neatly explains why nobody on the lawn saw a crossing. The chained dry canoes and untouched padlock on the watchman's log, plus boot prints coming from the hall side, refute it."
+  },
+  {
+   "name": "The borrowed secret",
+   "description": "Esha already knows from her bank's audit work that Dev has emptied the Meera Pinto Memorial Fund, a fact written on Dev's own card. She can expose him to pull attention away from her family's 2011 bribe, or trade her silence for his help in destroying the hatch receipt."
+  }
+ ]
+}

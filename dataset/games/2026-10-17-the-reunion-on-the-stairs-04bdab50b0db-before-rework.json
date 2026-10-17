@@ -1,0 +1,761 @@
+{
+ "id": "04bdab50b0db",
+ "createdAt": 1792253870354,
+ "status": "reading",
+ "players": [
+  {
+   "id": "p1",
+   "name": "Himanshu",
+   "wish": ""
+  },
+  {
+   "id": "p2",
+   "name": "Nikhil",
+   "wish": "The killer"
+  },
+  {
+   "id": "p3",
+   "name": "Rishabh",
+   "wish": "Spy"
+  }
+ ],
+ "setup": {
+  "setting": "A college reunion",
+  "tone": "tense",
+  "length": "standard",
+  "hints": 5,
+  "overrides": 5,
+  "notes": ""
+ },
+ "scenario": {
+  "background": [
+   "It is 2026. Saint Alban's College is holding its ten year reunion.",
+   "The old hostel wing has been opened for one night for the party.",
+   "Arjun Mehra was the class star. He built a big software company.",
+   "At 11:10 pm Arjun was found dead at the bottom of the main staircase.",
+   "Heavy rain has flooded the hill road. Police cannot arrive before morning.",
+   "The old wing had a power cut from 10:35 to 10:50 pm.",
+   "Everyone here remembers Priya Sharma. She fell from the hostel roof in 2016."
+  ],
+  "case_question": "Who killed Arjun Mehra at the reunion, and why?",
+  "clues": [
+   {
+    "id": "c1",
+    "name": "Head wound report",
+    "where": "With Dr. Sana Qureshi at the main staircase",
+    "shows": "The wound is one deep dent, not the many bruises a fall would cause.",
+    "does_not_prove": "It does not show who swung the object.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c2",
+    "name": "Blood behind the shelf",
+    "where": "Old Library, behind the third bookshelf",
+    "shows": "There are dried blood drops on the floor and a wiped smear beside them.",
+    "does_not_prove": "It does not show the time of the attack.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c3",
+    "name": "Wet cricket trophy",
+    "where": "Old Library, near the washroom sink",
+    "shows": "The heavy 2016 cricket trophy is wet and washed, taken from its case.",
+    "does_not_prove": "Washing removed any fingerprints.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c4",
+    "name": "Drag marks",
+    "where": "Old Library doorway and the corridor to the stairs",
+    "shows": "Dust is swept in two long lines, with a torn shirt thread at the door.",
+    "does_not_prove": "It does not show how many people dragged the body.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c5",
+    "name": "Pen in the dead hand",
+    "where": "Main Staircase, in Arjun's right hand",
+    "shows": "An engraved pen marked H.L. is in Arjun's right hand, but Arjun wrote with his left.",
+    "does_not_prove": "It does not prove the pen's owner was ever in the library.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c6",
+    "name": "Opened bag",
+    "where": "Hostel Room 302, Himanshu's bag",
+    "shows": "The bag zip is open and a green paint smear is on the strap.",
+    "does_not_prove": "It does not show whose hand left the paint.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c7",
+    "name": "Painted window ledge",
+    "where": "Main Staircase corridor, with Ramesh Yadav",
+    "shows": "Ramesh painted the corridor window ledge green at 9 pm and it stayed wet for hours.",
+    "does_not_prove": "It does not say who climbed through.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c8",
+    "name": "Hidden shirt",
+    "where": "Rooftop Terrace, behind the water tank",
+    "shows": "A folded shirt has green paint on one cuff and a torn sleeve edge.",
+    "does_not_prove": "The shirt has no name on it, only a hotel laundry tag.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c9",
+    "name": "Printed roof photo",
+    "where": "Old Library, inside a yearbook",
+    "shows": "A 2016 photo shows Priya on the roof with Nikhil standing close to her.",
+    "does_not_prove": "It does not show anyone pushing her.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c10",
+    "name": "Arjun's 9:15 email",
+    "where": "With Meera Nair",
+    "shows": "Arjun emailed Meera the old roof photos at 9:15 pm and asked her to keep them safe.",
+    "does_not_prove": "It does not say what Arjun planned to do next.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c11",
+    "name": "Deleted footage",
+    "where": "Reunion Hall office computer",
+    "shows": "Camera footage from 10:20 to 11:00 pm was deleted using Meera's login.",
+    "does_not_prove": "It does not show who typed at the keyboard.",
+    "importance": "useful",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c12",
+    "name": "Copy stick and receipt",
+    "where": "Hostel Room 302, taped under the desk",
+    "shows": "A memory stick holds copies of Arjun's work files, with a cash receipt signed V.D.",
+    "does_not_prove": "Copying files is not killing a man.",
+    "importance": "misleading",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c13",
+    "name": "Company paper",
+    "where": "With Vikram Dutta in the Old Library",
+    "shows": "A company paper lists Himanshu Lamba and Rishabh Sen as joint owners of a rival firm.",
+    "does_not_prove": "It does not show either man met Arjun tonight.",
+    "importance": "misleading",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c14",
+    "name": "Arjun's missing phone",
+    "where": "Rooftop Terrace, inside the water tank",
+    "shows": "Arjun's phone is in the water and dead, and its last photo was taken at 9:40 pm.",
+    "does_not_prove": "The water ruined any proof of who put it there.",
+    "importance": "useful",
+    "can_be_destroyed": false
+   }
+  ],
+  "locations": [
+   {
+    "id": "l1",
+    "name": "Reunion Hall",
+    "public_info": "Dinner tables, a stage and the office computer are here.",
+    "x": 50,
+    "y": 85,
+    "neighbors": [
+     "l3"
+    ],
+    "icon": "🎉"
+   },
+   {
+    "id": "l2",
+    "name": "Old Library",
+    "public_info": "Dusty shelves, a trophy case and the class yearbooks.",
+    "x": 20,
+    "y": 55,
+    "neighbors": [
+     "l3"
+    ],
+    "icon": "📚"
+   },
+   {
+    "id": "l3",
+    "name": "Main Staircase",
+    "public_info": "Arjun's body lies at the bottom of these stairs.",
+    "x": 50,
+    "y": 55,
+    "neighbors": [
+     "l1",
+     "l2",
+     "l4",
+     "l5"
+    ],
+    "icon": "🪜"
+   },
+   {
+    "id": "l4",
+    "name": "Hostel Room 302",
+    "public_info": "The old room where guests left their bags and laptops.",
+    "x": 80,
+    "y": 55,
+    "neighbors": [
+     "l3"
+    ],
+    "icon": "🛏️"
+   },
+   {
+    "id": "l5",
+    "name": "Rooftop Terrace",
+    "public_info": "A wet flat roof with a big water tank. Priya fell from here in 2016.",
+    "x": 50,
+    "y": 20,
+    "neighbors": [
+     "l3"
+    ],
+    "icon": "🌧️"
+   }
+  ],
+  "opening_scene": "Rain hammers the old hostel roof. The party music has been cut off. Arjun Mehra lies at the foot of the main staircase, and he is not breathing. The hill road is flooded, so no police will come before morning. Old classmates and staff are shut inside this wing together. Someone here hurt him. Tonight you must work out who, and why.",
+  "phases": [
+   {
+    "name": "The Body",
+    "planned_beat": "Dr. Sana Qureshi says the head wound does not match a fall. Nobody may leave the wing.",
+    "question": "Where was Arjun actually attacked?",
+    "options": [
+     "On the main staircase",
+     "In the Old Library",
+     "On the Rooftop Terrace",
+     "In Hostel Room 302"
+    ],
+    "answer_index": 1,
+    "reward": "Arjun was attacked in the Old Library and dragged to the stairs.",
+    "reward_time": "10:40 pm",
+    "reward_order": 60,
+    "wrong_nudge": "Look for blood that is not where the body is."
+   },
+   {
+    "name": "The Planted Pen",
+    "planned_beat": "Himanshu's engraved pen is found in Arjun's hand. His bag in Room 302 is open.",
+    "question": "How did Himanshu's pen reach Arjun's hand?",
+    "options": [
+     "Arjun borrowed it at dinner",
+     "Himanshu dropped it in a fight",
+     "Someone took it from Himanshu's bag",
+     "It was a different pen"
+    ],
+    "answer_index": 2,
+    "reward": "Someone opened Himanshu's bag in Room 302 around 10:30 pm.",
+    "reward_time": "10:30 pm",
+    "reward_order": 50,
+    "wrong_nudge": "Arjun wrote with his left hand. Check the bag strap."
+   },
+   {
+    "name": "The Green Mark",
+    "planned_beat": "Ramesh says he painted the window ledge at 9 pm. A stained shirt turns up on the roof.",
+    "question": "What does the green paint tell the group?",
+    "options": [
+     "The painter touched the body",
+     "The thief climbed through the painted window",
+     "The paint is old and means nothing",
+     "Arjun painted the ledge himself"
+    ],
+    "answer_index": 1,
+    "reward": "The pen thief used the window shortcut and stained one shirt cuff.",
+    "reward_time": "10:32 pm",
+    "reward_order": 55,
+    "wrong_nudge": "Match the paint on the bag strap to the wet ledge, then find the stained cloth."
+   },
+   {
+    "name": "The Old Fall",
+    "planned_beat": "Meera admits Arjun emailed her old photos at 9:15 pm. A printed photo turns up in a yearbook.",
+    "question": "Why was Arjun killed tonight?",
+    "options": [
+     "For his company money",
+     "To hide file copying",
+     "To bury proof about Priya's fall in 2016",
+     "Over an old love affair"
+    ],
+    "answer_index": 2,
+    "reward": "Arjun had proof that Nikhil was on the roof when Priya fell.",
+    "reward_time": "9:40 pm",
+    "reward_order": 30,
+    "wrong_nudge": "Ask Meera what Arjun sent her before his speech."
+   }
+  ],
+  "players": [
+   {
+    "id": "p1",
+    "character_name": "Himanshu Lamba",
+    "role_title": "Reunion Organiser",
+    "public_info": "Himanshu planned tonight's reunion and holds the keys to the old wing.",
+    "private_info": "You secretly co-own a company that competes with Arjun's. Rishabh is your hidden partner. Arjun threatened to sue you both last month. You went to Room 302 at 10:10 pm to hide your company papers. You never touched Arjun.",
+    "goal": "Keep your company partnership hidden until the group names the killer.",
+    "side": "investigator",
+    "side_explanation": "You are innocent, but planted evidence points straight at you.",
+    "hidden_facts": [
+     {
+      "id": "h1",
+      "fact": "Your engraved pen was stolen from your bag at about 10:30 pm."
+     },
+     {
+      "id": "h2",
+      "fact": "Arjun had already dropped the lawsuit in a letter he never sent you."
+     }
+    ],
+    "starting_knowledge": "You know the window shortcut into Room 302, because you showed it to people at dinner.",
+    "start_location": "l1",
+    "icon": "🔑",
+    "intro_line": "I am Himanshu, I organised this reunion. I hold the keys to this wing."
+   },
+   {
+    "id": "p2",
+    "character_name": "Nikhil Rao",
+    "role_title": "Bank Manager",
+    "public_info": "Nikhil runs a city bank branch and was the class cricket captain.",
+    "private_info": "In 2016 you argued with Priya on the roof and she fell. You never told anyone. At 9:40 pm Arjun showed you a photo and told you to confess tonight. You took Himanshu's pen, hit Arjun with the cricket trophy, and staged a fall. Your stained shirt is hidden on the roof.",
+    "goal": "Avoid being named as the killer in the final vote.",
+    "side": "culprit",
+    "side_explanation": "You killed Arjun to stop him from exposing Priya's death.",
+    "hidden_facts": [
+     {
+      "id": "h3",
+      "fact": "Arjun emailed copies of the roof photos to Meera at 9:15 pm."
+     },
+     {
+      "id": "h4",
+      "fact": "Meera deleted the camera footage for you without being asked."
+     }
+    ],
+    "starting_knowledge": "You know the trophy is washed, and that Meera saw you on the stairs at 11 pm.",
+    "start_location": "l1",
+    "icon": "🏏",
+    "intro_line": "I am Nikhil, I manage a bank in the city. I was our cricket captain here."
+   },
+   {
+    "id": "p3",
+    "character_name": "Rishabh Sen",
+    "role_title": "Risk Consultant",
+    "public_info": "Rishabh advises companies and travels a lot for work.",
+    "private_info": "You were paid in cash to copy Arjun's work files tonight. You did it in Room 302 at 10:00 pm. The memory stick is taped under the desk. You also secretly co-own a rival company with Himanshu. You saw nothing in the library.",
+    "goal": "Carry the memory stick out of the wing without anyone learning you copied the files.",
+    "side": "wildcard",
+    "side_explanation": "You are a paid spy who wants the stolen files out, not justice.",
+    "hidden_facts": [
+     {
+      "id": "h5",
+      "fact": "The man who paid you was Vikram Dutta, Arjun's own business partner."
+     },
+     {
+      "id": "h6",
+      "fact": "Your copied files include the 2016 roof photos, the proof of the motive."
+     }
+    ],
+    "starting_knowledge": "You passed the corridor window at 10:05 pm and the paint was still wet.",
+    "start_location": "l4",
+    "icon": "🕵️",
+    "intro_line": "I am Rishabh, a risk consultant. I flew in this morning for the reunion."
+   }
+  ],
+  "npcs": [
+   {
+    "id": "n1",
+    "name": "Meera Nair",
+    "role_title": "Alumni Secretary",
+    "public_info": "Meera keeps the alumni records and ran tonight's guest list.",
+    "knows": "She has Arjun's 9:15 pm email with the roof photos. She saw Nikhil hurry down the stairs at 11 pm.",
+    "secrets": "She loves Nikhil and deleted the camera footage with her own login to protect him.",
+    "lies": "She says the computer crashed and lost the footage by itself.",
+    "reveals_freely": "That Arjun seemed angry and rushed before his speech.",
+    "reveals_under_pressure": "The email from Arjun, and that she deleted the footage herself.",
+    "start_location": "l1",
+    "icon": "📒"
+   },
+   {
+    "id": "n2",
+    "name": "Ramesh Yadav",
+    "role_title": "Night Watchman",
+    "public_info": "Ramesh guards the old wing and found the body at 11:10 pm.",
+    "knows": "He painted the corridor window ledge green at 9 pm. He heard a thud on the library side.",
+    "secrets": "He was asleep from 10:15 to 10:50 pm and fears losing his job.",
+    "lies": "He says he walked his rounds every ten minutes all night.",
+    "reveals_freely": "That he painted the ledge and the paint stays wet for hours.",
+    "reveals_under_pressure": "That he slept, and that the thud came from the library, not the stairs.",
+    "start_location": "l3",
+    "icon": "🔦"
+   },
+   {
+    "id": "n3",
+    "name": "Dr. Sana Qureshi",
+    "role_title": "Classmate and Doctor",
+    "public_info": "Sana is a hospital doctor and checked Arjun's body first.",
+    "knows": "The wound is one deep dent. Arjun wrote with his left hand. Death was near 10:40 pm.",
+    "secrets": "She owed Arjun money and had begged him for more time that evening.",
+    "lies": "She says she and Arjun were on perfectly good terms.",
+    "reveals_freely": "That the wound does not match a fall down stairs.",
+    "reveals_under_pressure": "Her debt to Arjun, and that Arjun was left handed.",
+    "start_location": "l3",
+    "icon": "🩺"
+   },
+   {
+    "id": "n4",
+    "name": "Vikram Dutta",
+    "role_title": "Arjun's Business Partner",
+    "public_info": "Vikram built the company with Arjun and handles its money.",
+    "knows": "He paid Rishabh cash to copy Arjun's files. He saw Himanshu enter Room 302 at 10:10 pm.",
+    "secrets": "He wanted Arjun's files so he could push Arjun out of the company.",
+    "lies": "He says he sat at the dinner table the whole evening.",
+    "reveals_freely": "That Arjun planned to say something serious in his speech.",
+    "reveals_under_pressure": "That he hired Rishabh, and that he holds Himanshu and Rishabh's company paper.",
+    "start_location": "l2",
+    "icon": "💼"
+   }
+  ],
+  "public_timeline": [
+   {
+    "order": 10,
+    "time": "8:30 pm",
+    "event": "Dinner starts in the Reunion Hall.",
+    "reveal_round": 0
+   },
+   {
+    "order": 20,
+    "time": "9:00 pm",
+    "event": "Ramesh paints the corridor window ledge green.",
+    "reveal_round": 0
+   },
+   {
+    "order": 40,
+    "time": "10:15 pm",
+    "event": "Arjun's speech is announced, but he never comes to the stage.",
+    "reveal_round": 0
+   },
+   {
+    "order": 70,
+    "time": "10:35 pm",
+    "event": "The power cuts out in the whole old wing.",
+    "reveal_round": 0
+   },
+   {
+    "order": 80,
+    "time": "10:50 pm",
+    "event": "The power comes back on.",
+    "reveal_round": 2
+   },
+   {
+    "order": 90,
+    "time": "11:00 pm",
+    "event": "Meera sees someone hurry down the main staircase.",
+    "reveal_round": 3
+   },
+   {
+    "order": 100,
+    "time": "11:10 pm",
+    "event": "Ramesh finds Arjun's body at the foot of the stairs.",
+    "reveal_round": 0
+   }
+  ],
+  "setting_summary": "A ten year college reunion in an old hostel wing, cut off by flood rain. The class star lies dead at the foot of the stairs.",
+  "title": "The Reunion on the Stairs",
+  "truth": {
+   "summary": "Nikhil Rao killed Arjun Mehra in the Old Library with a cricket trophy. Arjun had a 2016 photo showing Nikhil on the roof when Priya Sharma fell. Nikhil stole Himanshu's engraved pen to frame him, then staged the body as a fall down the stairs.",
+   "timeline": [
+    {
+     "time": "2016",
+     "event": "Nikhil argues with Priya on the roof. She falls and dies. It is called an accident."
+    },
+    {
+     "time": "9:15 pm",
+     "event": "Arjun emails the old roof photos to Meera for safe keeping."
+    },
+    {
+     "time": "9:40 pm",
+     "event": "Arjun shows Nikhil the photo in the library and tells him to confess."
+    },
+    {
+     "time": "10:00 pm",
+     "event": "Rishabh copies Arjun's files in Room 302."
+    },
+    {
+     "time": "10:10 pm",
+     "event": "Himanshu hides his company papers in Room 302."
+    },
+    {
+     "time": "10:30 pm",
+     "event": "Nikhil climbs through the painted window, stains his cuff, and takes Himanshu's pen."
+    },
+    {
+     "time": "10:40 pm",
+     "event": "During the power cut, Nikhil hits Arjun with the trophy in the library."
+    },
+    {
+     "time": "10:45 pm",
+     "event": "Nikhil drags the body to the stairs, puts the pen in Arjun's right hand, and takes his phone."
+    },
+    {
+     "time": "10:52 pm",
+     "event": "Nikhil washes the trophy, then hides his shirt and the phone on the roof."
+    },
+    {
+     "time": "11:20 pm",
+     "event": "Meera deletes the camera footage to protect Nikhil."
+    }
+   ],
+   "culprit_ids": [
+    "p2"
+   ],
+   "method": "One heavy blow with the 2016 cricket trophy, then the body was dragged and staged as a fall.",
+   "motive": "To stop Arjun from proving that Nikhil caused Priya Sharma's death in 2016.",
+   "ambiguities": "Whether Nikhil pushed Priya or she slipped is never settled. Meera helped without being asked, so the group must judge her."
+  },
+  "key_deductions": [
+   {
+    "id": "k1",
+    "statement": "Arjun was killed in the Old Library and his body was dragged to the stairs.",
+    "clue_ids": [
+     "c1",
+     "c2",
+     "c4"
+    ]
+   },
+   {
+    "id": "k2",
+    "statement": "The pen in Arjun's hand was planted to blame Himanshu.",
+    "clue_ids": [
+     "c5",
+     "c6"
+    ]
+   },
+   {
+    "id": "k3",
+    "statement": "The person who took the pen climbed through the freshly painted window.",
+    "clue_ids": [
+     "c6",
+     "c7",
+     "c8"
+    ]
+   },
+   {
+    "id": "k4",
+    "statement": "The weapon was the cricket trophy, and it was washed after.",
+    "clue_ids": [
+     "c1",
+     "c3"
+    ]
+   },
+   {
+    "id": "k5",
+    "statement": "The motive was old proof about Priya Sharma's fall in 2016.",
+    "clue_ids": [
+     "c9",
+     "c10",
+     "c14"
+    ]
+   },
+   {
+    "id": "k6",
+    "statement": "Meera deleted the footage herself to shield Nikhil.",
+    "clue_ids": [
+     "c10",
+     "c11"
+    ]
+   }
+  ],
+  "hint_ladder": [
+   {
+    "text": "The body is not lying where the blood is.",
+    "is_false": false
+   },
+   {
+    "text": "Arjun wrote with his left hand, so the pen in his right hand was placed there.",
+    "is_false": false
+   },
+   {
+    "text": "Wet green paint moved from the ledge to a bag strap to a sleeve.",
+    "is_false": false
+   },
+   {
+    "text": "Check the trophy case in the library and see what is missing.",
+    "is_false": false
+   },
+   {
+    "text": "Ask Meera what Arjun sent her at 9:15 pm, and who she would protect.",
+    "is_false": false
+   },
+   {
+    "text": "Search the roof water tank and behind it for cloth and a phone.",
+    "is_false": false
+   },
+   {
+    "text": "Someone standing in this wing was on the roof the night Priya fell.",
+    "is_false": false
+   }
+  ],
+  "twists": [
+   {
+    "name": "The framed friend",
+    "description": "Nikhil plants Himanshu's pen in Arjun's hand, but the theft leaves green paint on the bag strap and on his own cuff."
+   },
+   {
+    "name": "The hidden partnership",
+    "description": "Himanshu and Rishabh secretly co-own a rival company, so both hide the same paper and look guilty together."
+   }
+  ],
+  "music": {
+   "root": "A",
+   "mode": "minor",
+   "tempo": 76,
+   "palette": "strings",
+   "percussion": "heartbeat",
+   "motif": [
+    0,
+    3,
+    2,
+    0,
+    5,
+    4,
+    2
+   ],
+   "description": "Low strings circling over a slow heartbeat, with rain outside."
+  }
+ },
+ "state": {
+  "phaseIndex": -1,
+  "phaseEndsAt": null,
+  "questionsPerPhase": 3,
+  "phaseMinutes": 15,
+  "hintsLeft": 5,
+  "hintCursor": 0,
+  "hintsGiven": [],
+  "hintVote": null,
+  "suspicion": 20,
+  "events": [
+   {
+    "at": 1792254226197,
+    "phase": null,
+    "text": "Rain hammers the old hostel roof. The party music has been cut off. Arjun Mehra lies at the foot of the main staircase, and he is not breathing. The hill road is flooded, so no police will come before morning. Old classmates and staff are shut inside this wing together. Someone here hurt him. Tonight you must work out who, and why.",
+    "kind": "opening"
+   },
+   {
+    "at": 1792254358226,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Rishabh",
+    "q": "How did he die?",
+    "text": "Arjun was found dead at the bottom of the main staircase. The exact cause is not known yet. Nobody knows that yet."
+   },
+   {
+    "at": 1792254392074,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Oh he died? How did he\nDie, timings and where were all characters?",
+    "text": "Arjun was found dead at the bottom of the main staircase at 11:10 pm. Ramesh Yadav, the night watchman, found him. How he died, and where everyone was at the time, nobody knows that yet."
+   },
+   {
+    "at": 1792254423930,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Rishabh",
+    "q": "How did everyone reach there when it was rain flooded?",
+    "text": "People came before the rain got bad. The hill road flooded later that night. That is why no police can get up here until morning."
+   },
+   {
+    "at": 1792254625771,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "Was any identifying item found on the dead body that can help identify the person",
+    "text": "Everyone already knows who he is. The dead man is Arjun Mehra, the class star. As for items found on his body, nobody knows that yet."
+   },
+   {
+    "at": 1792254699169,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Who is Himanshu to all ppl",
+    "text": "Himanshu Lamba is the reunion organiser. He planned tonight's party for the old classmates. He also holds the keys to the old wing."
+   },
+   {
+    "at": 1792254747216,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "I meant to ask if any alien identifying clue was found on the body which could point to the killer, a pen or a ring or something",
+    "text": "Nobody knows that yet. No object like a pen or ring has been reported on the body. Sana checked him first, so she may be worth asking."
+   },
+   {
+    "at": 1792254769886,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "How is rishabh friends with us, same dir nikhil",
+    "text": "Rishabh and Nikhil are old classmates from your batch. Everyone here graduated from Saint Alban's College ten years ago. Rishabh now works as a risk consultant, and Nikhil manages a bank branch."
+   }
+  ],
+  "threads": {
+   "p1": [],
+   "p2": [],
+   "p3": []
+  },
+  "questionsLeft": {
+   "p1": 0,
+   "p2": 0,
+   "p3": 0
+  },
+  "pending": {},
+  "found": {
+   "p1": [],
+   "p2": [],
+   "p3": []
+  },
+  "destroyed": [],
+  "revealed": {
+   "p1": [],
+   "p2": [],
+   "p3": []
+  },
+  "ready": {},
+  "positions": {
+   "p1": "l1",
+   "p2": "l1",
+   "p3": "l4",
+   "n1": "l1",
+   "n2": "l3",
+   "n3": "l3",
+   "n4": "l2"
+  },
+  "mapEdits": {},
+  "brief": {
+   "step": 0
+  },
+  "roundVote": null,
+  "roundResults": [],
+  "timelineExtra": [],
+  "shared": [],
+  "publicPending": {},
+  "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 400\" width=\"800\" height=\"400\">\n<defs>\n<linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#0a141c\"/><stop offset=\"1\" stop-color=\"#132b35\"/>\n</linearGradient>\n<linearGradient id=\"wall\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#1e3d47\"/><stop offset=\"1\" stop-color=\"#132b35\"/>\n</linearGradient>\n<radialGradient id=\"glow\" cx=\"0.5\" cy=\"0.75\" r=\"0.75\">\n<stop offset=\"0\" stop-color=\"#e9a94f\"/><stop offset=\"0.55\" stop-color=\"#e9a94f\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#0a141c\" stop-opacity=\"0.9\"/>\n</radialGradient>\n<linearGradient id=\"water\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#132b35\"/><stop offset=\"1\" stop-color=\"#0c2129\"/>\n</linearGradient>\n<linearGradient id=\"refl\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#e9a94f\" stop-opacity=\"0.45\"/><stop offset=\"1\" stop-color=\"#e9a94f\" stop-opacity=\"0\"/>\n</linearGradient>\n<pattern id=\"rain\" width=\"38\" height=\"40\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(14)\">\n<line x1=\"5\" y1=\"0\" x2=\"5\" y2=\"25\" stroke=\"#f6dca8\" stroke-opacity=\"0.22\" stroke-width=\"1.2\"/>\n<line x1=\"20\" y1=\"13\" x2=\"20\" y2=\"36\" stroke=\"#f6dca8\" stroke-opacity=\"0.14\" stroke-width=\"1\"/>\n<line x1=\"31\" y1=\"4\" x2=\"31\" y2=\"21\" stroke=\"#f6dca8\" stroke-opacity=\"0.18\" stroke-width=\"1\"/>\n</pattern>\n<radialGradient id=\"vig\" cx=\"0.42\" cy=\"0.6\" r=\"0.78\">\n<stop offset=\"0.45\" stop-color=\"#0a141c\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#0a141c\" stop-opacity=\"0.85\"/>\n</radialGradient>\n</defs>\n\n<rect width=\"800\" height=\"400\" fill=\"url(#sky)\"/>\n\n<!-- distant trees -->\n<path d=\"M0 118 q30 -24 54 -6 q22 -26 48 -8 q26 -22 46 2 q24 -16 40 6 l0 30 L0 140 Z\" fill=\"#0a141c\" opacity=\"0.8\"/>\n<path d=\"M620 120 q26 -26 50 -6 q28 -24 52 0 q30 -18 46 8 l0 28 -148 0 Z\" fill=\"#0a141c\" opacity=\"0.8\"/>\n\n<!-- hostel wing -->\n<rect x=\"4\" y=\"88\" width=\"792\" height=\"14\" fill=\"#0a141c\"/>\n<rect x=\"18\" y=\"100\" width=\"764\" height=\"202\" fill=\"url(#wall)\"/>\n<rect x=\"18\" y=\"196\" width=\"764\" height=\"10\" fill=\"#0a141c\" opacity=\"0.45\"/>\n<rect x=\"18\" y=\"112\" width=\"764\" height=\"6\" fill=\"#0a141c\" opacity=\"0.3\"/>\n\n<!-- upper windows -->\n<g fill=\"#0a141c\">\n<rect x=\"48\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"178\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"308\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"438\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"568\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"698\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n</g>\n<rect x=\"438\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\" fill=\"#e9a94f\" opacity=\"0.2\"/>\n<rect x=\"178\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\" fill=\"#e9a94f\" opacity=\"0.1\"/>\n\n<!-- arcade openings -->\n<g fill=\"#0a141c\">\n<path d=\"M42 302 L42 212 a43 43 0 0 1 86 0 L128 302 Z\"/>\n<path d=\"M432 302 L432 212 a43 43 0 0 1 86 0 L518 302 Z\"/>\n<path d=\"M562 302 L562 212 a43 43 0 0 1 86 0 L648 302 Z\"/>\n<path d=\"M692 302 L692 212 a43 43 0 0 1 86 0 L778 302 Z\"/>\n<path d=\"M172 302 L172 212 a43 43 0 0 1 86 0 L258 302 Z\"/>\n</g>\n\n<!-- lit stairwell arch -->\n<path d=\"M302 302 L302 212 a43 43 0 0 1 86 0 L388 302 Z\" fill=\"url(#glow)\"/>\n<!-- staircase silhouette -->\n<path d=\"M388 302 L388 206 L372 206 L372 218 L356 218 L356 230 L340 230 L340 242 L326 242 L326 254 L314 254 L314 266 L304 266 L304 302 Z\" fill=\"#132b35\"/>\n<path d=\"M388 302 L388 214 L376 214 L376 226 L360 226 L360 238 L344 238 L344 250 L330 250 L330 262 L318 262 L318 274 L308 274 L308 302 Z\" fill=\"#0a141c\" opacity=\"0.65\"/>\n<!-- banister -->\n<path d=\"M390 196 L300 262 L300 272 L390 206 Z\" fill=\"#0a141c\" opacity=\"0.8\"/>\n<!-- the fallen figure at the foot of the stairs -->\n<g fill=\"#0a141c\">\n<ellipse cx=\"338\" cy=\"292\" rx=\"34\" ry=\"9\"/>\n<path d=\"M310 292 q14 -12 34 -8 q18 4 26 8 q-6 6 -28 6 q-24 0 -32 -6 Z\"/>\n<path d=\"M352 290 q16 -4 26 4 q-10 4 -26 1 Z\"/>\n<circle cx=\"306\" cy=\"287\" r=\"7\"/>\n</g>\n<ellipse cx=\"368\" cy=\"297\" rx=\"26\" ry=\"5\" fill=\"#0a141c\" opacity=\"0.6\"/>\n\n<!-- pillar shading -->\n<g fill=\"#0a141c\" opacity=\"0.35\">\n<rect x=\"128\" y=\"206\" width=\"44\" height=\"96\"/>\n<rect x=\"258\" y=\"206\" width=\"44\" height=\"96\"/>\n<rect x=\"388\" y=\"206\" width=\"44\" height=\"96\"/>\n<rect x=\"518\" y=\"206\" width=\"44\" height=\"96\"/>\n<rect x=\"648\" y=\"206\" width=\"44\" height=\"96\"/>\n</g>\n\n<!-- floodwater -->\n<rect y=\"296\" width=\"800\" height=\"104\" fill=\"url(#water)\"/>\n<rect x=\"300\" y=\"296\" width=\"92\" height=\"86\" fill=\"url(#refl)\"/>\n<rect x=\"436\" y=\"296\" width=\"44\" height=\"54\" fill=\"url(#refl)\" opacity=\"0.4\"/>\n<g stroke=\"#f6dca8\" stroke-opacity=\"0.12\" stroke-width=\"1.5\">\n<line x1=\"282\" y1=\"312\" x2=\"410\" y2=\"312\"/>\n<line x1=\"300\" y1=\"330\" x2=\"396\" y2=\"330\"/>\n<line x1=\"266\" y1=\"352\" x2=\"430\" y2=\"352\"/>\n<line x1=\"296\" y1=\"376\" x2=\"402\" y2=\"376\"/>\n<line x1=\"40\" y1=\"322\" x2=\"150\" y2=\"322\"/>\n<line x1=\"620\" y1=\"340\" x2=\"760\" y2=\"340\"/>\n<line x1=\"80\" y1=\"364\" x2=\"220\" y2=\"364\"/>\n<line x1=\"540\" y1=\"316\" x2=\"640\" y2=\"316\"/>\n</g>\n<rect y=\"294\" width=\"800\" height=\"5\" fill=\"#0a141c\" opacity=\"0.5\"/>\n\n<!-- rain -->\n<rect width=\"800\" height=\"400\" fill=\"url(#rain)\"/>\n<rect width=\"800\" height=\"400\" fill=\"url(#vig)\"/>\n</svg>",
+  "knowledge": [],
+  "moments": [],
+  "overridesLeft": {
+   "p1": 5,
+   "p2": 5,
+   "p3": 5
+  },
+  "submissions": {},
+  "transitioning": false,
+  "result": null
+ },
+ "error": null,
+ "progress": null
+}

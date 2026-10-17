@@ -1000,6 +1000,14 @@ export function mentions(game, text) {
   }).map(([id]) => id);
 }
 
+// A copy safe to keep in the dataset: everything except the tokens that let someone act as the host or a player.
+export function forDataset(game) {
+  const copy = structuredClone(game);
+  delete copy.hostToken;
+  for (const p of copy.players ?? []) delete p.token;
+  return copy;
+}
+
 const SAID = [/^(.+?) said: "(.*)"$/, /^(.+?), in their own words: "(.*)"$/, /^(.+?) could not keep it in: "(.*)"$/];
 
 // Older saves: rebuild the facts list from lines players said out loud.

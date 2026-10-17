@@ -1,0 +1,492 @@
+{
+ "clues": [
+  {
+   "id": "c1",
+   "name": "The Body in the Lotus Fountain",
+   "where": "l2",
+   "shows": "Rustom Daruwalla lies face-down in eight inches of fountain water, dinner jacket soaked, with a deep bruise above the right ear. His pockets have been turned out.",
+   "does_not_prove": "It does not show who brought him to the court or whether he walked there willingly.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c2",
+   "name": "Dented Brass Hand-Bell",
+   "where": "l2",
+   "shows": "The Nautch Room's supper bell lies in the fountain's lily basket, its rim dented, two grey hairs caught in the clapper pin.",
+   "does_not_prove": "Anyone at the gala could have lifted the bell from the supper room; the water left no usable prints.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c3",
+   "name": "Gold Thread on the Nandi",
+   "where": "l2",
+   "shows": "A snag of gold zari thread hangs from the stone Nandi at the fountain rim, matching a heavy Benares shawl worn by one of the ladies at the gala.",
+   "does_not_prove": "A shawl can be lent, and the thread alone fixes no time.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c4",
+   "name": "Dr. Iyengar's Examination",
+   "where": "n3",
+   "shows": "The blow came before the drowning; the mouth smells faintly of chloral; a shred of human skin is lodged under the victim's right fingernail.",
+   "does_not_prove": "It cannot name whose skin it is — 1953 Bombay has no such test — only that the victim clawed someone alive.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c5",
+   "name": "Scratch Beneath the Bangles",
+   "where": "p3",
+   "shows": "Three fresh parallel scratches run across Chitra Varde's left wrist, kept under a stack of gold bangles and a long glove.",
+   "does_not_prove": "She can blame the hotel's thorny garlands or the fountain's stone edge when the body was lifted.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c6",
+   "name": "Bar Chit No. 418",
+   "where": "n2",
+   "shows": "Fredy's chit book records '1 Hennessy, 2 glasses, Nautch Room, 11.00 pm' initialled 'C.V.' — ordered by Chitra Varde, not by the victim.",
+   "does_not_prove": "Ordering a brandy is not poisoning it, and the chit does not say who carried the tray.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c7",
+   "name": "The Chloral Bottle and the Prescription",
+   "where": "n2",
+   "shows": "A half-empty bottle of chloral hydrate sits in Fredy's apron; Dr. Iyengar's casebook shows the same drops prescribed to 'Smt. C. Varde' for sleeplessness.",
+   "does_not_prove": "Fredy had the bottle in hand all evening, which keeps him a suspect for the dose.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c8",
+   "name": "The Torn Goods-Lift Log",
+   "where": "l5",
+   "shows": "A page is ripped from the goods-lift logbook; liftman Mohan Sawant insists the car ran twice during the blackout, the second time up from the Lotus Court level at about 11.25.",
+   "does_not_prove": "The missing page was torn by someone hiding a different trip entirely, so the tear points at the wrong person.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c9",
+   "name": "The Abandoned White Glove",
+   "where": "l4",
+   "shows": "A long white glove, lipstick-marked at the wrist and smeared with green ledger ink, lies under Rustom's desk — Asha Rane's size, Asha Rane's shade.",
+   "does_not_prove": "Ink on a glove proves she handled the ledger, not that she met Rustom; she was in the office before eleven.",
+   "importance": "useful",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c10",
+   "name": "The Green Ledger, Page 61 Missing",
+   "where": "l4",
+   "shows": "Rustom's blackmail ledger lies open; page 61 has been torn out, and the stub still reads '1948 … scaffold … Rs 7,000 … re: P. Varde'.",
+   "does_not_prove": "The stub does not say who paid or who was meant to fall — only that Pesi Varde's death was bought.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c11",
+   "name": "Ash Pan of the Kitchen Range",
+   "where": "l5",
+   "shows": "A charred corner of a share-transfer deed survives in the ash: Rustom's signature, the date 18-7-53, and the words 'to Smt. C. Varde'.",
+   "does_not_prove": "Burnt paper does not show who fed the range, only that someone destroyed a gift already given.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c12",
+   "name": "Cufflink and the Second Glass",
+   "where": "l3",
+   "shows": "A green enamel cufflink of Dev Khambatta's lies under the Nautch Room settee, beside two brandy glasses — one drained, one barely touched.",
+   "does_not_prove": "It places Dev with the victim at the last drink, but not at the fountain twenty minutes later.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c13",
+   "name": "The Tacky-Inked Codicil",
+   "where": "l4",
+   "shows": "A codicil leaving the Marigold Palace to Dev Khambatta sits in Rustom's blotter, the ink still soft, witnessed by a clerk who died in 1951.",
+   "does_not_prove": "A forged inheritance is a reason to keep a man alive long enough to sign, not proof of murder.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c14",
+   "name": "The Padlocked Terrace",
+   "where": "l6",
+   "shows": "Mohan Sawant chained the terrace shutters at 11.10 against the squall and unlocked them at midnight; the terrace was sealed through the entire blackout.",
+   "does_not_prove": "It breaks one alibi but offers no alternative route by itself.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c15",
+   "name": "Dr. Iyengar's Blood-Group Card",
+   "where": "n3",
+   "shows": "A 1946 hotel medical card and a folded letter from Nargis Khambatta establish that Rustom Daruwalla, not her husband, fathered Dev.",
+   "does_not_prove": "Blood is not a will, and it says nothing about anyone's movements.",
+   "importance": "useful",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c16",
+   "name": "Envelope in the Staff Cubby",
+   "where": "l5",
+   "shows": "Ben Lobo's cubby holds an envelope of hundred-rupee notes tucked under a receipt flap stamped 'Khambatta Distributors, Kalbadevi'.",
+   "does_not_prove": "A bribed house detective is a liar, not necessarily a killer.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  }
+ ],
+ "hint_ladder": [
+  {
+   "text": "Stop arguing about the whole evening. Only eleven minutes matter: the blackout from 11.20 to 11.31. Ask each person to be placed inside it by someone who is not their friend.",
+   "is_false": false
+  },
+  {
+   "text": "The blow did not begin this. A man his size does not stand still for a hand-bell. Find out what he drank at eleven and whose initials are on the chit.",
+   "is_false": false
+  },
+  {
+   "text": "Whoever tore page 61 out of the green ledger tore out the motive — find that page and you have the murderer's hand.",
+   "is_false": true
+  },
+  {
+   "text": "The Lotus Court has two ways in: the ballroom arch, overlooked all night by the band and four hundred guests, and the goods lift. The log is missing a page for a reason that has nothing to do with the second lift trip Mohan remembers.",
+   "is_false": false
+  },
+  {
+   "text": "Match the zari thread on the Nandi to a shawl, then ask its owner to take off her bangles. The victim's right hand took skin from somebody alive.",
+   "is_false": false
+  },
+  {
+   "text": "Rake the kitchen ash pan. Rustom signed his share away at nine o'clock; the person who gained burned the proof, because being given the hotel was no payment at all for a husband killed in 1948.",
+   "is_false": false
+  }
+ ],
+ "key_deductions": [
+  {
+   "id": "k1",
+   "statement": "Rustom was sedated before he was killed: chloral in a brandy ordered at 11.00 under Chitra Varde's initials.",
+   "clue_ids": [
+    "c4",
+    "c6",
+    "c7"
+   ]
+  },
+  {
+   "id": "k2",
+   "statement": "He died in the Lotus Court during the 11.20 blackout, struck with a bell carried down from the Nautch Room.",
+   "clue_ids": [
+    "c1",
+    "c2",
+    "c3"
+   ]
+  },
+  {
+   "id": "k3",
+   "statement": "Chitra's claim that she stood on the terrace through the blackout is impossible; she reached and left the court by the goods lift.",
+   "clue_ids": [
+    "c14",
+    "c8",
+    "c3"
+   ]
+  },
+  {
+   "id": "k4",
+   "statement": "The killer was clawed by the half-drugged victim — a woman in a gold zari shawl with fresh scratches on her wrist.",
+   "clue_ids": [
+    "c4",
+    "c5",
+    "c3"
+   ]
+  },
+  {
+   "id": "k5",
+   "statement": "Dev carried the drugged glass without knowing it, which explains his presence at the last drink and separates him from the fountain.",
+   "clue_ids": [
+    "c12",
+    "c6",
+    "c13"
+   ]
+  },
+  {
+   "id": "k6",
+   "statement": "The motive was page 61 — Rustom's purchase of Pesi Varde's fatal fall in 1948 — and Asha removed that page before the murder, mistaking it for her own secret.",
+   "clue_ids": [
+    "c10",
+    "c9",
+    "c11"
+   ]
+  }
+ ],
+ "locations": [
+  {
+   "id": "l1",
+   "name": "The Mirror Ballroom",
+   "public_info": "Four hundred guests, a sixteen-piece band and rain hammering the skylights; Fredy's bar stands at the far end under the silvered mirrors."
+  },
+  {
+   "id": "l2",
+   "name": "The Lotus Court",
+   "public_info": "A glass-roofed inner court with a marble fountain, a stone Nandi and banked lilies, reached from the ballroom arch or, by staff, from the goods lift."
+  },
+  {
+   "id": "l3",
+   "name": "The Nautch Room",
+   "public_info": "A small private supper room off the mezzanine with a settee, a brass hand-bell for service, and a door that locks from inside."
+  },
+  {
+   "id": "l4",
+   "name": "Rustom's Office",
+   "public_info": "Third floor, teak and green baize, with the hotel safe, the blotter, and the ledger the staff call simply 'the green book'."
+  },
+  {
+   "id": "l5",
+   "name": "The Service Spine",
+   "public_info": "Goods lift, staff stair, staff cubbies and the great coal kitchen range — the hotel's hidden artery, flooded ankle-deep at the courtyard end."
+  },
+  {
+   "id": "l6",
+   "name": "The Terrace Pavilion",
+   "public_info": "A canvas-roofed terrace above Apollo Bunder, shuttered and chained by the night engineer whenever the squall turns."
+  }
+ ],
+ "npcs": [
+  {
+   "id": "n1",
+   "name": "Gulab Jaan",
+   "role_title": "Garland girl, sixteen",
+   "public_info": "Sells jasmine and roses in the lobby; she screamed the hotel awake at 11.52 after finding the proprietor in the fountain.",
+   "knows": "She was in Rustom's office near 10.50 and watched Asha Rane tear a page from the green book and leave before eleven. During the blackout she saw a wet hem and heard bangles climbing the staff stair.",
+   "secrets": "She steals small things from guest rooms and sends the money to her mother in Nashik; Rustom's gold collar stud is in her choli now.",
+   "lies": "Claims she never goes above the lobby and found the body by chance while carrying garlands to the court.",
+   "reveals_freely": "The body's position, the bell among the lilies, and that the ballroom arch into the court was bolted on the court side.",
+   "reveals_under_pressure": "That Asha was in the office before eleven, and that bangles and a dripping hem went up the staff stair at about 11.28."
+  },
+  {
+   "id": "n2",
+   "name": "Faredoon 'Fredy' Mistry",
+   "role_title": "Bar steward",
+   "public_info": "Thirty years behind the Marigold's bar; he has poured for every scandal in Bombay and repeated none of them.",
+   "knows": "Chitra ordered the eleven o'clock brandy, produced her own chloral bottle, and told him it was for Rustom's nerves. He poured only half the drops because the amount frightened him, and he saw Dev take the tray.",
+   "secrets": "He has been watering the gala's champagne and pocketing the difference for his daughter's wedding; he also knows the drops were not his to pour at all.",
+   "lies": "Says the brandy was Rustom's own standing order and that he never left the bar.",
+   "reveals_freely": "That Dev Khambatta carried a tray to the Nautch Room a little after eleven.",
+   "reveals_under_pressure": "Chit 418, the chloral bottle in his apron, and that he halved the dose on purpose."
+  },
+  {
+   "id": "n3",
+   "name": "Dr. Padma Iyengar",
+   "role_title": "Hotel physician and gala guest",
+   "public_info": "Called from the ballroom at 11.55; she examined the body on the court tiles and will not allow it to be moved.",
+   "knows": "The blow preceded drowning, chloral was in the mouth, skin is under the right fingernail. She prescribed chloral to Chitra Varde in May, and she has held Dev's parentage in her casebook since 1946.",
+   "secrets": "She signed Pesi Varde's 1948 death certificate as accidental although the skull injury was wrong for the fall, because Rustom paid for her clinic.",
+   "lies": "Hides the chloral prescription and Dev's blood card behind professional discretion.",
+   "reveals_freely": "The full medical findings on the body, including the chloral and the skin under the nail.",
+   "reveals_under_pressure": "The prescription in Chitra's name, Dev's paternity card, and her own false certificate from 1948."
+  },
+  {
+   "id": "n4",
+   "name": "Mohan Sawant",
+   "role_title": "Night engineer and liftman",
+   "public_info": "Keeps the lifts, the generator and the terrace shutters; he fought the failing mains twice that night.",
+   "knows": "He chained the terrace at 11.10 and reopened it at midnight. The goods lift was called twice in the dark, the second time up from the court level at about 11.25. He saw Ben Lobo tear a page from the log at 11.40.",
+   "secrets": "He has let Ben's night crates through for a cut of two hundred a month and is terrified of losing his quarters and his pension.",
+   "lies": "Denies anyone used the goods lift during the blackout until he is shown the torn log.",
+   "reveals_freely": "The timing of both power failures and that the terrace was chained throughout.",
+   "reveals_under_pressure": "The two blackout lift trips, and that Ben Lobo tore the page out himself."
+  }
+ ],
+ "opening_scene": "Eighteenth July, 1953. The monsoon has shut Bombay like a fist. At the Marigold Palace the gala goes on anyway — Asha Rane's voice over the band, champagne warm because the ice launch never came, Apollo Bunder a grey roar beyond the glass. At twenty past eleven the lights die. For eleven minutes four hundred people stand laughing in the dark while the rain finds the skylights. When the filaments crawl back, nothing seems changed. At 11.52 the garland girl's scream crosses the ballroom like a dropped tray. In the Lotus Court, Rustom Daruwalla — proprietor, financier, keeper of everyone's secrets — lies face-down in his own fountain, pockets turned out, the supper bell among the lilies. The causeway is flooded. The police cannot reach you until dawn. Until then, the hotel holds whoever did it.",
+ "phases": [
+  {
+   "name": "Rain on the Mirror Ballroom",
+   "planned_beat": "The body is examined where it lies; Dr. Iyengar refuses to call it an accident, Ben seals the hotel, and the telephone brings word that Inspector Vakil cannot cross the flooded causeway before first light. The gala becomes a holding pen."
+  },
+  {
+   "name": "The Hour Without Light",
+   "planned_beat": "The mains fail a second time for ten minutes. In the dark the green ledger is snatched from the office, someone sluices the fountain rim with a bucket, and Gulab Jaan is found half-throttled on the staff stair — alive, and able to say only that her attacker wore bangles."
+  },
+  {
+   "name": "Dawn at Apollo Bunder",
+   "planned_beat": "The water drops and Vakil's launch is sighted. Mohan rakes the kitchen range for the morning fires and turns up the charred deed; the hotel safe is opened. One name must be given to the Inspector before he takes everyone to Colaba and the lawyers bury the night forever."
+  }
+ ],
+ "players": [
+  {
+   "id": "p1",
+   "character_name": "Asha Rane",
+   "role_title": "Playback singer, the voice of the gala",
+   "public_info": "Bombay's most recorded voice, engaged to sing three brackets tonight; Rustom Daruwalla financed the films that made her famous.",
+   "private_info": "Rustom kept a certificate proving I am married to Kishore Rane, a forger serving seven years in Yerawada; one word and my career ends. At 10.50, during the band's interval, I went up to his empty office and tore out the page I believed was mine from the green ledger — I cannot read Gujarati shorthand, so I have never known what is on it. The page is sewn into the lining of my evening bag. I left a glove up there. I was on the bandstand through the blackout, in front of four hundred witnesses.",
+   "goal": "Name Rustom's killer before Vakil lands, and make certain nobody learns you were in that office — or that there is a husband at all.",
+   "side": "investigator",
+   "side_explanation": "She stole evidence hours before the murder and carries a career-ending secret, but she killed no one and needs the truth found fast.",
+   "hidden_facts": [
+    {
+     "id": "h1",
+     "fact": "The page in her bag is not her marriage record: it is page 61, Rustom's record of the Rs 7,000 he paid to arrange Pesi Varde's fall from the scaffold in 1948 — tonight's motive."
+    },
+    {
+     "id": "h2",
+     "fact": "Rustom burned her marriage certificate a week ago, having decided she was worth more loved than squeezed; she has been terrified of nothing."
+    }
+   ],
+   "starting_knowledge": "She saw Chitra Varde leave the ballroom toward the mezzanine at about 11.05, and she found the ballroom arch into the court bolted when she tried it at eleven."
+  },
+  {
+   "id": "p2",
+   "character_name": "Benedict 'Ben' Lobo",
+   "role_title": "House detective of the Marigold Palace",
+   "public_info": "Ex-CID, twelve years the hotel's own policeman; with the causeway flooded he is the only law in the building.",
+   "private_info": "For eight months I have taken six hundred a month to let unmanifested crates ride the goods lift at night; I do not know who pays, only that the envelope arrives with a Kalbadevi receipt flap. At nine Rustom told me he had my lift trips in writing and would hand me to Colaba. At 11.40 I tore the page out of the goods-lift log because it recorded my own 10.40 run. I also ran an inquiry for Rustom last year and know Asha Rane is married to a convict — that is my one real card, and I may spend it once.",
+   "goal": "Identify the killer and hand Vakil a closed case, while ensuring the words 'goods lift' and 'envelope' never reach his notebook.",
+   "side": "investigator",
+   "side_explanation": "Corrupt and self-protecting, he destroyed evidence for his own sake, but he is not the murderer and wants the case solved before dawn.",
+   "hidden_facts": [
+    {
+     "id": "h3",
+     "fact": "The man bribing him through intermediaries is Dev Khambatta; the crates are Khambatta Distributors' uncustomed film stock and Swiss watches."
+    },
+    {
+     "id": "h4",
+     "fact": "The page he burned also recorded the 11.21 call of the goods lift down to the Lotus Court — he destroyed the only written proof of the killer's route."
+    }
+   ],
+   "starting_knowledge": "He knows the ballroom arch was bolted on the court side, that Rustom's pockets were emptied, and that Mohan chained the terrace at 11.10."
+  },
+  {
+   "id": "p3",
+   "character_name": "Chitra Varde",
+   "role_title": "Widow of the co-founder; mistress of the hotel's household",
+   "public_info": "Pesi Varde built the Marigold with Rustom and died off its scaffold in 1948; his widow has run its kitchens, linen and staff ever since.",
+   "private_info": "I killed him. Two weeks ago I read page 61 and learned Rustom bought my husband's fall. At 11.00 I ordered brandy and tipped in my chloral drops, then asked Dev to carry the tray so Rustom would not be warned by my face. I had already asked Rustom to meet me alone at the fountain at 11.15 and to bolt the arch behind him. When the lights died I took the supper bell down in the goods lift, struck him above the ear, held him under, emptied his pockets and climbed the staff stair at 11.28. I burned the papers from his pockets in the kitchen range and I have told everyone I was out on the terrace in the rain.",
+   "goal": "Survive until the launch and let Vakil leave with another name — Dev's forged codicil or Asha's glove will do.",
+   "side": "culprit",
+   "side_explanation": "She planned the sedation, struck the blow and drowned him; every word about the terrace is invention.",
+   "hidden_facts": [
+    {
+     "id": "h5",
+     "fact": "Fredy, uneasy, poured only half her dose — Rustom was far more awake than she believes, and his right hand took skin from her wrist before she pushed him under."
+    },
+    {
+     "id": "h6",
+     "fact": "The papers she burned unread were a deed signed at nine that evening transferring Rustom's entire share of the Marigold Palace to her, in confession and restitution."
+    }
+   ],
+   "starting_knowledge": "She knows Gulab steals from the rooms, that Dev delivered the brandy, and that Dr. Iyengar signed her husband's 1948 certificate without a murmur."
+  },
+  {
+   "id": "p4",
+   "character_name": "Dev Khambatta",
+   "role_title": "Film distributor; the proprietor's nephew",
+   "public_info": "Runs Khambatta Distributors out of Kalbadevi and has spent two years asking his uncle for the hotel's lease; he was in the Nautch Room at eleven.",
+   "private_info": "At 10.30 I sat at Rustom's desk and forged a codicil leaving me the Marigold, in his own ink and his own hand, witnessed by a clerk I did not know was dead. At 11.05 Chitra asked me to carry a brandy tray up to him; I did, we quarrelled about the lease, and I left at 11.12 missing a cufflink. It is my money that buys Ben Lobo, and my crates that ride his goods lift. I did not touch my uncle in that fountain, but no one will believe the codicil if they start reading the green ledger.",
+   "goal": "Get out at dawn with the green ledger in your coat and the codicil accepted as genuine in Vakil's inventory — whoever hangs for the fountain is not your business.",
+   "side": "wildcard",
+   "side_explanation": "He wants the hotel and his smuggling buried, not the truth; he will help or sabotage the investigation purely as inheritance requires.",
+   "hidden_facts": [
+    {
+     "id": "h7",
+     "fact": "Rustom was his biological father, which made him heir by blood already; the forgery was never necessary."
+    },
+    {
+     "id": "h8",
+     "fact": "The brandy he carried up at 11.05 was the drugged glass — he delivered the sedative that made the murder possible."
+    }
+   ],
+   "starting_knowledge": "He knows Ben Lobo is on his payroll, that Rustom was sleepy and slurring by 11.10, and that Chitra avoided going to the Nautch Room herself."
+  }
+ ],
+ "setting_summary": "The Marigold Palace Hotel, Apollo Bunder, Bombay, the night of 18 July 1953. The hotel's annual Monsoon Gala — band, champagne, a famous singer, four hundred of the city's loudest names — is cut off from the mainland by a flood tide and a failing electrical supply. The proprietor, Rustom Daruwalla, finances films and collects other people's secrets, and tonight almost everyone under his roof owes him something. The police launch cannot cross until dawn.",
+ "title": "The Monsoon Gala at the Marigold Palace",
+ "truth": {
+  "summary": "Chitra Varde murdered hotel proprietor Rustom Daruwalla in the Lotus Court during the 11.20 pm blackout. She sedated him with her own chloral drops in a brandy that Dev Khambatta innocently carried up, then met him at the fountain where he had come to hand over a signed deed, struck him with the Nautch Room's brass hand-bell and held him face-down in the water. She emptied his pockets and burned the papers in the kitchen range without reading them — they were his transfer of the whole hotel to her.",
+  "timeline": [
+   {
+    "time": "9.00 pm",
+    "event": "Rustom warns Ben Lobo he has the smuggling trips in writing; separately he signs a deed transferring his share of the Marigold to Chitra Varde."
+   },
+   {
+    "time": "10.30 pm",
+    "event": "Dev Khambatta, alone in the office, forges a codicil to Rustom's will in his uncle's own ink."
+   },
+   {
+    "time": "10.40 pm",
+    "event": "Ben runs crates down in the goods lift; the trip is entered in the logbook."
+   },
+   {
+    "time": "10.50 pm",
+    "event": "Asha Rane enters the empty office, tears out what she believes is her blackmail record — in fact page 61 — and leaves a glove behind. Gulab Jaan, hiding by the safe, sees her."
+   },
+   {
+    "time": "11.00 pm",
+    "event": "Chitra orders brandy from Fredy (chit 418) and doses it with chloral; Fredy quietly halves the dose."
+   },
+   {
+    "time": "11.05 pm",
+    "event": "Chitra hands the tray to Dev, who carries it to Rustom in the Nautch Room, quarrels about the lease and leaves at 11.12, dropping a cufflink."
+   },
+   {
+    "time": "11.10 pm",
+    "event": "Mohan Sawant chains the terrace shutters against the squall."
+   },
+   {
+    "time": "11.15 pm",
+    "event": "Rustom, groggy, goes down to the Lotus Court with the signed deed to meet Chitra, bolting the ballroom arch behind him as she asked."
+   },
+   {
+    "time": "11.20 pm",
+    "event": "The mains fail. Chitra takes the supper bell and rides the goods lift down."
+   },
+   {
+    "time": "11.24 pm",
+    "event": "Rustom half-wakes and claws her wrist; she strikes him above the ear and holds him under. Her shawl snags on the Nandi."
+   },
+   {
+    "time": "11.28 pm",
+    "event": "She climbs the staff stair with a dripping hem; Gulab hears bangles in the dark."
+   },
+   {
+    "time": "11.31 pm",
+    "event": "Lights return. Chitra burns the pocketed deed in the kitchen range and reappears in the ballroom claiming the terrace."
+   },
+   {
+    "time": "11.40 pm",
+    "event": "Ben tears and burns the goods-lift log page to hide his 10.40 run, destroying the record of the 11.21 call to the court."
+   },
+   {
+    "time": "11.52 pm",
+    "event": "Gulab Jaan finds the body and screams."
+   }
+  ],
+  "culprit_ids": [
+   "p3"
+  ],
+  "method": "Chloral hydrate in brandy delivered by an unwitting hand, then a blow with a brass hand-bell and drowning in nine inches of fountain water during a monsoon power failure; the court reached and left by the goods lift.",
+  "motive": "Chitra had read page 61 of the green ledger and learned that Rustom paid Rs 7,000 in 1948 to have her husband Pesi Varde killed on the hotel's scaffold so he could take sole control.",
+  "ambiguities": "Fredy handled the drug bottle all night and lies about the chit, so he reads as the poisoner. Dev's tacky-inked codicil and his presence at the last drink make him the obvious killer. Ben's torn log page looks like a murderer covering his route. Asha's inked glove and the missing page suggest a thief surprised at the desk. Page 61 never resurfaces unless someone searches Asha's evening bag."
+ },
+ "twists": [
+  {
+   "name": "A wildcard player",
+   "description": "Dev Khambatta does not care who hangs. He wins if the forged codicil survives the night unchallenged and the green ledger leaves in his coat, so he helps or sabotages the investigation as inheritance requires."
+  },
+  {
+   "name": "One player secretly knows another's private fact",
+   "description": "Ben Lobo investigated Asha Rane for Rustom and knows she is married to a convicted forger in Yerawada. It sits in his private_info as leverage he can spend once."
+  },
+  {
+   "name": "One false hint",
+   "description": "Hint three insists that whoever tore page 61 is the murderer. It is refutable: Gulab saw Asha take it before eleven, the ink is on her glove, and the killer already knew the 1948 entry by heart."
+  }
+ ]
+}

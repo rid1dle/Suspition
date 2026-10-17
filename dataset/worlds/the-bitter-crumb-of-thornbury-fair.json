@@ -1,0 +1,415 @@
+{
+ "title": "The Bitter Crumb of Thornbury Fair",
+ "setting_summary": "Thornbury village holds its hundredth annual bake-off in a striped marquee on the green, with bunting, jam and a visiting celebrity judge. The afternoon is hot, the hedges are in flower, and the prize cake sits under glass until judging. By four o'clock the judge is dead at the table and nobody is allowed to leave the green.",
+ "opening_scene": "The brass band stops mid bar. Under the marquee, the celebrity judge Gideon Rook rises half out of his chair, one hand at his collar, a forkful of prize cake still shining with almond glaze on the cloth. He goes down among the doilies. Dr Finch kneels, loosens the cravat, and after a long minute shakes his head. Outside, the tombola keeps spinning until someone thinks to stop it. The constable from Marbury is forty minutes away on a flooded road, so the fair committee locks the gate itself. Three villagers stood closest to that cake all morning. One of them put something in it, and the tea urn is still steaming as if nothing at all has happened.",
+ "truth": {
+  "summary": "The visiting judge Gideon Rook was really Walter Pye, the creamery manager who covered up contaminated cream that killed four people in Hallowmere eleven years ago and then vanished under a bought name. Chitra Vane, whose younger sister died in that outbreak, recognised him by his voice and crooked thumb at Friday's weigh in. She cut foxglove from the vicarage hedge that night, reduced it on the pavilion stove, and folded it into the almond glaze on one quarter of the prize cake. The dose alone would have made him very ill. With his daily heart tablet it stopped his heart in under a minute.",
+  "timeline": [
+   {
+    "time": "Friday 6pm",
+    "event": "At the weigh in Chitra Vane hears Rook speak and sees his crooked thumb, and recognises Walter Pye of Hallowmere."
+   },
+   {
+    "time": "Friday 10pm",
+    "event": "Chitra cuts foxglove from the vicarage hedge with pastry scissors and reduces the leaves on the pavilion stove."
+   },
+   {
+    "time": "Saturday 6am",
+    "event": "Chitra scrubs the green stained copper pan. Odette Pell walks past, understands, and says nothing."
+   },
+   {
+    "time": "Saturday 7am",
+    "event": "Chitra glazes the prize cake, adding the reduction to the judge's quarter only."
+   },
+   {
+    "time": "Saturday 9am",
+    "event": "Asha Doyle alters two scorecards so her lemon tart places second, a fraud unrelated to the poison."
+   },
+   {
+    "time": "Saturday 11am",
+    "event": "Ben Oyelaran carries the cake to the marquee, steadies the tray with his thumb in the glaze, then licks it. Tamsin Brue eats a sliver of the clean back quarter."
+   },
+   {
+    "time": "Saturday 2pm",
+    "event": "Rook takes his heart tablet in the caravan, watched by his assistant Nessa Quill."
+   },
+   {
+    "time": "Saturday 4pm",
+    "event": "Rook eats the judge's quarter and collapses. Dr Finch certifies death at the table."
+   }
+  ],
+  "culprit_ids": [
+   "p3"
+  ],
+  "method": "A reduction of foxglove leaves folded into the almond glaze of one quarter of the prize cake, made lethal by the victim's daily heart medicine.",
+  "motive": "Revenge: the judge was living under a false name after causing the Hallowmere outbreak that killed the culprit's sister.",
+  "ambiguities": "Odette Pell saw enough to stop it and chose silence, and Asha Doyle's fraud puts her hands all over the judging table. Either could be mistaken for the poisoner."
+ },
+ "players": [
+  {
+   "id": "p1",
+   "character_name": "Asha Doyle",
+   "role_title": "Baker and Assistant Scorekeeper",
+   "public_info": "Thornbury's most decorated home baker, placed second today, and one of only three people allowed behind the judging table.",
+   "private_info": "You altered two scorecards at nine this morning so your lemon tart would beat the Harrow sisters. You handled the judge's plate, his pencil and his water glass. You did not poison anyone, but if the scorecards are examined you become the obvious liar in the tent. Your grandmother's old recipe book went missing from the pavilion last night and you want it back.",
+   "goal": "Find who poisoned Gideon Rook, and keep your scorecard tampering from being proved.",
+   "side": "investigator",
+   "side_explanation": "You are innocent of the killing but guilty of a fraud that makes you look guilty of worse.",
+   "hidden_facts": [
+    {
+     "id": "h1",
+     "fact": "The foxglove came from the vicarage hedge your grandmother planted and tended for forty years, which is why the cuts are so neat."
+    },
+    {
+     "id": "h2",
+     "fact": "Your missing recipe book holds the almond glaze method used on the prize cake, and it is now in the tea tent lost property crate."
+    }
+   ],
+   "starting_knowledge": "You saw Ben carry the cake in at eleven. You know the judge drank only water and ate nothing else in the marquee."
+  },
+  {
+   "id": "p2",
+   "character_name": "Ben Oyelaran",
+   "role_title": "Tea Tent Keeper",
+   "public_info": "Runs the tea urn and the lost property crate, and carried the prize cake from the pavilion to the marquee this morning.",
+   "private_info": "You have skimmed small sums from the fair fund for two years to cover your mother's care home bills, and the ledger proving it sits in the tin under the urn. You touched the glaze with your thumb to steady the tray. You once lied for Chitra about a late delivery and you like her. You want that ledger off the green before anyone searches the tent.",
+   "goal": "Get the fair fund ledger away unread, and avoid being named for the poisoning.",
+   "side": "wildcard",
+   "side_explanation": "Your true aim is saving yourself from a theft charge, which may mean helping or obstructing the investigation.",
+   "hidden_facts": [
+    {
+     "id": "h3",
+     "fact": "You licked your thumb after setting the tray down and took a trace dose, which is why your pulse is slow and the bunting looks yellow."
+    },
+    {
+     "id": "h4",
+     "fact": "Odette Pell has known about your skimming for a year and has been quietly repaying the money from her own savings."
+    }
+   ],
+   "starting_knowledge": "The cake was already glazed when you collected it, and Chitra was at the pavilion stove very early."
+  },
+  {
+   "id": "p3",
+   "character_name": "Chitra Vane",
+   "role_title": "Pavilion Pastry Chef",
+   "public_info": "Baked the prize cake, as she has for nine years, and spent the morning alone in the pavilion kitchen.",
+   "private_info": "You recognised Gideon Rook at Friday's weigh in as Walter Pye, the Hallowmere creamery manager whose lies killed your sister Lila. You cut foxglove from the vicarage hedge that night, reduced it on the pavilion stove, and folded it into the almond glaze on his quarter alone. You scrubbed the copper pan at dawn, but Odette Pell walked past. You must not be named, and nobody must link Thornbury's pastry chef to a girl called Vane from Hallowmere.",
+   "goal": "Avoid being named as the poisoner, and make sure the village learns who Gideon Rook really was.",
+   "side": "culprit",
+   "side_explanation": "You poisoned the prize cake deliberately and you know exactly how.",
+   "hidden_facts": [
+    {
+     "id": "h5",
+     "fact": "Your dose alone would not have killed him. His daily heart tablet made it fatal, which turns an intended maiming into a death."
+    },
+    {
+     "id": "h6",
+     "fact": "Odette Pell watched you wash the pan at dawn, understood what it meant, and has covered for you all day."
+    }
+   ],
+   "starting_knowledge": "Only the judge's quarter was poisoned, and Ben handled the tray on the way over."
+  }
+ ],
+ "npcs": [
+  {
+   "id": "n1",
+   "name": "Odette Pell",
+   "role_title": "Fair Committee Secretary",
+   "public_info": "Keeps the running order, the scorecards and the keys to everything, and has done so for twenty three years.",
+   "knows": "She saw Chitra scrubbing a green stained pan at six in the morning, has researched the Hallowmere outbreak since Rook's name was announced, and knows Ben has been skimming the fair fund.",
+   "secrets": "She is a passive accomplice: she guessed what Chitra intended and deliberately warned no one. She has been repaying Ben's stolen sums out of her own savings.",
+   "lies": "Says she reached the green at eight and saw nobody at the pavilion.",
+   "reveals_freely": "The judging order, who was allowed behind the table, and that Rook insisted on judging the cake last.",
+   "reveals_under_pressure": "That she was there at six, that she keeps a folder of Hallowmere cuttings, and that she chose silence."
+  },
+  {
+   "id": "n2",
+   "name": "Dr Lowell Finch",
+   "role_title": "Village Doctor",
+   "public_info": "Certified the death at the table and will not let the body be moved until Marbury arrives.",
+   "knows": "The symptoms were cardiac: slow pulse, yellowed vision, vomiting, consistent with a plant glycoside. He has seen the victim's medicine bottle.",
+   "secrets": "He found the tablet bottle in the caravan under another man's name and has not yet told anyone.",
+   "lies": "Downplays that the dose alone might have been survivable, because he dislikes speculation.",
+   "reveals_freely": "Cause of death is cardiac arrest consistent with foxglove.",
+   "reveals_under_pressure": "That the tablet bottle is labelled Walter Pye, and that the combination with the poison is what actually killed the man."
+  },
+  {
+   "id": "n3",
+   "name": "Nessa Quill",
+   "role_title": "The Judge's Assistant",
+   "public_info": "Travelled with Gideon Rook, kept his diary, and has been crying behind the caravan since four o'clock.",
+   "knows": "Rook's real name, his daily tablet, and that he refused any booking within sixty miles of Hallowmere until this year.",
+   "secrets": "She was paid a bonus to maintain the Rook identity and fears she is an accessory to the old cover up.",
+   "lies": "Insists Rook was born in Jersey and had no connection to the north.",
+   "reveals_freely": "That he took a tablet every afternoon at two and ate almost nothing all day.",
+   "reveals_under_pressure": "That Rook was a bought name, and that there is a signed confidentiality contract in the caravan."
+  },
+  {
+   "id": "n4",
+   "name": "Tamsin Brue",
+   "role_title": "Runner for the Judging Table",
+   "public_info": "Fifteen, fast, carried plates and scorecards between pavilion and marquee all morning.",
+   "knows": "Who stood behind the judging table and when. She watched Asha writing on scorecards at nine and queueing for tea at seven.",
+   "secrets": "She stole a sliver from the back of the prize cake at eleven and felt perfectly fine.",
+   "lies": "Denies eating any cake, fearing a telling off.",
+   "reveals_freely": "Movements and timings of everyone near the table.",
+   "reveals_under_pressure": "That she ate cake and was unharmed, and that Asha was nowhere near the pavilion at seven."
+  }
+ ],
+ "locations": [
+  {
+   "id": "l1",
+   "name": "The Judging Marquee",
+   "public_info": "Striped canvas, a long clothed table, the body still in its chair and the prize cake under glass."
+  },
+  {
+   "id": "l2",
+   "name": "The Pavilion Kitchen",
+   "public_info": "Two gas stoves, a scrubbed bench and the copper pans the village has shared since the war."
+  },
+  {
+   "id": "l3",
+   "name": "The Tea Tent",
+   "public_info": "Urn, trestle tables, a tin of fair money and a crate of lost property."
+  },
+  {
+   "id": "l4",
+   "name": "The Vicarage Hedge",
+   "public_info": "A long border of foxglove and hollyhock running down to the green, planted generations ago."
+  },
+  {
+   "id": "l5",
+   "name": "Rook's Caravan",
+   "public_info": "A cream touring caravan behind the bandstand, curtains drawn, smelling of hair oil and peppermint."
+  }
+ ],
+ "clues": [
+  {
+   "id": "c1",
+   "name": "The Uneven Glaze",
+   "where": "l1",
+   "shows": "Under the glass, one quarter of the prize cake carries a duller, thicker almond glaze than the rest.",
+   "does_not_prove": "It does not show whose hand applied it.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c2",
+   "name": "Green Stained Reduction Pan",
+   "where": "l2",
+   "shows": "A copper pan scrubbed hard but still green in the seam, with wilted leaf fibre caught under a rivet.",
+   "does_not_prove": "The whole village cooks in that pavilion, so possession alone proves nothing.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c3",
+   "name": "The Neatly Cut Hedge",
+   "where": "l4",
+   "shows": "A section of foxglove cut at an angle with pastry scissors since Friday night, with small footprints in the bed.",
+   "does_not_prove": "The vicar prunes constantly and many villagers take flowers.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c4",
+   "name": "Tablet Bottle Labelled Walter Pye",
+   "where": "l5",
+   "shows": "A heart medicine bottle under the bunk, pharmacy label in the name Walter Pye of Hallowmere, dated this spring.",
+   "does_not_prove": "It does not prove anyone in Thornbury knew his real name.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c5",
+   "name": "Hallowmere Cuttings Folder",
+   "where": "n1",
+   "shows": "Newspaper clippings on the creamery outbreak, four dead, the manager's photograph, and a girl named Lila Vane among the victims.",
+   "does_not_prove": "Reading about an old scandal is not poisoning anybody.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c6",
+   "name": "Altered Scorecards",
+   "where": "l1",
+   "shows": "Two scorecards show erased totals rewritten in soft pencil, both raising Asha Doyle's placing.",
+   "does_not_prove": "Cheating over a lemon tart is not murder.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c7",
+   "name": "Ben's Yellowed Eyes",
+   "where": "n2",
+   "shows": "The doctor notes Ben's slow pulse and his complaint that the bunting looks yellow, classic low dose glycoside effects.",
+   "does_not_prove": "It makes Ben a victim rather than a poisoner.",
+   "importance": "useful",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c8",
+   "name": "Fair Fund Tin and Ledger",
+   "where": "l3",
+   "shows": "A tin under the urn holds a ledger of two years of small shortfalls, with a second column of quiet repayments in another hand.",
+   "does_not_prove": "Theft is not poison, and the repayments are not Ben's writing.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c9",
+   "name": "Grandmother's Recipe Book",
+   "where": "l3",
+   "shows": "In the lost property crate, Asha's missing book lies open at an almond glaze method with a fresh smear of glaze on the page.",
+   "does_not_prove": "The book sat in a public tent all morning where anyone could read it.",
+   "importance": "useful",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c10",
+   "name": "Tamsin's Clean Slice",
+   "where": "n4",
+   "shows": "The runner ate a sliver from the back of the cake at eleven and suffered nothing at all.",
+   "does_not_prove": "It does not identify who glazed the judge's quarter.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c11",
+   "name": "Pavilion Gas Meter Card",
+   "where": "l2",
+   "shows": "The meter card records a long burn between ten and midnight on Friday, when the pavilion should have been dark and locked.",
+   "does_not_prove": "The card does not name the cook.",
+   "importance": "useful",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c12",
+   "name": "Nessa's Confidentiality Contract",
+   "where": "l5",
+   "shows": "A signed agreement paying the assistant a bonus to refer to her employer only as Gideon Rook and to deny any northern connection.",
+   "does_not_prove": "A false name gives no villager a reason to kill, by itself.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  }
+ ],
+ "key_deductions": [
+  {
+   "id": "k1",
+   "statement": "Only the judge's quarter was poisoned, so the poisoner had the cake before it reached the marquee and knew which quarter he would be served.",
+   "clue_ids": [
+    "c1",
+    "c10"
+   ]
+  },
+  {
+   "id": "k2",
+   "statement": "The poison was foxglove, cut from the vicarage hedge and reduced on the pavilion stove on Friday night.",
+   "clue_ids": [
+    "c2",
+    "c3",
+    "c11"
+   ]
+  },
+  {
+   "id": "k3",
+   "statement": "Gideon Rook was really Walter Pye of Hallowmere, living under a bought identity.",
+   "clue_ids": [
+    "c4",
+    "c12"
+   ]
+  },
+  {
+   "id": "k4",
+   "statement": "Someone at the fair lost family in Hallowmere, and the surname Vane ties that motive to the pastry chef who had the cake alone all morning.",
+   "clue_ids": [
+    "c5",
+    "c2"
+   ]
+  },
+  {
+   "id": "k5",
+   "statement": "Asha's scorecard fraud and Ben's fund theft explain their evasions without explaining the poison, and Ben's symptoms mark him as an accidental victim.",
+   "clue_ids": [
+    "c6",
+    "c8",
+    "c7"
+   ]
+  },
+  {
+   "id": "k6",
+   "statement": "The dose was not certainly lethal alone; the daily heart tablet made it fatal, and the secretary's dawn silence let the plan run.",
+   "clue_ids": [
+    "c4",
+    "c5"
+   ]
+  }
+ ],
+ "phases": [
+  {
+   "name": "Flour and Silence",
+   "planned_beat": "The gate is locked and the body stays in its chair. Dr Finch names a plant glycoside, and the uneven glaze on one quarter of the cake is spotted under the glass."
+  },
+  {
+   "name": "The Name on the Bottle",
+   "planned_beat": "Nessa Quill breaks down behind the caravan and the bunk is opened: the medicine bottle reads Walter Pye, and the Hallowmere cuttings fall out of the secretary's satchel."
+  },
+  {
+   "name": "What the Hedge Knew",
+   "planned_beat": "Ben collapses briefly from his thumb dose, forcing the doctor to explain dosage, which proves the poisoner intended harm but relied on a tablet they may not have known about. Marbury's constable is twenty minutes away and a name must be given."
+  }
+ ],
+ "hint_ladder": [
+  {
+   "text": "Everyone keeps asking who touched the cake last. Ask instead who touched it first.",
+   "is_false": false
+  },
+  {
+   "text": "Something was cooked in the pavilion at an hour when the pavilion should have been dark.",
+   "is_false": false
+  },
+  {
+   "text": "The altered scorecards and the poisoned glaze were done by the same hand, which settles the matter.",
+   "is_false": true
+  },
+  {
+   "text": "The dead man's medicine bottle does not carry the dead man's name. Read the label, then read the old newspapers.",
+   "is_false": false
+  },
+  {
+   "text": "One surname appears both in the list of Hallowmere's dead and on the Thornbury pavilion rota.",
+   "is_false": false
+  },
+  {
+   "text": "The foxglove was cut with pastry scissors by someone who knew that hedge well, and only one person at this fair reduces anything in a copper pan.",
+   "is_false": false
+  }
+ ],
+ "twists": [
+  {
+   "name": "The False Hint",
+   "description": "One hint claims the scorecard tampering and the poisoned glaze share a hand. The scorecards were altered in soft pencil at nine on Saturday by Asha, while the glaze was applied at seven, and the runner Tamsin can place Asha in the tea queue at seven. The scorecards are flagged as misleading evidence, and handwriting cannot be matched to glazing."
+  },
+  {
+   "name": "The Borrowed Name",
+   "description": "Celebrity judge Gideon Rook is really Walter Pye, the Hallowmere creamery manager who buried four deaths and bought a new identity. His assistant was paid to maintain it, his medicine bottle betrays it, and the secretary's cuttings explain why a Thornbury pastry chef named Vane watched him eat."
+  }
+ ],
+ "music": {
+  "root": "D",
+  "mode": "dorian",
+  "tempo": 88,
+  "palette": "strings",
+  "percussion": "soft_tick",
+  "motif": [
+   0,
+   2,
+   3,
+   5,
+   3,
+   2,
+   0
+  ],
+  "description": "Warm village strings turning sour over a soft ticking clock."
+ }
+}

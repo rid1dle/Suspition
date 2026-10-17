@@ -73,8 +73,10 @@ culprit, adds a map and music, and saves the old version next to it.
 | `NO_OPEN` | | Set to `1` to stop the table screen opening on start |
 | `DETECTIVE_USE_API_KEY` | | Set to `1` to let the GM use `ANTHROPIC_API_KEY` instead of your Claude login |
 | `DETECTIVE_DATA_DIR` | `game-data/` | Where the current game is saved |
+| `DETECTIVE_DATASET_DIR` | `dataset/` | Where finished and replaced games are kept for the dataset |
 
 The current game is saved in `game-data/current-game.json`; restarting the server resumes it.
+Every game is also kept in `dataset/games/` (without join tokens) when it ends or is replaced; see `dataset/README.md`.
 Do not open that file mid-game: it holds the truth.
 
 To end a game early, press **End game** on the table screen (tap twice). If the table link is lost,

@@ -1,0 +1,580 @@
+{
+ "background": [
+  "Hollow Pine Research Camp, deep in the northern pine forest, autumn 2026.",
+  "Six people are here for a two week river survey for the Hollow Pine Trust.",
+  "The victim is Dr. Mira Sen, the camp leader. She was fair, strict and never missed a number.",
+  "Tonight a storm hit. The power died. Mira was found face down in the weir pool at 10:20 pm.",
+  "The bridge road is washed out and the radio is dead, so nobody can leave or call for help until morning.",
+  "Everyone here knows the old story of the Lamp Woman, a lantern ghost said to walk the weir.",
+  "Everyone also knows Mira had called a data audit for tomorrow morning."
+ ],
+ "clues": [
+  {
+   "id": "c1",
+   "name": "Lantern on the slope",
+   "where": "River Weir, twelve steps above the water",
+   "shows": "Mira's lantern still burned on dry ground, far from her body.",
+   "does_not_prove": "It does not say who carried her down.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c2",
+   "name": "Straight cut wound",
+   "where": "The body, examined by the camp medic",
+   "shows": "The back of her head has one straight edged dent, not a rock shape.",
+   "does_not_prove": "It does not name the object or the hand that held it.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c3",
+   "name": "Empty slot in the post rack",
+   "where": "Lab Tent",
+   "shows": "Twelve slots hold steel sample posts and one post is gone.",
+   "does_not_prove": "Anyone in camp could reach that rack.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c4",
+   "name": "Drag marks",
+   "where": "River Weir mud bank",
+   "shows": "Two heel lines run down to the water beside one set of size ten boots.",
+   "does_not_prove": "Many camp boots are size ten.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c5",
+   "name": "Loose fuel line",
+   "where": "Generator Shed",
+   "shows": "The fuel line was unscrewed by hand, with no tool marks or breaks.",
+   "does_not_prove": "It does not show who unscrewed it.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c6",
+   "name": "Wire snips with shavings",
+   "where": "Lab Tent, Ben's bench",
+   "shows": "The radio aerial wire was cut clean and matching shavings sit in these snips.",
+   "does_not_prove": "The bench is shared by the whole survey team.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c7",
+   "name": "Mira's notebook",
+   "where": "Main Hut, under her dinner plate",
+   "shows": "A page reads: river counts copied from 2019, I will tell the Trust.",
+   "does_not_prove": "The page never writes a full name, only the letter B.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c8",
+   "name": "Greasy rain jacket",
+   "where": "With Rekha Pillai",
+   "shows": "Her jacket has generator grease and a torn data sheet in the pocket.",
+   "does_not_prove": "Grease alone does not make her a killer.",
+   "importance": "useful",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c9",
+   "name": "The 1961 camp journal",
+   "where": "Main Hut shelf, kept by Gopi",
+   "shows": "A watchman named Nair was blamed for a surveyor drowning in 1961.",
+   "does_not_prove": "It says nothing about tonight.",
+   "importance": "useful",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c10",
+   "name": "Locked tin box",
+   "where": "Fire Tower, hidden under the stairs",
+   "shows": "It holds rare orchid bulbs, cash and a note: Asha, last warning.",
+   "does_not_prove": "Theft is not murder.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c11",
+   "name": "Empty rum bottle",
+   "where": "Fire Tower platform",
+   "shows": "Gopi drank up there tonight and his boots are size seven.",
+   "does_not_prove": "Drinking does not put him at the weir.",
+   "importance": "misleading",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c12",
+   "name": "Old tower lantern",
+   "where": "Fire Tower rail",
+   "shows": "The museum lantern was refilled tonight and has fresh grease on the handle.",
+   "does_not_prove": "Grease is on many hands in a camp.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c13",
+   "name": "Camera trap card",
+   "where": "River Weir, strapped to a pine",
+   "shows": "At 9:38 pm it caught two legs in size ten boots on the walkway.",
+   "does_not_prove": "The frame shows no face.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c14",
+   "name": "Copied count sheets",
+   "where": "With Rekha Pillai, in her tent",
+   "shows": "Rekha kept the true river counts next to the copied ones Ben filed.",
+   "does_not_prove": "It does not show she knew about the weir.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c15",
+   "name": "Mira's letter to the Trust",
+   "where": "Lab Tent, in Mira's folder",
+   "shows": "Mira asked the Trust to forgive one small theft and keep Asha on the team.",
+   "does_not_prove": "It does not say what was stolen.",
+   "importance": "useful",
+   "can_be_destroyed": true
+  }
+ ],
+ "hint_ladder": [
+  {
+   "text": "Start with the dark. The storm did not touch the generator.",
+   "is_false": false
+  },
+  {
+   "text": "The lantern tells you where she stood, not where she fell.",
+   "is_false": false
+  },
+  {
+   "text": "Gopi was drunk on the tower and pushed her into the pool.",
+   "is_false": true
+  },
+  {
+   "text": "Count the steel posts in the lab rack, then look at the shape of the wound.",
+   "is_false": false
+  },
+  {
+   "text": "Ask who had to stop the audit before morning, and whose numbers were copied.",
+   "is_false": false
+  }
+ ],
+ "key_deductions": [
+  {
+   "id": "k1",
+   "statement": "The power loss was not the storm. Someone unscrewed the fuel line by hand.",
+   "clue_ids": [
+    "c5",
+    "c8"
+   ]
+  },
+  {
+   "id": "k2",
+   "statement": "Mira did not drown by accident. She was struck on the walkway and moved into the water.",
+   "clue_ids": [
+    "c1",
+    "c4",
+    "c2"
+   ]
+  },
+  {
+   "id": "k3",
+   "statement": "The weapon was a steel sample post taken from the lab tent.",
+   "clue_ids": [
+    "c3",
+    "c2"
+   ]
+  },
+  {
+   "id": "k4",
+   "statement": "The ghost light was staged with the old tower lantern to scare people away.",
+   "clue_ids": [
+    "c12",
+    "c11"
+   ]
+  },
+  {
+   "id": "k5",
+   "statement": "Mira had proof that Ben copied old river counts and was going to report it.",
+   "clue_ids": [
+    "c7",
+    "c14"
+   ]
+  },
+  {
+   "id": "k6",
+   "statement": "The radio was cut after the blackout by someone with lab snips.",
+   "clue_ids": [
+    "c6",
+    "c13"
+   ]
+  }
+ ],
+ "locations": [
+  {
+   "id": "l1",
+   "name": "Main Hut",
+   "public_info": "Mess table, dead radio and the camp shelf.",
+   "x": 50,
+   "y": 20,
+   "neighbors": [
+    "l2",
+    "l3"
+   ],
+   "icon": "🏚️"
+  },
+  {
+   "id": "l2",
+   "name": "Lab Tent",
+   "public_info": "Benches, sample posts and folders of data.",
+   "x": 22,
+   "y": 40,
+   "neighbors": [
+    "l1",
+    "l4"
+   ],
+   "icon": "⛺"
+  },
+  {
+   "id": "l3",
+   "name": "Generator Shed",
+   "public_info": "One old diesel generator and fuel cans.",
+   "x": 78,
+   "y": 40,
+   "neighbors": [
+    "l1",
+    "l5"
+   ],
+   "icon": "🔌"
+  },
+  {
+   "id": "l4",
+   "name": "River Weir",
+   "public_info": "A wooden walkway over a deep cold pool.",
+   "x": 35,
+   "y": 80,
+   "neighbors": [
+    "l2",
+    "l5"
+   ],
+   "icon": "🌊"
+  },
+  {
+   "id": "l5",
+   "name": "Fire Tower",
+   "public_info": "An old lookout tower with a museum lantern.",
+   "x": 80,
+   "y": 78,
+   "neighbors": [
+    "l3",
+    "l4"
+   ],
+   "icon": "🗼"
+  }
+ ],
+ "music": {
+  "root": "D",
+  "mode": "phrygian",
+  "tempo": 72,
+  "palette": "plucked",
+  "percussion": "heartbeat",
+  "motif": [
+   0,
+   1,
+   0,
+   4,
+   3,
+   1,
+   0
+  ],
+  "description": "Low plucked strings circling one note over a slow heartbeat."
+ },
+ "npcs": [
+  {
+   "id": "n1",
+   "name": "Gopi Mane",
+   "role_title": "Camp cook and keeper",
+   "public_info": "He has cooked at Hollow Pine for thirty years and found the body.",
+   "knows": "He knows the ghost story, the 1961 journal and who walked past the hut tonight.",
+   "secrets": "He drank rum on the fire tower from nine to ten and saw a light move from tower to weir.",
+   "lies": "He says he was in the kitchen all evening.",
+   "reveals_freely": "The Lamp Woman story and that the old lantern sits on the tower rail.",
+   "reveals_under_pressure": "He was on the tower, drunk, and the tower lantern was gone when he climbed down.",
+   "start_location": "l1",
+   "icon": "🍲"
+  },
+  {
+   "id": "n2",
+   "name": "Rekha Pillai",
+   "role_title": "Student assistant",
+   "public_info": "She filed the river count sheets and screamed about a light at ten.",
+   "knows": "She knows Ben's counts were copied and that he sent her to the generator shed.",
+   "secrets": "She loosened the fuel line because Ben said the audit must be delayed; she kept the true counts.",
+   "lies": "She says the generator just died in the rain.",
+   "reveals_freely": "She saw a light at the weir around five past ten.",
+   "reveals_under_pressure": "Ben told her to kill the power at half past nine and stay away from the weir.",
+   "start_location": "l5",
+   "icon": "📋"
+  },
+  {
+   "id": "n3",
+   "name": "Tapan Barua",
+   "role_title": "Forest guard",
+   "public_info": "He checks the road and the radio aerial for the Trust.",
+   "knows": "The aerial wire was whole at half past nine and cut clean later.",
+   "secrets": "He sold camp diesel to Asha's buyer and fears being blamed.",
+   "lies": "He says he never touched camp fuel.",
+   "reveals_freely": "The road is washed out and the aerial is cut, not storm torn.",
+   "reveals_under_pressure": "He met a buyer at the tower last week who came for orchid bulbs.",
+   "start_location": "l4",
+   "icon": "🪖"
+  }
+ ],
+ "opening_scene": "Rain hammers the pine roofs. The generator is dead, so you work by torchlight. Gopi stands in the doorway, soaked, and says Dr. Mira Sen is in the weir pool and she is not breathing. Her lantern still burns up on the slope, dry and bright. The radio gives only hiss. The bridge road is gone. Six people, one night, and an old ghost story everyone suddenly wants to believe.",
+ "phases": [
+  {
+   "name": "Dark Water",
+   "planned_beat": "The generator will not restart and Tapan reports the road is washed out. Nobody can leave before morning.",
+   "question": "How did the camp lose power?",
+   "options": [
+    "Lightning hit the shed",
+    "Someone unscrewed the fuel line by hand",
+    "The diesel ran out",
+    "Rain soaked the wiring"
+   ],
+   "answer_index": 1,
+   "reward": "The blackout at half past nine was made on purpose.",
+   "reward_time": "9:30 pm",
+   "reward_order": 40,
+   "wrong_nudge": "Look at the fuel line threads. Clean threads mean fingers, not weather."
+  },
+  {
+   "name": "The Old Journal",
+   "planned_beat": "Gopi drops the 1961 journal on the table and names the blamed watchman. Chitra learns it is her grandfather, so her goal changes from stealing the journal to clearing his name in front of everyone.",
+   "question": "Where did Mira really die?",
+   "options": [
+    "She slipped off the walkway and drowned",
+    "She was struck on the walkway, then moved into the pool",
+    "She fell from the fire tower",
+    "She was hurt in the lab tent"
+   ],
+   "answer_index": 1,
+   "reward": "Mira was struck on the weir walkway at about twenty to ten.",
+   "reward_time": "9:40 pm",
+   "reward_order": 50,
+   "wrong_nudge": "Her lantern sat dry above the water. A falling woman takes her light with her."
+  },
+  {
+   "name": "Cut Wire",
+   "planned_beat": "Tapan proves the aerial was cut with lab snips after the blackout. Rekha breaks down and talks about the count sheets.",
+   "question": "Why was Mira killed?",
+   "options": [
+    "She found orchid smuggling",
+    "She was going to report copied river counts",
+    "She wanted to close the camp",
+    "She believed the ghost story"
+   ],
+   "answer_index": 1,
+   "reward": "Mira told the Trust at dinner that one person's river counts were fake.",
+   "reward_time": "6:00 pm",
+   "reward_order": 20,
+   "wrong_nudge": "Read her notebook page again. One letter, and only one person files river counts."
+  }
+ ],
+ "players": [
+  {
+   "id": "p1",
+   "character_name": "Asha Rao",
+   "role_title": "Camp medic and botanist",
+   "public_info": "She examined the body and keeps the camp medicine box.",
+   "private_info": "You sell rare orchid bulbs to a buyer outside the forest. Mira caught you last week and said she would decide tonight. Your tin box of bulbs and cash is hidden at the fire tower. At half past nine you were alone in the main hut.",
+   "goal": "Name Mira's killer while keeping your orchid trade out of the talk.",
+   "side": "investigator",
+   "side_explanation": "You want the truth, but you also have a theft to bury.",
+   "hidden_facts": [
+    {
+     "id": "h1",
+     "fact": "Mira had already written to the Trust asking them to forgive you and keep you."
+    },
+    {
+     "id": "h2",
+     "fact": "Your orchid buyer was introduced to you by Ben, who can expose you any time."
+    }
+   ],
+   "starting_knowledge": "You know the wound is a straight dent, not a rock shape.",
+   "start_location": "l1",
+   "icon": "🩺"
+  },
+  {
+   "id": "p2",
+   "character_name": "Ben Oduya",
+   "role_title": "River survey technician",
+   "public_info": "He counts fish and flow at the weir and fixes the generator.",
+   "private_info": "You copied your river counts from the 2019 files. Mira found out and called tomorrow's audit. You took a steel post from the lab, met her on the walkway at twenty to ten and hit her, then rolled her into the pool. You cut the aerial with your snips and carried the old tower lantern to feed the ghost story. Rekha killed the power for you without knowing why.",
+   "goal": "Get through the night without anyone naming you.",
+   "side": "culprit",
+   "side_explanation": "You killed Mira to stop the audit.",
+   "hidden_facts": [
+    {
+     "id": "h3",
+     "fact": "Rekha kept copies of the real river counts in her tent."
+    },
+    {
+     "id": "h4",
+     "fact": "Mira's camera trap photographed your boots on the walkway at 9:38 pm."
+    }
+   ],
+   "starting_knowledge": "You know the steel post is now under rocks below the weir.",
+   "start_location": "l3",
+   "icon": "🎣"
+  },
+  {
+   "id": "p3",
+   "character_name": "Chitra Nair",
+   "role_title": "Folklore researcher",
+   "public_info": "She came to record the Lamp Woman story for a university project.",
+   "private_info": "You are really here for the 1961 camp journal. Your family says a Hollow Pine watchman was shamed and died poor. You searched the main hut shelf at nine and the fire tower at ten. You saw a light move down toward the weir and said nothing.",
+   "goal": "Get the 1961 journal out of this camp before morning.",
+   "side": "wildcard",
+   "side_explanation": "Your prize is an old book, not tonight's killer.",
+   "hidden_facts": [
+    {
+     "id": "h5",
+     "fact": "The blamed 1961 watchman was your own grandfather."
+    },
+    {
+     "id": "h6",
+     "fact": "Mira had planned to ask you to co-write a paper clearing that watchman."
+    }
+   ],
+   "starting_knowledge": "You know the tower lantern was on its rail at nine and gone at ten.",
+   "start_location": "l2",
+   "icon": "📖"
+  }
+ ],
+ "public_timeline": [
+  {
+   "order": 10,
+   "time": "6:00 pm",
+   "event": "Dinner. Mira calls a full data audit for the morning.",
+   "reveal_round": 0
+  },
+  {
+   "order": 30,
+   "time": "8:30 pm",
+   "event": "The storm hits and the lights flicker.",
+   "reveal_round": 0
+  },
+  {
+   "order": 35,
+   "time": "9:10 pm",
+   "event": "Mira leaves the main hut with her lantern.",
+   "reveal_round": 0
+  },
+  {
+   "order": 45,
+   "time": "9:30 pm",
+   "event": "The generator dies. The camp goes dark.",
+   "reveal_round": 0
+  },
+  {
+   "order": 60,
+   "time": "10:05 pm",
+   "event": "Rekha screams that a light is moving at the weir.",
+   "reveal_round": 1
+  },
+  {
+   "order": 70,
+   "time": "10:20 pm",
+   "event": "Gopi finds Mira face down in the weir pool.",
+   "reveal_round": 0
+  },
+  {
+   "order": 80,
+   "time": "10:45 pm",
+   "event": "The radio is found dead and the aerial wire cut.",
+   "reveal_round": 2
+  },
+  {
+   "order": 90,
+   "time": "11:00 pm",
+   "event": "The bridge road washes out. Nobody can leave.",
+   "reveal_round": 3
+  }
+ ],
+ "setting_summary": "A small river research camp in a wet pine forest. One night, no power, no radio, and a ghost everyone blames.",
+ "title": "The Lamp Woman Of Hollow Pine",
+ "truth": {
+  "summary": "Ben Oduya faked his river counts. Mira Sen found out and called an audit, so Ben killed her at the weir and dressed it up as the Lamp Woman.",
+  "timeline": [
+   {
+    "time": "6:00 pm",
+    "event": "At dinner Mira says she will audit all data in the morning."
+   },
+   {
+    "time": "8:45 pm",
+    "event": "Ben tells Rekha to stop the generator at half past nine."
+   },
+   {
+    "time": "9:05 pm",
+    "event": "Ben takes a steel sample post from the lab rack."
+   },
+   {
+    "time": "9:10 pm",
+    "event": "Mira walks to the weir with her lantern to check the flow gauge."
+   },
+   {
+    "time": "9:30 pm",
+    "event": "Rekha unscrews the fuel line. The camp goes dark."
+   },
+   {
+    "time": "9:38 pm",
+    "event": "The camera trap catches Ben's boots on the walkway."
+   },
+   {
+    "time": "9:40 pm",
+    "event": "Ben strikes Mira on the head and rolls her into the pool."
+   },
+   {
+    "time": "9:50 pm",
+    "event": "Ben hides the post under rocks and cuts the radio aerial with lab snips."
+   },
+   {
+    "time": "10:00 pm",
+    "event": "Ben carries the old tower lantern toward the weir to fake the ghost light."
+   },
+   {
+    "time": "10:05 pm",
+    "event": "Rekha sees the light and screams. Chitra sees it too."
+   },
+   {
+    "time": "10:20 pm",
+    "event": "Gopi, climbing down drunk from the tower, finds the body."
+   }
+  ],
+  "culprit_ids": [
+   "p2"
+  ],
+  "method": "One blow to the back of the head with a steel sample post, then the body was rolled into the weir pool.",
+  "motive": "Mira's audit would have proved Ben copied his river counts and ended his career.",
+  "ambiguities": "Rekha cut the power but did not know about the murder. Asha's theft and Tapan's diesel sales look guilty but are not."
+ },
+ "twists": [
+  {
+   "name": "False hint",
+   "description": "The third hint blames drunk Gopi, but his size seven boots beat the size ten prints and camera frame."
+  },
+  {
+   "name": "Goal change in The Old Journal",
+   "description": "In round two Chitra learns the blamed 1961 watchman was her grandfather, so she must clear his name out loud instead of stealing the journal."
+  }
+ ]
+}

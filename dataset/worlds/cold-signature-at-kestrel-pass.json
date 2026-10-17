@@ -1,0 +1,474 @@
+{
+ "title": "Cold Signature at Kestrel Pass",
+ "setting_summary": "Kestrel Pass Lodge, a timber-and-glass ski lodge at 2,100 metres, cut off by a three-day blizzard. The road is buried, the phones are down to one crackling landline, and the only people left inside are four stranded guests and staff, plus the lodge's small winter crew. The owner, Teodor Vance, was found frozen at dawn in the avalanche-beacon shed by the lift station.",
+ "opening_scene": "Seven minutes past seven, and the dark outside is still absolute. Oskar comes in through the staff door without stamping the snow off his boots, which is how everyone knows something is wrong before he says it. Teodor Vance is in the beacon shed by the lift station, sitting against the wall in his shirtsleeves, hard as a bench. The shed was padlocked from the outside. The storm has eaten the road, the radio gives back nothing but hiss, and the snowcat from the valley cannot reach Kestrel Pass before tomorrow's first light. Lotte Vance locks the front doors herself and sets the key on the bar. Until the plough lights come up the pass, nobody leaves, and one of you already knows why Teodor died.",
+ "truth": {
+  "summary": "Chitra Rao, head of ski patrol, murdered lodge owner Teodor Vance. Three seasons ago she signed a slope-clearance report she had never actually walked; an avalanche on that slope killed a young skier, Rhea Sahni. Teodor buried the report to protect the lodge. With the lodge now being sold, Teodor decided to hand the true file to the reopened inquiry. On the night of 16 October he told Chitra. She crushed ten temazepam tablets from the patrol medical kit into a thermos of mulled wine, walked the slurring Teodor out to the beacon shed on the pretext of checking the transceiver cache, and padlocked the hasp behind him with her patrol padlock. He woke around 01:40, could not open the inside latch because Oskar had broken it weeks earlier and never reported it, triggered a beacon trying to signal, and died of hypothermia around 02:30.",
+  "timeline": [
+   {
+    "time": "Three seasons ago",
+    "event": "Rhea Sahni dies in an avalanche on a slope Chitra Rao certified as cleared without walking it. Teodor suppresses the report."
+   },
+   {
+    "time": "16 Oct, 18:00",
+    "event": "Teodor tells his daughter Lotte he is sending the real file to the inquiry on Monday."
+   },
+   {
+    "time": "21:30",
+    "event": "Teodor tells Chitra in his office. Asha, passing, hears raised voices and the word 'inquiry'."
+   },
+   {
+    "time": "22:40",
+    "event": "Teodor finds discrepancies in the books and types an unsent dismissal letter to Asha."
+   },
+   {
+    "time": "23:20",
+    "event": "Chitra signs ten temazepam out of the patrol medical kit, smudging the log entry."
+   },
+   {
+    "time": "23:50",
+    "event": "Teodor phones room 12 and asks Ben to meet him at 08:00 to receive the file."
+   },
+   {
+    "time": "00:05",
+    "event": "Asha takes the bar master key to the cellar and hangs it back on the bar hook."
+   },
+   {
+    "time": "00:10",
+    "event": "Chitra brings Teodor a thermos of mulled wine at the bar; Signe serves them both."
+   },
+   {
+    "time": "00:15",
+    "event": "Signe notices Teodor slurring and sweating; he waves her off."
+   },
+   {
+    "time": "00:35",
+    "event": "Chitra walks Teodor out to the beacon shed and padlocks the hasp behind him."
+   },
+   {
+    "time": "00:50",
+    "event": "Dev, unable to sleep, sees a single headlamp moving back from the lift station."
+   },
+   {
+    "time": "01:42",
+    "event": "Teodor wakes, cannot work the broken inside latch, scratches at the door and switches on a transceiver, which logs its transmit start."
+   },
+   {
+    "time": "≈02:30",
+    "event": "Teodor dies of hypothermia."
+   },
+   {
+    "time": "03:10",
+    "event": "Chitra rinses the thermos in the bar sink but misses sediment in the screw lid."
+   },
+   {
+    "time": "07:10",
+    "event": "Oskar finds the body."
+   }
+  ],
+  "culprit_ids": [
+   "p3"
+  ],
+  "method": "Sedation with ten crushed temazepam tablets in mulled wine, then confinement in an unheated shed padlocked from outside; death by hypothermia.",
+  "motive": "To stop Teodor handing the inquiry the clearance report that would prove her falsified signature caused a skier's death.",
+  "ambiguities": "Chitra intended exposure to cold and argues she expected him to let himself out by the inside latch; the broken latch (Oskar's negligence) makes the difference between manslaughter and murder, and Oskar is lying about it."
+ },
+ "players": [
+  {
+   "id": "p1",
+   "character_name": "Asha Mirza",
+   "role_title": "Lodge Bookkeeper",
+   "public_info": "Keeps the lodge's accounts and has wintered at Kestrel Pass for six seasons; the last person known to have been awake in the office wing besides Teodor.",
+   "private_info": "You have been skimming roughly 900 a month from the linen and ski-hire accounts to pay your mother's care home. Last night at 21:30 you passed Teodor's office and heard him shouting at someone about 'the inquiry' and 'a signature'; you could not see who. At 00:05 you took the bar master key down to the cellar and hung it back on its hook. You do not know whether Teodor had found your numbers yet, and you are terrified he had.",
+   "goal": "Find out who killed Teodor, and make sure the books are reconciled or the evidence of your skimming never reaches the inquiry.",
+   "side": "investigator",
+   "side_explanation": "Innocent of the killing, but hiding embezzlement that makes her the obvious suspect.",
+   "hidden_facts": [
+    {
+     "id": "h1",
+     "fact": "Teodor had already found her skimming and typed a dismissal letter to her at 22:40, which he never sent."
+    },
+    {
+     "id": "h2",
+     "fact": "The voice she heard arguing with Teodor at 21:30 was Chitra's; Signe heard the same argument from the stairwell and can identify it."
+    }
+   ],
+   "starting_knowledge": "You know the overheard argument, your cellar trip, and your own skimming."
+  },
+  {
+   "id": "p2",
+   "character_name": "Ben Thackeray",
+   "role_title": "Guest, Freelance Journalist",
+   "public_info": "Booked in as a guest under a travel-writing assignment; has been asking an unusual number of questions about the lodge's safety record.",
+   "private_info": "You are really here to finish a piece on the avalanche death of a young skier three seasons ago. An anonymous source has been feeding you documents for months. At 23:50 Teodor rang your room and asked you to meet him at 08:00 — 'I'll bring the whole file' — and you told nobody. You also know, from three weeks of reading the lodge's scanned ledgers your source sent you, that Asha Mirza has been skimming the hire accounts, and you have been saving that.",
+   "goal": "Name Teodor's killer and get the inquiry file — or a usable copy of it — off this mountain.",
+   "side": "investigator",
+   "side_explanation": "Innocent; his concealed assignment and the midnight call make him look like a blackmailer.",
+   "hidden_facts": [
+    {
+     "id": "h3",
+     "fact": "His anonymous source was Teodor Vance himself, who had been preparing to go public for months."
+    },
+    {
+     "id": "h4",
+     "fact": "Chitra searched his room during breakfast looking for his copies of the documents."
+    }
+   ],
+   "starting_knowledge": "You know about the 23:50 call, your assignment, and Asha's skimming."
+  },
+  {
+   "id": "p3",
+   "character_name": "Chitra Rao",
+   "role_title": "Head of Ski Patrol",
+   "public_info": "Runs avalanche control and patrol at Kestrel Pass; respected, unsentimental, and the only person on the mountain allowed to close a slope.",
+   "private_info": "You killed Teodor. Three seasons ago you signed a slope-clearance report for a face you never walked, and a girl died in the slide. Last night Teodor told you he was giving the real file to the inquiry on Monday. At 23:20 you took ten temazepam from the patrol kit, crushed them into his mulled wine at 00:10, walked him to the beacon shed at 00:35 and padlocked the hasp with your patrol padlock. You rinsed the thermos at 03:10, you burnt a page of the report in the drying-room stove, and you have searched Ben's room.",
+   "goal": "Survive until the snowcat arrives without being named as the killer.",
+   "side": "culprit",
+   "side_explanation": "She planned and carried out the sedation and the confinement.",
+   "hidden_facts": [
+    {
+     "id": "h5",
+     "fact": "The shed's inside latch had been broken for weeks by Oskar and never reported — Teodor could not have let himself out, and he woke and tried."
+    },
+    {
+     "id": "h6",
+     "fact": "The new ski instructor 'Dev' is Rhea Sahni's brother, travelling under his mother's surname."
+    }
+   ],
+   "starting_knowledge": "You know everything you did, and that the file still exists somewhere."
+  },
+  {
+   "id": "p4",
+   "character_name": "Dev Sahni",
+   "role_title": "Seasonal Ski Instructor",
+   "public_info": "Hired this season on a short contract; keeps to himself and skis better than the job requires.",
+   "private_info": "Your sister Rhea died in the avalanche three seasons ago. You took this job under your mother's surname to find the suppressed clearance report. At 00:50 you saw a single headlamp coming back from the lift station toward the staff door, but not who carried it. You do not care very much who killed Teodor; you care that the file leaves this mountain intact and reaches the inquiry, and that nobody learns who you are before it does.",
+   "goal": "Get the original inquiry file off the mountain and into the inquiry's hands without your true identity becoming public knowledge.",
+   "side": "wildcard",
+   "side_explanation": "Innocent of the murder; his objective is the file and his anonymity, not the killer.",
+   "hidden_facts": [
+    {
+     "id": "h7",
+     "fact": "The original file is not in the office safe — Teodor was carrying it in the inner pocket of his parka in the drying room."
+    },
+    {
+     "id": "h8",
+     "fact": "Chitra recognised him in his first week and has been keeping him off the upper slopes on purpose."
+    }
+   ],
+   "starting_knowledge": "You know your real identity, your purpose, and the headlamp at 00:50."
+  }
+ ],
+ "npcs": [
+  {
+   "id": "n1",
+   "name": "Signe Lund",
+   "role_title": "Night Barkeep",
+   "public_info": "Works the bar from eight until the last guest goes up; the only person who saw Teodor after midnight.",
+   "knows": "She served Teodor and Chitra at 00:10, saw Teodor slurring and sweating by 00:15, and watched them leave through the staff door at about 00:35. She also heard the 21:30 argument from the stairwell and recognised Chitra's voice.",
+   "secrets": "She has been drinking the lodge's stock and under-ringing the till, which is partly why Asha's numbers look worse than the skimming alone.",
+   "lies": "Initially says she went up at midnight and saw nothing, to avoid admitting she was still behind the bar drunk.",
+   "reveals_freely": "That Teodor looked ill, and that a thermos was on the bar.",
+   "reveals_under_pressure": "That Chitra brought the thermos, that the two left together, and that it was Chitra's voice arguing at 21:30."
+  },
+  {
+   "id": "n2",
+   "name": "Oskar Pehrsson",
+   "role_title": "Handyman and Lift Mechanic",
+   "public_info": "Keeps the generator, the lift and the outbuildings running; found the body at 07:10.",
+   "knows": "He snapped the beacon shed's inside latch with a pallet trolley weeks ago and never logged the repair. He knows the shed's hasp takes a patrol padlock, not the lodge master lock.",
+   "secrets": "He is terrified the broken latch makes him responsible for a death, and he filed a new latch plate into place this morning before anyone else arrived.",
+   "lies": "Says the latch 'must have frozen'; claims he touched nothing at the shed.",
+   "reveals_freely": "The body's position, the padlocked hasp, that the shed is unheated.",
+   "reveals_under_pressure": "That he broke the latch weeks ago and tried to cover it this morning, and that only three patrol padlock keys exist."
+  },
+  {
+   "id": "n3",
+   "name": "Dr Mireille Dubois",
+   "role_title": "Guest, Retired Physician",
+   "public_info": "A long-standing winter guest who examined the body at Lotte's request.",
+   "knows": "Hypothermia, no wounds of struggle, pupils and breath consistent with a strong sedative, death roughly four to six hours before she saw him. Fingernail damage consistent with clawing at wood.",
+   "secrets": "She recognised temazepam because Teodor had asked her, two days earlier, whether sleeping tablets were safe with his heart medication.",
+   "lies": "Downplays her certainty to avoid accusing anyone.",
+   "reveals_freely": "Cause of death and approximate time.",
+   "reveals_under_pressure": "The sedative, the clawed fingernails, and Teodor's question about sleeping tablets."
+  },
+  {
+   "id": "n4",
+   "name": "Lotte Vance",
+   "role_title": "Teodor's Daughter, Reception",
+   "public_info": "Runs the front desk and the bookings; the one holding the lodge together since dawn.",
+   "knows": "Her father was selling the lodge and intended to send the real clearance file to the reopened inquiry on Monday. She keeps a duplicate of the 2023 report in the reception ledger drawer.",
+   "secrets": "She begged him not to send it; the sale collapses if the inquiry reopens, and she needs that money.",
+   "lies": "Says her father had 'no enemies here' and that the old avalanche was fully investigated.",
+   "reveals_freely": "The sale, the storm logistics, the phone log.",
+   "reveals_under_pressure": "The inquiry file, the duplicate report with Chitra's signature, and her own argument with her father."
+  }
+ ],
+ "locations": [
+  {
+   "id": "l1",
+   "name": "Great Room and Bar",
+   "public_info": "Timber hall with a dying fire, the bar at the far end, and the lodge's one working landline behind it. The master key hangs on a hook by the till."
+  },
+  {
+   "id": "l2",
+   "name": "Teodor's Office",
+   "public_info": "Behind reception: desk, typewriter, wall safe, and three seasons of slope logs in box files."
+  },
+  {
+   "id": "l3",
+   "name": "Avalanche Beacon Shed",
+   "public_info": "An unheated plank shed by the lift station, forty metres from the staff door, where transceivers and probes are cached. The hasp outside takes a padlock."
+  },
+  {
+   "id": "l4",
+   "name": "Patrol Room and Drying Room",
+   "public_info": "Boots steaming on racks, the patrol medical kit on its shelf with the sign-out log, and a small iron stove."
+  },
+  {
+   "id": "l5",
+   "name": "Guest Corridor and Room 12",
+   "public_info": "Four occupied rooms along the upper landing, each with a window facing the lift station."
+  }
+ ],
+ "clues": [
+  {
+   "id": "c1",
+   "name": "Sediment in the thermos lid",
+   "where": "l1",
+   "shows": "The rinsed thermos has a chalky white residue trapped in the screw threads of its lid.",
+   "does_not_prove": "It does not show who filled or carried the thermos.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c2",
+   "name": "Patrol medical kit log",
+   "where": "l4",
+   "shows": "Ten temazepam signed out at 23:20 with the initials smudged while still wet.",
+   "does_not_prove": "The smudged initials name nobody by themselves.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c3",
+   "name": "The padlock on the hasp",
+   "where": "l3",
+   "shows": "A brass ski-patrol-issue padlock, not the lodge master lock; Oskar confirms only three keys exist and patrol holds them.",
+   "does_not_prove": "It does not say which of the three keyholders used it.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c4",
+   "name": "Scratches and a new latch plate",
+   "where": "l3",
+   "shows": "Deep fingernail gouges inside the door, and a latch plate whose screws are bright and freshly cut.",
+   "does_not_prove": "It does not show who broke the original latch or when.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c5",
+   "name": "Transceiver transmit log",
+   "where": "l3",
+   "shows": "A beacon from the shed cache logs transmit start at 01:42 and battery death at 04:05.",
+   "does_not_prove": "It does not establish the exact moment of death.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c6",
+   "name": "Unsent dismissal letter",
+   "where": "l2",
+   "shows": "A typed letter dated 22:40 terminating Asha Mirza for 'sustained irregularities in the hire accounts'.",
+   "does_not_prove": "Being about to be fired is not the same as killing the man who signs the letter.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c7",
+   "name": "Teodor's covering letter to the inquiry",
+   "where": "l2",
+   "shows": "A draft letter stating that the 2023 clearance report 'was signed by a member of my staff who did not walk the face'.",
+   "does_not_prove": "The draft names no staff member.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c8",
+   "name": "Duplicate 2023 clearance report",
+   "where": "n4",
+   "shows": "Lotte's duplicate carries the clearance signature 'C. Rao' against a slope that patrol's own timesheet shows nobody walked that morning.",
+   "does_not_prove": "A false signature is not a confession to murder.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c9",
+   "name": "Bootprints to the shed",
+   "where": "l3",
+   "shows": "Under the fresh fall, two sets of prints go out to the shed and only one small patrol-boot set comes back.",
+   "does_not_prove": "Patrol boots are issued to three people.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c10",
+   "name": "Reception phone log",
+   "where": "l1",
+   "shows": "A call from the office to room 12 at 23:50, lasting four minutes.",
+   "does_not_prove": "The call's content is unknown; it does not place Ben outside his room.",
+   "importance": "misleading",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c11",
+   "name": "Clipping in a rucksack",
+   "where": "l5",
+   "shows": "A folded obituary for Rhea Sahni and a bank card in a different surname, in the instructor's kit bag.",
+   "does_not_prove": "A grieving brother is not automatically a killer.",
+   "importance": "misleading",
+   "can_be_destroyed": true
+  },
+  {
+   "id": "c12",
+   "name": "Master key on the bar hook",
+   "where": "l1",
+   "shows": "The lodge master key has hung on its hook since 00:08, and it does not fit the shed hasp at all.",
+   "does_not_prove": "It says nothing about who held patrol keys.",
+   "importance": "useful",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c13",
+   "name": "Dr Dubois's examination note",
+   "where": "n3",
+   "shows": "Hypothermia, no defensive injuries, sedative traces on the breath, torn fingernails, death between 02:00 and 04:00.",
+   "does_not_prove": "It cannot identify who administered the sedative.",
+   "importance": "essential",
+   "can_be_destroyed": false
+  },
+  {
+   "id": "c14",
+   "name": "Burnt corner in the drying-room stove",
+   "where": "l4",
+   "shows": "An unburnt corner of official paper in the stove ash reads '...learance confirmed — C. R' above a date three seasons old.",
+   "does_not_prove": "Someone else could in theory have burnt a page naming her.",
+   "importance": "essential",
+   "can_be_destroyed": true
+  }
+ ],
+ "key_deductions": [
+  {
+   "id": "k1",
+   "statement": "Teodor was sedated before he ever reached the shed.",
+   "clue_ids": [
+    "c1",
+    "c2",
+    "c13"
+   ]
+  },
+  {
+   "id": "k2",
+   "statement": "He was locked in deliberately and could not get out, because the inside latch was already broken and Oskar hid it.",
+   "clue_ids": [
+    "c3",
+    "c4",
+    "c5"
+   ]
+  },
+  {
+   "id": "k3",
+   "statement": "The lock was a patrol padlock and the returning prints are patrol boots, so the killer is one of three patrol keyholders.",
+   "clue_ids": [
+    "c3",
+    "c9",
+    "c12"
+   ]
+  },
+  {
+   "id": "k4",
+   "statement": "The motive is the 2023 clearance report: Teodor was about to expose the false signature of C. Rao.",
+   "clue_ids": [
+    "c7",
+    "c8",
+    "c14"
+   ]
+  },
+  {
+   "id": "k5",
+   "statement": "Asha's firing and Ben's midnight call are genuine secrets but not the murder: the key never left the bar and the call was Teodor arranging to hand over the file.",
+   "clue_ids": [
+    "c6",
+    "c10",
+    "c12"
+   ]
+  },
+  {
+   "id": "k6",
+   "statement": "Chitra Rao sedated Teodor at the bar at 00:10 and padlocked him into the shed at 00:35.",
+   "clue_ids": [
+    "c1",
+    "c9",
+    "c14",
+    "c8"
+   ]
+  }
+ ],
+ "phases": [
+  {
+   "name": "Snowline",
+   "planned_beat": "The body is carried into the ski room and Dr Dubois gives her first finding — hypothermia, but a man who smelled of sedative. The shed is opened and the padlock comes off in Oskar's hand."
+  },
+  {
+   "name": "Whiteout",
+   "planned_beat": "The generator fails for forty minutes in full dark. When the lights return, Teodor's parka has been moved and the inquiry file is gone from its inner pocket; Ben's room has been searched; Oskar's fresh latch plate is spotted."
+  },
+  {
+   "name": "Plough Lights",
+   "planned_beat": "At first light the snowcat's lamps appear on the pass. Everyone has fifteen minutes to name the killer before the valley police take over — and whoever holds the file must decide whether it goes down the mountain or into the stove."
+  }
+ ],
+ "hint_ladder": [
+  {
+   "text": "Teodor walked out to that shed on his own legs. Ask why a fit man sat down in the cold instead of walking back.",
+   "is_false": false
+  },
+  {
+   "text": "Only one person at Kestrel Pass could have signed out ten tablets without anyone thinking twice about it.",
+   "is_false": false
+  },
+  {
+   "text": "The shed was locked with the lodge master key, so whoever held the key after midnight held the answer.",
+   "is_false": true
+  },
+  {
+   "text": "Count the prints in the snow: two sets went out and one came back, and it was a small patrol boot.",
+   "is_false": false
+  },
+  {
+   "text": "Teodor's draft letter says the clearance report was signed by someone who never walked the face. Lotte keeps the duplicate that carries the signature.",
+   "is_false": false
+  },
+  {
+   "text": "Sift the drying-room stove. A corner of the burnt page still carries the first letters of the name.",
+   "is_false": false
+  }
+ ],
+ "twists": [
+  {
+   "name": "A wildcard player",
+   "description": "Dev Sahni is the dead skier's brother. He wants the inquiry file off the mountain and his identity intact; he will obstruct the investigation if it threatens either."
+  },
+  {
+   "name": "One player secretly knows another's secret",
+   "description": "Ben already knows from his leaked ledgers that Asha has been skimming the hire accounts, and can deploy it at any moment."
+  },
+  {
+   "name": "One false hint",
+   "description": "The third hint claims the shed was locked with the lodge master key; the hasp takes a patrol padlock and the master key never left the bar hook after 00:08."
+  }
+ ]
+}

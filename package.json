@@ -10,6 +10,7 @@
     "simplify": "node scripts/simplify-game.js",
     "rework": "node scripts/rework-cast.js",
     "fix-cards": "node scripts/fix-cards.js",
+    "dataset": "node scripts/export-dataset.js",
     "test": "node --test test/*.test.js"
   },
   "engines": {

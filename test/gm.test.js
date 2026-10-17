@@ -137,7 +137,7 @@ describe('GM.generate', () => {
     const prompts = [];
     const bad = makeScenario(2, { phases: 3, hints: 2 });
     const good = makeScenario(3, { phases: 3, hints: 2 });
-    const gm = new GM({ workDir, run: async ({ prompt }) => (prompts.push(prompt), prompts.length === 1 ? bad : good) });
+    const gm = new GM({ workDir, random: () => 0, run: async ({ prompt }) => (prompts.push(prompt), prompts.length === 1 ? bad : good) });
     assert.equal((await gm.generate(game())).players.length, 3);
     assert.match(prompts[1], /previous draft broke these rules[\s\S]*exactly p1, p2, p3/);
   });
@@ -173,7 +173,7 @@ describe('GM card check after writing a world', () => {
   test('should check every card after a valid world and add what each player is missing', async () => {
     const steps = [];
     const calls = [];
-    const gm = new GM({ workDir, run: async ({ prompt }) => {
+    const gm = new GM({ workDir, random: () => 0, run: async ({ prompt }) => {
       calls.push(prompt);
       return calls.length === 1 ? makeScenario(3, { phases: 3, hints: 2 }) : { players: [{ player_id: 'p3', add: ['You locked the gate.'], known_hidden_fact_ids: [] }] };
     } });
@@ -185,11 +185,23 @@ describe('GM card check after writing a world', () => {
 
   test('should still hand over the world when the card check fails', async () => {
     let n = 0;
-    const gm = new GM({ workDir, run: async () => {
+    const gm = new GM({ workDir, random: () => 0, run: async () => {
       n += 1;
       if (n === 1) return makeScenario(3, { phases: 3, hints: 2 });
       throw new Error('check broke');
     } });
     assert.equal((await gm.generate(game())).players.length, 3);
+  });
+});
+
+describe('GM.generate culprits', () => {
+  test('should ask for a rewrite when the world names other culprits than the game picked', async () => {
+    const prompts = [];
+    const g = createGame();
+    for (const name of ['A', 'B', 'C']) addPlayer(g, { name });
+    applySetup(g, { tone: 'tense', length: 'short', hints: 2 });
+    const gm = new GM({ workDir, random: () => 0.5, run: async ({ prompt }) => (prompts.push(prompt), makeScenario(3, { phases: 3, hints: 2 })) });
+    await assert.rejects(() => gm.generate(g), /culprits among the players must be exactly p2/);
+    assert.match(prompts[0], /exactly p2\./);
   });
 });

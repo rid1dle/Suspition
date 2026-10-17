@@ -1,0 +1,37 @@
+{
+ "id": "060f340f6292",
+ "createdAt": 1792241489362,
+ "status": "failed",
+ "players": [
+  {
+   "id": "p1",
+   "name": "Nikhil",
+   "wish": "I want to me be the main culprit, murder"
+  },
+  {
+   "id": "p2",
+   "name": "Jai",
+   "wish": "i’m a retired detective"
+  },
+  {
+   "id": "p3",
+   "name": "Rishabh",
+   "wish": ""
+  },
+  {
+   "id": "p4",
+   "name": "Himanshu",
+   "wish": "A insconspicuous type, like yk, kind of funny but has depth"
+  }
+ ],
+ "setup": {
+  "setting": "It should involve a bit of forestry, a bit of a touch of supernatural",
+  "tone": "tense",
+  "length": "standard",
+  "hints": 5,
+  "notes": ""
+ },
+ "scenario": null,
+ "state": null,
+ "error": "The GM could not write the world. Check the terminal for details."
+}

@@ -143,8 +143,9 @@ class Limiter {
 }
 
 export class GM {
-  constructor({ workDir, run = runClaude, setupModel, playModel, setupEffort, maxParallel = 4, log = () => {} }) {
+  constructor({ workDir, run = runClaude, setupModel, playModel, setupEffort, maxParallel = 4, log = () => {}, random = Math.random }) {
     this.workDir = workDir;
+    this.random = random;
     this.run = run;
     this.setupModel = setupModel;
     this.playModel = playModel;
@@ -163,9 +164,9 @@ export class GM {
   }
 
   async generate(game, onProgress = () => {}) {
-    const twists = pickTwists(game.players.length);
-    const culprits = pickCulprits(game.players.length, twists);
-    const rules = { playerCount: game.players.length, phases: LENGTHS[game.setup.length].phases, hints: game.setup.hints, npcs: game.setup.npcs, npcRole: game.setup.npcRole };
+    const twists = pickTwists(game.players.length, this.random);
+    const culprits = pickCulprits(game.players.length, twists, this.random);
+    const rules = { playerCount: game.players.length, phases: LENGTHS[game.setup.length].phases, hints: game.setup.hints, npcs: game.setup.npcs, npcRole: game.setup.npcRole, culprits };
     this.log(`gm twists: ${twists.map((t) => t.id).join(', ')}`);
     let prompt = generationPrompt(game, twists, culprits);
     let errors = [];

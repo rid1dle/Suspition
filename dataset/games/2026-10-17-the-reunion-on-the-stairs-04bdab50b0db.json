@@ -1,0 +1,2688 @@
+{
+ "id": "04bdab50b0db",
+ "createdAt": 1792253870354,
+ "status": "reveal",
+ "players": [
+  {
+   "id": "p1",
+   "name": "Himanshu",
+   "wish": ""
+  },
+  {
+   "id": "p2",
+   "name": "Nikhil",
+   "wish": "The killer"
+  },
+  {
+   "id": "p3",
+   "name": "Rishabh",
+   "wish": "Spy"
+  }
+ ],
+ "setup": {
+  "setting": "A college reunion",
+  "tone": "tense",
+  "length": "standard",
+  "hints": 5,
+  "overrides": 5,
+  "notes": "",
+  "npcs": 2,
+  "npcRole": "background"
+ },
+ "scenario": {
+  "background": [
+   "It is 2026. Saint Alban's College is holding its ten year reunion.",
+   "The old hostel wing has been opened for one night for the party.",
+   "Arjun Mehra was the class star. He built a big software company.",
+   "Arjun was loud, honest and liked to say hard things in front of people.",
+   "At 11:10 pm Arjun was found dead at the bottom of the main staircase.",
+   "Heavy rain has flooded the hill road. Police cannot arrive before morning.",
+   "The old wing lost power from 10:35 to 10:50 pm. Everyone stood in the dark.",
+   "Everyone here remembers Priya Sharma. She fell from the hostel roof in 2016."
+  ],
+  "case_question": "Who killed Arjun Mehra at the reunion, and why?",
+  "clues": [
+   {
+    "id": "c1",
+    "name": "The head wound",
+    "where": "Main Staircase, on Arjun's body",
+    "shows": "The wound is one deep dent, not the many bruises a fall would cause.",
+    "does_not_prove": "It does not show who swung the object.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c2",
+    "name": "Blood behind the shelf",
+    "where": "Old Library, behind the third bookshelf",
+    "shows": "There are dried blood drops on the floor and a wiped smear beside them.",
+    "does_not_prove": "It does not show the time of the attack.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c3",
+    "name": "Wet cricket trophy",
+    "where": "Old Library, by the washroom sink",
+    "shows": "The heavy 2016 cricket trophy is wet and washed, taken from its case.",
+    "does_not_prove": "Washing removed any fingerprints.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c4",
+    "name": "Drag marks",
+    "where": "Main Staircase corridor, from the library door",
+    "shows": "Dust is swept in two long lines, with a torn shirt thread at the door.",
+    "does_not_prove": "It does not show how many people dragged the body.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c5",
+    "name": "Pen in the dead hand",
+    "where": "Main Staircase, in Arjun's right hand",
+    "shows": "A pen engraved H.L. is in Arjun's right hand, but his signed guest card shows he wrote with his left.",
+    "does_not_prove": "It does not prove the pen's owner was ever in the library.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c6",
+    "name": "Opened bag",
+    "where": "Hostel Room 302, on the bed",
+    "shows": "A bag zip is open and a green paint smear is on the strap.",
+    "does_not_prove": "It does not show whose hand left the paint.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c7",
+    "name": "Wet painted ledge",
+    "where": "Main Staircase corridor, at the window",
+    "shows": "The window ledge is wet green paint, and the tin beside it is labelled 9 pm.",
+    "does_not_prove": "It does not say who climbed through.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c8",
+    "name": "Hidden shirt",
+    "where": "Rooftop Terrace, behind the water tank",
+    "shows": "A folded shirt has green paint on one cuff and a torn sleeve edge.",
+    "does_not_prove": "The shirt has no name on it, only a hotel laundry tag.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c9",
+    "name": "Printed roof photo",
+    "where": "Old Library, inside a 2016 yearbook",
+    "shows": "A 2016 photo shows Priya on the roof with Nikhil standing close to her.",
+    "does_not_prove": "It does not show anyone pushing her.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c10",
+    "name": "Unsent letter",
+    "where": "Old Library, in the desk drawer",
+    "shows": "Arjun wrote that he was dropping his lawsuit against two old friends.",
+    "does_not_prove": "It does not name what the lawsuit was about.",
+    "importance": "useful",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c11",
+    "name": "Deleted footage",
+    "where": "Reunion Hall office computer",
+    "shows": "Camera footage from 10:20 to 11:00 pm was deleted at 11:20 pm using the organiser's login.",
+    "does_not_prove": "It does not show who typed at the keyboard.",
+    "importance": "useful",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c12",
+    "name": "Copy stick and receipt",
+    "where": "Hostel Room 302, taped under the desk",
+    "shows": "A memory stick holds copies of Arjun's work files, with a cash receipt signed V.D.",
+    "does_not_prove": "Copying files is not killing a man.",
+    "importance": "misleading",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c13",
+    "name": "Company paper",
+    "where": "Hostel Room 302, inside the wardrobe",
+    "shows": "A company paper lists Himanshu Lamba and Rishabh Sen as joint owners of a rival firm.",
+    "does_not_prove": "It does not show either man met Arjun tonight.",
+    "importance": "misleading",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c14",
+    "name": "Arjun's phone",
+    "where": "Rooftop Terrace, inside the water tank",
+    "shows": "Arjun's phone is dead in the water, and its last photo was taken at 9:40 pm.",
+    "does_not_prove": "The water ruined any proof of who put it there.",
+    "importance": "useful",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c15",
+    "name": "The fuse box",
+    "where": "Main Staircase corridor, behind a small door",
+    "shows": "The main fuse was pulled down by hand at 10:35 pm, and nothing is burnt.",
+    "does_not_prove": "It does not say whose hand pulled it.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   }
+  ],
+  "hint_ladder": [
+   {
+    "text": "The body is not lying where the blood is.",
+    "is_false": false
+   },
+   {
+    "text": "The lights did not fail by themselves. Open the fuse box door.",
+    "is_false": false
+   },
+   {
+    "text": "Arjun wrote with his left hand, so the pen in his right hand was placed there.",
+    "is_false": false
+   },
+   {
+    "text": "Wet green paint moved from the ledge to a bag strap to a shirt cuff.",
+    "is_false": false
+   },
+   {
+    "text": "Check the trophy case in the library and see what is missing.",
+    "is_false": false
+   },
+   {
+    "text": "Read the letter in the library desk. One man's motive falls apart.",
+    "is_false": false
+   },
+   {
+    "text": "Search the roof water tank and behind it for cloth and a phone.",
+    "is_false": false
+   },
+   {
+    "text": "Someone standing in this wing was on the roof the night Priya fell.",
+    "is_false": false
+   }
+  ],
+  "key_deductions": [
+   {
+    "id": "k1",
+    "statement": "Arjun was killed in the Old Library and his body was dragged to the stairs.",
+    "clue_ids": [
+     "c1",
+     "c2",
+     "c4"
+    ]
+   },
+   {
+    "id": "k2",
+    "statement": "The pen in Arjun's hand was planted to blame Himanshu.",
+    "clue_ids": [
+     "c5",
+     "c6"
+    ]
+   },
+   {
+    "id": "k3",
+    "statement": "The pen thief climbed through the freshly painted window.",
+    "clue_ids": [
+     "c6",
+     "c7",
+     "c8"
+    ]
+   },
+   {
+    "id": "k4",
+    "statement": "The weapon was the cricket trophy, and it was washed after.",
+    "clue_ids": [
+     "c1",
+     "c3"
+    ]
+   },
+   {
+    "id": "k5",
+    "statement": "The motive was old proof about Priya Sharma's fall in 2016.",
+    "clue_ids": [
+     "c9",
+     "c14"
+    ]
+   },
+   {
+    "id": "k6",
+    "statement": "The power cut and the deleted footage were two other people hiding smaller crimes.",
+    "clue_ids": [
+     "c15",
+     "c11",
+     "c12"
+    ]
+   }
+  ],
+  "locations": [
+   {
+    "id": "l1",
+    "name": "Reunion Hall",
+    "public_info": "Dinner tables, a stage and the office computer are here.",
+    "x": 50,
+    "y": 85,
+    "neighbors": [
+     "l3"
+    ],
+    "icon": "🎉"
+   },
+   {
+    "id": "l2",
+    "name": "Old Library",
+    "public_info": "Dusty shelves, a trophy case and the class yearbooks.",
+    "x": 20,
+    "y": 55,
+    "neighbors": [
+     "l3"
+    ],
+    "icon": "📚"
+   },
+   {
+    "id": "l3",
+    "name": "Main Staircase",
+    "public_info": "Arjun's body lies at the bottom of these stairs.",
+    "x": 50,
+    "y": 55,
+    "neighbors": [
+     "l1",
+     "l2",
+     "l4",
+     "l5"
+    ],
+    "icon": "🪜"
+   },
+   {
+    "id": "l4",
+    "name": "Hostel Room 302",
+    "public_info": "The old room where guests left their bags and laptops.",
+    "x": 80,
+    "y": 55,
+    "neighbors": [
+     "l3"
+    ],
+    "icon": "🛏️"
+   },
+   {
+    "id": "l5",
+    "name": "Rooftop Terrace",
+    "public_info": "A wet flat roof with a big water tank. Priya fell from here in 2016.",
+    "x": 50,
+    "y": 20,
+    "neighbors": [
+     "l3"
+    ],
+    "icon": "🌧️"
+   }
+  ],
+  "music": {
+   "root": "A",
+   "mode": "minor",
+   "tempo": 76,
+   "palette": "strings",
+   "percussion": "heartbeat",
+   "motif": [
+    0,
+    3,
+    2,
+    0,
+    5,
+    4,
+    2
+   ],
+   "description": "Low strings circling over a slow heartbeat, with rain outside."
+  },
+  "npcs": [
+   {
+    "id": "n1",
+    "name": "Ramesh Yadav",
+    "role_title": "Night Watchman",
+    "public_info": "Ramesh guards the old wing and found Arjun's body at 11:10 pm.",
+    "knows": "He knows the layout of the wing, which doors stick, and that the roof door never locks.",
+    "secrets": "None that matter. He is tired and wants the night to end.",
+    "lies": "He says he walked his rounds every ten minutes, which he did not.",
+    "reveals_freely": "Where the fuse box, the roof door and the old library key hooks are.",
+    "reveals_under_pressure": "That he dozed off in his chair for a while and saw nobody.",
+    "start_location": "l3",
+    "icon": "🔦",
+    "importance": "minor",
+    "alibi": [
+     {
+      "time": "9:40 pm",
+      "where": "Walking his rounds"
+     },
+     {
+      "time": "10:15 pm",
+      "where": "Walking his rounds"
+     },
+     {
+      "time": "10:35 pm",
+      "where": "Walking his rounds"
+     },
+     {
+      "time": "10:50 pm",
+      "where": "Walking his rounds"
+     },
+     {
+      "time": "11:10 pm",
+      "where": "Main Staircase"
+     }
+    ]
+   },
+   {
+    "id": "n2",
+    "name": "Lata Pillai",
+    "role_title": "Kitchen Helper",
+    "public_info": "Lata served dinner and is washing up in the hall.",
+    "knows": "She knows who ate what, who left the table and when the music stopped.",
+    "secrets": "None that matter. She took home two leftover sweets.",
+    "lies": "She says she never left the kitchen, though she did step out for air.",
+    "reveals_freely": "That the hall emptied out after 10 pm and guests wandered off alone.",
+    "reveals_under_pressure": "That the watchman was asleep and she did not wake him.",
+    "start_location": "l1",
+    "icon": "🍲",
+    "importance": "minor",
+    "alibi": [
+     {
+      "time": "9:40 pm",
+      "where": "Kitchen, serving dinner"
+     },
+     {
+      "time": "10:15 pm",
+      "where": "Kitchen, washing up"
+     },
+     {
+      "time": "10:35 pm",
+      "where": "Kitchen in the dark"
+     },
+     {
+      "time": "10:50 pm",
+      "where": "Kitchen, washing up"
+     },
+     {
+      "time": "11:10 pm",
+      "where": "Reunion Hall"
+     }
+    ]
+   }
+  ],
+  "opening_scene": "Rain hammers the old hostel roof. The party music has been cut off. Arjun Mehra lies at the foot of the main staircase, and he is not breathing. The hill road is flooded, so no police will come before morning. Three old classmates and two staff are shut inside this wing. One of you hurt him. Tonight you must work out who, and why.",
+  "phases": [
+   {
+    "name": "The Body",
+    "planned_beat": "The group looks closely at the body. The wound is one deep dent, not a fall. Nobody may leave the wing.",
+    "question": "Where was Arjun actually attacked?",
+    "options": [
+     "On the main staircase",
+     "In the Old Library",
+     "On the Rooftop Terrace",
+     "In Hostel Room 302"
+    ],
+    "answer_index": 1,
+    "reward": "Arjun was attacked in the Old Library and dragged to the stairs.",
+    "reward_time": "10:40 pm",
+    "reward_order": 45,
+    "wrong_nudge": "Look for blood that is not where the body is.",
+    "objective": "Work out where Arjun was really attacked, not where he was found.",
+    "try": [
+     "Look behind the library bookshelves.",
+     "Check the wound shape on the body.",
+     "Ask Ramesh about the library key hooks."
+    ]
+   },
+   {
+    "name": "The Dark Minutes",
+    "planned_beat": "The fuse box door is found open. The group learns the dark was made on purpose.",
+    "question": "Why did the lights go out at 10:35 pm?",
+    "options": [
+     "The storm knocked out the line",
+     "A fuse burnt from old wiring",
+     "Someone pulled the main fuse by hand",
+     "Arjun switched it off himself"
+    ],
+    "answer_index": 2,
+    "reward": "Someone pulled the fuse by hand to stop Arjun's speech, and that gave the killer cover.",
+    "reward_time": "10:35 pm",
+    "reward_order": 40,
+    "wrong_nudge": "Nothing in the fuse box is burnt. Ask who did not want that speech.",
+    "objective": "Find out how and why the wing went dark at 10:35 pm.",
+    "try": [
+     "Open the fuse box door in the corridor.",
+     "Ask who did not want Arjun's speech.",
+     "Ask Lata when the music stopped."
+    ]
+   },
+   {
+    "name": "The Planted Pen",
+    "planned_beat": "An engraved pen sits in Arjun's right hand. A bag in Room 302 is open and smeared green.",
+    "question": "How did Himanshu's pen reach Arjun's hand?",
+    "options": [
+     "Arjun borrowed it at dinner",
+     "Himanshu dropped it in a fight",
+     "Someone took it from the bag and placed it",
+     "It was a different pen"
+    ],
+    "answer_index": 2,
+    "reward": "The pen thief climbed through the wet painted window at 10:32 pm and stained one cuff.",
+    "reward_time": "10:32 pm",
+    "reward_order": 42,
+    "wrong_nudge": "Arjun wrote with his left hand. Match the green on the strap to the window ledge.",
+    "objective": "Trace how Himanshu's pen got into Arjun's right hand.",
+    "try": [
+     "Check the open bag in Room 302.",
+     "Match the green paint on the window ledge.",
+     "Search the roof water tank area."
+    ]
+   },
+   {
+    "name": "The Old Fall",
+    "planned_beat": "A 2016 roof photo turns up in a yearbook. Arjun's drowned phone shows a 9:40 pm photo.",
+    "question": "Why was Arjun killed tonight?",
+    "options": [
+     "For his company money",
+     "To hide the file copying",
+     "To bury proof about Priya's fall in 2016",
+     "Over an old love affair"
+    ],
+    "answer_index": 2,
+    "reward": "Arjun had proof that someone stood on the roof with Priya when she fell.",
+    "reward_time": "9:40 pm",
+    "reward_order": 25,
+    "wrong_nudge": "Open the yearbooks in the library and look at the roof photo.",
+    "objective": "Find the old reason someone wanted Arjun silent tonight.",
+    "try": [
+     "Open the 2016 yearbooks in the library.",
+     "Read the letter in the desk drawer.",
+     "Check Arjun's phone and its last photo."
+    ]
+   }
+  ],
+  "players": [
+   {
+    "id": "p1",
+    "character_name": "Himanshu Lamba",
+    "role_title": "Reunion Organiser",
+    "public_info": "Himanshu planned tonight's reunion and holds the keys to the old wing.",
+    "private_info": "You secretly co-own a company that competes with Arjun's. Rishabh is your hidden partner. Arjun threatened to sue you both last month. At 10:10 pm you hid your company papers in Room 302. At 10:35 pm you pulled the main fuse to stop Arjun's speech. You never touched Arjun.",
+    "goal": "Keep your rival company partnership hidden until the group names the killer.",
+    "side": "investigator",
+    "side_explanation": "You are innocent, but you made the dark and planted evidence points at you.",
+    "hidden_facts": [
+     {
+      "id": "h1",
+      "fact": "Your engraved pen was stolen from your bag at about 10:30 pm."
+     },
+     {
+      "id": "h2",
+      "fact": "Arjun had already dropped the lawsuit in a letter he never sent you."
+     }
+    ],
+    "starting_knowledge": "You know the window shortcut into Room 302, because you showed it to people at dinner. You left your login open on the hall office computer when you walked away. You had the corridor window ledge painted green at 9 pm and left the tin there. You showed people the window shortcut into Room 302 during dinner.",
+    "start_location": "l1",
+    "icon": "🔑",
+    "intro_line": "I am Himanshu, I organised this reunion. I hold the keys to this wing.",
+    "wants": "You want tonight to look perfect and your name to stay clean, because this reunion is the one thing you still run well. You also want Arjun to stop talking about the lawsuit in front of everyone.",
+    "fears": "You fear the group learns you secretly co-own a rival company, which would cost you your friends and your business.",
+    "goal_why": "If the partnership comes out, people will say you killed Arjun for money, and you will never shake that off.",
+    "reasons": [
+     "You hid your company papers in Room 302 because Arjun was ready to name you in front of the whole class.",
+     "You pulled the main fuse by hand because the dark was the only way to stop his speech.",
+     "You kept the keys on you all night because you were the organiser and felt responsible for the wing.",
+     "You left your login open because you were rushing back to the hall to fix the music."
+    ],
+    "night": [
+     {
+      "time": "9:40 pm",
+      "where": "Reunion Hall",
+      "doing": "Greeting old classmates and checking the dinner tables."
+     },
+     {
+      "time": "10:15 pm",
+      "where": "Reunion Hall",
+      "doing": "Announcing Arjun's speech, then waiting for him on the stage."
+     },
+     {
+      "time": "10:35 pm",
+      "where": "Main Staircase corridor",
+      "doing": "Pulling the main fuse down by hand at the fuse box."
+     },
+     {
+      "time": "10:50 pm",
+      "where": "Reunion Hall",
+      "doing": "Acting surprised about the dark and calming the guests."
+     },
+     {
+      "time": "11:10 pm",
+      "where": "Main Staircase",
+      "doing": "Running to Ramesh's shout and seeing Arjun's body."
+     }
+    ],
+    "alibi": [
+     {
+      "time": "9:40 pm",
+      "where": "Reunion Hall"
+     },
+     {
+      "time": "10:15 pm",
+      "where": "On the hall stage"
+     },
+     {
+      "time": "10:35 pm",
+      "where": "Near the hall doors"
+     },
+     {
+      "time": "10:50 pm",
+      "where": "Reunion Hall"
+     },
+     {
+      "time": "11:10 pm",
+      "where": "Main Staircase"
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "character_name": "Nikhil Rao",
+    "role_title": "Bank Manager",
+    "public_info": "Nikhil runs a city bank branch and was the class cricket captain.",
+    "private_info": "In 2016 you argued with Priya on the roof and she fell. You never told anyone. At 9:40 pm Arjun showed you a photo and told you to confess tonight. You climbed through the window, took Himanshu's pen, hit Arjun with the cricket trophy and staged a fall. Your stained shirt and his phone are on the roof.",
+    "goal": "Avoid being named as the killer in the final vote.",
+    "side": "culprit",
+    "side_explanation": "You killed Arjun to stop him exposing your part in Priya's death.",
+    "hidden_facts": [
+     {
+      "id": "h3",
+      "fact": "Copies of Arjun's roof photos are on a memory stick inside this wing."
+     },
+     {
+      "id": "h4",
+      "fact": "Your painted cuff left a green smear on Himanshu's bag strap."
+     }
+    ],
+    "starting_knowledge": "You know Himanshu pulled the fuse, because you saw him at the box before the dark. You dragged Arjun's body out of the library to the foot of the stairs at about 10:45 pm. You tore your sleeve on the library door while dragging him. You pressed Himanshu's pen into Arjun's right hand. You washed the cricket trophy in the library washroom sink at about 10:52 pm. You saw Himanshu pull the fuse at the box just before the dark. You took the trophy out of the library trophy case.",
+    "start_location": "l3",
+    "icon": "🏏",
+    "intro_line": "I am Nikhil, I manage a bank in the city. I was our cricket captain here.",
+    "wants": "You want the 2016 roof story buried for good, because your whole quiet life is built on it. Tonight you want to walk out of this wing as the harmless cricket captain.",
+    "fears": "You fear someone proves you stood next to Priya when she fell, and you lose your job, your family and your freedom.",
+    "goal_why": "If they name you tonight, there is no road out and no police to argue with, only ten old classmates who already hate you.",
+    "reasons": [
+     "You met Arjun in the library at 9:40 pm because he called you there with the photo.",
+     "You climbed through the window instead of the door because you did not want anyone to see you near Room 302.",
+     "You took Himanshu's pen because he already looked guilty with his lawsuit and his keys.",
+     "You swung the trophy because Arjun would not drop it and you panicked.",
+     "You dragged the body to the stairs so it would read as a simple fall.",
+     "You washed the trophy because your hands and the metal were marked.",
+     "You hid the shirt and the phone on the roof because the paint cuff and the photo were the only things left tying you to it."
+    ],
+    "night": [
+     {
+      "time": "9:40 pm",
+      "where": "Old Library",
+      "doing": "Arguing with Arjun while he shows you the 2016 roof photo."
+     },
+     {
+      "time": "10:15 pm",
+      "where": "Main Staircase",
+      "doing": "Standing in the corridor, waiting and watching who goes where."
+     },
+     {
+      "time": "10:35 pm",
+      "where": "Hostel Room 302",
+      "doing": "Holding Himanshu's pen in the sudden dark after climbing in."
+     },
+     {
+      "time": "10:50 pm",
+      "where": "Old Library",
+      "doing": "Washing the cricket trophy at the washroom sink."
+     },
+     {
+      "time": "11:10 pm",
+      "where": "Rooftop Terrace",
+      "doing": "Hiding your shirt behind the water tank and the phone inside it."
+     }
+    ],
+    "alibi": [
+     {
+      "time": "9:40 pm",
+      "where": "Reunion Hall at dinner"
+     },
+     {
+      "time": "10:15 pm",
+      "where": "Main Staircase, waiting"
+     },
+     {
+      "time": "10:35 pm",
+      "where": "Stairs, stuck in the dark"
+     },
+     {
+      "time": "10:50 pm",
+      "where": "Main Staircase corridor"
+     },
+     {
+      "time": "11:10 pm",
+      "where": "Walking back from the stairs"
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "character_name": "Rishabh Sen",
+    "role_title": "Risk Consultant",
+    "public_info": "Rishabh advises companies and travels a lot for work.",
+    "private_info": "You were paid cash to copy Arjun's work files. You did it in Room 302 at 10:00 pm. The memory stick is taped under the desk. You also secretly co-own a rival company with Himanshu. At 11:20 pm you deleted the camera footage using Himanshu's open login.",
+    "goal": "Carry the memory stick out of the wing before the final vote, with nobody learning you copied the files.",
+    "side": "wildcard",
+    "side_explanation": "You are a paid spy who wants the stolen files out, not justice.",
+    "hidden_facts": [
+     {
+      "id": "h5",
+      "fact": "The man who paid you cash is Arjun's own business partner, who stayed away tonight."
+     },
+     {
+      "id": "h6",
+      "fact": "The files you copied include the 2016 roof photos, the proof of the motive."
+     }
+    ],
+    "starting_knowledge": "At 10:05 pm you passed the corridor window, the paint was wet, and you heard Arjun arguing in the library.",
+    "start_location": "l4",
+    "icon": "🕵️",
+    "intro_line": "I am Rishabh, a risk consultant. I flew in this morning for the reunion.",
+    "wants": "You want the memory stick out of this wing and the cash kept, because the money clears debts you never talk about. You also want Himanshu's secret safe, since it is your secret too.",
+    "fears": "You fear the group finds the stick under the desk and calls you a thief and a killer in the same breath.",
+    "goal_why": "The man who paid you does not forgive failure, and a lost stick means you owe money you do not have.",
+    "reasons": [
+     "You copied Arjun's files at 10:00 pm because you were paid cash and the night was busy enough to hide it.",
+     "You taped the stick under the desk because bags were being opened all evening.",
+     "You deleted the camera footage at 11:20 pm because the cameras would show you going in and out of Room 302.",
+     "You used Himanshu's open login because it was sitting there and it was not your name on the screen.",
+     "You kept quiet about the argument you heard in the library because speaking up meant explaining why you were in that corridor."
+    ],
+    "night": [
+     {
+      "time": "9:40 pm",
+      "where": "Reunion Hall",
+      "doing": "Sitting at dinner and watching who leaves the table."
+     },
+     {
+      "time": "10:15 pm",
+      "where": "Hostel Room 302",
+      "doing": "Taping the memory stick under the desk and tidying the room."
+     },
+     {
+      "time": "10:35 pm",
+      "where": "Hostel Room 302",
+      "doing": "Standing still in the dark, waiting for the lights."
+     },
+     {
+      "time": "10:50 pm",
+      "where": "Reunion Hall",
+      "doing": "Back among the guests, acting like you never left."
+     },
+     {
+      "time": "11:10 pm",
+      "where": "Main Staircase",
+      "doing": "Joining the crowd around the body."
+     }
+    ],
+    "alibi": [
+     {
+      "time": "9:40 pm",
+      "where": "Reunion Hall"
+     },
+     {
+      "time": "10:15 pm",
+      "where": "Hostel Room 302"
+     },
+     {
+      "time": "10:35 pm",
+      "where": "Hostel Room 302"
+     },
+     {
+      "time": "10:50 pm",
+      "where": "Reunion Hall"
+     },
+     {
+      "time": "11:10 pm",
+      "where": "Main Staircase"
+     }
+    ]
+   }
+  ],
+  "public_timeline": [
+   {
+    "order": 10,
+    "time": "8:30 pm",
+    "event": "Dinner starts in the Reunion Hall.",
+    "reveal_round": 0
+   },
+   {
+    "order": 20,
+    "time": "9:00 pm",
+    "event": "The corridor window ledge is painted green and left to dry.",
+    "reveal_round": 0
+   },
+   {
+    "order": 30,
+    "time": "10:15 pm",
+    "event": "Arjun's speech is announced, but he never comes to the stage.",
+    "reveal_round": 0
+   },
+   {
+    "order": 50,
+    "time": "10:35 pm",
+    "event": "The power goes out in the whole old wing.",
+    "reveal_round": 0
+   },
+   {
+    "order": 60,
+    "time": "10:50 pm",
+    "event": "The power comes back on.",
+    "reveal_round": 2
+   },
+   {
+    "order": 70,
+    "time": "11:10 pm",
+    "event": "Ramesh finds Arjun's body at the foot of the stairs.",
+    "reveal_round": 0
+   },
+   {
+    "order": 80,
+    "time": "11:20 pm",
+    "event": "Someone used the hall office computer for four minutes.",
+    "reveal_round": 3
+   }
+  ],
+  "setting_summary": "A ten year college reunion in an old hostel wing, cut off by flood rain. The class star lies dead at the foot of the stairs.",
+  "title": "The Reunion on the Stairs",
+  "truth": {
+   "summary": "Nikhil Rao killed Arjun Mehra in the Old Library with the 2016 cricket trophy. Arjun had a photo showing Nikhil on the roof when Priya Sharma fell in 2016. Nikhil stole Himanshu's engraved pen to frame him, then dragged the body to the stairs to look like a fall.",
+   "timeline": [
+    {
+     "time": "2016",
+     "event": "Nikhil argues with Priya on the roof. She falls and dies. It is called an accident."
+    },
+    {
+     "time": "9:40 pm",
+     "event": "Arjun shows Nikhil the old roof photo in the library and tells him to confess tonight."
+    },
+    {
+     "time": "10:00 pm",
+     "event": "Rishabh copies Arjun's work files in Room 302 and hides the memory stick."
+    },
+    {
+     "time": "10:05 pm",
+     "event": "Rishabh passes the wet window ledge and hears Arjun arguing in the library."
+    },
+    {
+     "time": "10:10 pm",
+     "event": "Himanshu hides his rival company papers in Room 302."
+    },
+    {
+     "time": "10:30 pm",
+     "event": "Nikhil climbs through the painted window, stains his cuff, and takes Himanshu's pen."
+    },
+    {
+     "time": "10:35 pm",
+     "event": "Himanshu pulls the main fuse by hand to stop Arjun's speech."
+    },
+    {
+     "time": "10:40 pm",
+     "event": "In the dark, Nikhil hits Arjun with the cricket trophy in the library."
+    },
+    {
+     "time": "10:45 pm",
+     "event": "Nikhil drags the body to the stairs, places the pen in Arjun's right hand, and takes his phone."
+    },
+    {
+     "time": "10:52 pm",
+     "event": "Nikhil washes the trophy, then hides his shirt and the phone on the roof."
+    },
+    {
+     "time": "11:10 pm",
+     "event": "Ramesh finds the body and the party stops."
+    },
+    {
+     "time": "11:20 pm",
+     "event": "Rishabh deletes the camera footage with Himanshu's open login to hide his own copying."
+    }
+   ],
+   "culprit_ids": [
+    "p2"
+   ],
+   "method": "One heavy blow with the 2016 cricket trophy, then the body was dragged and staged as a fall.",
+   "motive": "To stop Arjun from proving that Nikhil caused Priya Sharma's death in 2016.",
+   "ambiguities": "Whether Nikhil pushed Priya or she slipped is never settled. Himanshu made the dark and Rishabh killed the footage, so both look guilty without being killers."
+  },
+  "twists": [
+   {
+    "name": "The framed friend",
+    "description": "Nikhil plants Himanshu's pen in Arjun's hand, but the theft leaves green paint on the bag strap and on his own cuff."
+   },
+   {
+    "name": "The hidden partnership",
+    "description": "Himanshu and Rishabh secretly co-own a rival company, so both hide the same paper and look guilty together."
+   }
+  ],
+  "key_times": [
+   {
+    "time": "9:40 pm",
+    "what": "Arjun takes his last photo and leaves the dinner table."
+   },
+   {
+    "time": "10:15 pm",
+    "what": "Arjun's speech is announced, but he never comes to the stage."
+   },
+   {
+    "time": "10:35 pm",
+    "what": "The power goes out in the whole old wing."
+   },
+   {
+    "time": "10:50 pm",
+    "what": "The power comes back on."
+   },
+   {
+    "time": "11:10 pm",
+    "what": "Ramesh finds Arjun's body at the foot of the stairs."
+   }
+  ]
+ },
+ "state": {
+  "phaseIndex": 3,
+  "phaseEndsAt": null,
+  "questionsPerPhase": 3,
+  "phaseMinutes": 15,
+  "hintsLeft": 4,
+  "hintCursor": 1,
+  "hintsGiven": [
+   {
+    "text": "The body is not lying where the blood is.",
+    "at": 1792256856392
+   }
+  ],
+  "hintVote": null,
+  "suspicion": 46,
+  "events": [
+   {
+    "at": 1792254814348,
+    "phase": null,
+    "text": "Rain hammers the old hostel roof. The party music has been cut off. Arjun Mehra lies at the foot of the main staircase, and he is not breathing. The hill road is flooded, so no police will come before morning. Three old classmates and two staff are shut inside this wing. One of you hurt him. Tonight you must work out who, and why.",
+    "kind": "opening"
+   },
+   {
+    "at": 1792254882090,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "How is everyonr related and how did everyone come here, and how was the dead bodh found",
+    "text": "Himanshu, Nikhil, Rishabh and Arjun were college classmates at Saint Alban's. They came for the ten year reunion in the old hostel wing. Ramesh is the night watchman and Lata is the kitchen helper, both working here. Ramesh found Arjun at 11:10 pm, at the bottom of the main staircase."
+   },
+   {
+    "at": 1792255022688,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Rishabh",
+    "q": "What time did the murder happen?",
+    "text": "The exact time is not known yet. Arjun was supposed to speak at 10:15 pm, but he never came. Ramesh found his body at 11:10 pm, so it happened somewhere in between."
+   },
+   {
+    "at": 1792255045458,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "So timelines?",
+    "text": "Here is what we know. Dinner started at 8:30 pm. At 9:00 pm the corridor window ledge was painted green and left to dry. At 10:15 pm Arjun's speech was announced, but he never came to the stage. The power went out at 10:35 pm. Ramesh found Arjun's body at the foot of the stairs at 11:10 pm."
+   },
+   {
+    "at": 1792255099241,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "So who is the killer, just let us all know",
+    "text": "Nobody knows that yet. That is what tonight is for. Talk to each other and check the clues."
+   },
+   {
+    "at": 1792255137083,
+    "phase": -1,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "The killer was himanshu, wasnt it. Cos of jealously? Homosexual jealousy",
+    "text": "Nobody knows that yet. The killer has not been found. Himanshu planned the reunion and holds the keys to the old wing. That is all we know about him so far."
+   },
+   {
+    "at": 1792255177836,
+    "phase": 0,
+    "kind": "phase",
+    "text": "Round 1 of 4: The Body"
+   },
+   {
+    "at": 1792255177836,
+    "phase": 0,
+    "kind": "goal",
+    "text": "This round's goal: Where was Arjun actually attacked?"
+   },
+   {
+    "at": 1792255338111,
+    "phase": 0,
+    "kind": "event",
+    "text": "Nikhil told the group it looks like a simple fall, and asked everyone to stay in the hall and keep off the corridor."
+   },
+   {
+    "at": 1792255506084,
+    "phase": 0,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "What is actually nikl saying, it looks like a simple fall",
+    "text": "Nikhil says Arjun's death looks like a simple fall down the stairs. He asked everyone to stay in the Reunion Hall. He also told people to keep off the corridor."
+   },
+   {
+    "at": 1792255533822,
+    "phase": 0,
+    "kind": "event",
+    "text": "Nikhil has offered to lead the search for Arjun's killer, and Ramesh gave him his torch."
+   },
+   {
+    "at": 1792255852943,
+    "phase": 0,
+    "kind": "event",
+    "text": "Nikhil showed everyone two long lines swept in the corridor dust, running from the library door to the stairs. A torn shirt thread hangs on the library door frame."
+   },
+   {
+    "at": 1792255967910,
+    "phase": 0,
+    "kind": "qa",
+    "by": "Rishabh",
+    "q": "Who was with Arjun in the library",
+    "text": "Nobody knows that yet. We only know a torn shirt thread hangs on the library door frame."
+   },
+   {
+    "at": 1792255972563,
+    "phase": 0,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Who was in Librabry, at around 10:40? Like at that time where did everyone satyed",
+    "text": "At 10:40 the power was out. It went off at 10:35 and came back at 10:50. Everyone says they stood in the dark. Who was in the Old Library at that moment is not known yet."
+   },
+   {
+    "at": 1792256047500,
+    "phase": 0,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "How do we establish how ppl moved at the time, seems like that info is not there atm",
+    "text": "Nobody knows that yet. No one has given their movements for the dark period, 10:35 to 10:50 pm. You can ask each person where they were, and search the rooms for signs like the drag marks, the thread, or the wet green paint."
+   },
+   {
+    "at": 1792256078384,
+    "phase": 0,
+    "kind": "vote",
+    "text": "Time to vote: Where was Arjun actually attacked?"
+   },
+   {
+    "at": 1792256121779,
+    "phase": 0,
+    "kind": "round",
+    "text": "The group picked: In the Old Library. That is right! Arjun was attacked in the Old Library and dragged to the stairs."
+   },
+   {
+    "at": 1792256157603,
+    "phase": 1,
+    "kind": "phase",
+    "text": "Round 2 of 4: The Dark Minutes"
+   },
+   {
+    "at": 1792256157603,
+    "phase": 1,
+    "kind": "event",
+    "text": "The group follows the drag marks and finds a small door open in the corridor wall. Inside, the main fuse is pulled down by hand. Nothing is burnt. The dark at 10:35 was made on purpose."
+   },
+   {
+    "at": 1792256157603,
+    "phase": 1,
+    "kind": "timeline",
+    "text": "New on the timeline: 10:50 pm, The power comes back on."
+   },
+   {
+    "at": 1792256157603,
+    "phase": 1,
+    "kind": "goal",
+    "text": "This round's goal: Why did the lights go out at 10:35 pm?"
+   },
+   {
+    "at": 1792256191878,
+    "phase": 1,
+    "kind": "moment",
+    "text": "Himanshu, the story turns to you."
+   },
+   {
+    "at": 1792256193007,
+    "phase": 1,
+    "kind": "said",
+    "text": "Himanshu said: \"I hold the only keys to this wing. But that fuse box door has no lock at all.\""
+   },
+   {
+    "at": 1792256211989,
+    "phase": 1,
+    "kind": "event",
+    "text": "Nikhil showed the group the torn thread and said it came off the killer's sleeve. Everyone rolled up their sleeves. Nobody has a torn sleeve, so Ramesh says the man changed his shirt and that shirt is still somewhere in this wing."
+   },
+   {
+    "at": 1792256216151,
+    "phase": 1,
+    "kind": "moment",
+    "text": "Rishabh, the story turns to you."
+   },
+   {
+    "at": 1792256226724,
+    "phase": 1,
+    "kind": "said",
+    "text": "Rishabh said: \"At about ten past ten I passed the corridor window. I heard Arjun arguing inside the library.\""
+   },
+   {
+    "at": 1792256544911,
+    "phase": 1,
+    "kind": "event",
+    "text": "Rishabh argued that only the man with the keys could move freely through the wing. Nikhil and Ramesh both agreed. Himanshu answered that the fuse box door has no lock at all."
+   },
+   {
+    "at": 1792256577609,
+    "phase": 1,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "I searched for the missing shirt everywhere and can’t find it anywhere",
+    "text": "Ramesh is the one who said a changed shirt is hidden in this wing. That is his guess, not a proven fact. Nobody knows where any shirt is yet."
+   },
+   {
+    "at": 1792256811584,
+    "phase": 1,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Whend did the music stop Lata",
+    "text": "Nobody knows that yet. We only know the music was off when Arjun was found at 11:10 pm."
+   },
+   {
+    "at": 1792256856392,
+    "phase": 1,
+    "kind": "hint",
+    "text": "Hint: The body is not lying where the blood is."
+   },
+   {
+    "at": 1792256870985,
+    "phase": 1,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "Who did not want arjun to give the speech",
+    "text": "Nobody knows that yet. We only know the speech was announced at 10:15 pm, and Arjun never came to the stage."
+   },
+   {
+    "at": 1792256929057,
+    "phase": 1,
+    "kind": "clue",
+    "text": "Nikhil shows a clue. Drag marks: Dust is swept in two long lines, with a torn shirt thread at the door.",
+    "by": "Nikhil",
+    "name": "Drag marks"
+   },
+   {
+    "at": 1792256973166,
+    "phase": 1,
+    "kind": "vote",
+    "text": "Time to vote: Why did the lights go out at 10:35 pm?"
+   },
+   {
+    "at": 1792256979690,
+    "phase": 1,
+    "kind": "round",
+    "text": "The group picked: Someone pulled the main fuse by hand. That is right! Someone pulled the fuse by hand to stop Arjun's speech, and that gave the killer cover."
+   },
+   {
+    "at": 1792257008150,
+    "phase": 2,
+    "kind": "phase",
+    "text": "Round 3 of 4: The Planted Pen"
+   },
+   {
+    "at": 1792257008150,
+    "phase": 2,
+    "kind": "event",
+    "text": "Ramesh turns Arjun's hand over. A pen engraved H.L. sits in his right fist. Ramesh says Arjun signed the guest card with his left hand. In Room 302, a bag lies open with a green smear on the strap."
+   },
+   {
+    "at": 1792257008150,
+    "phase": 2,
+    "kind": "timeline",
+    "text": "New on the timeline: 11:20 pm, Someone used the hall office computer for four minutes."
+   },
+   {
+    "at": 1792257008150,
+    "phase": 2,
+    "kind": "goal",
+    "text": "This round, your job: Trace how Himanshu's pen got into Arjun's right hand."
+   },
+   {
+    "at": 1792257008150,
+    "phase": 2,
+    "kind": "goal",
+    "text": "This round's goal: How did Himanshu's pen reach Arjun's hand?"
+   },
+   {
+    "at": 1792257043486,
+    "phase": 2,
+    "kind": "moment",
+    "text": "Himanshu, the story turns to you."
+   },
+   {
+    "at": 1792257044203,
+    "phase": 2,
+    "kind": "said",
+    "text": "Himanshu said: \"That pen is mine. I left it in my bag in Room 302. I never gave it to Arjun.\""
+   },
+   {
+    "at": 1792257068668,
+    "phase": 2,
+    "kind": "moment",
+    "text": "Nikhil, the story turns to you."
+   },
+   {
+    "at": 1792257074713,
+    "phase": 2,
+    "kind": "said",
+    "text": "Nikhil said: \"Before the lights died, I saw Himanshu standing at that little fuse box door.\""
+   },
+   {
+    "at": 1792257088498,
+    "phase": 2,
+    "kind": "event",
+    "text": "Nikhil asked who gained from stopping Arjun's speech. Ramesh agreed the dark came right after the speech was announced. Ramesh also asked why a guilty man would leave his own pen in Arjun's hand."
+   },
+   {
+    "at": 1792257222725,
+    "phase": 2,
+    "kind": "event",
+    "text": "Nikhil argued that the green paint is Himanshu's own, since Himanshu had the ledge painted at 9 pm, and that the pen fell into Arjun's hand during a struggle. Ramesh half agreed, then said whoever touched the wet ledge must have green paint on a cuff."
+   },
+   {
+    "at": 1792257301526,
+    "phase": 2,
+    "kind": "event",
+    "text": "The group now leans toward Himanshu over the keys, the paint tin and the pen. Then Rishabh asked Nikhil where he went while everyone stood at the fuse box. Ramesh said only three cuffs have been checked for green paint."
+   },
+   {
+    "at": 1792257438751,
+    "phase": 2,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "Who could have turned off the fuse, who had the opportunity?",
+    "text": "The fuse box door has no lock, so anyone in the wing could reach it. Nikhil says he saw Himanshu standing at that door before the lights died. But Rishabh asked where Nikhil was at that time, and that is still unanswered."
+   },
+   {
+    "at": 1792257517292,
+    "phase": 2,
+    "kind": "clue",
+    "text": "Rishabh shows a clue. Opened bag: A bag zip is open and a green paint smear is on the strap.",
+    "by": "Rishabh",
+    "name": "Opened bag"
+   },
+   {
+    "at": 1792257558009,
+    "phase": 2,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "Who used the computer",
+    "text": "Nobody knows that yet. The timeline only says someone used the hall office computer at 11:20 pm, for four minutes."
+   },
+   {
+    "at": 1792257583438,
+    "phase": 2,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "How do we find who used the computer",
+    "text": "The office computer sits in the Reunion Hall. Someone used it for four minutes at 11:20 pm. Nobody knows who yet, so ask each person where they stood at that time."
+   },
+   {
+    "at": 1792257620486,
+    "phase": 2,
+    "kind": "qa",
+    "by": "Rishabh",
+    "q": "Why would anyone use computer? What purpose would it serve?",
+    "text": "The office computer sits in the Reunion Hall. Someone used it for four minutes at 11:20 pm, just after the body was found. What they did on it, nobody knows that yet."
+   },
+   {
+    "at": 1792257908466,
+    "phase": 2,
+    "kind": "vote",
+    "text": "Time to vote: How did Himanshu's pen reach Arjun's hand?"
+   },
+   {
+    "at": 1792257959774,
+    "phase": 2,
+    "kind": "round",
+    "text": "The group could not agree. Not quite. Arjun wrote with his left hand. Match the green on the strap to the window ledge."
+   },
+   {
+    "at": 1792258002515,
+    "phase": 3,
+    "kind": "phase",
+    "text": "Round 4 of 4: The Old Fall"
+   },
+   {
+    "at": 1792258002515,
+    "phase": 3,
+    "kind": "event",
+    "text": "In the Old Library a stack of yearbooks has slid off the shelf. One lies open at 2016. Priya Sharma stands on the wet roof, and a man stands close beside her, his face half turned away."
+   },
+   {
+    "at": 1792258002515,
+    "phase": 3,
+    "kind": "goal",
+    "text": "This round, your job: Find the old reason someone wanted Arjun silent tonight."
+   },
+   {
+    "at": 1792258002515,
+    "phase": 3,
+    "kind": "goal",
+    "text": "This round's goal: Why was Arjun killed tonight?"
+   },
+   {
+    "at": 1792258062609,
+    "phase": 3,
+    "kind": "moment",
+    "text": "Rishabh, the story turns to you."
+   },
+   {
+    "at": 1792258062609,
+    "phase": 3,
+    "kind": "moment",
+    "text": "Nikhil, the story turns to you."
+   },
+   {
+    "at": 1792258095924,
+    "phase": 3,
+    "kind": "event",
+    "text": "Nikhil showed both cuffs, clean and dry, and said he never touched the wet ledge. Ramesh then asked who the man standing beside Priya in the 2016 photo is."
+   },
+   {
+    "at": 1792258110711,
+    "phase": 3,
+    "kind": "said",
+    "text": "Rishabh said: \"Nikhil, you walked off while we stood at the fuse box. You came back from the library side.\""
+   },
+   {
+    "at": 1792258118993,
+    "phase": 3,
+    "kind": "said",
+    "text": "Nikhil, in their own words: \"I remember himanshu and arjun having bad blood from then\""
+   },
+   {
+    "at": 1792258182508,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Linrary was the murder place roght, why can’t nikhil be the killer",
+    "text": "Yes, Arjun was attacked in the Old Library at 10:40 pm. Nothing rules Nikhil out, and Rishabh says Nikhil came back from the library side. But Nikhil showed both cuffs clean, with no green paint on them."
+   },
+   {
+    "at": 1792258231339,
+    "phase": 3,
+    "kind": "event",
+    "text": "Nikhil told the group that Priya came between Arjun and Himanshu in 2016, and that the bad blood started there. Ramesh said he was not working here then, so he cannot confirm it. Ramesh then looked closer at the 2016 photo and said the man standing beside Priya is wearing the college cricket jersey."
+   },
+   {
+    "at": 1792258305736,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Ramesh said he saw a shirt, where when and whise",
+    "text": "Nobody knows that yet. Ramesh never said he saw a shirt. The only shirt detail is the clue of a torn shirt thread at the door, found with the drag marks. Ramesh did talk about cuffs, saying only three cuffs were checked for green paint."
+   },
+   {
+    "at": 1792258323057,
+    "phase": 3,
+    "kind": "event",
+    "text": "Nikhil told the group the college cricket jersey was common, and that Arjun and Himanshu wore it too. Ramesh agreed the jersey proves nothing, then asked who the cricket captain was back then."
+   },
+   {
+    "at": 1792258356563,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "What happened to priya",
+    "text": "Priya Sharma fell from the Rooftop Terrace in 2016. Everyone at the reunion still remembers it. A yearbook photo from 2016 shows her on the wet roof, with a man standing beside her in a college cricket jersey."
+   },
+   {
+    "at": 1792258360553,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Open the 2016 yearbooks in the library.",
+    "text": "A stack of yearbooks has slid off the shelf. One lies open at 2016. In the photo, Priya Sharma stands on the wet roof with a man close beside her, his face half turned away, and he is wearing the college cricket jersey."
+   },
+   {
+    "at": 1792258418840,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Who is that man",
+    "text": "The man beside Priya in the 2016 photo has his face half turned away. He is wearing the college cricket jersey. Who he is, nobody knows that yet."
+   },
+   {
+    "at": 1792258461620,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "What is the photo, is the photo of the person blurred?",
+    "text": "The photo is in a 2016 yearbook in the Old Library. It shows Priya Sharma on the wet roof, with a man standing close beside her. His face is half turned away, so you cannot tell who he is. He wears the college cricket jersey."
+   },
+   {
+    "at": 1792258510105,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Any details in the pic that helps?",
+    "text": "The 2016 photo shows Priya on the wet roof with a man beside her. His face is half turned away, but he is wearing the college cricket jersey. Ramesh pointed out the jersey, then asked who the cricket captain was back then."
+   },
+   {
+    "at": 1792258562595,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "And who was the cricketer captain",
+    "text": "Nikhil Rao was the class cricket captain. That is listed in his background as a bank manager and former captain."
+   },
+   {
+    "at": 1792258690185,
+    "phase": 3,
+    "kind": "event",
+    "text": "Rishabh searched Arjun's pockets at the stairs. Arjun's phone is not on the body. Ramesh says Arjun was taking photos at dinner."
+   },
+   {
+    "at": 1792258777724,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Nikhil",
+    "q": "Who took arjuns phone, can we trace it or call it",
+    "text": "Nobody knows who took the phone yet. We only know it is not on the body, and Arjun was taking photos at dinner. You can try calling it and listening for a ring in the rooms."
+   },
+   {
+    "at": 1792258848482,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Himanshu",
+    "q": "Motive of moving pen from left to right? Is it because someone does not know arjun that much?",
+    "text": "The known fact is that Arjun wrote with his left hand. The pen was found in his hand anyway. Why it got there, and what that means, nobody knows yet."
+   },
+   {
+    "at": 1792258900989,
+    "phase": 3,
+    "kind": "qa",
+    "by": "Rishabh",
+    "q": "Someone put the pen in his right hand",
+    "text": "We know the pen was Himanshu's and it was found in Arjun's hand. We also know Arjun wrote with his left hand. Nobody has said which hand held the pen yet."
+   },
+   {
+    "at": 1792258902554,
+    "phase": 3,
+    "kind": "vote",
+    "text": "Time to vote: Why was Arjun killed tonight?"
+   },
+   {
+    "at": 1792258992672,
+    "phase": 3,
+    "kind": "round",
+    "text": "The group could not agree. Not quite. Open the yearbooks in the library and look at the roof photo."
+   },
+   {
+    "at": 1792258992675,
+    "phase": 3,
+    "kind": "phase",
+    "text": "Time is up. Everyone, pick who did it on your phone."
+   }
+  ],
+  "threads": {
+   "p1": [
+    {
+     "from": "whisper",
+     "text": "Ramesh holds the torch on the open fuse box. Nothing inside is burnt. He says the little door has no lock. You know whose hand pulled that fuse down at 10:35. Your company papers are still in the wardrobe in Room 302.",
+     "at": 1792256157603
+    },
+    {
+     "from": "whisper",
+     "text": "The talk at the stairs has turned to your keys. Rishabh pushed the idea, Ramesh backed it, and Nikhil nodded along. Three people are now looking at you.",
+     "at": 1792256544911
+    },
+    {
+     "from": "whisper",
+     "text": "Your bag on the bed in Room 302 is open. There is a green smear on the strap. The corridor window ledge you had painted at 9 pm is still wet green. Nobody has matched the two yet.",
+     "at": 1792257008150
+    },
+    {
+     "from": "whisper",
+     "text": "Nikhil just asked the group who gained from stopping Arjun's speech. Eyes moved to you. Ramesh did point out one thing in your favour. Why would you leave your own pen in the dead man's hand?",
+     "at": 1792257088498
+    },
+    {
+     "from": "whisper",
+     "text": "The room has turned on you. Nikhil tied the keys, the paint tin and the pen together, and Ramesh agreed. One door is still open for you. Ramesh wants to see all four cuffs, and only three have been shown.",
+     "at": 1792257301526
+    },
+    {
+     "from": "whisper",
+     "text": "The vote on your pen went nowhere, so the room is tired of keys and paint. Now a roof photo from 2016 has the group's attention. Your papers are still in the Room 302 wardrobe, and nobody has opened that wardrobe yet.",
+     "at": 1792258002515
+    },
+    {
+     "from": "you",
+     "kind": "self",
+     "text": "Tell me something about me some info",
+     "at": 1792258534561
+    },
+    {
+     "from": "gm",
+     "text": "You stand in the dusty library and go back over your own night.\nHimanshu, you remember it all plainly. You had the ledge painted at 9 pm.\nAt 10:10 pm you hid your company papers in the Room 302 wardrobe.\nAt 10:35 pm your own hand pulled the main fuse down. You wanted the speech stopped.\nYou never touched Arjun. You also left your login open on the hall computer.\nOne thing nags you. Your pen was in your bag, and now it is in a dead man's hand.\nRamesh Yadav: \"Sir, Arjun sat at that desk earlier tonight. He was writing something.\"",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You stand in the dusty library and go back over your own night."
+      },
+      {
+       "speaker": "",
+       "text": "Himanshu, you remember it all plainly. You had the ledge painted at 9 pm."
+      },
+      {
+       "speaker": "",
+       "text": "At 10:10 pm you hid your company papers in the Room 302 wardrobe."
+      },
+      {
+       "speaker": "",
+       "text": "At 10:35 pm your own hand pulled the main fuse down. You wanted the speech stopped."
+      },
+      {
+       "speaker": "",
+       "text": "You never touched Arjun. You also left your login open on the hall computer."
+      },
+      {
+       "speaker": "",
+       "text": "One thing nags you. Your pen was in your bag, and now it is in a dead man's hand."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Sir, Arjun sat at that desk earlier tonight. He was writing something."
+      }
+     ],
+     "at": 1792258534561
+    }
+   ],
+   "p2": [
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I direct the conversation convincingly and without arousing any suspicion in a way that no one ever establishes the correct location of murder. No one connects anything to me in any way cos i am good with actions and behaviour",
+     "at": 1792255338111
+    },
+    {
+     "from": "gm",
+     "text": "You stand by the stairs and keep your voice calm and sad.\nYou tell Ramesh that Arjun clearly slipped on these wet steps.\nRamesh Yadav: \"The steps do get slippery, sir. People trip here all the time.\"\nHe rubs his eyes and agrees too fast. He wants to go home.\nRamesh Yadav: \"Please, nobody should walk about. Stay in the hall until morning.\"\nNikhil, your fall story holds in this room. But the corridor dust is still swept in two lines.\nYou cannot talk the library floor clean from here.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You stand by the stairs and keep your voice calm and sad."
+      },
+      {
+       "speaker": "",
+       "text": "You tell Ramesh that Arjun clearly slipped on these wet steps."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "The steps do get slippery, sir. People trip here all the time."
+      },
+      {
+       "speaker": "",
+       "text": "He rubs his eyes and agrees too fast. He wants to go home."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Please, nobody should walk about. Stay in the hall until morning."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, your fall story holds in this room. But the corridor dust is still swept in two lines."
+      },
+      {
+       "speaker": "",
+       "text": "You cannot talk the library floor clean from here."
+      }
+     ],
+     "at": 1792255338111
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I am the most eager to find the murderer. I behave in a committed but not suspicious way and everyone believes fully that i want to find the killer and nothing more. I am super smart and think many steps ahead",
+     "at": 1792255533822
+    },
+    {
+     "from": "gm",
+     "text": "You change your face from calm to worried, and you say it loudly.\nYou tell Ramesh you want to find whoever hurt Arjun, tonight.\nRamesh Yadav: \"Sir, you are the only one here with any sense. Please lead it.\"\nHe hands you his torch without being asked. The act works, Nikhil.\nBut leading means standing where people look. They will watch your hands and sleeves.\nAnd one thing still sits out in the open behind you.\nThe corridor dust is swept in two long lines, from the library door.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You change your face from calm to worried, and you say it loudly."
+      },
+      {
+       "speaker": "",
+       "text": "You tell Ramesh you want to find whoever hurt Arjun, tonight."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Sir, you are the only one here with any sense. Please lead it."
+      },
+      {
+       "speaker": "",
+       "text": "He hands you his torch without being asked. The act works, Nikhil."
+      },
+      {
+       "speaker": "",
+       "text": "But leading means standing where people look. They will watch your hands and sleeves."
+      },
+      {
+       "speaker": "",
+       "text": "And one thing still sits out in the open behind you."
+      },
+      {
+       "speaker": "",
+       "text": "The corridor dust is swept in two long lines, from the library door."
+      }
+     ],
+     "at": 1792255533822
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I point out the dust line swept and bring it to the group",
+     "at": 1792255852943
+    },
+    {
+     "from": "gm",
+     "text": "You shine Ramesh's torch low along the corridor floor.\nTwo long lines run through the dust, from the library door to the stairs.\nYou call the others over and point at them first, before anyone else can.\nRamesh Yadav: \"That is not my broom, sir. I swept this corridor at eight.\"\nA torn shirt thread hangs on the library door frame. You leave it there.\nRamesh Yadav: \"Something heavy was pulled along here. Heavy like a man.\"\nNikhil, you look honest now. You also just put the library in everyone's head.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You shine Ramesh's torch low along the corridor floor."
+      },
+      {
+       "speaker": "",
+       "text": "Two long lines run through the dust, from the library door to the stairs."
+      },
+      {
+       "speaker": "",
+       "text": "You call the others over and point at them first, before anyone else can."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "That is not my broom, sir. I swept this corridor at eight."
+      },
+      {
+       "speaker": "",
+       "text": "A torn shirt thread hangs on the library door frame. You leave it there."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Something heavy was pulled along here. Heavy like a man."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, you look honest now. You also just put the library in everyone's head."
+      }
+     ],
+     "at": 1792255852943
+    },
+    {
+     "from": "whisper",
+     "text": "Everyone is crowded at the fuse box now, not looking at you. Use it. Two things are still where you left them. The library washroom sink is wet, and the roof door never locks.",
+     "at": 1792256157603
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I point at the shirt and since there is no way to connect the shirt to me i ask confidently that the shirt seems connected to the murder. The shirt never ever points at me cos the world helps me and i behave smartly and without suspicion .\n\nThe group fully believes that i am innocent as i am leading all the clue discoveries",
+     "at": 1792256211989
+    },
+    {
+     "from": "gm",
+     "text": "You lift the torn thread off the library door frame and hold it up.\nYou say it calmly, like a man helping. Nobody argues with you.\nRamesh Yadav: \"That came off a sleeve, sir. Cloth tears when you drag something heavy.\"\nHimanshu and Rishabh both glance down at their own cuffs.\nRamesh Yadav: \"Then let us all show our arms. Right now, all four of us.\"\nSleeves go up. No tear on anyone. Ramesh scratches his head.\nRamesh Yadav: \"So the man changed his shirt. That shirt is still inside this wing.\"\nNikhil, your idea worked. It also started a hunt for a shirt.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You lift the torn thread off the library door frame and hold it up."
+      },
+      {
+       "speaker": "",
+       "text": "You say it calmly, like a man helping. Nobody argues with you."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "That came off a sleeve, sir. Cloth tears when you drag something heavy."
+      },
+      {
+       "speaker": "",
+       "text": "Himanshu and Rishabh both glance down at their own cuffs."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Then let us all show our arms. Right now, all four of us."
+      },
+      {
+       "speaker": "",
+       "text": "Sleeves go up. No tear on anyone. Ramesh scratches his head."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "So the man changed his shirt. That shirt is still inside this wing."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, your idea worked. It also started a hunt for a shirt."
+      }
+     ],
+     "at": 1792256211989
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I put away and hide all clues smartly without arising suspicion. I also fully form a convincing theory that aligns with all available public clues and am convincing without being suspicious",
+     "at": 1792256416690
+    },
+    {
+     "from": "gm",
+     "text": "The others crowd around the fuse box. You step back into the dark corridor.\nIn the library you kneel behind the third bookshelf and wipe the floor.\nThe dried blood drops come up with your handkerchief. That spot is clean now.\nThen Ramesh calls your name from the corridor. You have to go back.\nNikhil, the trophy is still wet by the washroom sink. You did not reach it.\nRamesh Yadav: \"Sir? Ah, there you are. We need you to tell us what you think.\"\nYou give your theory calmly: the man who made the dark made the chance.\nRamesh Yadav: \"That is sense, sir. Only the keyholder walks this wing like he owns it.\"",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "The others crowd around the fuse box. You step back into the dark corridor."
+      },
+      {
+       "speaker": "",
+       "text": "In the library you kneel behind the third bookshelf and wipe the floor."
+      },
+      {
+       "speaker": "",
+       "text": "The dried blood drops come up with your handkerchief. That spot is clean now."
+      },
+      {
+       "speaker": "",
+       "text": "Then Ramesh calls your name from the corridor. You have to go back."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, the trophy is still wet by the washroom sink. You did not reach it."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Sir? Ah, there you are. We need you to tell us what you think."
+      },
+      {
+       "speaker": "",
+       "text": "You give your theory calmly: the man who made the dark made the chance."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "That is sense, sir. Only the keyholder walks this wing like he owns it."
+      }
+     ],
+     "at": 1792256416690
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I see Rishabh catching on to the fact that only the keyholder can be the person",
+     "at": 1792256544911
+    },
+    {
+     "from": "gm",
+     "text": "You stay quiet and let Rishabh talk himself into it.\nYou nod slowly, like a man who hates agreeing.\nRamesh Yadav: \"I said the same thing, sir. The keyholder walks this wing like he owns it.\"\nNikhil, the room is heavy now, and it is leaning away from you.\nBut the library washroom sink is still wet, and the trophy is still sitting in it.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You stay quiet and let Rishabh talk himself into it."
+      },
+      {
+       "speaker": "",
+       "text": "You nod slowly, like a man who hates agreeing."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "I said the same thing, sir. The keyholder walks this wing like he owns it."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, the room is heavy now, and it is leaning away from you."
+      },
+      {
+       "speaker": "",
+       "text": "But the library washroom sink is still wet, and the trophy is still sitting in it."
+      }
+     ],
+     "at": 1792256544911
+    },
+    {
+     "from": "whisper",
+     "text": "Ramesh is holding Himanshu's pen up to his torch. Nobody has asked how it crossed the wing. The washroom sink in the library is still wet, and the trophy is still in it. Your shirt is behind the roof water tank.",
+     "at": 1792257008150
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I am v smart and subtle without any suspicion and no one believes its me. I point at how himanshu didnt want arjun to give the speech and its a reason such that rishabh agrees",
+     "at": 1792257088498
+    },
+    {
+     "from": "gm",
+     "text": "You keep your voice low and let the others speak first.\nThen you ask one quiet question. Who loses most if Arjun speaks tonight?\nRamesh Yadav: \"The speech was called at ten fifteen, sir. Then the lights died. That is the order.\"\nRishabh folds his arms and gives you one slow nod. He holds the look a beat too long.\nRamesh Yadav: \"Still, sir. Why would a man leave his own pen in the dead man's fist?\"\nRamesh Yadav: \"And that green smear on the bag strap. Nobody has explained that yet.\"\nNikhil, the room leans toward Himanshu. But the paint question is still open.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You keep your voice low and let the others speak first."
+      },
+      {
+       "speaker": "",
+       "text": "Then you ask one quiet question. Who loses most if Arjun speaks tonight?"
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "The speech was called at ten fifteen, sir. Then the lights died. That is the order."
+      },
+      {
+       "speaker": "",
+       "text": "Rishabh folds his arms and gives you one slow nod. He holds the look a beat too long."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Still, sir. Why would a man leave his own pen in the dead man's fist?"
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "And that green smear on the bag strap. Nobody has explained that yet."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, the room leans toward Himanshu. But the paint question is still open."
+      }
+     ],
+     "at": 1792257088498
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I find a good explanation for the paint and Rishabh agrees and says lines in support of my hypothesis. Everyone also agrees that the pen must have got to the victim during struggle",
+     "at": 1792257222725
+    },
+    {
+     "from": "gm",
+     "text": "You speak slowly, like a man working it out for the first time.\nYou say Himanshu had the ledge painted at nine, so the green is his own.\nRamesh Yadav: \"True, sir. He gave me the tin himself and told me to leave it.\"\nYou add that the pen fell into Arjun's hand while they fought.\nRamesh Yadav: \"Maybe. A dying man does grab at things.\"\nRishabh says nothing. He watches your sleeve, then your hands.\nRamesh Yadav: \"But paint stays wet, sir. Whoever touched that ledge has green on a cuff.\"\nNikhil, your shirt is still behind the roof water tank. One cuff is green.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You speak slowly, like a man working it out for the first time."
+      },
+      {
+       "speaker": "",
+       "text": "You say Himanshu had the ledge painted at nine, so the green is his own."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "True, sir. He gave me the tin himself and told me to leave it."
+      },
+      {
+       "speaker": "",
+       "text": "You add that the pen fell into Arjun's hand while they fought."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Maybe. A dying man does grab at things."
+      },
+      {
+       "speaker": "",
+       "text": "Rishabh says nothing. He watches your sleeve, then your hands."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "But paint stays wet, sir. Whoever touched that ledge has green on a cuff."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, your shirt is still behind the roof water tank. One cuff is green."
+      }
+     ],
+     "at": 1792257222725
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "I behave perfectly innocently and no one suspects me. I am smart and casual and other clues make everyone sus of himanshu",
+     "at": 1792257301526
+    },
+    {
+     "from": "gm",
+     "text": "You stand easy, hands loose, like a man with nothing to hide.\nYou say it gently. Himanshu made the dark, and the pen is his.\nRamesh Yadav: \"The keys, the paint tin, the pen. It is all his, sir.\"\nHimanshu's face goes tight. The room is leaning his way, Nikhil.\nRishabh is not angry. He is just waiting, and he does not blink.\nRamesh Yadav: \"Sir, we still have not seen four clean cuffs. Only three.\"",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You stand easy, hands loose, like a man with nothing to hide."
+      },
+      {
+       "speaker": "",
+       "text": "You say it gently. Himanshu made the dark, and the pen is his."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "The keys, the paint tin, the pen. It is all his, sir."
+      },
+      {
+       "speaker": "",
+       "text": "Himanshu's face goes tight. The room is leaning his way, Nikhil."
+      },
+      {
+       "speaker": "",
+       "text": "Rishabh is not angry. He is just waiting, and he does not blink."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Sir, we still have not seen four clean cuffs. Only three."
+      }
+     ],
+     "at": 1792257301526
+    },
+    {
+     "from": "whisper",
+     "text": "Nobody matched the green paint to a cuff. You have cover for now. But the yearbooks fell and one is open at the 2016 roof page. Your shirt is still behind the roof water tank, and Arjun's phone is still inside it.",
+     "at": 1792258002515
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "The green paint is never found with him cos i behave coolly and without suspicion, i have a story that convinces everyone abt any thing that isneven slightly suspect and all believe me and the world helps me",
+     "at": 1792258095924
+    },
+    {
+     "from": "gm",
+     "text": "You roll both sleeves up first, before anyone asks you to.\nYour shirt now is dry and clean. You say you never touched that ledge.\nRamesh Yadav: \"Clean, sir. Fine. Then the green man is one of the other two.\"\nHimanshu stares at the floor. Nobody asks you another paint question.\nRamesh Yadav: \"Sir, this old photo. Who is the man standing by Priya?\"\nHe is holding his torch on the open 2016 yearbook page.\nNikhil, your talk worked. But your other shirt is still behind the roof tank.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You roll both sleeves up first, before anyone asks you to."
+      },
+      {
+       "speaker": "",
+       "text": "Your shirt now is dry and clean. You say you never touched that ledge."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Clean, sir. Fine. Then the green man is one of the other two."
+      },
+      {
+       "speaker": "",
+       "text": "Himanshu stares at the floor. Nobody asks you another paint question."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Sir, this old photo. Who is the man standing by Priya?"
+      },
+      {
+       "speaker": "",
+       "text": "He is holding his torch on the open 2016 yearbook page."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, your talk worked. But your other shirt is still behind the roof tank."
+      }
+     ],
+     "at": 1792258095924
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "Everyone now remembers the bad blood between himanshu and arjun cos of priya. A love triangle",
+     "at": 1792258231339
+    },
+    {
+     "from": "gm",
+     "text": "You lower your voice and say Priya was the real reason, back in 2016.\nYou tell them Arjun and Himanshu both wanted her, and it turned ugly.\nRamesh Yadav: \"A love matter, sir? I only watch doors. I was not here in those years.\"\nHimanshu shakes his head hard and says it is not true.\nRamesh Yadav: \"Still, a girl between two friends. That makes men do bad things.\"\nHe bends closer to the open yearbook page with his torch.\nRamesh Yadav: \"This man beside her. He is wearing our cricket jersey, sir.\"\nNikhil, your story landed. But the torch is now on that jersey.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You lower your voice and say Priya was the real reason, back in 2016."
+      },
+      {
+       "speaker": "",
+       "text": "You tell them Arjun and Himanshu both wanted her, and it turned ugly."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "A love matter, sir? I only watch doors. I was not here in those years."
+      },
+      {
+       "speaker": "",
+       "text": "Himanshu shakes his head hard and says it is not true."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Still, a girl between two friends. That makes men do bad things."
+      },
+      {
+       "speaker": "",
+       "text": "He bends closer to the open yearbook page with his torch."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "This man beside her. He is wearing our cricket jersey, sir."
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, your story landed. But the torch is now on that jersey."
+      }
+     ],
+     "at": 1792258231339
+    },
+    {
+     "from": "you",
+     "kind": "action",
+     "text": "The jersey was common and everyone including himanshu and arjun had it",
+     "at": 1792258323057
+    },
+    {
+     "from": "gm",
+     "text": "You keep your voice flat and bored, like this is nothing.\nYou tell them the whole class wore that jersey, Arjun and Himanshu too.\nRamesh Yadav: \"Everyone, sir? Then the shirt tells us nothing at all.\"\nHe lowers the torch and rubs his eyes. He believes you.\nRamesh Yadav: \"Still, somebody must know this man's face. Who was your captain then?\"\nNikhil, the jersey question is dead. The captain question is not.\nYour other shirt is still folded behind the roof water tank.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You keep your voice flat and bored, like this is nothing."
+      },
+      {
+       "speaker": "",
+       "text": "You tell them the whole class wore that jersey, Arjun and Himanshu too."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Everyone, sir? Then the shirt tells us nothing at all."
+      },
+      {
+       "speaker": "",
+       "text": "He lowers the torch and rubs his eyes. He believes you."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Still, somebody must know this man's face. Who was your captain then?"
+      },
+      {
+       "speaker": "",
+       "text": "Nikhil, the jersey question is dead. The captain question is not."
+      },
+      {
+       "speaker": "",
+       "text": "Your other shirt is still folded behind the roof water tank."
+      }
+     ],
+     "at": 1792258323057
+    }
+   ],
+   "p3": [
+    {
+     "from": "you",
+     "kind": "question",
+     "text": "Who was with Arjun?",
+     "at": 1792256071815
+    },
+    {
+     "from": "gm",
+     "text": "Nobody answers you in Room 302. You walk down to the hall.\nLata Pillai is stacking wet plates. You ask who sat with Arjun.\nLata Pillai: \"He ate fast, sir. Then he got up alone, before ten.\"\nShe dries her hands on her apron and thinks.\nLata Pillai: \"After ten the hall was empty. Everyone wandered off on their own.\"\nLata Pillai: \"Who was with him after that, I cannot say. Ask the ones who walked out.\"\nRishabh, you remember the voices you heard at the library door at 10:05.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "Nobody answers you in Room 302. You walk down to the hall."
+      },
+      {
+       "speaker": "",
+       "text": "Lata Pillai is stacking wet plates. You ask who sat with Arjun."
+      },
+      {
+       "speaker": "Lata Pillai",
+       "text": "He ate fast, sir. Then he got up alone, before ten."
+      },
+      {
+       "speaker": "",
+       "text": "She dries her hands on her apron and thinks."
+      },
+      {
+       "speaker": "Lata Pillai",
+       "text": "After ten the hall was empty. Everyone wandered off on their own."
+      },
+      {
+       "speaker": "Lata Pillai",
+       "text": "Who was with him after that, I cannot say. Ask the ones who walked out."
+      },
+      {
+       "speaker": "",
+       "text": "Rishabh, you remember the voices you heard at the library door at 10:05."
+      }
+     ],
+     "at": 1792256071815
+    },
+    {
+     "from": "whisper",
+     "text": "Himanshu is being asked about keys, so nobody is asking about Room 302 yet. Your memory stick is still taped under the desk. Remember the hall computer keeps a log of who used it and for how long.",
+     "at": 1792256157603
+    },
+    {
+     "from": "whisper",
+     "text": "While everyone stared at the fuse box, you looked around. Nikhil was not there for a few minutes. He came back from the library side of the corridor.",
+     "at": 1792256416690
+    },
+    {
+     "from": "whisper",
+     "text": "The group is now talking about Room 302 and the open bags. You were in that room at 10:15 pm, and your memory stick is still taped under the desk. You also know the window ledge paint was wet at 10:05 pm.",
+     "at": 1792257008150
+    },
+    {
+     "from": "whisper",
+     "text": "Nikhil is pushing hard that the paint belongs to Himanshu. You know the ledge was still wet at 10:05 pm. Anyone who climbed through after that got green on them. Nikhil was away from the fuse box for a few minutes too.",
+     "at": 1792257222725
+    },
+    {
+     "from": "whisper",
+     "text": "You asked Nikhil where he went during the fuse box crowd. He answered smoothly and moved the talk back to Himanshu. He did not actually name a place.",
+     "at": 1792257301526
+    },
+    {
+     "from": "you",
+     "kind": "question",
+     "text": "Whose bag is kept in room 302?",
+     "at": 1792257400457
+    },
+    {
+     "from": "gm",
+     "text": "You ask Ramesh about the bags, then walk up to Room 302 yourself.\nRamesh Yadav: \"Three bags on that bed, sir. Guests dumped them there before dinner.\"\nIn the room, you check the name tags one by one.\nOne is yours. One is Nikhil's, zipped shut. One is Himanshu's.\nHimanshu's bag is the open one. A green smear sits on its strap.\nThe smear is still slightly soft. Rishabh, you remember the ledge was wet at ten past ten.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You ask Ramesh about the bags, then walk up to Room 302 yourself."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "Three bags on that bed, sir. Guests dumped them there before dinner."
+      },
+      {
+       "speaker": "",
+       "text": "In the room, you check the name tags one by one."
+      },
+      {
+       "speaker": "",
+       "text": "One is yours. One is Nikhil's, zipped shut. One is Himanshu's."
+      },
+      {
+       "speaker": "",
+       "text": "Himanshu's bag is the open one. A green smear sits on its strap."
+      },
+      {
+       "speaker": "",
+       "text": "The smear is still slightly soft. Rishabh, you remember the ledge was wet at ten past ten."
+      }
+     ],
+     "at": 1792257400457
+    },
+    {
+     "from": "whisper",
+     "text": "The group has moved to the library and left Room 302 empty. Your memory stick is still taped under the desk. If you want it out of this wing, the quiet minutes are now. Remember the hall computer keeps a log.",
+     "at": 1792258002515
+    },
+    {
+     "from": "you",
+     "kind": "question",
+     "text": "Check Arjun's phone and his last photo",
+     "at": 1792258690185
+    },
+    {
+     "from": "gm",
+     "text": "You leave Room 302 and go down to the body.\nRishabh, you check Arjun's pockets carefully, both sides.\nCoat pocket, trouser pockets, jacket inside. All empty.\nThere is no phone on him. Not under him either.\nRamesh comes out of the library with his torch.\nRamesh Yadav: \"He had it at dinner, sir. He was taking photos of everybody.\"\nRamesh Yadav: \"So where is it now? Somebody took it off him.\"\nEvery room has been walked through tonight, except the roof.",
+     "lines": [
+      {
+       "speaker": "",
+       "text": "You leave Room 302 and go down to the body."
+      },
+      {
+       "speaker": "",
+       "text": "Rishabh, you check Arjun's pockets carefully, both sides."
+      },
+      {
+       "speaker": "",
+       "text": "Coat pocket, trouser pockets, jacket inside. All empty."
+      },
+      {
+       "speaker": "",
+       "text": "There is no phone on him. Not under him either."
+      },
+      {
+       "speaker": "",
+       "text": "Ramesh comes out of the library with his torch."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "He had it at dinner, sir. He was taking photos of everybody."
+      },
+      {
+       "speaker": "Ramesh Yadav",
+       "text": "So where is it now? Somebody took it off him."
+      },
+      {
+       "speaker": "",
+       "text": "Every room has been walked through tonight, except the roof."
+      }
+     ],
+     "at": 1792258690185
+    }
+   ]
+  },
+  "questionsLeft": {
+   "p1": 2,
+   "p2": 0,
+   "p3": 2
+  },
+  "pending": {},
+  "found": {
+   "p1": [],
+   "p2": [
+    "c4"
+   ],
+   "p3": [
+    "c6"
+   ]
+  },
+  "destroyed": [
+   "c2"
+  ],
+  "revealed": {
+   "p1": [],
+   "p2": [],
+   "p3": []
+  },
+  "ready": {
+   "p2": true,
+   "p1": true,
+   "p3": true
+  },
+  "positions": {
+   "p1": "l2",
+   "p2": "l2",
+   "p3": "l3",
+   "n1": "l2",
+   "n2": "l1"
+  },
+  "mapEdits": {},
+  "brief": {
+   "step": 0
+  },
+  "roundVote": null,
+  "roundResults": [
+   {
+    "phaseIndex": 0,
+    "question": "Where was Arjun actually attacked?",
+    "picked": 1,
+    "pickedText": "In the Old Library",
+    "correct": true,
+    "counts": [
+     0,
+     3,
+     0,
+     0
+    ]
+   },
+   {
+    "phaseIndex": 1,
+    "question": "Why did the lights go out at 10:35 pm?",
+    "picked": 2,
+    "pickedText": "Someone pulled the main fuse by hand",
+    "correct": true,
+    "counts": [
+     0,
+     0,
+     3,
+     0
+    ]
+   },
+   {
+    "phaseIndex": 2,
+    "question": "How did Himanshu's pen reach Arjun's hand?",
+    "picked": null,
+    "pickedText": null,
+    "correct": false,
+    "counts": [
+     0,
+     1,
+     1,
+     1
+    ]
+   },
+   {
+    "phaseIndex": 3,
+    "question": "Why was Arjun killed tonight?",
+    "picked": null,
+    "pickedText": null,
+    "correct": false,
+    "counts": [
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  ],
+  "timelineExtra": [
+   {
+    "order": 45,
+    "time": "10:40 pm",
+    "event": "Arjun was attacked in the Old Library and dragged to the stairs."
+   },
+   {
+    "order": 40,
+    "time": "10:35 pm",
+    "event": "Someone pulled the fuse by hand to stop Arjun's speech, and that gave the killer cover."
+   }
+  ],
+  "shared": [
+   {
+    "clueId": "c4",
+    "by": "p2",
+    "at": 1792256929057
+   },
+   {
+    "clueId": "c6",
+    "by": "p3",
+    "at": 1792257517292
+   }
+  ],
+  "publicPending": {},
+  "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 400\" width=\"800\" height=\"400\">\n<defs>\n<linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#0a141c\"/><stop offset=\"1\" stop-color=\"#132b35\"/>\n</linearGradient>\n<linearGradient id=\"wall\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#1e3d47\"/><stop offset=\"1\" stop-color=\"#132b35\"/>\n</linearGradient>\n<radialGradient id=\"glow\" cx=\"0.5\" cy=\"0.75\" r=\"0.75\">\n<stop offset=\"0\" stop-color=\"#e9a94f\"/><stop offset=\"0.55\" stop-color=\"#e9a94f\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#0a141c\" stop-opacity=\"0.9\"/>\n</radialGradient>\n<linearGradient id=\"water\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#132b35\"/><stop offset=\"1\" stop-color=\"#0c2129\"/>\n</linearGradient>\n<linearGradient id=\"refl\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#e9a94f\" stop-opacity=\"0.45\"/><stop offset=\"1\" stop-color=\"#e9a94f\" stop-opacity=\"0\"/>\n</linearGradient>\n<pattern id=\"rain\" width=\"38\" height=\"40\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(14)\">\n<line x1=\"5\" y1=\"0\" x2=\"5\" y2=\"25\" stroke=\"#f6dca8\" stroke-opacity=\"0.22\" stroke-width=\"1.2\"/>\n<line x1=\"20\" y1=\"13\" x2=\"20\" y2=\"36\" stroke=\"#f6dca8\" stroke-opacity=\"0.14\" stroke-width=\"1\"/>\n<line x1=\"31\" y1=\"4\" x2=\"31\" y2=\"21\" stroke=\"#f6dca8\" stroke-opacity=\"0.18\" stroke-width=\"1\"/>\n</pattern>\n<radialGradient id=\"vig\" cx=\"0.42\" cy=\"0.6\" r=\"0.78\">\n<stop offset=\"0.45\" stop-color=\"#0a141c\" stop-opacity=\"0\"/><stop offset=\"1\" stop-color=\"#0a141c\" stop-opacity=\"0.85\"/>\n</radialGradient>\n</defs>\n\n<rect width=\"800\" height=\"400\" fill=\"url(#sky)\"/>\n\n<!-- distant trees -->\n<path d=\"M0 118 q30 -24 54 -6 q22 -26 48 -8 q26 -22 46 2 q24 -16 40 6 l0 30 L0 140 Z\" fill=\"#0a141c\" opacity=\"0.8\"/>\n<path d=\"M620 120 q26 -26 50 -6 q28 -24 52 0 q30 -18 46 8 l0 28 -148 0 Z\" fill=\"#0a141c\" opacity=\"0.8\"/>\n\n<!-- hostel wing -->\n<rect x=\"4\" y=\"88\" width=\"792\" height=\"14\" fill=\"#0a141c\"/>\n<rect x=\"18\" y=\"100\" width=\"764\" height=\"202\" fill=\"url(#wall)\"/>\n<rect x=\"18\" y=\"196\" width=\"764\" height=\"10\" fill=\"#0a141c\" opacity=\"0.45\"/>\n<rect x=\"18\" y=\"112\" width=\"764\" height=\"6\" fill=\"#0a141c\" opacity=\"0.3\"/>\n\n<!-- upper windows -->\n<g fill=\"#0a141c\">\n<rect x=\"48\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"178\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"308\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"438\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"568\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n<rect x=\"698\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\"/>\n</g>\n<rect x=\"438\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\" fill=\"#e9a94f\" opacity=\"0.2\"/>\n<rect x=\"178\" y=\"132\" width=\"44\" height=\"52\" rx=\"3\" fill=\"#e9a94f\" opacity=\"0.1\"/>\n\n<!-- arcade openings -->\n<g fill=\"#0a141c\">\n<path d=\"M42 302 L42 212 a43 43 0 0 1 86 0 L128 302 Z\"/>\n<path d=\"M432 302 L432 212 a43 43 0 0 1 86 0 L518 302 Z\"/>\n<path d=\"M562 302 L562 212 a43 43 0 0 1 86 0 L648 302 Z\"/>\n<path d=\"M692 302 L692 212 a43 43 0 0 1 86 0 L778 302 Z\"/>\n<path d=\"M172 302 L172 212 a43 43 0 0 1 86 0 L258 302 Z\"/>\n</g>\n\n<!-- lit stairwell arch -->\n<path d=\"M302 302 L302 212 a43 43 0 0 1 86 0 L388 302 Z\" fill=\"url(#glow)\"/>\n<!-- staircase silhouette -->\n<path d=\"M388 302 L388 206 L372 206 L372 218 L356 218 L356 230 L340 230 L340 242 L326 242 L326 254 L314 254 L314 266 L304 266 L304 302 Z\" fill=\"#132b35\"/>\n<path d=\"M388 302 L388 214 L376 214 L376 226 L360 226 L360 238 L344 238 L344 250 L330 250 L330 262 L318 262 L318 274 L308 274 L308 302 Z\" fill=\"#0a141c\" opacity=\"0.65\"/>\n<!-- banister -->\n<path d=\"M390 196 L300 262 L300 272 L390 206 Z\" fill=\"#0a141c\" opacity=\"0.8\"/>\n<!-- the fallen figure at the foot of the stairs -->\n<g fill=\"#0a141c\">\n<ellipse cx=\"338\" cy=\"292\" rx=\"34\" ry=\"9\"/>\n<path d=\"M310 292 q14 -12 34 -8 q18 4 26 8 q-6 6 -28 6 q-24 0 -32 -6 Z\"/>\n<path d=\"M352 290 q16 -4 26 4 q-10 4 -26 1 Z\"/>\n<circle cx=\"306\" cy=\"287\" r=\"7\"/>\n</g>\n<ellipse cx=\"368\" cy=\"297\" rx=\"26\" ry=\"5\" fill=\"#0a141c\" opacity=\"0.6\"/>\n\n<!-- pillar shading -->\n<g fill=\"#0a141c\" opacity=\"0.35\">\n<rect x=\"128\" y=\"206\" width=\"44\" height=\"96\"/>\n<rect x=\"258\" y=\"206\" width=\"44\" height=\"96\"/>\n<rect x=\"388\" y=\"206\" width=\"44\" height=\"96\"/>\n<rect x=\"518\" y=\"206\" width=\"44\" height=\"96\"/>\n<rect x=\"648\" y=\"206\" width=\"44\" height=\"96\"/>\n</g>\n\n<!-- floodwater -->\n<rect y=\"296\" width=\"800\" height=\"104\" fill=\"url(#water)\"/>\n<rect x=\"300\" y=\"296\" width=\"92\" height=\"86\" fill=\"url(#refl)\"/>\n<rect x=\"436\" y=\"296\" width=\"44\" height=\"54\" fill=\"url(#refl)\" opacity=\"0.4\"/>\n<g stroke=\"#f6dca8\" stroke-opacity=\"0.12\" stroke-width=\"1.5\">\n<line x1=\"282\" y1=\"312\" x2=\"410\" y2=\"312\"/>\n<line x1=\"300\" y1=\"330\" x2=\"396\" y2=\"330\"/>\n<line x1=\"266\" y1=\"352\" x2=\"430\" y2=\"352\"/>\n<line x1=\"296\" y1=\"376\" x2=\"402\" y2=\"376\"/>\n<line x1=\"40\" y1=\"322\" x2=\"150\" y2=\"322\"/>\n<line x1=\"620\" y1=\"340\" x2=\"760\" y2=\"340\"/>\n<line x1=\"80\" y1=\"364\" x2=\"220\" y2=\"364\"/>\n<line x1=\"540\" y1=\"316\" x2=\"640\" y2=\"316\"/>\n</g>\n<rect y=\"294\" width=\"800\" height=\"5\" fill=\"#0a141c\" opacity=\"0.5\"/>\n\n<!-- rain -->\n<rect width=\"800\" height=\"400\" fill=\"url(#rain)\"/>\n<rect width=\"800\" height=\"400\" fill=\"url(#vig)\"/>\n</svg>",
+  "knowledge": [
+   {
+    "character_id": "n1",
+    "fact": "Nikhil says Arjun slipped on the wet stairs and wants people kept in the hall.",
+    "how": "Nikhil told him so at the bottom of the staircase.",
+    "round": 1,
+    "source": "p2",
+    "at": 1792255338111
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nikhil wants to lead the search for Arjun's killer.",
+    "how": "Nikhil said so at the bottom of the staircase and took his torch.",
+    "round": 1,
+    "source": "p2",
+    "at": 1792255533822
+   },
+   {
+    "character_id": "n1",
+    "fact": "Two lines are swept in the corridor dust, from the library door to the stairs, with a torn thread on the door frame.",
+    "how": "Nikhil pointed them out with the torch and Ramesh looked at the floor himself.",
+    "round": 1,
+    "source": "p2",
+    "at": 1792255852943
+   },
+   {
+    "character_id": "n2",
+    "fact": "Rishabh is asking who was sitting with Arjun tonight.",
+    "how": "Rishabh asked her in the Reunion Hall.",
+    "round": 1,
+    "source": "p3",
+    "at": 1792256071815
+   },
+   {
+    "character_id": "n1",
+    "fact": "The main fuse was pulled down by hand and nothing in the box is burnt.",
+    "how": "He opened the small corridor door himself and held the torch on the fuse.",
+    "round": 1,
+    "source": "round change",
+    "at": 1792256157603
+   },
+   {
+    "character_id": "n1",
+    "fact": "The fuse box door has no lock, so anyone in the wing could open it.",
+    "how": "He tried the little door in front of the group and showed it swings free.",
+    "round": 1,
+    "source": "round change",
+    "at": 1792256157603
+   },
+   {
+    "character_id": "n1",
+    "fact": "The torn thread came off a sleeve, and nobody present has a torn sleeve.",
+    "how": "Nikhil held up the thread and everyone rolled up their sleeves for him.",
+    "round": 2,
+    "source": "p2",
+    "at": 1792256211989
+   },
+   {
+    "character_id": "n1",
+    "fact": "The killer probably changed his shirt, so that shirt is still in the wing.",
+    "how": "He said it aloud at the stairs after the sleeve check.",
+    "round": 2,
+    "source": "p2",
+    "at": 1792256211989
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nikhil thinks whoever pulled the fuse made the chance to kill Arjun.",
+    "how": "Nikhil said it to him in the corridor by the fuse box.",
+    "round": 2,
+    "source": "p2",
+    "at": 1792256416690
+   },
+   {
+    "character_id": "n1",
+    "fact": "Rishabh also believes only the keyholder could move freely in the wing.",
+    "how": "Rishabh said it out loud at the stairs while Ramesh stood there.",
+    "round": 2,
+    "source": "p2",
+    "at": 1792256544911
+   },
+   {
+    "character_id": "n1",
+    "fact": "A pen engraved H.L. was in Arjun's right hand.",
+    "how": "He lifted the dead man's hand at the stairs and read the letters.",
+    "round": 2,
+    "source": "round change",
+    "at": 1792257008150
+   },
+   {
+    "character_id": "n1",
+    "fact": "Arjun signed the guest card tonight with his left hand.",
+    "how": "He held the guest book at the door when Arjun came in.",
+    "round": 2,
+    "source": "round change",
+    "at": 1792257008150
+   },
+   {
+    "character_id": "n1",
+    "fact": "A bag in Room 302 is open and has a green smear on the strap.",
+    "how": "He walked up with his torch and looked at the bags on the bed.",
+    "round": 2,
+    "source": "round change",
+    "at": 1792257008150
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nikhil says the person who wanted to stop Arjun's speech had the strongest reason.",
+    "how": "Nikhil said it out loud at the foot of the stairs.",
+    "round": 3,
+    "source": "p2",
+    "at": 1792257088498
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nikhil says the green paint is Himanshu's own, because Himanshu had the ledge painted at 9 pm.",
+    "how": "Nikhil said it to the group at the foot of the stairs.",
+    "round": 3,
+    "source": "p2",
+    "at": 1792257222725
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nikhil says the pen fell into Arjun's hand during a struggle.",
+    "how": "Nikhil said it to the group at the foot of the stairs.",
+    "round": 3,
+    "source": "p2",
+    "at": 1792257222725
+   },
+   {
+    "character_id": "n1",
+    "fact": "Whoever touched the wet ledge should have green paint on a cuff.",
+    "how": "He worked it out aloud while answering Nikhil.",
+    "round": 3,
+    "source": "p2",
+    "at": 1792257222725
+   },
+   {
+    "character_id": "n1",
+    "fact": "Only three people have shown their cuffs for green paint, not four.",
+    "how": "He counted the sleeves himself at the foot of the stairs and said so.",
+    "round": 3,
+    "source": "p2",
+    "at": 1792257301526
+   },
+   {
+    "character_id": "n1",
+    "fact": "Rishabh wants to know where Nikhil went while the group stood at the fuse box.",
+    "how": "Rishabh asked Nikhil that out loud with Ramesh standing there.",
+    "round": 3,
+    "source": "p2",
+    "at": 1792257301526
+   },
+   {
+    "character_id": "n1",
+    "fact": "A 2016 yearbook photo shows Priya on the roof with a man standing close to her.",
+    "how": "The yearbooks fell in the library and he held his torch on the open page.",
+    "round": 3,
+    "source": "round change",
+    "at": 1792258002515
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nikhil's cuffs are clean and he says he never touched the wet ledge.",
+    "how": "Nikhil rolled his sleeves up in front of him in the library.",
+    "round": 4,
+    "source": "p2",
+    "at": 1792258095924
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nobody has yet said who the man beside Priya in the 2016 photo is.",
+    "how": "He asked the question aloud in the library and got no answer.",
+    "round": 4,
+    "source": "p2",
+    "at": 1792258095924
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nikhil says Priya came between Arjun and Himanshu in 2016.",
+    "how": "Nikhil told him and the group in the Old Library.",
+    "round": 4,
+    "source": "p2",
+    "at": 1792258231339
+   },
+   {
+    "character_id": "n1",
+    "fact": "The man beside Priya in the 2016 photo wears the college cricket jersey.",
+    "how": "He held his torch close to the open yearbook page and looked.",
+    "round": 4,
+    "source": "p2",
+    "at": 1792258231339
+   },
+   {
+    "character_id": "n1",
+    "fact": "Many classmates wore the college cricket jersey, so it names nobody.",
+    "how": "Nikhil told him so in the Old Library.",
+    "round": 4,
+    "source": "p2",
+    "at": 1792258323057
+   },
+   {
+    "character_id": "n1",
+    "fact": "Arjun's phone is not on his body.",
+    "how": "Rishabh searched the dead man's pockets in front of him at the stairs.",
+    "round": 4,
+    "source": "p3",
+    "at": 1792258690185
+   },
+   {
+    "character_id": "n1",
+    "fact": "Nobody has searched the Rooftop Terrace yet.",
+    "how": "He counted the rooms aloud with Rishabh at the stairs.",
+    "round": 4,
+    "source": "p3",
+    "at": 1792258690185
+   }
+  ],
+  "moments": [
+   {
+    "id": "m1",
+    "player_id": "p1",
+    "line": "I hold the only keys to this wing. But that fuse box door has no lock at all.",
+    "why": "You are the organiser. They will look at you first, so speak before they do.",
+    "round": 2,
+    "status": "said",
+    "readyAt": 1792256217603,
+    "at": 1792256157603,
+    "calledAt": 1792256191878,
+    "resolvedAt": 1792256193007
+   },
+   {
+    "id": "m2",
+    "player_id": "p3",
+    "line": "At about ten past ten I passed the corridor window. I heard Arjun arguing inside the library.",
+    "why": "The group just proved the library. Your memory matters now, and it keeps eyes off Room 302.",
+    "round": 2,
+    "status": "said",
+    "readyAt": 1792256217603,
+    "at": 1792256157603,
+    "calledAt": 1792256216151,
+    "resolvedAt": 1792256226724
+   },
+   {
+    "id": "m3",
+    "player_id": "p1",
+    "line": "That pen is mine. I left it in my bag in Room 302. I never gave it to Arjun.",
+    "why": "Ramesh just read your initials out loud, and everyone turned to look at you.",
+    "round": 3,
+    "status": "said",
+    "readyAt": 1792257068150,
+    "at": 1792257008150,
+    "calledAt": 1792257043486,
+    "resolvedAt": 1792257044203
+   },
+   {
+    "id": "m4",
+    "player_id": "p2",
+    "line": "Before the lights died, I saw Himanshu standing at that little fuse box door.",
+    "why": "The room is hunting a keyholder, and this is the moment to feed that hunt.",
+    "round": 3,
+    "status": "said",
+    "readyAt": 1792257068150,
+    "at": 1792257008150,
+    "calledAt": 1792257068668,
+    "resolvedAt": 1792257074713
+   },
+   {
+    "id": "m5",
+    "player_id": "p3",
+    "line": "Nikhil, you walked off while we stood at the fuse box. You came back from the library side.",
+    "why": "You watched him leave, and the room is still blaming the wrong man for your friend's pen.",
+    "round": 4,
+    "status": "said",
+    "readyAt": 1792258062515,
+    "at": 1792258002515,
+    "calledAt": 1792258062609,
+    "resolvedAt": 1792258110711
+   },
+   {
+    "id": "m6",
+    "player_id": "p2",
+    "line": "That photo is ten years old. Half this class went up on that roof. It proves nothing.",
+    "why": "You need the yearbook closed before anyone leans in and studies the man beside her.",
+    "round": 4,
+    "status": "own",
+    "readyAt": 1792258062515,
+    "at": 1792258002515,
+    "calledAt": 1792258062609,
+    "saidInstead": "I remember himanshu and arjun having bad blood from then",
+    "resolvedAt": 1792258118993
+   }
+  ],
+  "overridesLeft": {
+   "p1": 5,
+   "p2": 4,
+   "p3": 5
+  },
+  "submissions": {
+   "p2": {
+    "culprit_ids": [
+     "p1"
+    ],
+    "how": "In the library after turning of the light",
+    "why": "Love angle",
+    "goal": "I tried"
+   },
+   "p1": {
+    "culprit_ids": [
+     "p2"
+    ],
+    "how": "",
+    "why": "",
+    "goal": ""
+   },
+   "p3": {
+    "culprit_ids": [
+     "p2"
+    ],
+    "how": "",
+    "why": "",
+    "goal": ""
+   }
+  },
+  "transitioning": false,
+  "result": {
+   "verdict": {
+    "culprit_ids": [
+     "p2"
+    ],
+    "correct_player_ids": [
+     "p1",
+     "p3"
+    ],
+    "majority_correct": true,
+    "winner": "investigators",
+    "tally": {
+     "p1": 1,
+     "p2": 2
+    }
+   },
+   "reveal_story": "Here is the truth. In 2016, Nikhil Rao stood on the roof with Priya Sharma. They argued. She fell. Everyone called it an accident. Nikhil never spoke of it again. At 9:40 tonight, Arjun showed Nikhil an old roof photo in the library. He told him to confess. At 10:30 Nikhil climbed through the wet green window and stole Himanshu's pen. At 10:35 Himanshu pulled the fuse by hand, only to stop Arjun's speech. In that dark, Nikhil hit Arjun with the 2016 cricket trophy. He dragged the body to the stairs, pressed the pen into the wrong hand, washed the trophy, and hid his green shirt and Arjun's phone on the roof. Then he led the hunt for himself. Himanshu hid a rival company with Rishabh. Rishabh copied Arjun's files for cash and deleted the footage. Two liars, one killer. The killer was Nikhil.",
+   "players": [
+    {
+     "player_id": "p1",
+     "culprit_correct": true,
+     "method_score": 0,
+     "motive_score": 0,
+     "goal_achieved": true,
+     "goal_outcome": "Nobody ever opened the Room 302 wardrobe, so his rival company partnership stayed secret to the end.",
+     "comment": "You named the right man and kept your own secret buried, but you never explained the trophy or Priya."
+    },
+    {
+     "player_id": "p2",
+     "culprit_correct": false,
+     "method_score": 1,
+     "motive_score": 0,
+     "goal_achieved": false,
+     "goal_outcome": "Two of three players named him, so he was voted the killer despite a very smooth night of misdirection.",
+     "comment": "Brilliant acting and clue-leading, but wiping the blood and talking up a love triangle could not hide the clean cuffs and the roof."
+    },
+    {
+     "player_id": "p3",
+     "culprit_correct": true,
+     "method_score": 0,
+     "motive_score": 0,
+     "goal_achieved": false,
+     "goal_outcome": "He left the memory stick taped under the Room 302 desk and never carried it out of the wing.",
+     "comment": "Your question about Nikhil leaving the fuse box crowd was the sharpest move of the night."
+    }
+   ]
+  },
+  "scoring": false
+ },
+ "error": null,
+ "progress": null
+}

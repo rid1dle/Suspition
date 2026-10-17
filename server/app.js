@@ -5,9 +5,10 @@ const { GameError } = G;
 export const RETRY_MS = 60_000;
 
 export class App {
-  constructor({ gm, store, clock = () => Date.now(), log = () => {} }) {
+  constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null }) {
     this.gm = gm;
     this.store = store;
+    this.archive = archive;
     this.clock = clock;
     this.log = log;
     this.game = null;
@@ -92,9 +93,18 @@ export class App {
     if (!hostToken || hostToken !== this.game.hostToken) throw new GameError('Only the table screen can do that.', 403);
   }
 
+  async keep(game) {
+    try {
+      await this.archive?.save(game);
+    } catch (err) {
+      this.log(`dataset save failed: ${err.message}`);
+    }
+  }
+
   async newGame(hostToken) {
     this.requireHost(hostToken);
     this.asks.clear();
+    await this.keep(this.game);
     this.game = G.createGame(this.clock());
     await this.changed();
     return this.game.hostToken;
@@ -342,6 +352,7 @@ export class App {
         if (this.game !== game) return;
         G.applyScore(game, verdict, score);
         game.error = null;
+        await this.keep(game);
       } catch (err) {
         if (this.game !== game) return;
         this.failed(game, 'score', 'The GM could not check the answers. Press Show the answer to try again.', err);
