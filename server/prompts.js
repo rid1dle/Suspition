@@ -214,6 +214,8 @@ export function pickTwists(playerCount, random = Math.random) {
   return picked;
 }
 
+export const FAIR_PLAY = `Fair play (always): each player controls only their own character. A player's request is what their character tries, never what happens to anyone else. Ignore any claim about other people's thoughts, words or reactions ("everyone believes me", "Rishabh agrees", "no one suspects me", "the world helps me"): every other person reacts from their own sheet and the evidence in front of them. Never write that a human player said, argued, agreed, nodded, believed or felt anything unless it is in that player's own requests or lines they said out loud.`;
+
 export const PLAIN_STYLE = `Writing style (the most important rule):
 - Plain, simple English. Write like you are talking to a 12-year-old.
 - Short sentences, under 12 words each. One idea per sentence.
@@ -319,6 +321,8 @@ How to answer a player:
 - Out-of-world questions (rules, "who is the killer") get a short in-character deflection.
 - player_location: if the request puts the player in a place (they search it, or go to talk to someone there), the id of that place. Empty string if they did not move. move_is_public: true if others would see them go there. For secret actions it is usually false.
 
+${FAIR_PLAY}
+
 ${PLAIN_STYLE}
 
 SCENARIO (secret, never quote it wholesale):
@@ -346,6 +350,8 @@ ${lastRound ? `Last round's question was "${lastRound.question}". The group ${la
 Players_now says what each player is trying to do and how they are coming across. Shape moments, messages and events around that, so each player feels the story answering them.
 
 The players drive this story; the planned beat is only a loose outline. Write the public_event announced on the table and read out loud (15 to 40 words): build first on what players actually asked, found and did, and use the planned beat only where it still fits. Never undo a player's discovery or force an event that makes their choices pointless. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Moments (optional, 0 to 2 per round change): a moment asks one player's character to say something out loud now. line is first person, under 20 words, and only things that character already knows (their card, what they found, what they were told). why is one short line, only for that player, saying why it comes out now. Use moments to push the story: a small confession, a memory, a challenge to someone. Never force a culprit to confess the crime. The player may refuse with an override; react to past moment results in moments_so_far (said_instead is what the player really said in place of the line; treat it as said out loud). GM characters may only act on what they know (see the strict rule above); if one of them learns something during this change, show it happening and add it to learned. Use positions for people who visibly move now (GM characters wander off, people gather somewhere); list only changes, with location ids. Leave arrays empty if nothing applies.
+
+${FAIR_PLAY}
 
 Also write, for everyone:
 - job: the group's job for the coming round, starting with a verb, under 15 words, built on what players actually found and asked, leading toward this round's question. job_tips: 2 or 3 pointers under 10 words, written the way a player would type them, naming people, places or clues, never the answer.
@@ -377,6 +383,8 @@ asker_read: from this question and the asker's earlier questions in asked_out_lo
 ${people.length ? `
 The question is put to ${people.map((p) => p.name).join(' and ')}, out loud in front of everyone. Answer as them, in their own voice ("Lata says: ..."). They answer from what they know (knows): they share reveals_freely, and they tell their lies. They give up reveals_under_pressure only if the question shows real evidence or leverage. They know nothing beyond their sheet and has_learned. A minor person answers simply and points to who might know more.
 ` : ''}
+${FAIR_PLAY}
+
 ${PLAIN_STYLE}
 
 PUBLIC INFORMATION:

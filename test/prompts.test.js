@@ -159,3 +159,11 @@ describe('culprits chosen by the game', () => {
     for (const key of ['job', 'job_tips', 'recap', 'open_questions']) assert.ok(PHASE_SCHEMA.properties[key], key);
   });
 });
+
+describe('fair play rule', () => {
+  test("should tell the GM a player controls only their own character", () => {
+    for (const text of [playSystem({}), publicSystem({}, []), phasePrompt({ snapshot: {}, nextPhase: { name: 'R', planned_beat: 'B' }, lastRound: null })]) {
+      assert.match(text, /controls only their own character/);
+    }
+  });
+});

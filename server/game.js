@@ -473,6 +473,21 @@ function destroy(game, clueIds) {
   }
 }
 
+const PUPPET_VERBS = new Set(['said', 'says', 'argued', 'argues', 'agreed', 'agrees', 'asked', 'asks', 'told', 'tells', 'nodded', 'nods', 'nod', 'admitted', 'admits', 'pushed', 'pushes', 'believes', 'believed', 'backed', 'backs', 'accused', 'accuses', 'thinks', 'thought', 'swore', 'insisted', 'insists', 'claimed', 'claims', 'suggested', 'suggests', 'supported', 'supports', 'smiles', 'smiled', 'shrugs', 'shrugged', 'laughs', 'laughed', 'frowns', 'frowned', 'agree', 'trusts', 'trusted']);
+
+// In a reply to one player's move, a sentence led by another player's name that has them speak or react was invented.
+export function dropPuppeting(game, actorId, text) {
+  const others = (game.scenario?.players ?? []).filter((c) => c.id !== actorId)
+    .map((c) => new Set([...nameWords(c.character_name), ...nameWords(game.players.find((p) => p.id === c.id)?.name)]));
+  const sentences = String(text ?? '').split(/(?<=[.!?])\s+/).filter(Boolean);
+  const kept = sentences.filter((sentence) => {
+    const words = wordsOf(sentence);
+    const lead = others.some((names) => names.has(words[0]));
+    return !(lead && words.some((w) => PUPPET_VERBS.has(w)));
+  });
+  return { text: kept.join(' '), dropped: sentences.length - kept.length };
+}
+
 export function completeAsk(game, playerId, result, now = Date.now()) {
   const st = game.state;
   const ask = st.pending[playerId];
@@ -481,6 +496,11 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const kind = ask.kind === 'chat' ? (ANSWER_KINDS.includes(result.kind) ? result.kind : 'question') : ask.kind;
   const thread = st.threads[playerId];
   thread.push({ from: 'you', kind, text: ask.text, ...(ask.read ? { read: ask.read } : {}), at: now });
+  const unpuppet = (text) => {
+    const out = dropPuppeting(game, playerId, text);
+    st.puppetDrops = (st.puppetDrops ?? 0) + out.dropped;
+    return out.text;
+  };
   const myName = game.scenario.players.find((p) => p.id === playerId)?.character_name?.toLowerCase();
   const players = new Set(game.scenario.players.map((p) => p.character_name.toLowerCase()));
   const names = Object.fromEntries([
@@ -492,6 +512,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
       const raw = String(l?.speaker ?? '').trim();
       return { speaker: (names[raw] ?? raw).slice(0, 40), text: String(l?.text ?? '').trim().replace(/^["“]|["”]$/g, '') };
     })
+    .map((l) => (l.speaker ? l : { ...l, text: unpuppet(l.text) }))
     .filter((l) => l.text)
     .flatMap((l) => {
       const who = l.speaker.toLowerCase();
@@ -519,8 +540,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   learn(game, result.learned, playerId, now);
   if (result.player_location && (kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
-  addEvent(game, result.public_event, 'event', now);
-  whisper(game, result.messages_to_players, now);
+  addEvent(game, unpuppet(result.public_event), 'event', now);
+  whisper(game, (result.messages_to_players ?? []).map((m) => ({ ...m, text: unpuppet(m?.text) })), now);
 }
 
 export function isLastPhase(game) {

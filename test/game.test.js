@@ -1298,3 +1298,40 @@ describe('people facts for a game saved before facts existed', () => {
     assert.equal(game.state.facts.length, 2);
   });
 });
+
+describe('fair play: players control only their own character', () => {
+  const named = () => {
+    const game = playing(3);
+    const names = [['Nikhil', 'Nikhil Rao'], ['Rishabh', 'Rishabh Sen'], ['Himanshu', 'Himanshu Lal']];
+    game.players.forEach((p, i) => (p.name = names[i][0]));
+    game.scenario.players.forEach((c, i) => (c.character_name = names[i][1]));
+    game.scenario.npcs[0].name = 'Ramesh Yadav';
+    return game;
+  };
+
+  test("should drop a public event sentence that puts words in another player's mouth", () => {
+    const out = G.dropPuppeting(named(), 'p1', 'Rishabh argued the keys matter. Ramesh nods.');
+    assert.deepEqual(out, { text: 'Ramesh nods.', dropped: 1 });
+  });
+
+  test("should keep sentences about the actor's own words", () => {
+    const out = G.dropPuppeting(named(), 'p1', 'Nikhil asked Rishabh where he was.');
+    assert.deepEqual(out, { text: 'Nikhil asked Rishabh where he was.', dropped: 0 });
+  });
+
+  test('should drop whispers that say another player agreed', () => {
+    const game = named();
+    G.beginAsk(game, 'p1', { kind: 'chat', text: 'x' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, messages_to_players: [{ player_id: 'p3', text: 'Three people look at you. Rishabh Sen pushed the idea, and Ramesh backed it.' }] });
+    assert.equal(game.state.threads.p3.at(-1).text, 'Three people look at you.');
+  });
+
+  test('should count dropped sentences for the playtest report', () => {
+    const game = named();
+    G.beginAsk(game, 'p1', { kind: 'chat', text: 'x' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, public_event: 'Rishabh agrees with Nikhil. Himanshu nodded slowly.', lines: [{ speaker: '', text: 'Rishabh gives you one slow nod.' }, { speaker: '', text: 'You wait.' }] });
+    assert.equal(game.state.puppetDrops, 3);
+    assert.ok(!game.state.events.some((e) => e.kind === 'event'));
+    assert.equal(game.state.threads.p1.at(-1).text, 'You wait.');
+  });
+});
