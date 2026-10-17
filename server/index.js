@@ -128,7 +128,7 @@ async function main() {
     setupModel: process.env.DETECTIVE_SETUP_MODEL || undefined,
     setupEffort: process.env.DETECTIVE_SETUP_EFFORT || 'medium',
     playModel: process.env.DETECTIVE_PLAY_MODEL || undefined,
-    readerModel: process.env.DETECTIVE_READER_MODEL || 'haiku',
+    readerModel: process.env.DETECTIVE_READER_MODEL || 'sonnet',
     log,
   });
   const datasetDir = process.env.DETECTIVE_DATASET_DIR ? resolve(process.env.DETECTIVE_DATASET_DIR) : join(ROOT, 'dataset');

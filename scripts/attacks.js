@@ -13,7 +13,7 @@ const NAMES = ['Nikhil', 'Rishabh', 'Himanshu', 'Asha', 'Ben', 'Cy', 'Dev', 'Esh
 async function main() {
   const attacks = JSON.parse(await readFile(join(ROOT, 'test', 'attacks.json'), 'utf8'));
   const world = JSON.parse(await readFile(join(ROOT, 'dataset', 'worlds', 'the-water-tower-reunion.json'), 'utf8'));
-  const gm = new GM({ workDir: join(tmpdir(), 'detective-gm'), readerModel: process.env.DETECTIVE_READER_MODEL || 'haiku', playModel: process.env.DETECTIVE_PLAY_MODEL || undefined });
+  const gm = new GM({ workDir: join(tmpdir(), 'detective-gm'), readerModel: process.env.DETECTIVE_READER_MODEL || 'sonnet', playModel: process.env.DETECTIVE_PLAY_MODEL || undefined });
   const fresh = () => {
     const game = createGame();
     world.players.forEach((_, i) => addPlayer(game, { name: NAMES[i] }));

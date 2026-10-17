@@ -135,7 +135,7 @@ async function main() {
     setupEffort: process.env.DETECTIVE_SETUP_EFFORT || 'medium',
     setupModel: process.env.DETECTIVE_SETUP_MODEL || undefined,
     playModel: process.env.DETECTIVE_PLAY_MODEL || undefined,
-    readerModel: process.env.DETECTIVE_READER_MODEL || 'haiku',
+    readerModel: process.env.DETECTIVE_READER_MODEL || 'sonnet',
     log: (line) => console.log(`  ${line}`),
   });
   const botCall = ({ bot, view, mode }) => gm.call(`bot ${bot.username}`, {

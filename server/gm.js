@@ -144,7 +144,7 @@ class Limiter {
 }
 
 export class GM {
-  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'haiku', setupEffort, maxParallel = 4, log = () => {}, random = Math.random }) {
+  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'sonnet', setupEffort, maxParallel = 4, log = () => {}, random = Math.random }) {
     this.workDir = workDir;
     this.readerModel = readerModel;
     this.random = random;
@@ -153,12 +153,13 @@ export class GM {
     this.playModel = playModel;
     this.setupEffort = setupEffort;
     this.limiter = new Limiter(maxParallel);
+    this.readLimiter = new Limiter(maxParallel);
     this.log = log;
   }
 
-  call(label, opts) {
+  call(label, opts, limiter = this.limiter) {
     const started = Date.now();
-    return this.limiter.run(async () => {
+    return limiter.run(async () => {
       const result = await this.run({ workDir: this.workDir, ...opts });
       this.log(`gm ${label} ${Date.now() - started}ms`);
       return result;
@@ -224,7 +225,7 @@ export class GM {
       model: this.readerModel,
       effort: 'low',
       timeoutMs: 90_000,
-    });
+    }, this.readLimiter);
     return cleanRead(raw, mode);
   }
 

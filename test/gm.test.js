@@ -213,9 +213,23 @@ describe('GM.read', () => {
     const gm = new GM({ workDir, run: async (opts) => (calls.push(opts), { kind: 'action', attempt: 'Character 1 hides the glove', target: '', place: 'Ballroom', said_aloud: '', out_of_world: false, sways_gm: false, claims: [] }) });
     const read = await gm.read(gameInReading(3), 'p1', 'I hide the glove', 'move');
     assert.equal(read.attempt, 'Character 1 hides the glove');
-    assert.equal(calls[0].model, 'haiku');
+    assert.equal(calls[0].model, 'sonnet');
     assert.equal(calls[0].effort, 'low');
     assert.ok(!calls[0].system.includes('PRIVATE-1'));
     assert.ok(calls[0].prompt.includes('I hide the glove'));
+  });
+});
+
+describe('GM.read queue', () => {
+  test('should not make a read wait behind slow GM calls', async () => {
+    const { gameInReading } = await import('./fixtures.js');
+    let release;
+    const slow = new Promise((r) => (release = r));
+    const gm = new GM({ workDir, maxParallel: 1, run: async (opts) => (opts.model === 'sonnet' && opts.effort === 'low' ? { kind: 'question', claims: [] } : slow) });
+    const blocked = gm.call('answer', {});
+    const read = await Promise.race([gm.read(gameInReading(3), 'p1', 'hi', 'move'), new Promise((r) => setTimeout(() => r('timed out'), 200))]);
+    assert.notEqual(read, 'timed out');
+    release({});
+    await blocked;
   });
 });
