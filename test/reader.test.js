@@ -64,6 +64,7 @@ describe('reader', () => {
   test('should tell the reader that a bluff to a story character is not a claim', () => {
     const sys = readerSystem({ character: 'Nikhil', cast: [], places: [] });
     assert.match(sys, /A lie or a bluff the character tells a person in the story is normal play: never a claim/);
+    assert.match(sys, /Words the character says to someone, true or false, are never claims/);
   });
 
   test('should mark raw text from old saves as data', () => {
