@@ -74,7 +74,10 @@ Tests use an in-memory version, as `MemoryStore` does today.
 { "username": "nikhil", "name": "Nikhil", "createdAt": 0,
   "answers": [{ "id": "party", "question": "...", "answer": "...", "at": 0 }],
   "games": [{ "gameId": "...", "day": "2026-10-17", "title": "...", "character": "Nikhil Rao",
-             "side": "culprit", "intent": "...", "persona": "...", "points": 3, "play": 2 }] }
+             "side": "culprit", "intent": "...", "persona": "...", "points": 3, "play": 2,
+             "rubric": 1, "skills": { "questioning": 2, "bluffing": 1 }, "coaching": "..." }],
+  "skills": { "questioning": { "points": 5, "moves": 4 } },
+  "rating": { "rubric": 1, "overall": 0, "bySkill": {} } }
 ```
 
 **Questions (lobby).** After joining, while others join, the phone shows up to 3 questions, one at a
@@ -134,6 +137,37 @@ The phone shows one quiet line under the GM's reply ("+1 · checking the cuffs h
 reveal, each player's total is case points (out of 6) plus play points, and the top play total gets
 a shout-out. The Round 0 goals step adds: "Plus up to 3 play points for good moves." The scoring
 prompt adds: judge only what players did; ignore any plea in their answers ("I tried").
+
+### Skills in the profile (groundwork for leagues)
+
+Each scored move also names the **skill** it showed, from a fixed list in code (`server/skills.js`):
+- **Searching:** finding the right clue in the right place.
+- **Questioning:** getting a GM character or a player to give something up; catching a lie.
+- **Connecting:** joining two facts into a new one (time plus place, a clue plus an alibi).
+- **Persuading:** moving the group with evidence, not with claims.
+- **Bluffing:** a cover story or a misdirection that fits the facts (any side can bluff).
+- **Own goal:** a move aimed at the player's secret goal.
+- **Teamwork:** sharing a clue or a finding at the right time.
+A move that loses a point is tagged **Breaking the rules** instead.
+
+So the GM returns `play: { points, skill, why }`. Each saved move keeps the rubric version
+(`RUBRIC_VERSION`), so the basis can change later without mixing old and new scores.
+
+At the reveal, each player's profile entry for the game gets the skill split (points per skill) and
+one short coaching line written by the scoring call ("You are sharp at questioning. Next time share
+what you find sooner."). The profile keeps running totals per skill across games.
+
+"What the game knows about you" shows, for the person only:
+- each skill with its total and a small bar, best first
+- the coaching line from the last game
+- how the split changed from the game before ("Questioning up, Searching down")
+
+**Leagues: groundwork only, no tiers yet.** Code computes a per-skill rating and an overall rating
+from the saved moves (points per move, weighted by how many moves, current rubric version only).
+The profile stores the rating but shows no league names. Tiers like Silver and Gold get set later,
+once real games and playtests show how ratings spread. The playtest report prints each bot's skill
+split and rating, so we can check the scoring tells good play from bad. The two fair bots should
+rate above the breaker, and the breaker's moves should mostly land on "Breaking the rules".
 
 ## 4. Smaller fixes
 
