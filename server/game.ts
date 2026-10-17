@@ -5,7 +5,7 @@ import { scoreMoves, playTotal, skillSplit, PLAY_MAX } from './skills.ts';
 import { LENGTHS, PLAN_SECTIONS } from './prompts.ts';
 import { roomTheme, guessRoom } from './room.ts';
 import { GENERATION_STEPS } from './progress.ts';
-import { sanitizeMusic } from '../public/music-theory.js';
+import { sanitizeMusic } from '../src/lib/music-theory.ts';
 
 export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 10;

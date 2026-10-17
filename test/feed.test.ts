@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { feedItem, roundGroups, feedHtml, visibleCount } from '../public/feed.js';
+import { feedItem, roundGroups, feedHtml, visibleCount } from '../src/lib/feed.ts';
 
 const ev = (phase, kind, text, extra = {}) => ({ phase, kind, text, ...extra });
 

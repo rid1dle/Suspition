@@ -1,5 +1,5 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { ROOTS, MODES, PALETTES, PERCUSSION } from '../public/music-theory.js';
+import { ROOTS, MODES, PALETTES, PERCUSSION } from '../src/lib/music-theory.ts';
 import { formForGM, quoteRaw } from './reader.ts';
 import { SKILLS, PENALTIES } from './skills.ts';
 import { ROOM_SCHEMA } from './room.ts';

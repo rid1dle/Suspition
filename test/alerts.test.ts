@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { tableSound, phoneAlerts } from '../public/alerts.js';
-import { SOUND_NAMES } from '../public/sfx.js';
+import { tableSound, phoneAlerts } from '../src/lib/alerts.ts';
+import { SOUND_NAMES } from '../src/lib/sfx.ts';
 
 const table = (events, extra = {}) => ({ gameId: 'g', events, ...extra });
 

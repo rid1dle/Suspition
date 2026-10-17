@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapHtml, shortName } from '../public/map.js';
+import { mapHtml, shortName } from '../src/lib/map.ts';
 
 const view = {
   cast: { players: [{ id: 'p1', name: 'Ruby Vance' }, { id: 'p2', name: 'Edgar <b>Wynne</b>' }], npcs: [{ id: 'n1', name: 'Florrie Dann' }] },

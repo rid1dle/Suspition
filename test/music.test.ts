@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { sanitizeMusic, degreeToMidi, midiToFreq, intensityFor, cuesBetween, triad } from '../public/music-theory.js';
+import { sanitizeMusic, degreeToMidi, midiToFreq, intensityFor, cuesBetween, triad } from '../src/lib/music-theory.ts';
 
 describe('sanitizeMusic', () => {
   test('should keep a valid theme as given', () => {

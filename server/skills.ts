@@ -1,4 +1,4 @@
-import { SKILL_LABELS, PENALTY_SKILLS } from '../public/skill-labels.js';
+import { SKILL_LABELS, PENALTY_SKILLS } from '../src/lib/skill-labels.ts';
 import type { Move, Play, Rating, Read } from './types.ts';
 
 // Play points: what a move does in the story, never what it claims. Each move keeps the rubric it

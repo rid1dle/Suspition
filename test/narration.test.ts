@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { narrationFor, chunks, pickVoice } from '../public/narration.js';
+import { narrationFor, chunks, pickVoice } from '../src/lib/narration.ts';
 
 const base = { gameId: 'g', status: 'playing', title: 'The Case', opening: 'It was dark.', events: [{ kind: 'opening', text: 'It was dark.' }] };
 const withEvents = (...events) => ({ ...base, events: [...base.events, ...events] });
