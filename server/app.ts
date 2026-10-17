@@ -9,8 +9,9 @@ const { GameError } = G;
 export const RETRY_MS = 60_000;
 
 export class App {
-  constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null, people = new MemoryPeople() }) {
+  constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null, people = new MemoryPeople(), library = null }) {
     this.gm = gm;
+    this.library = library;
     this.people = people;
     this.profiles = new Map();
     this.store = store;
@@ -172,6 +173,39 @@ export class App {
     await this.changed();
   }
 
+  requireLibrary() {
+    if (!this.library) throw new G.GameError('Saved games are not available here.', 404);
+    return this.library;
+  }
+
+  async listGames(hostToken) {
+    this.requireHost(hostToken);
+    return this.requireLibrary().list();
+  }
+
+  // Changing what the game learns from never touches the live game; it only refreshes the profiles in it.
+  async setLearning(hostToken, id, learning, note) {
+    this.requireHost(hostToken);
+    try {
+      this.requireLibrary().setLearning(id, learning, note);
+    } catch (err) {
+      throw new G.GameError(err.message, 400);
+    }
+    for (const p of this.game.players) {
+      if (p.username) this.profiles.set(p.username, (await this.people.load(p.username)) ?? this.profiles.get(p.username));
+    }
+    await this.changed();
+  }
+
+  async importGame(hostToken, game, answers = {}) {
+    this.requireHost(hostToken);
+    try {
+      return this.requireLibrary().importGame(game, answers, this.clock());
+    } catch (err) {
+      throw new G.GameError(err.message, 400);
+    }
+  }
+
   // Each player's profile learns from a finished game. Only the reveal calls this.
   async learn(game) {
     for (const p of game.players) {
@@ -187,7 +221,9 @@ export class App {
     this.requireHost(hostToken);
     G.applySetup(this.game, input);
     for (const p of this.game.players) Object.assign(p, aboutForGM(this.profiles.get(p.username)));
+    if (input.testGame === true) this.game.learning = 'test';
     await this.changed();
+    if (input.testGame === true) this.library?.setLearning(this.game.id, 'test');
     const game = this.game;
     game.progress = { attempt: 1, draft: 0, step: 'thinking', seen: ['thinking'], counts: {}, startedAt: this.clock() };
     this.background('generate', async () => {

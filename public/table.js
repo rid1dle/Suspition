@@ -21,7 +21,7 @@ let dragging = null;
 let sideTab = 'map';
 const openRounds = new Set();
 const seenCounts = {};
-const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 3, notes: '' };
+const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 3, testGame: 'no', notes: '' };
 
 const SETTINGS = ['A 1950s Bombay hotel party', 'A snowed-in ski lodge', 'A 1920s ocean liner', 'A space station', 'A college reunion', 'A village fair'];
 const TONES = [['cozy', 'Cozy'], ['tense', 'Tense'], ['dark', 'Dark'], ['funny', 'Funny']];
@@ -54,6 +54,7 @@ function endButton() {
 function header(title, sub = '') {
   return `<div class="row between" style="margin-bottom:16px;flex-wrap:nowrap;align-items:flex-start">
     <div style="flex:1;min-width:0"><h1>${esc(title)}</h1>${sub ? `<div class="muted">${esc(sub)}</div>` : ''}</div>
+    ${isHost() ? `<a class="quiet small" style="flex:none;padding:8px 10px" href="/games#host=${encodeURIComponent(host)}" target="_blank">Saved games</a>` : ''}
     ${endButton()}
   </div>`;
 }
@@ -110,6 +111,8 @@ const skeletons = {
         <div class="field"><div class="label">People the GM plays</div><div class="row" style="gap:6px" id="npcs">${[0, 1, 2, 3, 4, 5, 6].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div>
           <div class="row" style="gap:6px;margin-top:8px" id="npcRole"><button class="chip" data-v="mixed">Some matter to the case</button><button class="chip" data-v="background">Background only</button></div>
           <div class="small muted" style="margin-top:4px">Fewer is easier to follow. Background only means the story is all about the players.</div></div>
+        <div class="field"><div class="label">Test game</div><div class="row" style="gap:6px" id="testGame"><button class="chip" data-v="no">No, a real game</button><button class="chip" data-v="yes">Yes, just testing</button></div>
+          <div class="small muted" style="margin-top:4px">A test game is saved but never teaches the game about anyone.</div></div>
         <div class="field"><div class="label">Anything the GM should know?</div>
           <textarea id="notes" maxlength="500" placeholder="Jokes, things you like, things to avoid"></textarea></div>
         <button class="primary wide" id="write">Make our mystery</button>
@@ -234,7 +237,7 @@ function wire() {
     document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => {
       form.setting = setting.value = b.dataset.setting;
     }));
-    for (const key of ['tone', 'length', 'hints', 'overrides', 'npcs', 'npcRole', 'replays', 'questions']) {
+    for (const key of ['tone', 'length', 'hints', 'overrides', 'npcs', 'npcRole', 'replays', 'questions', 'testGame']) {
       $(key).querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
         form[key] = ['hints', 'overrides', 'npcs', 'replays', 'questions'].includes(key) ? Number(b.dataset.v) : b.dataset.v;
         chipGroup(key, form[key]);
@@ -243,7 +246,7 @@ function wire() {
     }
     $('notes').value = form.notes;
     $('notes').addEventListener('input', () => (form.notes = $('notes').value));
-    $('write').addEventListener('click', () => act('setup', form));
+    $('write').addEventListener('click', () => act('setup', { ...form, testGame: form.testGame === 'yes' }));
   }
   $('retry')?.addEventListener('click', () => act('setup', view.setup ?? form));
   $('start')?.addEventListener('click', () => act('start'));

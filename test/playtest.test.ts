@@ -112,3 +112,24 @@ describe('playtest run', () => {
     assert.ok(!saved.includes(app.game.hostToken));
   });
 });
+
+describe('bot samples from real games only', () => {
+  test('should take bot samples only from real games', async () => {
+    const { openDb } = await import('../src/db/index.ts');
+    const dir = await mkdtemp(join(tmpdir(), 'seeddb-'));
+    const db = openDb(join(dir, 'suspition.db'));
+    const real = gameInReading(3);
+    real.players[0].name = 'Nikhil';
+    real.state.threads.p1.push({ from: 'you', text: 'real words', at: 1 });
+    const test1 = gameInReading(3);
+    test1.players[0].name = 'Nikhil';
+    test1.state.threads.p1.push({ from: 'you', text: 'test words', at: 1 });
+    db.saveGame(real);
+    db.saveGame(test1);
+    db.setLearning(test1.id, 'test');
+    await seedBots(null, join(dir, 'bots'), { db });
+    const nikhil = JSON.parse(await readFile(join(dir, 'bots', 'nikhil.json'), 'utf8'));
+    assert.deepEqual(nikhil.samples, ['real words']);
+    db.close();
+  });
+});

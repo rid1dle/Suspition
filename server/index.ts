@@ -11,6 +11,7 @@ import { App } from './app.ts';
 import { GM } from './gm.ts';
 import { openDb, DbError } from '../src/db/index.ts';
 import { DbStore, DbArchive, DbPeople } from '../src/db/stores.ts';
+import { GameLibrary } from '../src/db/library.ts';
 import { importOnce } from '../src/db/importer.ts';
 import { GameError } from './game.ts';
 
@@ -87,6 +88,8 @@ export function createHandler(app, { joinUrl, next = null }) {
     'POST /api/checkname': (b) => app.checkName(b.name),
     'POST /api/answer': (b) => app.answerQuestion(b.token, b),
     'POST /api/forget': (b) => app.forget(b.token),
+    'POST /api/games/learning': (b) => app.setLearning(b.host, b.id, b.learning, b.note),
+    'POST /api/games/import': (b) => app.importGame(b.host, b.game, b.people ?? {}),
   };
 
   const pages = { '/': 'table.html', '/table': 'table.html', '/play': 'play.html' };
@@ -106,6 +109,7 @@ export function createHandler(app, { joinUrl, next = null }) {
       }
       if (url.pathname === '/api/info') return send(res, 200, { joinUrl });
       if (url.pathname === '/api/people') return send(res, 200, { people: await app.knownPeople() });
+      if (url.pathname === '/api/games') return send(res, 200, { games: await app.listGames(url.searchParams.get('host')) });
       if (url.pathname === '/api/qr.svg') {
         return send(res, 200, await QRCode.toString(joinUrl, { type: 'svg', margin: 1 }), TYPES['.svg']);
       }
@@ -147,7 +151,7 @@ async function main() {
   }
   const imported = await importOnce(db, { gameData: dataDir, dataset: datasetDir });
   if (!imported.skipped) log(`First start on the database: brought in ${imported.games} games, ${imported.people} people and ${imported.playtests} playtests. The JSON files are untouched.`);
-  const app = await new App({ gm, store: new DbStore(db), archive: new DbArchive(db, datasetDir), people: new DbPeople(db), log }).init();
+  const app = await new App({ gm, store: new DbStore(db), archive: new DbArchive(db, datasetDir), people: new DbPeople(db), library: new GameLibrary(db), log }).init();
   if (process.argv.includes('--new')) await app.newGame(app.game.hostToken);
   const joinUrl = `http://${process.env.DETECTIVE_HOST || lanAddress()}:${port}/play`;
   const dev = process.argv.includes('--dev');

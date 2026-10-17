@@ -170,3 +170,11 @@ describe('the new server shape', () => {
     assert.equal(nextPaths.length, before);
   });
 });
+
+describe('games routes', () => {
+  test('should refuse the games list without the host token', async () => {
+    assert.equal((await fetch(`${base}/api/games?host=nope`)).status, 403);
+    assert.equal((await post('games/learning', { host: 'nope', id: 'x', learning: 'test' })).status, 403);
+    assert.equal((await post('games/import', { host: 'nope', game: {} })).status, 403);
+  });
+});

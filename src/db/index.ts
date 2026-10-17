@@ -163,6 +163,12 @@ export class Db {
       .filter((g): g is Game => Boolean(g));
   }
 
+  // Every username known here: people rows and players of any saved game.
+  allUsernames(): Set<string> {
+    const fromGames = this.orm.select({ u: schema.games.usernames }).from(schema.games).all().flatMap((r) => r.u.split('|').filter(Boolean));
+    return new Set([...fromGames, ...this.peopleList().map((p) => p.username)]);
+  }
+
   // Usernames that played at least one real game.
   realPlayers(): Set<string> {
     const rows = this.orm.select({ u: schema.games.usernames }).from(schema.games).where(eq(schema.games.learning, 'real')).all();

@@ -114,3 +114,67 @@ describe('first start import', () => {
     assert.deepEqual(await importOnce(db, { gameData: join(dir, 'game-data'), dataset: join(dir, 'dataset') }), { skipped: true });
   });
 });
+
+describe('choosing what the game learns from', () => {
+  const make = async () => {
+    const dir = await tmp();
+    const db = await dbIn(dir);
+    const { GameLibrary } = await import('../src/db/library.ts');
+    const app = await new App({ gm: new FakeGM(), store: new DbStore(db), people: new DbPeople(db), library: new GameLibrary(db) }).init();
+    return { dir, db, app, host: app.game.hostToken };
+  };
+
+  test('should store a test game as test from setup', async () => {
+    const { db, app, host } = await make();
+    for (const name of ['Asha', 'Ben', 'Cy']) await app.join({ name });
+    await app.setup(host, { tone: 'tense', length: 'short', hints: 2, testGame: true });
+    await app.idle();
+    assert.equal(db.listGames()[0].learning, 'test');
+  });
+
+  test("should change a game's tag and recompute profiles without touching the live game", async () => {
+    const { db, app, host } = await make();
+    const old = played('asha', 2);
+    db.saveGame(old);
+    await app.join({ name: 'Asha', username: 'asha' });
+    assert.equal(app.playerView(app.game.players[0].token).profile.games, 1);
+    const before = JSON.stringify(app.game);
+    await app.setLearning(host, old.id, 'outlier', 'odd night');
+    assert.equal(JSON.stringify(app.game), before);
+    assert.equal(app.playerView(app.game.players[0].token).profile.games, 0);
+    assert.deepEqual((await app.listGames(host)).find((g) => g.id === old.id).note, 'odd night');
+  });
+
+  test('should refuse the games list without the host token', async () => {
+    const { app } = await make();
+    await assert.rejects(() => app.listGames('nope'), /Only the table screen/);
+  });
+
+  test('should ask before merging a clashing username on import', async () => {
+    const { db, app, host } = await make();
+    db.saveGame(played('asha', 1));
+    const other = played('asha', 2);
+    other.players[0].name = 'Asha';
+    const out = await app.importGame(host, forDataset(other));
+    assert.deepEqual(out, { ask: [{ username: 'asha', name: 'Asha' }] });
+    assert.equal(db.loadGame(other.id), null);
+    assert.deepEqual(await app.importGame(host, forDataset(other), { asha: 'same' }), { imported: other.id });
+    assert.equal(db.loadGame(other.id).players[0].username, 'asha');
+  });
+
+  test('should rename a different person on import', async () => {
+    const { db, app, host } = await make();
+    db.saveGame(played('asha', 1));
+    const other = played('asha', 2);
+    await app.importGame(host, forDataset(other), { asha: 'different' });
+    assert.equal(db.loadGame(other.id).players[0].username, 'asha-2');
+    assert.ok(db.person('asha-2'));
+  });
+
+  test('should skip a game id it already has', async () => {
+    const { db, app, host } = await make();
+    const g = played('asha', 1);
+    db.saveGame(g);
+    assert.deepEqual(await app.importGame(host, forDataset(g)), { skipped: g.id });
+  });
+});

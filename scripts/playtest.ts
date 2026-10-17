@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { App } from '../server/app.ts';
 import { GM } from '../server/gm.ts';
-import { Store, MemoryPeople, People } from '../server/store.ts';
+import { Store, MemoryPeople } from '../server/store.ts';
 import { forDataset, briefingSteps } from '../server/game.ts';
 import { rating } from '../server/skills.ts';
 import { BOT_SCHEMA, FINAL_BOT_SCHEMA, botSystem, botPrompt, applyBotAction } from './playtest/bots.ts';
@@ -123,13 +123,16 @@ function args(argv) {
 async function main() {
   const opts = args(process.argv.slice(2));
   const botsDir = join(ROOT, 'dataset', 'bots');
-  if (!(await readdir(botsDir).catch(() => [])).length) await seedBots(join(ROOT, 'dataset', 'games'), botsDir);
+  const { openDb } = await import('../src/db/index.ts');
+  const db = openDb(join(ROOT, 'game-data', 'suspition.db'));
+  if (!(await readdir(botsDir).catch(() => [])).length) await seedBots(null, botsDir, { db });
   const all = await Promise.all((await readdir(botsDir)).filter((f) => f.endsWith('.json')).map(async (f) => JSON.parse(await readFile(join(botsDir, f), 'utf8'))));
   const real = all.filter((b) => b.username !== 'guest').sort((a, b) => b.samples.length - a.samples.length);
   const guest = all.find((b) => b.username === 'guest') ?? { username: 'guest', name: 'Guest', samples: [] };
   const chosen = [...real.slice(0, Math.max(0, opts.roles.length - 1)), guest].slice(0, opts.roles.length);
   const shuffled = [...opts.roles].sort(() => Math.random() - 0.5);
-  const realPeople = new People(join(ROOT, 'dataset', 'people'));
+  const { DbPeople } = await import('../src/db/stores.ts');
+  const realPeople = new DbPeople(db);
   const people = new MemoryPeople(await Promise.all((await realPeople.list()).map((p) => realPeople.load(p.username))));
   const bots = await Promise.all(chosen.map(async (b, i) => ({ ...b, role: shuffled[i], about: (await people.load(b.username))?.answers ?? [] })));
 
@@ -148,7 +151,10 @@ async function main() {
     effort: 'low',
   });
   const judgeCall = ({ system, prompt }) => gm.call('judge', { system, prompt, schema: JUDGE_SCHEMA, timeoutMs: 600_000 });
-  await runPlaytest({ gm, botCall, judgeCall, bots, outDir: opts.out, setting: opts.setting, length: opts.length, people });
+  const { app, report } = await runPlaytest({ gm, botCall, judgeCall, bots, outDir: opts.out, setting: opts.setting, length: opts.length, people });
+  db.saveGame({ ...forDataset(app.game), learning: 'playtest' });
+  db.savePlaytest(report.id, app.game.id, report);
+  db.close();
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
