@@ -3,23 +3,27 @@
   "version": "0.1.0",
   "description": "A hidden-role mystery game for one room. Phones are character cards, Claude is the game master.",
   "type": "module",
-  "main": "server/index.js",
+  "main": "server/index.ts",
   "scripts": {
-    "start": "node server/index.js",
-    "fresh": "node server/index.js --new",
-    "simplify": "node scripts/simplify-game.js",
-    "rework": "node scripts/rework-cast.js",
-    "fix-cards": "node scripts/fix-cards.js",
-    "dataset": "node scripts/export-dataset.js",
-    "test": "node --test test/*.test.js",
-    "playtest": "node scripts/playtest.js",
-    "seed-bots": "node scripts/playtest/seed.js",
-    "attacks": "node scripts/attacks.js"
+    "start": "node server/index.ts",
+    "fresh": "node server/index.ts --new",
+    "simplify": "node scripts/simplify-game.ts",
+    "rework": "node scripts/rework-cast.ts",
+    "fix-cards": "node scripts/fix-cards.ts",
+    "dataset": "node scripts/export-dataset.ts",
+    "test": "node --test test/*.test.js test/*.test.ts",
+    "playtest": "node scripts/playtest.ts",
+    "seed-bots": "node scripts/playtest/seed.ts",
+    "attacks": "node scripts/attacks.ts"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "dependencies": {
     "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^5.9.3"
   }
 }

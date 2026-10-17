@@ -1,0 +1,1046 @@
+{
+ "id": "f4cdf0d7973c",
+ "createdAt": 1792273173597,
+ "status": "playing",
+ "players": [
+  {
+   "id": "p1",
+   "name": "Himanshu",
+   "wish": "",
+   "username": "himanshu",
+   "questions": [
+    "party",
+    "blame",
+    "hero"
+   ],
+   "skipped": [],
+   "about": [
+    {
+     "question": "At a party you are usually...",
+     "answer": "Himanshu describes himself as someone who listens, asks, tells, and tries to be dynamic."
+    },
+    {
+     "question": "The group gets blamed for something. You...",
+     "answer": "Talk your way out"
+    },
+    {
+     "question": "In a film you would be...",
+     "answer": "Himanshu reflects that he is involved, though which role he plays depends on the circumstances."
+    }
+   ],
+   "played_before": []
+  },
+  {
+   "id": "p2",
+   "name": "Rishabh",
+   "wish": "",
+   "username": "rishabh",
+   "questions": [
+    "group-chat",
+    "deadline",
+    "clue"
+   ],
+   "skipped": [
+    "group-chat",
+    "deadline",
+    "clue"
+   ],
+   "about": [],
+   "played_before": []
+  },
+  {
+   "id": "p3",
+   "name": "Nikhil",
+   "wish": "",
+   "username": "nikhil",
+   "questions": [
+    "group-chat",
+    "lost",
+    "power"
+   ],
+   "skipped": [
+    "group-chat",
+    "lost",
+    "power"
+   ],
+   "about": [],
+   "played_before": []
+  }
+ ],
+ "setup": {
+  "setting": "",
+  "tone": "tense",
+  "length": "standard",
+  "hints": 3,
+  "overrides": 3,
+  "npcs": 2,
+  "npcRole": "background",
+  "replays": 2,
+  "notes": ""
+ },
+ "scenario": {
+  "background": [
+   "This is Tsokar High Observatory, high in the Ladakh mountains, winter 2026.",
+   "Three staff spend the dark months here with a cook's helper and a stranded truck driver.",
+   "Tonight the chief, Dr. Arun Mehta, was found dead at the foot of the dome stairs.",
+   "Mehta was clever, strict and very private. He never spoke about his past.",
+   "A storm has buried the road. No truck, no helicopter, no police until morning.",
+   "Everyone knows the station rules: the cold store locks from outside, and the engineer controls all heaters.",
+   "Everyone also knows the radio sends one message at a time, and every message sits in a log."
+  ],
+  "case_question": "Who killed Dr. Arun Mehta tonight, and why?",
+  "clues": [
+   {
+    "id": "c1",
+    "name": "The body on the stairs",
+    "where": "l5",
+    "shows": "The head wound did not bleed on the ice, and the body is cold right through.",
+    "does_not_prove": "It does not show who carried him there.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c2",
+    "name": "Scratches inside the cold store",
+    "where": "l3",
+    "shows": "There are fresh scratch marks inside the door and a torn glove on the floor.",
+    "does_not_prove": "It does not show who shut the door.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c3",
+    "name": "Heater control log",
+    "where": "l4",
+    "shows": "At 10:40pm the cold store heater and door lock were switched off with the engineer's code.",
+    "does_not_prove": "A code can be used by anyone who watched it typed.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c4",
+    "name": "Thermos in the sink",
+    "where": "l1",
+    "shows": "White powder sits in the thermos, and both the cook's and the engineer's prints are on it.",
+    "does_not_prove": "It does not show when the powder went in.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c5",
+    "name": "Old passport and photo",
+    "where": "l6",
+    "shows": "A passport and diploma name Vikas Rane, with a photo of Rane beside another young scientist.",
+    "does_not_prove": "It does not say who at the station knew this.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c6",
+    "name": "Half-written confession",
+    "where": "l6",
+    "shows": "A letter dated tonight says he is Vikas Rane, that he stole another man's work, and that he will not report the cook.",
+    "does_not_prove": "It does not name his killer.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c7",
+    "name": "Clipping in the engineer's locker",
+    "where": "l4",
+    "shows": "An old news clipping about the Rane fraud case is folded around a photo of a dead scientist.",
+    "does_not_prove": "It does not prove the engineer acted tonight.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c8",
+    "name": "Radio log, 9:20pm",
+    "where": "l2",
+    "shows": "At 9:20pm someone asked the mainland office about a man called Vikas Rane.",
+    "does_not_prove": "Asking a question is not killing anyone.",
+    "importance": "useful",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c9",
+    "name": "Letter in the chief's safe",
+    "where": "l6",
+    "shows": "The chief wrote a private letter asking the board to give the doctor this posting.",
+    "does_not_prove": "It does not show the doctor ever saw it.",
+    "importance": "useful",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c10",
+    "name": "Drag marks and apron thread",
+    "where": "l5",
+    "shows": "Drag marks run from the corridor to the stairs, with a kitchen apron thread caught in the ice.",
+    "does_not_prove": "Aprons hang in the corridor where anyone can take one.",
+    "importance": "misleading",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c11",
+    "name": "Medical kit count",
+    "where": "l1",
+    "shows": "Two sleeping pills are missing from the kit, and the kit sat open in the mess all evening.",
+    "does_not_prove": "It does not show who took them.",
+    "importance": "essential",
+    "can_be_destroyed": false
+   },
+   {
+    "id": "c13",
+    "name": "Bent latch pin",
+    "where": "l4",
+    "shows": "A bent cold store latch pin lies in the engineer's toolbag with a fresh paint scrape on it.",
+    "does_not_prove": "Engineers carry broken parts all the time.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c14",
+    "name": "Unsent police message",
+    "where": "l2",
+    "shows": "A message to the police sat in the radio queue from 11:00pm and was never sent.",
+    "does_not_prove": "The short text does not say what crime it was about.",
+    "importance": "essential",
+    "can_be_destroyed": true
+   },
+   {
+    "id": "c15",
+    "name": "Money order stubs",
+    "where": "l6",
+    "shows": "Years of unsigned money order stubs are addressed to the engineer's family village.",
+    "does_not_prove": "It does not show the family ever knew who sent them.",
+    "importance": "useful",
+    "can_be_destroyed": false
+   }
+  ],
+  "hint_ladder": [
+   {
+    "text": "Start with the body. The ice under it is clean and dry.",
+    "is_false": false
+   },
+   {
+    "text": "A man who falls on stairs does not get cold to the bone in minutes.",
+    "is_false": false
+   },
+   {
+    "text": "Look at the cold store door inside and out, then ask who controls its lock.",
+    "is_false": false
+   },
+   {
+    "text": "The chief was asleep before he was cold. Ask who handled his drink.",
+    "is_false": false
+   },
+   {
+    "text": "Read the chief's desk and safe. His real name explains the hate in this building.",
+    "is_false": false
+   },
+   {
+    "text": "The engineer's code, the bent latch pin and the news clipping all point one way.",
+    "is_false": false
+   }
+  ],
+  "key_deductions": [
+   {
+    "id": "k1",
+    "statement": "The chief did not die on the dome stairs. He died in the cold store and was moved.",
+    "clue_ids": [
+     "c1",
+     "c2"
+    ]
+   },
+   {
+    "id": "k2",
+    "statement": "He was drugged with sleeping pills in his hot drink before he was shut in.",
+    "clue_ids": [
+     "c4",
+     "c11"
+    ]
+   },
+   {
+    "id": "k3",
+    "statement": "The cold store was locked and cooled on purpose, with the engineer's code and tools.",
+    "clue_ids": [
+     "c3",
+     "c13"
+    ]
+   },
+   {
+    "id": "k4",
+    "statement": "Dr. Arun Mehta was really Vikas Rane, who stole another scientist's research.",
+    "clue_ids": [
+     "c5",
+     "c8"
+    ]
+   },
+   {
+    "id": "k5",
+    "statement": "The engineer is the son of the ruined scientist and came here for Rane.",
+    "clue_ids": [
+     "c7",
+     "c15"
+    ]
+   },
+   {
+    "id": "k6",
+    "statement": "Mehta meant to confess tonight, so this was the last night to stop him.",
+    "clue_ids": [
+     "c6",
+     "c14"
+    ]
+   }
+  ],
+  "locations": [
+   {
+    "id": "l1",
+    "name": "Mess Hall",
+    "public_info": "A warm room with a long table, a kettle and the medical kit shelf.",
+    "x": 30,
+    "y": 60,
+    "neighbors": [
+     "l2",
+     "l3"
+    ],
+    "icon": "🍲"
+   },
+   {
+    "id": "l2",
+    "name": "Control Room",
+    "public_info": "Radio set, logbooks and the weather screens.",
+    "x": 68,
+    "y": 60,
+    "neighbors": [
+     "l1",
+     "l4",
+     "l6"
+    ],
+    "icon": "📡"
+   },
+   {
+    "id": "l3",
+    "name": "Cold Store",
+    "public_info": "A freezing food room with a door that locks from outside.",
+    "x": 14,
+    "y": 34,
+    "neighbors": [
+     "l1",
+     "l4"
+    ],
+    "icon": "🧊"
+   },
+   {
+    "id": "l4",
+    "name": "Generator Room",
+    "public_info": "Fuel drums, heater controls and the engineer's tools.",
+    "x": 70,
+    "y": 30,
+    "neighbors": [
+     "l2",
+     "l3",
+     "l5"
+    ],
+    "icon": "⚙️"
+   },
+   {
+    "id": "l5",
+    "name": "Dome Stairs",
+    "public_info": "Icy steps up to the telescope dome, where the body was found.",
+    "x": 48,
+    "y": 8,
+    "neighbors": [
+     "l4"
+    ],
+    "icon": "🔭"
+   },
+   {
+    "id": "l6",
+    "name": "Chief's Cabin",
+    "public_info": "A small room with a desk, a safe and no photos on the wall.",
+    "x": 88,
+    "y": 78,
+    "neighbors": [
+     "l2"
+    ],
+    "icon": "🔑"
+   }
+  ],
+  "music": {
+   "root": "D",
+   "mode": "minor",
+   "tempo": 66,
+   "palette": "strings",
+   "percussion": "heartbeat",
+   "motif": [
+    0,
+    2,
+    3,
+    2,
+    7,
+    6,
+    3
+   ],
+   "description": "Slow cold strings over a steady heartbeat."
+  },
+  "npcs": [
+   {
+    "id": "n1",
+    "name": "Dolma Yangzom",
+    "role_title": "Kitchen helper",
+    "public_info": "She washes up, fills the kettle and keeps the mess warm.",
+    "knows": "Who came in for tea, when the kettle boiled, and where the aprons hang.",
+    "secrets": "None that matter tonight.",
+    "lies": "She says nothing in the kitchen is ever her fault, even small spills.",
+    "reveals_freely": "The kettle times, and that the doctor and the cook were both in the mess after dinner.",
+    "reveals_under_pressure": "She admits she never washed the thermos, so it still sits in the sink.",
+    "start_location": "l1",
+    "icon": "🫖",
+    "importance": "minor",
+    "alibi": [
+     {
+      "time": "9:30pm",
+      "where": "Mess hall, washing up"
+     },
+     {
+      "time": "10:15pm",
+      "where": "Mess hall, at the kettle"
+     },
+     {
+      "time": "10:50pm",
+      "where": "Mess hall, alone"
+     },
+     {
+      "time": "11:20pm",
+      "where": "Mess hall, tidying"
+     },
+     {
+      "time": "11:30pm",
+      "where": "Mess hall, then the stairs"
+     }
+    ]
+   },
+   {
+    "id": "n2",
+    "name": "Tenzin Norbu",
+    "role_title": "Stranded truck driver",
+    "public_info": "His truck is stuck outside until the road is cleared.",
+    "knows": "The road is shut, and all station doors were bolted from inside.",
+    "secrets": "None that matter tonight.",
+    "lies": "He says he slept all evening, though he sat awake and cold in the cab.",
+    "reveals_freely": "Nobody came in or went out after the storm closed the road.",
+    "reveals_under_pressure": "He admits he bought cheap diesel here before, and tells you to ask the cook.",
+    "start_location": "l2",
+    "icon": "🚚",
+    "importance": "minor",
+    "alibi": [
+     {
+      "time": "9:30pm",
+      "where": "Truck cab, asleep"
+     },
+     {
+      "time": "10:15pm",
+      "where": "Truck cab, asleep"
+     },
+     {
+      "time": "10:50pm",
+      "where": "Truck cab, asleep"
+     },
+     {
+      "time": "11:20pm",
+      "where": "Truck cab, asleep"
+     },
+     {
+      "time": "11:30pm",
+      "where": "Control room, woken up"
+     }
+    ]
+   }
+  ],
+  "opening_scene": "The storm shakes the dome. At 11:30pm the three of you stand at the bottom of the icy stairs. Dr. Arun Mehta lies there, face down, one glove missing. The ice under his head is clean and dry. The radio can reach nobody until morning. Three of you live here. The doors were bolted from the inside. So one of you did this.",
+  "phases": [
+   {
+    "name": "The Body on the Ice",
+    "objective": "Work out where the chief actually died tonight.",
+    "try": [
+     "Look under the body for blood.",
+     "Check the cold store door inside.",
+     "Ask Dolma about the corridor."
+    ],
+    "planned_beat": "The body thaws and water pools on the step. The wound starts to bleed only now.",
+    "question": "Where did Dr. Mehta really die?",
+    "options": [
+     "On the dome stairs",
+     "In the cold store",
+     "In the generator room",
+     "In his own cabin"
+    ],
+    "answer_index": 1,
+    "reward": "The cold store heater and door lock were switched off at 10:40pm.",
+    "reward_time": "10:40pm",
+    "reward_order": 50,
+    "wrong_nudge": "A man who falls down stairs is not frozen through in half an hour."
+   },
+   {
+    "name": "The Hot Drink",
+    "objective": "Find out what was done to the chief before he was shut in.",
+    "try": [
+     "Count the medical kit pills.",
+     "Look in the mess sink.",
+     "Ask who carried tea after ten."
+    ],
+    "planned_beat": "Dolma says she never washed the thermos. It still sits in the sink with powder inside.",
+    "question": "What was done to the chief before the cold store?",
+    "options": [
+     "He was hit on the head",
+     "His drink was drugged with sleeping pills",
+     "He was tied with rope",
+     "He was gassed in his cabin"
+    ],
+    "answer_index": 1,
+    "reward": "A hot drink was carried to the chief's cabin at 10:15pm.",
+    "reward_time": "10:15pm",
+    "reward_order": 40,
+    "wrong_nudge": "The pills missing from the kit did not walk away by themselves."
+   },
+   {
+    "name": "The Name in the Safe",
+    "objective": "Learn who the chief really was before this posting.",
+    "try": [
+     "Open the chief's desk and safe.",
+     "Read the radio log at 9:20pm.",
+     "Check lockers for old clippings."
+    ],
+    "planned_beat": "The cabin safe swings open. Inside is a passport with the right face and the wrong name.",
+    "question": "Who was Dr. Arun Mehta really?",
+    "options": [
+     "A retired police officer",
+     "Vikas Rane, who stole another man's research",
+     "A board inspector in disguise",
+     "Nobody, the name was real"
+    ],
+    "answer_index": 1,
+    "reward": "Twelve years ago Rane took credit for a colleague's work, and that man died in disgrace.",
+    "reward_time": "Twelve years ago",
+    "reward_order": 10,
+    "wrong_nudge": "Compare the face in the old passport with the man on the stairs."
+   },
+   {
+    "name": "The Last Night",
+    "objective": "Explain why the chief had to die tonight, not later.",
+    "try": [
+     "Read the unfinished letter.",
+     "Check the radio message queue.",
+     "Match the money stubs to a village."
+    ],
+    "planned_beat": "The radio screen still shows one message waiting to be sent, addressed to the police.",
+    "question": "Why did it have to be tonight?",
+    "options": [
+     "He was going to report the stolen diesel",
+     "He had written a confession and was sending it to the police",
+     "He was leaving on the truck at dawn",
+     "He was about to fire the engineer"
+    ],
+    "answer_index": 1,
+    "reward": "An unsent police message sat in the radio queue from 11:00pm.",
+    "reward_time": "11:00pm",
+    "reward_order": 60,
+    "wrong_nudge": "Read the letter again. He was ready to name himself, not someone else."
+   }
+  ],
+  "players": [
+   {
+    "id": "p1",
+    "character_name": "Dr. Himanshu Vaid",
+    "role_title": "Station doctor and radio voice",
+    "public_info": "I am the station doctor, and I keep the radio log and the medical kit.",
+    "private_info": "I came here to work beside a great scientist, and I found a liar instead. Last week I saw an old passport on the chief's desk with a different name on it. Tonight at 9:20pm I radioed the mainland and asked about Vikas Rane. Then I shouted at the chief in his cabin and told him to confess or I would. I told nobody, because I was scared he would end my career first.",
+    "wants": "I want the truth about the chief said out loud, because I gave up a city job for his name.",
+    "fears": "I am scared people will say my shouting match is the reason he is dead.",
+    "goal": "Prove in front of everyone that the chief used a false name.",
+    "goal_why": "I built my career on trusting that name, and I need to clear my own choice.",
+    "side": "investigator",
+    "side_explanation": "He killed nobody, but he knew the chief's secret and hid it.",
+    "hidden_facts": [
+     {
+      "id": "h1",
+      "fact": "The chief secretly wrote to the board asking them to give you this posting."
+     },
+     {
+      "id": "h2",
+      "fact": "Your student prize paper was approved years ago by Rane, under his false name."
+     }
+    ],
+    "starting_knowledge": "You know the chief had a passport in another name. You know you called the mainland at 9:20pm and argued with him at 9:30pm. You saw the medical kit sitting open in the mess all evening. You ate dinner with everyone in the mess hall at 8:00pm. You sat in the mess hall after dinner, where Dolma filled the kettle. You were with the cook and the engineer when the body was found at 11:30pm. You checked the body on the stairs yourself.",
+    "start_location": "l2",
+    "icon": "🩺",
+    "intro_line": "I am Himanshu, the station doctor. I checked the body on the stairs.",
+    "reasons": [
+     "You radioed the mainland at 9:20pm because the passport name on his desk would not leave your head.",
+     "You shouted at the chief at 9:30pm because you wanted him to confess before you had to report him.",
+     "You told nobody about the passport because you feared he would end your career first.",
+     "You checked the body on the stairs because you are the station doctor and that is your job."
+    ],
+    "night": [
+     {
+      "time": "9:30pm",
+      "where": "Chief's Cabin",
+      "doing": "Shouting at the chief and telling him to confess"
+     },
+     {
+      "time": "10:15pm",
+      "where": "Control Room",
+      "doing": "Waiting by the radio for an answer from the mainland"
+     },
+     {
+      "time": "10:50pm",
+      "where": "Control Room",
+      "doing": "Watching the lights dip and writing in the radio log"
+     },
+     {
+      "time": "11:20pm",
+      "where": "Control Room",
+      "doing": "Sitting alone with the logbooks"
+     },
+     {
+      "time": "11:30pm",
+      "where": "Dome Stairs",
+      "doing": "Finding the body and checking it"
+     }
+    ],
+    "alibi": [
+     {
+      "time": "9:30pm",
+      "where": "Chief's cabin, arguing"
+     },
+     {
+      "time": "10:15pm",
+      "where": "Control room, at radio"
+     },
+     {
+      "time": "10:50pm",
+      "where": "Control room, alone"
+     },
+     {
+      "time": "11:20pm",
+      "where": "Control room, alone"
+     },
+     {
+      "time": "11:30pm",
+      "where": "Dome stairs, with others"
+     }
+    ]
+   },
+   {
+    "id": "p2",
+    "character_name": "Rishabh Kaul",
+    "role_title": "Cook and store keeper",
+    "public_info": "I cook, I count the stores, and I hold the cold store keys.",
+    "private_info": "My family owes money in Leh, so I sold station diesel to the truck driver for cash. Last week the chief checked the fuel drums and found the gap. Tonight he told me he would radio the police at eleven. At 10:15pm I carried him a hot drink and begged him to wait. He only said sorry, so I walked out angry.",
+    "wants": "I want the fuel theft to stay buried, because my sister's school fees come out of that money.",
+    "fears": "I am scared they will find the theft and say I killed him to hide it.",
+    "goal": "Hide or destroy the fuel book before the final vote.",
+    "goal_why": "If that book is read out, I lose my job and my family loses everything.",
+    "side": "investigator",
+    "side_explanation": "He is a thief with a strong motive, but he did not kill the chief.",
+    "hidden_facts": [
+     {
+      "id": "h3",
+      "fact": "The hot drink you carried to the chief already had sleeping pills in it."
+     },
+     {
+      "id": "h4",
+      "fact": "The chief had already decided not to report your theft."
+     }
+    ],
+    "starting_knowledge": "You know you stole diesel and sold it to Tenzin. You know the chief planned a police call at eleven. You know you carried the thermos to his cabin at 10:15pm and left it there. You ate dinner with everyone in the mess hall at 8:00pm. You stayed in the mess hall after dinner, and Dolma saw you there. You were with the doctor and the engineer when the body was found at 11:30pm. You left the thermos in the chief's cabin, and it later came back to the mess sink unwashed.",
+    "start_location": "l1",
+    "icon": "🔪",
+    "intro_line": "I am Rishabh, the cook. I keep the stores and the cold store keys.",
+    "reasons": [
+     "You sold station diesel to Tenzin because your family owes money in Leh.",
+     "You carried the hot drink up at 10:15pm because you hoped kindness would soften him.",
+     "You begged him to wait because a police call at eleven would end your family.",
+     "You walked out angry because all he said was sorry.",
+     "You want the fuel book gone because it is the only written proof against you."
+    ],
+    "night": [
+     {
+      "time": "9:30pm",
+      "where": "Mess Hall",
+      "doing": "Clearing dinner pots and filling a thermos"
+     },
+     {
+      "time": "10:15pm",
+      "where": "Chief's Cabin",
+      "doing": "Handing the chief his drink and begging him to wait"
+     },
+     {
+      "time": "10:50pm",
+      "where": "Mess Hall",
+      "doing": "Sitting angry by the table when the lights dip"
+     },
+     {
+      "time": "11:20pm",
+      "where": "Mess Hall",
+      "doing": "Still in the mess, hearing a corridor door"
+     },
+     {
+      "time": "11:30pm",
+      "where": "Dome Stairs",
+      "doing": "Finding the body with the others"
+     }
+    ],
+    "alibi": [
+     {
+      "time": "9:30pm",
+      "where": "Mess hall, clearing pots"
+     },
+     {
+      "time": "10:15pm",
+      "where": "Chief's cabin, bringing tea"
+     },
+     {
+      "time": "10:50pm",
+      "where": "Mess hall, alone"
+     },
+     {
+      "time": "11:20pm",
+      "where": "Mess hall, alone"
+     },
+     {
+      "time": "11:30pm",
+      "where": "Dome stairs, with others"
+     }
+    ]
+   },
+   {
+    "id": "p3",
+    "character_name": "Nikhil Sodhi",
+    "role_title": "Station engineer",
+    "public_info": "I run the generators, the heaters and every lock in this building.",
+    "private_info": "My father died broken after Vikas Rane stole his research and his name. I spent two years getting posted here, because I knew who the chief really was. Tonight I dropped two of the doctor's pills into the cook's thermos while nobody watched. At 10:40pm I walked the sleeping chief into the cold store, bent the latch, and killed the heater with my code. At 11:20pm I dragged him to the dome stairs with a kitchen apron so it would look like a fall.",
+    "wants": "I want this to look like an accident, because the road opens tomorrow and police will come.",
+    "fears": "I am scared someone opens my locker and finds my father's photo.",
+    "goal": "Avoid being named as the killer in the final vote.",
+    "goal_why": "My father died with his name dirty, and I will not die with mine dirty too.",
+    "side": "culprit",
+    "side_explanation": "He drugged, froze and moved the chief to avenge his father.",
+    "hidden_facts": [
+     {
+      "id": "h5",
+      "fact": "The chief had written a confession naming himself and clearing your father."
+     },
+     {
+      "id": "h6",
+      "fact": "The chief had sent unsigned money to your family village for years."
+     }
+    ],
+    "starting_knowledge": "You know every step you took tonight. You know the chief's real name is Vikas Rane. You know you used your own code and your own tools, and that you left an apron thread behind. You ate dinner with everyone in the mess hall at 8:00pm. You took the two sleeping pills from the open medical kit in the mess. Your heater switching at 10:50pm made the station lights dip. You kept the bent cold store latch pin in your toolbag. At 11:20pm you struck the dead chief's head on a step to fake a fall. You keep an old news clipping and your father's photo in your locker. You were with the doctor and the cook when the body was found at 11:30pm.",
+    "start_location": "l4",
+    "icon": "⚙️",
+    "intro_line": "I am Nikhil, the engineer. If anything in here is warm, that is my work.",
+    "reasons": [
+     "You took this posting because you knew the chief was really Vikas Rane.",
+     "You dropped the pills in the cook's thermos so someone else would carry them.",
+     "You waited until nobody watched because the mess is never empty for long.",
+     "You used the cold store because cold leaves no mark and no noise.",
+     "You used your own code because only your code can kill that heater.",
+     "You bent the latch so the door could not be pushed open from inside.",
+     "You dragged the body to the stairs so it would look like an icy fall.",
+     "You used a kitchen apron so the drag marks would not point at you."
+    ],
+    "night": [
+     {
+      "time": "9:30pm",
+      "where": "Generator Room",
+      "doing": "Working on the heater controls and listening to the shouting"
+     },
+     {
+      "time": "10:15pm",
+      "where": "Generator Room",
+      "doing": "Waiting for the cook to deliver the drugged drink"
+     },
+     {
+      "time": "10:50pm",
+      "where": "Generator Room",
+      "doing": "Standing at the heater panel after killing the cold store heat"
+     },
+     {
+      "time": "11:20pm",
+      "where": "Dome Stairs",
+      "doing": "Dragging the frozen body up and faking a fall"
+     },
+     {
+      "time": "11:30pm",
+      "where": "Dome Stairs",
+      "doing": "Pretending to find the body with the others"
+     }
+    ],
+    "alibi": [
+     {
+      "time": "9:30pm",
+      "where": "Generator room, on heaters"
+     },
+     {
+      "time": "10:15pm",
+      "where": "Generator room, on heaters"
+     },
+     {
+      "time": "10:50pm",
+      "where": "Generator room, fixing a dip"
+     },
+     {
+      "time": "11:20pm",
+      "where": "Generator room, checking fuel"
+     },
+     {
+      "time": "11:30pm",
+      "where": "Dome stairs, with others"
+     }
+    ]
+   }
+  ],
+  "public_timeline": [
+   {
+    "order": 20,
+    "time": "8:00pm",
+    "event": "All five people eat dinner together in the mess hall.",
+    "reveal_round": 0
+   },
+   {
+    "order": 25,
+    "time": "8:40pm",
+    "event": "The storm closes the road. The truck cannot leave.",
+    "reveal_round": 0
+   },
+   {
+    "order": 30,
+    "time": "9:30pm",
+    "event": "Shouting is heard from the chief's cabin.",
+    "reveal_round": 0
+   },
+   {
+    "order": 45,
+    "time": "10:50pm",
+    "event": "The lights dip for a few seconds across the station.",
+    "reveal_round": 2
+   },
+   {
+    "order": 55,
+    "time": "11:20pm",
+    "event": "A door to the dome corridor is heard opening.",
+    "reveal_round": 3
+   },
+   {
+    "order": 70,
+    "time": "11:30pm",
+    "event": "The body is found at the bottom of the dome stairs.",
+    "reveal_round": 0
+   }
+  ],
+  "setting_summary": "A snowed-in mountain observatory in Ladakh, winter 2026. The chief lies dead on the icy dome stairs.",
+  "title": "Cold Store at Tsokar",
+  "truth": {
+   "summary": "Nikhil Sodhi drugged the chief, locked him in the cold store to freeze, then dragged the body to the dome stairs. The chief was really Vikas Rane, who had stolen the research of Nikhil's father years ago.",
+   "timeline": [
+    {
+     "time": "Twelve years ago",
+     "event": "Vikas Rane steals a colleague's research. That man dies in disgrace. He was Nikhil's father."
+    },
+    {
+     "time": "Two years ago",
+     "event": "Rane takes the name Dr. Arun Mehta and the chief's job at Tsokar. Nikhil works to get posted there."
+    },
+    {
+     "time": "8:00pm",
+     "event": "Dinner. The medical kit sits open on the mess shelf."
+    },
+    {
+     "time": "9:20pm",
+     "event": "Himanshu radios the mainland and asks about Vikas Rane."
+    },
+    {
+     "time": "9:30pm",
+     "event": "Himanshu shouts at the chief and tells him to confess."
+    },
+    {
+     "time": "10:00pm",
+     "event": "The chief starts writing a confession letter in his cabin."
+    },
+    {
+     "time": "10:10pm",
+     "event": "Nikhil drops two sleeping pills into the cook's thermos in the mess."
+    },
+    {
+     "time": "10:15pm",
+     "event": "Rishabh carries the drink to the chief and begs him not to report the diesel theft."
+    },
+    {
+     "time": "10:40pm",
+     "event": "Nikhil walks the sleeping chief into the cold store, bends the latch, and turns the heater off with his code."
+    },
+    {
+     "time": "10:50pm",
+     "event": "The heater switching makes the station lights dip."
+    },
+    {
+     "time": "11:00pm",
+     "event": "The chief's own message to the police sits unsent in the radio queue."
+    },
+    {
+     "time": "11:20pm",
+     "event": "Nikhil drags the frozen body to the dome stairs with a kitchen apron and strikes the head on a step."
+    },
+    {
+     "time": "11:30pm",
+     "event": "The three staff find the body together."
+    }
+   ],
+   "culprit_ids": [
+    "p3"
+   ],
+   "method": "Sleeping pills in a hot drink, then locked in the unheated cold store until he froze, then dragged to the stairs to look like a fall.",
+   "motive": "Revenge. The chief was Vikas Rane, who stole Nikhil's father's research and ruined him.",
+   "ambiguities": "The unsent police message could be about the diesel theft, which points at Rishabh. The apron thread also points at the cook, and the loud argument plus the missing pills point at the doctor."
+  },
+  "twists": [
+   {
+    "name": "The chief had a false name",
+    "description": "Dr. Arun Mehta was really Vikas Rane, a scientist who stole research and hid here under a new name."
+   },
+   {
+    "name": "The cook carried the poison",
+    "description": "Rishabh does not know that the hot drink he handed the chief had Nikhil's sleeping pills in it."
+   }
+  ],
+  "key_times": [
+   {
+    "time": "9:30pm",
+    "what": "Shouting is heard from the chief's cabin."
+   },
+   {
+    "time": "10:15pm",
+    "what": "A hot drink is carried to the chief's cabin."
+   },
+   {
+    "time": "10:50pm",
+    "what": "The station lights dip for a few seconds."
+   },
+   {
+    "time": "11:20pm",
+    "what": "A door to the dome corridor is heard opening."
+   },
+   {
+    "time": "11:30pm",
+    "what": "The body is found at the bottom of the dome stairs."
+   }
+  ]
+ },
+ "state": {
+  "phaseIndex": 0,
+  "phaseEndsAt": 1792274968449,
+  "questionsPerPhase": 3,
+  "phaseMinutes": 15,
+  "hintsLeft": 3,
+  "hintCursor": 0,
+  "hintsGiven": [],
+  "hintVote": null,
+  "suspicion": 20,
+  "events": [
+   {
+    "at": 1792273850521,
+    "phase": null,
+    "text": "The storm shakes the dome. At 11:30pm the three of you stand at the bottom of the icy stairs. Dr. Arun Mehta lies there, face down, one glove missing. The ice under his head is clean and dry. The radio can reach nobody until morning. Three of you live here. The doors were bolted from the inside. So one of you did this.",
+    "kind": "opening"
+   },
+   {
+    "at": 1792274068449,
+    "phase": 0,
+    "kind": "phase",
+    "text": "Round 1 of 4: The Body on the Ice"
+   },
+   {
+    "at": 1792274068449,
+    "phase": 0,
+    "kind": "goal",
+    "text": "This round, your job: Work out where the chief actually died tonight."
+   },
+   {
+    "at": 1792274068449,
+    "phase": 0,
+    "kind": "goal",
+    "text": "This round's goal: Where did Dr. Mehta really die?"
+   },
+   {
+    "at": 1792274969019,
+    "phase": 0,
+    "kind": "vote",
+    "text": "Time to vote: Where did Dr. Mehta really die?"
+   }
+  ],
+  "threads": {
+   "p1": [],
+   "p2": [],
+   "p3": []
+  },
+  "questionsLeft": {
+   "p1": 3,
+   "p2": 3,
+   "p3": 3
+  },
+  "pending": {},
+  "found": {
+   "p1": [],
+   "p2": [],
+   "p3": []
+  },
+  "destroyed": [],
+  "revealed": {
+   "p1": [],
+   "p2": [],
+   "p3": []
+  },
+  "ready": {
+   "p1": true,
+   "p3": true,
+   "p2": true
+  },
+  "positions": {
+   "p1": "l2",
+   "p2": "l1",
+   "p3": "l4",
+   "n1": "l1",
+   "n2": "l2"
+  },
+  "mapEdits": {},
+  "brief": {
+   "step": 0
+  },
+  "roundVote": {
+   "phaseIndex": 0,
+   "votes": {},
+   "endsAt": 1792275059019
+  },
+  "roundResults": [],
+  "timelineExtra": [],
+  "shared": [],
+  "publicPending": {},
+  "illustration": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 800 400\" width=\"800\" height=\"400\">\n<defs>\n<linearGradient id=\"sky\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#0a1222\"/><stop offset=\"0.6\" stop-color=\"#15263d\"/><stop offset=\"1\" stop-color=\"#223b58\"/>\n</linearGradient>\n<linearGradient id=\"snow\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#ccdbe9\"/><stop offset=\"1\" stop-color=\"#7f98b4\"/>\n</linearGradient>\n<linearGradient id=\"far\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n<stop offset=\"0\" stop-color=\"#2b4664\"/><stop offset=\"1\" stop-color=\"#1b2f4a\"/>\n</linearGradient>\n<radialGradient id=\"glow\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\">\n<stop offset=\"0\" stop-color=\"#f0b45e\" stop-opacity=\"0.55\"/><stop offset=\"1\" stop-color=\"#f0b45e\" stop-opacity=\"0\"/>\n</radialGradient>\n<radialGradient id=\"moonglow\" cx=\"0.5\" cy=\"0.5\" r=\"0.5\">\n<stop offset=\"0\" stop-color=\"#ccdbe9\" stop-opacity=\"0.45\"/><stop offset=\"1\" stop-color=\"#ccdbe9\" stop-opacity=\"0\"/>\n</radialGradient>\n</defs>\n\n<rect width=\"800\" height=\"400\" fill=\"url(#sky)\"/>\n\n<circle cx=\"640\" cy=\"78\" r=\"70\" fill=\"url(#moonglow)\"/>\n<circle cx=\"640\" cy=\"78\" r=\"21\" fill=\"#ccdbe9\"/>\n<circle cx=\"652\" cy=\"70\" r=\"20\" fill=\"#15263d\" opacity=\"0.55\"/>\n\n<g fill=\"#ccdbe9\">\n<circle cx=\"60\" cy=\"40\" r=\"1.8\"/><circle cx=\"118\" cy=\"82\" r=\"1.2\"/><circle cx=\"175\" cy=\"34\" r=\"1.5\"/>\n<circle cx=\"232\" cy=\"70\" r=\"1.1\"/><circle cx=\"289\" cy=\"28\" r=\"1.7\"/><circle cx=\"330\" cy=\"96\" r=\"1.1\"/>\n<circle cx=\"388\" cy=\"46\" r=\"1.4\"/><circle cx=\"444\" cy=\"88\" r=\"1\"/><circle cx=\"500\" cy=\"30\" r=\"1.6\"/>\n<circle cx=\"548\" cy=\"112\" r=\"1.2\"/><circle cx=\"706\" cy=\"36\" r=\"1.5\"/><circle cx=\"760\" cy=\"92\" r=\"1.2\"/>\n<circle cx=\"740\" cy=\"20\" r=\"1\"/><circle cx=\"26\" cy=\"110\" r=\"1.2\"/><circle cx=\"250\" cy=\"130\" r=\"1\"/>\n<circle cx=\"610\" cy=\"150\" r=\"0.9\"/><circle cx=\"90\" cy=\"150\" r=\"0.9\"/>\n</g>\n\n<path d=\"M0 206 L70 150 L120 182 L190 112 L250 160 L300 128 L360 180 L420 140 L470 176 L530 132 L600 184 L660 148 L720 190 L800 152 L800 300 L0 300 Z\" fill=\"url(#far)\"/>\n<path d=\"M190 112 L160 150 L220 150 Z M530 132 L506 164 L556 164 Z M70 150 L50 176 L94 176 Z M660 148 L640 174 L684 174 Z\" fill=\"#ccdbe9\" opacity=\"0.5\"/>\n\n<path d=\"M0 262 C120 238 230 250 330 258 C430 266 470 258 520 254 C620 246 710 262 800 248 L800 400 L0 400 Z\" fill=\"url(#snow)\"/>\n\n<g>\n<circle cx=\"510\" cy=\"230\" r=\"120\" fill=\"url(#glow)\"/>\n<rect x=\"452\" y=\"214\" width=\"118\" height=\"68\" fill=\"#050a13\"/>\n<path d=\"M452 216 A59 52 0 0 1 570 216 Z\" fill=\"#050a13\"/>\n<path d=\"M506 164 L516 164 L520 216 L502 216 Z\" fill=\"#f0b45e\" opacity=\"0.85\"/>\n<rect x=\"470\" y=\"236\" width=\"16\" height=\"20\" rx=\"2\" fill=\"#f0b45e\" opacity=\"0.9\"/>\n<rect x=\"536\" y=\"236\" width=\"16\" height=\"20\" rx=\"2\" fill=\"#f0b45e\" opacity=\"0.45\"/>\n<rect x=\"498\" y=\"240\" width=\"22\" height=\"42\" fill=\"#050a13\"/>\n<rect x=\"596\" y=\"248\" width=\"60\" height=\"34\" fill=\"#050a13\"/>\n<rect x=\"608\" y=\"256\" width=\"13\" height=\"12\" fill=\"#f0b45e\" opacity=\"0.5\"/>\n<rect x=\"624\" y=\"208\" width=\"5\" height=\"44\" fill=\"#050a13\"/>\n<path d=\"M620 208 L634 208 L627 196 Z\" fill=\"#050a13\"/>\n</g>\n\n<path d=\"M452 282 L452 272 L436 272 L436 282 L420 282 L420 292 L404 292 L404 302 L388 302 L388 312 L372 312 L372 324 L452 324 Z\" fill=\"#050a13\"/>\n<path d=\"M452 272 L436 272 L436 282 L420 282 L420 292 L404 292 L404 302 L388 302 L388 312 L372 312 L372 318 L458 318 L458 272 Z\" fill=\"#050a13\" opacity=\"0.4\"/>\n<rect x=\"455\" y=\"238\" width=\"4\" height=\"86\" fill=\"#050a13\"/>\n<rect x=\"455\" y=\"252\" width=\"56\" height=\"4\" fill=\"#050a13\" opacity=\"0.7\"/>\n\n<circle cx=\"352\" cy=\"334\" r=\"46\" fill=\"url(#glow)\" opacity=\"0.6\"/>\n<path d=\"M300 338 C310 324 332 320 350 326 C362 330 372 326 380 330 C388 334 386 344 374 344 L312 346 C302 346 296 344 300 338 Z\" fill=\"#050a13\"/>\n<circle cx=\"296\" cy=\"336\" r=\"9\" fill=\"#050a13\"/>\n<path d=\"M378 330 L396 320 L400 328 L382 338 Z\" fill=\"#050a13\"/>\n<ellipse cx=\"344\" cy=\"350\" rx=\"56\" ry=\"8\" fill=\"#15263d\" opacity=\"0.35\"/>\n<circle cx=\"404\" cy=\"340\" r=\"7\" fill=\"#f0b45e\" opacity=\"0.9\"/>\n<circle cx=\"404\" cy=\"340\" r=\"18\" fill=\"url(#glow)\"/>\n\n<g fill=\"#7f98b4\" opacity=\"0.8\">\n<ellipse cx=\"258\" cy=\"358\" rx=\"7\" ry=\"4\"/><ellipse cx=\"228\" cy=\"366\" rx=\"7\" ry=\"4\"/>\n<ellipse cx=\"198\" cy=\"360\" rx=\"7\" ry=\"4\"/><ellipse cx=\"168\" cy=\"370\" rx=\"7\" ry=\"4\"/>\n<ellipse cx=\"138\" cy=\"364\" rx=\"7\" ry=\"4\"/>\n</g>\n\n<g>\n<rect x=\"60\" y=\"316\" width=\"70\" height=\"30\" rx=\"4\" fill=\"#050a13\"/>\n<rect x=\"124\" y=\"304\" width=\"40\" height=\"42\" rx=\"5\" fill=\"#050a13\"/>\n<rect x=\"132\" y=\"312\" width=\"24\" height=\"14\" rx=\"2\" fill=\"#223b58\"/>\n<circle cx=\"88\" cy=\"350\" r=\"11\" fill=\"#050a13\"/><circle cx=\"146\" cy=\"350\" r=\"11\" fill=\"#050a13\"/>\n<path d=\"M50 350 C90 334 140 334 180 350 Z\" fill=\"#ccdbe9\"/>\n<path d=\"M58 306 C90 298 136 294 166 300 L166 306 C130 300 92 302 58 312 Z\" fill=\"#ccdbe9\"/>\n</g>\n\n<path d=\"M0 372 C160 354 340 384 520 366 C640 354 720 372 800 362 L800 400 L0 400 Z\" fill=\"#ccdbe9\" opacity=\"0.65\"/>\n<rect width=\"800\" height=\"400\" fill=\"#0a1222\" opacity=\"0.12\"/>\n</svg>",
+  "knowledge": [],
+  "moments": [],
+  "overridesLeft": {
+   "p1": 3,
+   "p2": 3,
+   "p3": 3
+  },
+  "submissions": {},
+  "transitioning": false,
+  "result": null,
+  "roundNumber": 1,
+  "replays": 0
+ },
+ "error": null,
+ "progress": null
+}

@@ -9,7 +9,7 @@ Design notes: [docs/design.md](docs/design.md).
 
 ## Run a game
 
-Needs Node 20+ and Claude Code signed in on the host laptop (`claude` on the PATH). No API key:
+Needs Node 24+ and Claude Code signed in on the host laptop (`claude` on the PATH). No API key:
 the GM always uses your Claude login and ignores any `ANTHROPIC_API_KEY` in your shell.
 
 ```bash
