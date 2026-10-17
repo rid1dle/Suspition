@@ -175,7 +175,7 @@ describe('phases', () => {
     assert.equal(game.state.phaseIndex, 1);
     assert.equal(game.state.questionsLeft.p2, 3);
     assert.equal(game.state.phaseEndsAt, 2_000 + 10 * 60_000);
-    assert.deepEqual(game.state.events.slice(-2).map((e) => e.text), ['Round 2 of 3: Phase name 2', 'Something changed.']);
+    assert.deepEqual(game.state.events.slice(-3).map((e) => e.text), ['Round 2 of 3: Phase name 2', 'Something changed.', 'New on the timeline: 9:30, TL-ROUND2']);
   });
 
   test('should block questions while the phase is changing', () => {
@@ -395,7 +395,7 @@ describe('the map', () => {
 
   test('should show places and positions to everyone, with unknown neighbours dropped', () => {
     const map = G.tableView(playing()).map;
-    assert.deepEqual(map.places[1], { id: 'l2', name: 'Kitchen', x: 80, y: 70, room: '', neighbors: ['l1'] });
+    assert.deepEqual(map.places[1], { id: 'l2', name: 'Kitchen', x: 80, y: 70, room: '', icon: '', neighbors: ['l1'] });
     assert.equal(G.playerView(playing(), 'p2').map.positions.p1, 'l1');
   });
 
@@ -451,5 +451,179 @@ describe('the map', () => {
 
   test('should tell the GM where everyone is', () => {
     assert.equal(G.snapshotForGM(playing()).where_everyone_is.p2, 'l2');
+  });
+});
+
+describe('round goals and votes', () => {
+  const voting = (n = 3) => {
+    const game = gameInReading(n, 1_000, { questions: true });
+    G.startPlay(game, 1_000);
+    return game;
+  };
+
+  test('should announce the round goal and the timeline entries for that round', () => {
+    const game = voting();
+    const texts = game.state.events.map((e) => e.text);
+    assert.ok(texts.includes("This round's goal: QUESTION-1"));
+    assert.ok(!texts.some((t) => t.includes('TL-ROUND2')));
+  });
+
+  test('should show the question and choices but never the answer, reward or nudge', () => {
+    const game = voting();
+    const body = JSON.stringify([G.tableView(game), G.playerView(game, 'p2')]);
+    assert.deepEqual(G.tableView(game).round.options, ['A', 'B', 'C']);
+    for (const secret of ['REWARD-1', 'NUDGE-1', 'answer_index', '"answer"']) assert.ok(!body.includes(secret), secret);
+  });
+
+  test('should unlock the reward on the timeline when most people pick the right answer', () => {
+    const game = voting();
+    G.beginRoundVote(game, 2_000);
+    G.voteRound(game, 'p1', 1, 2_000);
+    G.voteRound(game, 'p2', 1, 2_000);
+    const result = G.voteRound(game, 'p3', 0, 2_000);
+    assert.equal(result.correct, true);
+    assert.ok(G.tableView(game).timeline.some((t) => t.event === 'REWARD-1' && t.time === '9:15'));
+    assert.match(game.state.events.at(-1).text, /The group picked: B. That is right! REWARD-1/);
+    assert.equal(game.state.roundVote, null);
+  });
+
+  test('should give a nudge and the culprit some cover when the group is wrong', () => {
+    const game = voting();
+    const before = game.state.suspicion;
+    G.beginRoundVote(game, 2_000);
+    for (const p of ['p1', 'p2', 'p3']) G.voteRound(game, p, 2, 2_000);
+    assert.match(game.state.events.at(-1).text, /Not quite. NUDGE-1/);
+    assert.equal(game.state.suspicion, before - 10);
+    assert.ok(!G.tableView(game).timeline.some((t) => t.event === 'REWARD-1'));
+  });
+
+  test('should count a tie or no votes as not agreeing', () => {
+    const game = voting(4);
+    G.beginRoundVote(game, 2_000);
+    G.voteRound(game, 'p1', 0, 2_000);
+    G.voteRound(game, 'p2', 1, 2_000);
+    const result = G.resolveRoundVote(game, 2_000, true);
+    assert.deepEqual([result.picked, result.correct], [null, false]);
+    assert.match(game.state.events.at(-1).text, /could not agree/);
+  });
+
+  test('should wait for everyone or the timer before closing the vote', () => {
+    const game = voting();
+    G.beginRoundVote(game, 2_000);
+    assert.equal(G.voteRound(game, 'p1', 1, 2_000), null);
+    assert.equal(G.resolveRoundVote(game, 2_000 + G.ROUND_VOTE_MS).correct, true);
+  });
+
+  test('should block questions while voting and refuse a bad choice', () => {
+    const game = voting();
+    G.beginRoundVote(game, 2_000);
+    assert.throws(() => G.beginAsk(game, 'p1', { kind: 'question', text: 'x' }), /Voting now/);
+    assert.throws(() => G.voteRound(game, 'p1', 7, 2_000), /Pick one/);
+  });
+
+  test('should vote only once per round', () => {
+    const game = voting();
+    G.beginRoundVote(game, 2_000);
+    G.resolveRoundVote(game, 2_000, true);
+    assert.equal(G.needsRoundVote(game), false);
+    assert.throws(() => G.beginRoundVote(game, 2_000), /no question/);
+  });
+
+  test('should skip votes for a round whose question is broken', () => {
+    const game = voting();
+    game.scenario.phases[0].answer_index = 9;
+    assert.equal(G.roundQuestion(game, 0), null);
+    assert.equal(G.needsRoundVote(game), false);
+  });
+});
+
+describe('timeline', () => {
+  test('should show only the times known so far, in story order', () => {
+    const game = gameInReading(3, 1_000, { questions: true });
+    assert.deepEqual(G.tableView(game).timeline.map((t) => t.event), ['TL-START']);
+    G.startPlay(game, 1_000);
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 2_000);
+    assert.deepEqual(G.tableView(game).timeline.map((t) => t.event), ['TL-START', 'TL-ROUND2']);
+    assert.ok(game.state.events.some((e) => e.text === 'New on the timeline: 9:30, TL-ROUND2'));
+  });
+});
+
+describe('meet everyone', () => {
+  test('should walk through the scene, background, map, each player, the GM people, the timeline and the rules', () => {
+    const game = gameInReading(3);
+    const steps = G.tableView(game).briefing.steps;
+    assert.deepEqual(steps.map((s) => s.kind), ['scene', 'story', 'background', 'map', 'intro', 'intro', 'intro', 'npcs', 'timeline', 'goal']);
+    assert.match(steps[4].lines[0], /Player1, stand up and say: "I am Character 1, Role 1. PUBLIC-1"/);
+  });
+
+  test('should keep secrets out of the intro', () => {
+    const body = JSON.stringify(G.tableView(gameInReading(3)).briefing);
+    assert.ok(!body.includes('PRIVATE') && !body.includes('TRUTH') && !body.includes('HIDDEN'));
+  });
+
+  test('should step forward and back within the intro only', () => {
+    const game = gameInReading(3);
+    assert.equal(G.moveBrief(game, -1), 0);
+    assert.equal(G.moveBrief(game, 99), 9);
+    G.startPlay(game, 1_000);
+    assert.throws(() => G.moveBrief(game, 1), /intro is over/);
+  });
+});
+
+describe('sharing clues', () => {
+  const found = () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'look' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, clues_found: ['c1'] });
+    return game;
+  };
+
+  test('should put a found clue on every screen and in the news', () => {
+    const game = found();
+    G.shareClue(game, 'p2', 'c1', 2_000);
+    assert.deepEqual(G.playerView(game, 'p3').sharedClues, [{ id: 'c1', name: 'Torn glove', shows: 'CLUE-1-SHOWS', by: 'Player2' }]);
+    assert.match(game.state.events.at(-1).text, /Player2 shows a clue. Torn glove: CLUE-1-SHOWS/);
+  });
+
+  test('should refuse a clue you never found, or one already shared', () => {
+    const game = found();
+    assert.throws(() => G.shareClue(game, 'p3', 'c1'), /not found that clue/);
+    G.shareClue(game, 'p2', 'c1');
+    assert.throws(() => G.shareClue(game, 'p2', 'c1'), /already see/);
+  });
+});
+
+describe('public questions about the world', () => {
+  test('should give the GM only public knowledge, never a secret', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    const body = JSON.stringify(G.publicKnowledge(game));
+    for (const secret of ['PRIVATE', 'TRUTH-SUMMARY', 'HIDDEN', 'CLUE-1-SHOWS', 'NPC-SECRET', 'NPC-KNOWS', 'GOAL-', 'METHOD', 'MOTIVE']) assert.ok(!body.includes(secret), secret);
+    assert.ok(body.includes('BG-1 public line'));
+  });
+
+  test('should post the question and answer for everyone, without using a question', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginPublicAsk(game, 'p1', 'How far is town?');
+    assert.throws(() => G.beginPublicAsk(game, 'p1', 'again'), /Wait for the answer/);
+    G.completePublicAsk(game, 'p1', 'Ten miles.', 2_000);
+    const qa = G.playerView(game, 'p2').events.at(-1);
+    assert.deepEqual([qa.kind, qa.by, qa.q, qa.text], ['qa', 'Player1', 'How far is town?', 'Ten miles.']);
+    assert.equal(game.state.questionsLeft.p1, 3);
+  });
+});
+
+describe('cleanSvg', () => {
+  test('should accept a plain drawing', () => {
+    assert.ok(G.cleanSvg('<svg viewBox="0 0 10 10"><rect width="10" height="10" fill="url(#g)"/></svg>'));
+  });
+
+  test('should refuse scripts, event handlers, outside links and non-SVG', () => {
+    for (const bad of ['<svg><script>x</script></svg>', '<svg onload="x()"></svg>', '<svg><a href="http://evil"/></svg>', '<svg><image href="x.png"/></svg>', '<div></div>', '<svg>']) {
+      assert.equal(G.cleanSvg(bad), null, bad);
+    }
   });
 });

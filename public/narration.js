@@ -3,12 +3,13 @@ const SKIP = /kept its hint/i;
 export function narrationFor(prev, next) {
   if (!prev || !next || prev.gameId !== next.gameId) return [];
   const lines = [];
-  if (next.status === 'reading' && prev.status !== 'reading' && next.opening) {
-    lines.push(`${next.title}.`, next.opening);
+  const step = next.briefing?.steps?.[next.briefing.step];
+  if (step && (prev.status !== 'reading' || prev.briefing?.step !== next.briefing.step)) {
+    lines.push(...stepLines(step));
   }
   const before = prev.events?.length ?? 0;
   for (const e of (next.events ?? []).slice(before)) {
-    if (e.kind === 'opening' || SKIP.test(e.text)) continue;
+    if (e.kind === 'opening' || e.kind === 'qa' || SKIP.test(e.text)) continue;
     lines.push(e.kind === 'phase' ? e.text.replace(/^Round (\d+) of (\d+): /, 'Round $1 of $2. ') : e.text);
   }
   if (next.status === 'reveal' && prev.status !== 'reveal' && next.reveal) {
@@ -16,6 +17,11 @@ export function narrationFor(prev, next) {
     lines.push(win ? 'The detectives win.' : 'The culprits got away with it.', next.reveal.reveal_story);
   }
   return lines.filter(Boolean);
+}
+
+export function stepLines(step) {
+  if (step.kind === 'intro') return [step.title + '.'];
+  return [`${step.title}.`, ...step.lines];
 }
 
 export function chunks(text, max = 180) {

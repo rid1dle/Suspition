@@ -170,3 +170,31 @@ button.chip.on .muted { color: inherit; opacity: 0.75; }
   .place { max-width: 44%; padding: 4px 6px; }
   .place-name { font-size: 0.78rem; }
 }
+
+img.scene { width: 100%; aspect-ratio: 2 / 1; object-fit: cover; border-radius: var(--radius); display: block; margin-bottom: 10px; background: var(--panel-2); }
+.facts { margin: 0; padding-left: 1.1em; }
+.facts li { margin: 4px 0; }
+.timeline { list-style: none; margin: 0; padding: 0; border-left: 2px solid var(--line); }
+.timeline li { display: flex; gap: 10px; padding: 4px 0 4px 12px; position: relative; }
+.timeline li::before { content: ''; position: absolute; left: -6px; top: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.timeline .when { flex: none; min-width: 4.2em; color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 600; }
+.clue { padding: 6px 0; border-bottom: 1px solid var(--line); }
+.clue:last-child { border-bottom: 0; }
+.round .question { font-family: Georgia, serif; font-size: 1.3rem; margin: 2px 0 8px; }
+.round .choices { margin: 0; padding-left: 1.1em; color: var(--muted); }
+.round.voting { border-left: 4px solid var(--accent); padding-left: 10px; }
+.options { display: grid; gap: 8px; margin: 6px 0; }
+.option { text-align: left; }
+.option.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.brief-step h2 { margin-top: 6px; }
+.dots-row { display: flex; gap: 4px; flex-wrap: wrap; }
+.dots-row .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--line); }
+.dots-row .dot.done { background: var(--muted); }
+.dots-row .dot.on { background: var(--accent); }
+.intro { text-align: center; padding: 10px 0; }
+.intro .big-icon { font-size: 3rem; line-height: 1.2; }
+.intro.mine { border: 2px solid var(--accent); border-radius: var(--radius); padding: 12px; }
+.your-turn { color: var(--accent); font-weight: 700; margin-bottom: 4px; }
+.feed li.round, .feed li.goal, .feed li.vote { color: var(--accent); }
+.feed li.clue::before { content: '\1F50E  '; }
+.feed li.timeline::before { content: '\23F1  '; }

@@ -7,6 +7,7 @@ export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 10;
 export const TONES = ['cozy', 'tense', 'dark', 'funny'];
 export const HINT_VOTE_MS = 60_000;
+export const ROUND_VOTE_MS = 90_000;
 export const EXTEND_MS = 5 * 60_000;
 
 export class GameError extends Error {
@@ -145,6 +146,7 @@ export function mapOf(scenario, edits = {}) {
       x: Number.isFinite(e.x) ? e.x : hasLayout ? clamp(Math.round(l.x), 6, 94) : Math.round(50 + 38 * Math.cos(angle)),
       y: Number.isFinite(e.y) ? e.y : hasLayout ? clamp(Math.round(l.y), 8, 92) : Math.round(50 + 38 * Math.sin(angle)),
       room: e.room ?? '',
+      icon: l.icon ?? '',
       neighbors: (l.neighbors ?? []).filter((n) => ids.includes(n) && n !== l.id),
     };
   });
@@ -203,6 +205,13 @@ export function attachScenario(game, scenario, now = Date.now()) {
     ready: {},
     positions: startPositions(scenario),
     mapEdits: {},
+    brief: { step: 0 },
+    roundVote: null,
+    roundResults: [],
+    timelineExtra: [],
+    shared: [],
+    publicPending: {},
+    illustration: null,
     submissions: {},
     transitioning: false,
     result: null,
@@ -226,6 +235,15 @@ export function startPlay(game, now = Date.now()) {
   game.status = 'playing';
   enterPhase(game, 0, now);
   game.state.events.push({ at: now, phase: 0, kind: 'phase', text: phaseLine(game, 0) });
+  announceRound(game, 0, now);
+}
+
+function announceRound(game, index, now) {
+  for (const t of game.scenario.public_timeline ?? []) {
+    if (Number(t.reveal_round) === index + 1) addEvent(game, `New on the timeline: ${t.time ? `${t.time}, ` : ''}${t.event}`, 'timeline', now);
+  }
+  const q = roundQuestion(game, index);
+  if (q) addEvent(game, `This round's goal: ${q.question}`, 'goal', now);
 }
 
 const phaseLine = (game, i) => `Round ${i + 1} of ${game.scenario.phases.length}: ${game.scenario.phases[i].name}`;
@@ -240,6 +258,7 @@ export const ASK_KINDS = ['question', 'self', 'action'];
 export function beginAsk(game, playerId, { kind, text }) {
   if (game.status !== 'playing') fail('You can only ask during a round.', 409);
   if (game.state.transitioning) fail('Things are changing. Try again in a moment.', 409);
+  if (game.state.roundVote) fail('Voting now. Ask again after the vote.', 409);
   if (!ASK_KINDS.includes(kind)) fail('Unknown request type.');
   const clean = String(text ?? '').trim().slice(0, 500);
   if (!clean) fail('Write what you want to do.');
@@ -342,6 +361,7 @@ export function completePhase(game, result, now = Date.now()) {
   enterPhase(game, next, now);
   addEvent(game, phaseLine(game, next), 'phase', now);
   addEvent(game, result.public_event, 'event', now);
+  announceRound(game, next, now);
   whisper(game, result.messages_to_players, now);
 }
 
@@ -446,6 +466,174 @@ export function applyScore(game, verdict, score) {
   game.status = 'reveal';
 }
 
+export function roundQuestion(game, index) {
+  const ph = game.scenario?.phases?.[index];
+  const options = (ph?.options ?? []).map((o) => String(o ?? '').trim()).filter(Boolean).slice(0, 4);
+  const answer = Number(ph?.answer_index);
+  if (!ph?.question || options.length < 2 || !Number.isInteger(answer) || answer < 0 || answer >= options.length) return null;
+  return { question: String(ph.question), options, answer, reward: String(ph.reward ?? ''), rewardTime: String(ph.reward_time ?? ''), rewardOrder: Number(ph.reward_order) || 0, nudge: String(ph.wrong_nudge ?? '') };
+}
+
+export function needsRoundVote(game) {
+  const st = game.state;
+  return Boolean(roundQuestion(game, st.phaseIndex)) && !st.roundResults.some((r) => r.phaseIndex === st.phaseIndex);
+}
+
+export function beginRoundVote(game, now = Date.now()) {
+  const st = game.state;
+  if (game.status !== 'playing') fail('No round is running.', 409);
+  if (st.roundVote) return st.roundVote;
+  if (!needsRoundVote(game)) fail('This round has no question to vote on.', 409);
+  st.hintVote = null;
+  st.roundVote = { phaseIndex: st.phaseIndex, votes: {}, endsAt: now + ROUND_VOTE_MS };
+  addEvent(game, `Time to vote: ${roundQuestion(game, st.phaseIndex).question}`, 'vote', now);
+  return st.roundVote;
+}
+
+export function voteRound(game, playerId, choice, now = Date.now()) {
+  const vote = game.state.roundVote;
+  if (!vote) fail('There is no vote right now.', 409);
+  const q = roundQuestion(game, vote.phaseIndex);
+  const pick = Number(choice);
+  if (!Number.isInteger(pick) || pick < 0 || pick >= q.options.length) fail('Pick one of the answers.');
+  vote.votes[playerId] = pick;
+  return resolveRoundVote(game, now);
+}
+
+export function resolveRoundVote(game, now = Date.now(), force = false) {
+  const st = game.state;
+  const vote = st.roundVote;
+  if (!vote) return null;
+  const everyone = game.players.every((p) => vote.votes[p.id] !== undefined);
+  if (!everyone && !force && vote.endsAt > now) return null;
+  const q = roundQuestion(game, vote.phaseIndex);
+  const counts = q.options.map((_, i) => Object.values(vote.votes).filter((v) => v === i).length);
+  const top = Math.max(...counts);
+  const winners = counts.flatMap((c, i) => (c === top && top > 0 ? [i] : []));
+  const picked = winners.length === 1 ? winners[0] : null;
+  const correct = picked === q.answer;
+  const result = { phaseIndex: vote.phaseIndex, question: q.question, picked, pickedText: picked === null ? null : q.options[picked], correct, counts };
+  st.roundResults.push(result);
+  st.roundVote = null;
+  const said = picked === null ? 'The group could not agree.' : `The group picked: ${q.options[picked]}.`;
+  if (correct) {
+    addEvent(game, `${said} That is right! ${q.reward}`, 'round', now);
+    if (q.reward) st.timelineExtra.push({ order: q.rewardOrder, time: q.rewardTime, event: q.reward });
+    st.suspicion = clamp(st.suspicion + 10, 0, 100);
+  } else {
+    addEvent(game, `${said} Not quite. ${q.nudge}`, 'round', now);
+    st.suspicion = clamp(st.suspicion - 10, 0, 100);
+  }
+  return result;
+}
+
+export function briefingSteps(game) {
+  const sc = game.scenario;
+  if (!sc) return [];
+  const steps = [
+    { kind: 'scene', title: sc.title, lines: [sc.setting_summary] },
+    { kind: 'story', title: 'What just happened', lines: [sc.opening_scene] },
+    { kind: 'background', title: 'What everyone knows', lines: sc.background ?? [] },
+    { kind: 'map', title: 'The place', lines: ['This is the map. It shows every place and who is there.', 'Players are gold. People the GM plays are grey.'] },
+  ];
+  for (const c of sc.players) {
+    const player = game.players.find((p) => p.id === c.id);
+    steps.push({ kind: 'intro', playerId: c.id, title: `Meet ${c.character_name}`, lines: [`${player?.name ?? 'This player'}, stand up and say: "I am ${c.character_name}, ${c.role_title}. ${c.public_info}"`], icon: c.icon ?? '' });
+  }
+  steps.push({ kind: 'npcs', title: 'People the GM plays', lines: sc.npcs.map((n) => `${n.name}, ${n.role_title}. ${n.public_info}`) });
+  steps.push({ kind: 'timeline', title: 'The timeline so far', lines: publicTimeline(game).map((t) => `${t.time ? `${t.time}: ` : ''}${t.event}`) });
+  steps.push({ kind: 'goal', title: 'How to play', lines: [
+    `There are ${sc.phases.length} rounds. Each round has one question.`,
+    'Talk. Ask the GM on your phone. Look around. Share clues.',
+    'At the end of each round, everyone votes on the answer.',
+    'At the very end, everyone votes on who did it. Culprits vote too.',
+  ] });
+  return steps.filter((st) => st.lines.length);
+}
+
+export function moveBrief(game, delta) {
+  if (game.status !== 'reading') fail('The intro is over.', 409);
+  const count = briefingSteps(game).length;
+  game.state.brief.step = clamp(game.state.brief.step + Number(delta || 0), 0, count - 1);
+  return game.state.brief.step;
+}
+
+export function publicTimeline(game) {
+  const sc = game.scenario;
+  const st = game.state;
+  if (!sc || !st) return [];
+  const round = ['final', 'reveal'].includes(game.status) ? Infinity : game.status === 'playing' ? st.phaseIndex + 1 : 0;
+  return [
+    ...(sc.public_timeline ?? []).filter((t) => Number(t.reveal_round ?? 0) <= round),
+    ...st.timelineExtra,
+  ].map((t) => ({ order: Number(t.order) || 0, time: String(t.time ?? ''), event: String(t.event ?? '') }))
+    .filter((t) => t.event)
+    .sort((a, b) => a.order - b.order);
+}
+
+export function shareClue(game, playerId, clueId, now = Date.now()) {
+  if (!['playing', 'final'].includes(game.status)) fail('You can share clues during the game.', 409);
+  const st = game.state;
+  if (!st.found[playerId]?.includes(clueId)) fail('You have not found that clue.', 403);
+  if (st.shared.some((x) => x.clueId === clueId)) fail('Everyone can already see that clue.', 409);
+  const clue = game.scenario.clues.find((c) => c.id === clueId);
+  const name = game.players.find((p) => p.id === playerId)?.name;
+  st.shared.push({ clueId, by: playerId, at: now });
+  addEvent(game, `${name} shows a clue. ${clue.name}: ${clue.shows}`, 'clue', now);
+}
+
+export function beginPublicAsk(game, playerId, text) {
+  if (!['reading', 'playing'].includes(game.status)) fail('You can ask about the world during the game.', 409);
+  const clean = String(text ?? '').trim().slice(0, 200);
+  if (!clean) fail('Write your question.');
+  const st = game.state;
+  if (st.publicPending[playerId]) fail('Wait for the answer to your last question.', 409);
+  st.publicPending[playerId] = clean;
+  return clean;
+}
+
+export function completePublicAsk(game, playerId, answer, now = Date.now()) {
+  const st = game.state;
+  const q = st.publicPending[playerId];
+  if (!q) return;
+  delete st.publicPending[playerId];
+  const name = game.players.find((p) => p.id === playerId)?.name;
+  st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text: String(answer ?? '').trim() || 'Nobody knows that yet.' });
+}
+
+export function failPublicAsk(game, playerId) {
+  delete game.state.publicPending[playerId];
+}
+
+export function publicKnowledge(game) {
+  const sc = game.scenario;
+  return {
+    title: sc.title,
+    setting: sc.setting_summary,
+    background: sc.background ?? [],
+    opening: sc.opening_scene,
+    people: [
+      ...sc.players.map((c) => ({ name: c.character_name, role: c.role_title, about: c.public_info })),
+      ...sc.npcs.map((n) => ({ name: n.name, role: n.role_title, about: n.public_info })),
+    ],
+    places: sc.locations.map((l) => ({ name: l.name, about: l.public_info })),
+    timeline: publicTimeline(game),
+    news: game.state.events.filter((e) => !['opening', 'qa'].includes(e.kind)).slice(-20).map((e) => e.text),
+    shared_clues: game.state.shared.map((x) => {
+      const c = sc.clues.find((k) => k.id === x.clueId);
+      return `${c.name}: ${c.shows}`;
+    }),
+  };
+}
+
+const SVG_BAD = /<script|<foreignObject|\son\w+\s*=|(?:href|src)\s*=\s*["'](?!#)|javascript:|<iframe|<image/i;
+
+export function cleanSvg(svg) {
+  const text = String(svg ?? '').trim();
+  if (!text.startsWith('<svg') || !text.endsWith('</svg>') || text.length > 20_000 || SVG_BAD.test(text)) return null;
+  return text;
+}
+
 export function snapshotForGM(game) {
   const st = game.state;
   return {
@@ -453,6 +641,8 @@ export function snapshotForGM(game) {
     suspicion: st.suspicion,
     destroyed_clues: st.destroyed,
     where_everyone_is: st.positions,
+    round_results: st.roundResults,
+    shared_clues: st.shared.map((x) => x.clueId),
     clues_found_by_player: st.found,
     revealed_hidden_facts: st.revealed,
     public_events: st.events.filter((e) => e.kind !== 'opening').map((e) => e.text),
@@ -471,9 +661,23 @@ function publicCast(game) {
       name: c.character_name,
       role: c.role_title,
       info: c.public_info,
+      icon: c.icon ?? '',
     })),
-    npcs: game.scenario.npcs.map((n) => ({ id: n.id, name: n.name, role: n.role_title, info: n.public_info })),
-    locations: game.scenario.locations.map((l) => ({ id: l.id, name: l.name, info: l.public_info })),
+    npcs: game.scenario.npcs.map((n) => ({ id: n.id, name: n.name, role: n.role_title, info: n.public_info, icon: n.icon ?? '' })),
+    locations: game.scenario.locations.map((l) => ({ id: l.id, name: l.name, info: l.public_info, icon: l.icon ?? '' })),
+  };
+}
+
+function roundView(game, now) {
+  const st = game.state;
+  const q = roundQuestion(game, st.phaseIndex);
+  if (!q) return null;
+  const vote = st.roundVote;
+  return {
+    question: q.question,
+    options: q.options,
+    done: st.roundResults.some((r) => r.phaseIndex === st.phaseIndex),
+    vote: vote ? { endsAt: vote.endsAt, voted: Object.keys(vote.votes).length, of: game.players.length } : null,
   };
 }
 
@@ -488,6 +692,16 @@ function publicCore(game, now) {
     players: game.players.map((p) => ({ id: p.id, name: p.name })),
     setup: game.setup,
     title: sc?.title ?? null,
+    background: sc?.background ?? [],
+    timeline: publicTimeline(game),
+    briefing: game.status === 'reading' && st ? { step: st.brief?.step ?? 0, steps: briefingSteps(game) } : null,
+    round: st && game.status === 'playing' ? roundView(game, now) : null,
+    roundResults: st?.roundResults ?? [],
+    sharedClues: st ? st.shared.map((x) => {
+      const c = sc.clues.find((k) => k.id === x.clueId);
+      return { id: x.clueId, name: c.name, shows: c.shows, by: game.players.find((p) => p.id === x.by)?.name };
+    }) : [],
+    illustration: st?.illustration ?? null,
     music: sanitizeMusic(sc?.music, game.setup?.tone ?? 'cozy'),
     musicDescription: sc?.music?.description ?? null,
     setting: sc?.setting_summary ?? null,
@@ -575,6 +789,8 @@ export function playerView(game, playerId, now = Date.now()) {
     return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id) };
   });
   view.myVote = st.hintVote ? st.hintVote.votes[playerId] ?? null : null;
+  view.myRoundVote = st.roundVote ? st.roundVote.votes[playerId] ?? null : null;
+  view.publicPending = st.publicPending?.[playerId] ?? null;
   view.submission = st.submissions[playerId] ?? null;
   view.reveal = game.status === 'reveal' ? revealView(game) : null;
   return view;

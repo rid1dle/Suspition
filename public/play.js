@@ -1,12 +1,13 @@
 import { api, esc, stream, countdown, suspicionLabel, hashParam, toast, tickers } from '/common.js';
 import { mapHtml } from '/map.js';
+import { pictureHtml, backgroundHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, stepHtml } from '/panels.js';
 
 const app = document.getElementById('app');
 const fromHash = hashParam('t');
 let token = fromHash || localStorage.getItem('detective-token');
 let view = null;
 let skeleton = null;
-let tab = 'card';
+let tab = 'story';
 let kind = 'question';
 let draft = '';
 let picked = new Set();
@@ -17,6 +18,7 @@ const KINDS = [
   ['question', 'Ask or look', 'Talk to someone, or look at a place or thing.'],
   ['self', 'About me', 'What do you try to remember about yourself?'],
   ['action', 'Secret move', 'What do you do when no one is looking?'],
+  ['world', 'Ask everyone', 'A question about the world. Free. Everyone sees the answer.'],
 ];
 
 async function act(path, body = {}) {
@@ -59,6 +61,7 @@ function topbar() {
       <span class="timer" id="timer"></span></div>
     <div class="row between small muted" style="margin-top:2px"><span id="qleft"></span><span id="susp"></span></div>
     <div id="vote"></div>
+    <div id="round-alert"></div>
   </div>`;
 }
 
@@ -85,9 +88,23 @@ const skeletons = {
   waiting: () => `<h1 style="margin-top:20px">You're in, ${esc(view.me.name)}</h1>
     <div class="panel stack" style="margin-top:12px"><p id="wait-msg"></p><div><div class="label">Players here</div><div id="players"></div></div></div>
     <p class="small muted" style="margin-top:12px">Keep this page open. Your card shows up here.</p>`,
-  reading: () => `${cardHtml()}<div style="margin-top:16px"><button class="primary wide" id="read">Done reading</button><p class="small muted" id="read-note" style="margin-top:6px"></p></div>`,
+  reading: () => `
+    <section id="t-story" class="tab"><div id="brief" class="panel"></div>
+      <div class="panel" style="margin-top:12px"><div class="label">Ask about the world (free)</div>
+        <textarea id="world-text" maxlength="200" placeholder="How far is the town? Who owns the hotel?" style="min-height:60px"></textarea>
+        <button class="wide" id="world-send" style="margin-top:6px">Ask everyone</button><div id="qa" style="margin-top:8px"></div></div></section>
+    <section id="t-card" class="tab"><div id="card-body">${cardHtml()}</div><div style="margin-top:16px"><button class="primary wide" id="read">Done reading</button><p class="small muted" id="read-note" style="margin-top:6px"></p></div></section>
+    <nav class="tabs">${[['story', 'Story'], ['card', 'My card']].map(([t, l]) => `<button data-tab="${t}">${l}</button>`).join('')}</nav>`,
   playing: () => `${topbar()}
-    <section id="t-card" class="tab">${cardHtml()}</section>
+    <section id="t-story" class="tab">
+      <div class="panel" id="round"></div>
+      <div id="picture" style="margin-top:12px"></div>
+      <div class="panel" style="margin-top:12px"><div class="label">Background</div><div id="background"></div></div>
+      <div class="panel" style="margin-top:12px"><div class="label">Timeline</div><div id="timeline"></div></div>
+      <div class="panel" style="margin-top:12px"><div class="label">Shared clues</div><div id="shared"></div></div>
+      <div class="panel" style="margin-top:12px"><div class="label">News</div><div id="news"></div></div>
+    </section>
+    <section id="t-card" class="tab"><div id="card-body">${cardHtml()}</div></section>
     <section id="t-ask" class="tab">
       <div class="row" style="gap:6px;margin-bottom:8px" id="kinds">${KINDS.map(([k, l]) => `<button class="chip" data-k="${k}">${l}</button>`).join('')}</div>
       <textarea id="ask-text" maxlength="500"></textarea>
@@ -97,9 +114,9 @@ const skeletons = {
       <div class="thread" id="thread" style="margin-top:16px"></div>
     </section>
     <section id="t-map" class="tab"><h2>Who is where</h2><div id="map"></div></section>
-    <section id="t-clues" class="tab"><h2>Your clues</h2><div id="clues"></div></section>
-    <section id="t-notes" class="tab"><h2>Notes</h2><p class="small muted">Only on this phone.</p><textarea id="notes" style="min-height:50vh"></textarea></section>
-    <nav class="tabs">${[['card', 'Card'], ['ask', 'Ask'], ['map', 'Map'], ['clues', 'Clues'], ['notes', 'Notes']].map(([t, l]) => `<button data-tab="${t}">${l}</button>`).join('')}</nav>`,
+    <section id="t-clues" class="tab"><h2>Your clues</h2><div id="clues"></div>
+      <h2 style="margin-top:16px">Notes</h2><p class="small muted">Only on this phone.</p><textarea id="notes" style="min-height:30vh"></textarea></section>
+    <nav class="tabs">${[['story', 'Story'], ['card', 'Card'], ['ask', 'Ask'], ['map', 'Map'], ['clues', 'Clues']].map(([t, l]) => `<button data-tab="${t}">${l}</button>`).join('')}</nav>`,
   final: () => `<h1 style="margin-top:12px">Who did it?</h1>
     <p class="muted">Everyone picks. Culprits too. Most votes decides who wins.</p>
     <div id="final-body"></div>`,
@@ -130,12 +147,17 @@ function wire() {
     kind = b.dataset.k;
     showKind();
   }));
+  $('world-send')?.addEventListener('click', async () => {
+    const res = await act('public', { text: $('world-text').value });
+    if (res) $('world-text').value = '';
+  });
+  if (document.querySelector('[data-tab]') && !$('ask-text')) showTab();
   const text = $('ask-text');
   if (text) {
     text.value = draft;
     text.addEventListener('input', () => (draft = text.value));
     $('send').addEventListener('click', async () => {
-      const res = await act('ask', { kind, text: text.value });
+      const res = kind === 'world' ? await act('public', { text: text.value }) : await act('ask', { kind, text: text.value });
       if (res) {
         draft = text.value = '';
       }
@@ -153,6 +175,7 @@ function wire() {
 }
 
 function showTab() {
+  if (!document.getElementById(`t-${tab}`)) tab = 'story';
   document.querySelectorAll('.tab').forEach((s) => s.classList.toggle('hidden-el', s.id !== `t-${tab}`));
   document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
 }
@@ -195,10 +218,33 @@ function update() {
     $('read-note').textContent = `${v.ready.length} of ${v.players.length} ready. Keep your card secret.`;
   }
   if ($('phase-label')) $('phase-label').textContent = v.phase ? `Round ${v.phase.index + 1} of ${v.phase.count}: ${v.phase.name}` : '';
-  const card = $('t-card');
+  const card = $('card-body');
   if (card && card.dataset.sig !== JSON.stringify(v.card)) {
     card.dataset.sig = JSON.stringify(v.card);
     card.innerHTML = cardHtml();
+  }
+  if ($('brief')) $('brief').innerHTML = stepHtml(v, { me: v.me.id });
+  if ($('qa')) $('qa').innerHTML = newsHtml(v.events.filter((e) => e.kind === 'qa')).replace('No news yet.', '');
+  if ($('round')) {
+    $('round').innerHTML = v.round ? roundHtml(v.round, { voting: true, myVote: v.myRoundVote }) : '<div class="label">This round</div><p class="muted small">Talk, look around and share clues.</p>';
+    $('round').querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => act('roundvote', { choice: Number(b.dataset.choice) })));
+  }
+  if ($('round-alert')) {
+    const needVote = v.round?.vote && v.myRoundVote === null && tab !== 'story';
+    $('round-alert').innerHTML = needVote ? '<button class="primary wide" id="go-vote" style="margin-top:8px">Vote now</button>' : '';
+    $('go-vote')?.addEventListener('click', () => {
+      tab = 'story';
+      showTab();
+      update();
+    });
+  }
+  if ($('background')) $('background').innerHTML = backgroundHtml(v.background);
+  if ($('timeline')) $('timeline').innerHTML = timelineHtml(v.timeline);
+  if ($('shared')) $('shared').innerHTML = sharedCluesHtml(v.sharedClues);
+  if ($('news')) $('news').innerHTML = newsHtml(v.events);
+  if ($('picture') && !$('picture').dataset.done && v.illustration) {
+    $('picture').innerHTML = pictureHtml(v.illustration);
+    $('picture').dataset.done = '1';
   }
   if ($('qleft')) $('qleft').textContent = `${v.questionsLeft} question${v.questionsLeft === 1 ? '' : 's'} left`;
   if ($('map')) {
@@ -213,8 +259,10 @@ function update() {
   }
   if ($('send')) {
     const blocked = v.pending || v.transitioning || v.questionsLeft < 1;
-    $('send').disabled = blocked;
-    $('send').innerHTML = v.pending ? 'The GM is thinking<span class="dots"></span>' : v.transitioning ? 'Things are changing<span class="dots"></span>' : v.questionsLeft < 1 ? 'No questions left this round' : 'Send';
+    const world = kind === 'world';
+    $('send').disabled = world ? Boolean(v.publicPending) : blocked || Boolean(v.round?.vote);
+    $('send').innerHTML = world ? (v.publicPending ? 'Waiting for the answer<span class="dots"></span>' : 'Ask everyone')
+      : v.pending ? 'The GM is thinking<span class="dots"></span>' : v.round?.vote ? 'Voting now' : v.transitioning ? 'Things are changing<span class="dots"></span>' : v.questionsLeft < 1 ? 'No questions left this round' : 'Send';
     $('hint').disabled = v.hintsLeft < 1 || Boolean(v.hintVote);
     $('hint').textContent = v.hintsLeft < 1 ? 'No hints left' : `Ask the group for a hint (${v.hintsLeft} left)`;
   }
@@ -239,8 +287,11 @@ function update() {
       || '<p class="small muted">Your private chat with the GM shows here.</p>';
   }
   if ($('clues')) {
-    $('clues').innerHTML = v.clues.length ? v.clues.map((c) => `<div class="panel" style="margin-bottom:10px"><b>${esc(c.name)}</b>${c.destroyed ? ' <span class="badge culprit">now gone</span>' : ''}<div class="small">${esc(c.shows)}</div></div>`).join('')
+    const shared = new Set((v.sharedClues ?? []).map((c) => c.id));
+    $('clues').innerHTML = v.clues.length ? v.clues.map((c) => `<div class="panel" style="margin-bottom:10px"><b>${esc(c.name)}</b>${c.destroyed ? ' <span class="badge culprit">now gone</span>' : ''}<div class="small">${esc(c.shows)}</div>
+        ${shared.has(c.id) ? '<div class="small muted" style="margin-top:6px">Everyone can see this.</div>' : `<button class="chip" data-share="${esc(c.id)}" style="margin-top:6px">Show everyone</button>`}</div>`).join('')
       : '<p class="muted">Nothing yet. Use Ask to look around and talk to people.</p>';
+    $('clues').querySelectorAll('[data-share]').forEach((b) => b.addEventListener('click', () => act('share', { clueId: b.dataset.share })));
   }
   if ($('final-body')) {
     $('final-body').innerHTML = finalBody();

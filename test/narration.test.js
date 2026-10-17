@@ -6,8 +6,22 @@ const base = { gameId: 'g', status: 'playing', title: 'The Case', opening: 'It w
 const withEvents = (...events) => ({ ...base, events: [...base.events, ...events] });
 
 describe('narrationFor', () => {
-  test('should read the title and opening when the world is ready', () => {
-    assert.deepEqual(narrationFor({ ...base, status: 'generating', events: [] }, { ...base, status: 'reading' }), ['The Case.', 'It was dark.']);
+  const briefing = (step) => ({ ...base, status: 'reading', briefing: { step, steps: [
+    { kind: 'scene', title: 'The Case', lines: ['A dark hotel.'] },
+    { kind: 'intro', title: 'Meet Ruby', lines: ['Asha, stand up and say: "I am Ruby"'] },
+  ] } });
+
+  test('should read the first intro step when the world is ready', () => {
+    assert.deepEqual(narrationFor({ ...base, status: 'generating', events: [] }, briefing(0)), ['The Case.', 'A dark hotel.']);
+  });
+
+  test('should read each intro step when the host moves on, but only say who is next for a player intro', () => {
+    assert.deepEqual(narrationFor(briefing(0), briefing(1)), ['Meet Ruby.']);
+    assert.deepEqual(narrationFor(briefing(1), briefing(1)), []);
+  });
+
+  test('should not read public questions and answers out loud', () => {
+    assert.deepEqual(narrationFor(base, withEvents({ kind: 'qa', q: 'Cold?', text: 'Yes.' })), []);
   });
 
   test('should read only the news that is new since last time', () => {

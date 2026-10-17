@@ -72,6 +72,10 @@ export function createHandler(app, { joinUrl }) {
     'POST /api/ask': (b) => app.ask(b.token, b),
     'POST /api/hint': (b) => app.proposeHint(b.token),
     'POST /api/place': (b) => app.editPlace(b.host, b),
+    'POST /api/brief': (b) => app.brief(b.host, b.delta),
+    'POST /api/roundvote': (b) => app.voteRound(b.token, b.choice),
+    'POST /api/share': (b) => app.shareClue(b.token, b.clueId),
+    'POST /api/public': (b) => app.askPublic(b.token, b.text),
     'POST /api/vote': (b) => app.voteHint(b.token, b.yes),
     'POST /api/submit': (b) => app.submit(b.token, b),
   };

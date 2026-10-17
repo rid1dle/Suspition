@@ -90,12 +90,16 @@ describe('HTTP API', () => {
     assert.equal((await post('place', { host: app.game.hostToken, id: 'l1', room: 'sofa' })).status, 200);
     assert.equal((await firstEvent(`?token=${tokens[2]}`)).data.map.places[0].room, 'sofa');
 
+    assert.equal((await post('brief', { host: app.game.hostToken, delta: 1 })).status, 200);
     await post('ready', { token: tokens[0] });
     assert.equal((await post('start', { host: app.game.hostToken })).status, 200);
     assert.equal((await post('ask', { token: tokens[0], kind: 'question', text: 'Search the ballroom' })).status, 200);
     await app.idle();
     assert.equal(app.game.state.threads.p1.length, 2);
 
+    assert.equal((await post('public', { token: tokens[1], text: 'Is it cold?' })).status, 200);
+    assert.equal((await post('share', { token: tokens[2], clueId: 'c1' })).status, 403);
+    assert.equal((await post('roundvote', { token: tokens[0], choice: 0 })).status, 409);
     assert.equal((await post('hint', { token: tokens[0] })).status, 200);
     assert.equal((await post('vote', { token: tokens[1], yes: true })).status, 200);
     assert.equal(app.game.state.hintsLeft, 1);

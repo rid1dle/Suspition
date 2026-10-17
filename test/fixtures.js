@@ -1,6 +1,6 @@
 import { createGame, addPlayer, applySetup, attachScenario } from '../server/game.js';
 
-export function makeScenario(playerCount = 4, { phases = 3, hints = 3 } = {}) {
+export function makeScenario(playerCount = 4, { phases = 3, hints = 3, questions = false } = {}) {
   const players = Array.from({ length: playerCount }, (_, i) => ({
     id: `p${i + 1}`,
     character_name: `Character ${i + 1}`,
@@ -38,17 +38,26 @@ export function makeScenario(playerCount = 4, { phases = 3, hints = 3 } = {}) {
       { id: 'k2', statement: 'B', clue_ids: ['c2', 'c3'] },
       { id: 'k3', statement: 'C', clue_ids: ['c1', 'c3'] },
     ],
-    phases: Array.from({ length: phases }, (_, i) => ({ name: `Phase name ${i + 1}`, planned_beat: `BEAT-${i + 1}` })),
+    phases: Array.from({ length: phases }, (_, i) => ({
+      name: `Phase name ${i + 1}`,
+      planned_beat: `BEAT-${i + 1}`,
+      ...(questions ? { question: `QUESTION-${i + 1}`, options: ['A', 'B', 'C'], answer_index: 1, reward: `REWARD-${i + 1}`, reward_time: '9:15', reward_order: 25, wrong_nudge: `NUDGE-${i + 1}` } : {}),
+    })),
+    background: ['BG-1 public line', 'BG-2 public line'],
+    public_timeline: [
+      { order: 10, time: '8:00', event: 'TL-START', reveal_round: 0 },
+      { order: 30, time: '9:30', event: 'TL-ROUND2', reveal_round: 2 },
+    ],
     hint_ladder: Array.from({ length: hints + 1 }, (_, i) => ({ text: `HINT-${i + 1}`, is_false: false })),
     twists: [{ name: 'Twist', description: 'TWIST-DESC' }],
   };
 }
 
-export function gameInReading(playerCount = 4, now = 1_000) {
+export function gameInReading(playerCount = 4, now = 1_000, opts = {}) {
   const game = createGame(now);
   for (let i = 0; i < playerCount; i += 1) addPlayer(game, { name: `Player${i + 1}` });
   applySetup(game, { setting: '', tone: 'tense', length: 'short', hints: 3 });
-  attachScenario(game, makeScenario(playerCount), now);
+  attachScenario(game, makeScenario(playerCount, opts), now);
   return game;
 }
 
@@ -78,6 +87,12 @@ export class FakeGM {
   }
   phase() {
     return this.step('phase', this.phaseResult);
+  }
+  publicAnswer() {
+    return this.step('public', { answer: 'PUBLIC ANSWER' });
+  }
+  illustrate() {
+    return this.step('illustrate', this.svg ?? { svg: '<svg viewBox="0 0 10 10"><rect width="10" height="10"/></svg>' });
   }
   score(game) {
     return this.step('score', () => ({

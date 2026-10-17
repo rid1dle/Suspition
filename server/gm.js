@@ -2,8 +2,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { LENGTHS, pickTwists, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt } from './prompts.js';
-import { validateScenario, snapshotForGM, nextPhaseInfo } from './game.js';
+import { PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt } from './prompts.js';
+import { validateScenario, snapshotForGM, nextPhaseInfo, publicKnowledge } from './game.js';
 import { TopLevelTracker } from './progress.js';
 
 const ISOLATION = [
@@ -201,9 +201,32 @@ export class GM {
   phase(game) {
     return this.call('phase', {
       system: playSystem(game.scenario),
-      prompt: phasePrompt({ snapshot: snapshotForGM(game), nextPhase: nextPhaseInfo(game) }),
+      prompt: phasePrompt({
+        snapshot: snapshotForGM(game),
+        nextPhase: nextPhaseInfo(game),
+        lastRound: game.state.roundResults.find((r) => r.phaseIndex === game.state.phaseIndex) ?? null,
+      }),
       schema: PHASE_SCHEMA,
       model: this.playModel,
+    });
+  }
+
+  publicAnswer(game, question) {
+    return this.call('public', {
+      system: publicSystem(publicKnowledge(game)),
+      prompt: `Question from a player: ${question}`,
+      schema: PUBLIC_ANSWER_SCHEMA,
+      model: this.playModel,
+    });
+  }
+
+  illustrate(game) {
+    return this.call('illustrate', {
+      system: 'You draw clean, simple SVG illustrations. Output only the SVG in the svg field.',
+      prompt: illustrationPrompt(game.scenario),
+      schema: ILLUSTRATION_SCHEMA,
+      model: this.playModel,
+      timeoutMs: 300_000,
     });
   }
 

@@ -5,7 +5,7 @@ import { MemoryStore, Store } from '../server/store.js';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { FakeGM } from './fixtures.js';
+import { FakeGM, makeScenario } from './fixtures.js';
 
 async function setupApp({ players = 3, gm = new FakeGM() } = {}) {
   let now = 1_000;
@@ -337,5 +337,72 @@ describe('Store', () => {
     store.file = join(dir, 'current-game.json');
     await store.save({ n: 2 });
     assert.deepEqual(await store.load(), { n: 2 });
+  });
+});
+
+describe('App rounds with goals', () => {
+  async function withQuestions() {
+    const ctx = await setupApp();
+    ctx.gm.generate = (game, onProgress = () => {}) => ctx.gm.step('generate', () => makeScenario(game.players.length, { phases: 3, hints: game.setup.hints, questions: true }));
+    await toPlaying(ctx);
+    return ctx;
+  }
+
+  test('should start the vote on Next round, then move on after the vote', async () => {
+    const ctx = await withQuestions();
+    await ctx.app.nextPhase(ctx.host);
+    await ctx.app.idle();
+    assert.ok(ctx.app.game.state.roundVote);
+    assert.ok(!ctx.gm.calls.includes('phase'));
+    await ctx.app.nextPhase(ctx.host);
+    await ctx.app.idle();
+    assert.equal(ctx.app.game.state.phaseIndex, 1);
+    assert.match(ctx.app.game.state.roundResults[0].question, /QUESTION-1/);
+  });
+
+  test('should move on by itself once everyone has voted', async () => {
+    const ctx = await withQuestions();
+    await ctx.app.nextPhase(ctx.host);
+    for (const t of ctx.tokens) await ctx.app.voteRound(t, 1);
+    await ctx.app.idle();
+    assert.equal(ctx.app.game.state.phaseIndex, 1);
+    assert.equal(ctx.app.game.state.roundResults[0].correct, true);
+  });
+
+  test('should open the vote when the timer runs out, and close it when the vote timer runs out', async () => {
+    const ctx = await withQuestions();
+    ctx.advanceClock(10 * 60_000 + 1);
+    await ctx.app.tick();
+    assert.ok(ctx.app.game.state.roundVote);
+    ctx.advanceClock(91_000);
+    await ctx.app.tick();
+    await ctx.app.idle();
+    assert.equal(ctx.app.game.state.phaseIndex, 1);
+  });
+
+  test('should draw the scene picture after the world is written, and drop an unsafe one', async () => {
+    const ctx = await withQuestions();
+    assert.match(ctx.app.tableView().illustration, /^<svg/);
+    const bad = await setupApp();
+    bad.gm.svg = { svg: '<svg onload="steal()"></svg>' };
+    await toPlaying(bad);
+    assert.equal(bad.app.tableView().illustration, null);
+  });
+
+  test('should answer a world question for everyone', async () => {
+    const ctx = await withQuestions();
+    await ctx.app.askPublic(ctx.tokens[0], 'Is it raining?');
+    await ctx.app.idle();
+    const qa = ctx.app.playerView(ctx.tokens[2]).events.at(-1);
+    assert.deepEqual([qa.kind, qa.q, qa.text], ['qa', 'Is it raining?', 'PUBLIC ANSWER']);
+  });
+
+  test('should let only the host move through the intro', async () => {
+    const ctx = await setupApp();
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    await ctx.app.idle();
+    await assert.rejects(() => ctx.app.brief('nope', 1), /table screen/);
+    await ctx.app.brief(ctx.host, 1);
+    assert.equal(ctx.app.tableView().briefing.step, 1);
   });
 });

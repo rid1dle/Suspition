@@ -31,7 +31,7 @@ export function mapHtml(view, { me = null, before = null, editing = false } = {}
     const room = editing
       ? `<input class="room-input" data-room="${esc(p.id)}" value="${esc(p.room)}" placeholder="Spot in our room" maxlength="40">`
       : p.room ? `<div class="room">&#128205; ${esc(p.room)}</div>` : '';
-    return `<div class="place${editing ? ' editing' : ''}" data-place="${esc(p.id)}" style="left:${p.x}%;top:${p.y}%"><div class="place-name">${esc(p.name)}</div>${room}<div class="whos">${chips}</div></div>`;
+    return `<div class="place${editing ? ' editing' : ''}" data-place="${esc(p.id)}" style="left:${p.x}%;top:${p.y}%"><div class="place-name">${p.icon ? `${esc(p.icon)} ` : ''}${esc(p.name)}</div>${room}<div class="whos">${chips}</div></div>`;
   }).join('');
   return `<div class="map${editing ? ' editing' : ''}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${places}</div>
     <div class="map-key small muted"><span class="who player">Player</span> <span class="who npc">Played by the GM</span></div>`;

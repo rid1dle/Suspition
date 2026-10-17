@@ -24,7 +24,13 @@ export class App {
       this.game.progress = null;
     }
     if (this.game.state) {
-      this.game.state.positions ??= G.startPositions(this.game.scenario);
+      const st = this.game.state;
+      st.positions ??= G.startPositions(this.game.scenario);
+      st.brief ??= { step: 0 };
+      st.roundResults ??= [];
+      st.timelineExtra ??= [];
+      st.shared ??= [];
+      st.publicPending = {};
       for (const pid of Object.keys(this.game.state.pending ?? {})) {
         G.failAsk(this.game, pid);
         this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. You did not lose a question. Ask again.', at: this.clock() });
@@ -103,6 +109,7 @@ export class App {
         if (this.game !== game) return;
         G.attachScenario(game, scenario, this.clock());
         game.progress = null;
+        this.drawPicture(game);
       } catch (err) {
         if (this.game !== game) return;
         game.status = 'failed';
@@ -140,6 +147,56 @@ export class App {
     if (!p.seen.includes(p.step)) p.seen.push(p.step);
     if (p.step !== before) this.log(`gm generate: ${GENERATION_STEPS.find((s) => s.id === p.step)?.label ?? p.step}`);
     this.notify();
+  }
+
+  drawPicture(game) {
+    this.background('illustrate', async () => {
+      const { svg } = await this.gm.illustrate(game);
+      if (this.game !== game || !game.state) return;
+      const clean = G.cleanSvg(svg);
+      if (!clean) throw new Error('the picture was not a safe SVG');
+      game.state.illustration = clean;
+      await this.changed();
+    });
+  }
+
+  async brief(hostToken, delta) {
+    this.requireHost(hostToken);
+    G.moveBrief(this.game, delta);
+    await this.changed();
+  }
+
+  async voteRound(tok, choice) {
+    const p = G.playerByToken(this.game, tok);
+    const result = G.voteRound(this.game, p.id, choice, this.clock());
+    await this.changed();
+    if (result) this.advance();
+  }
+
+  async shareClue(tok, clueId) {
+    const p = G.playerByToken(this.game, tok);
+    G.shareClue(this.game, p.id, clueId, this.clock());
+    await this.changed();
+  }
+
+  async askPublic(tok, text) {
+    const game = this.game;
+    const p = G.playerByToken(game, tok);
+    const q = G.beginPublicAsk(game, p.id, text);
+    this.background(`public ${p.id}`, async () => {
+      try {
+        const { answer } = await this.gm.publicAnswer(game, q);
+        if (this.game !== game) return;
+        G.completePublicAsk(game, p.id, answer, this.clock());
+      } catch (err) {
+        if (this.game !== game) return;
+        G.failPublicAsk(game, p.id);
+        this.log(`public ${p.id} failed: ${err.message}`);
+      } finally {
+        if (this.game === game) await this.changed();
+      }
+    });
+    await this.changed();
   }
 
   async ready(tok) {
@@ -208,6 +265,14 @@ export class App {
 
   advance() {
     const game = this.game;
+    const st = game.state;
+    if (st.roundVote) {
+      G.resolveRoundVote(game, this.clock(), true);
+    } else if (G.needsRoundVote(game)) {
+      G.beginRoundVote(game, this.clock());
+      this.notify();
+      return null;
+    }
     G.beginPhaseChange(game);
     this.notify();
     return this.background('phase', async () => {
@@ -275,7 +340,8 @@ export class App {
       dirty = true;
     }
     if (dirty) await this.changed();
-    if (!st.transitioning && st.phaseEndsAt && st.phaseEndsAt <= now) this.advance();
+    if (st.roundVote && st.roundVote.endsAt <= now) return this.advance();
+    if (!st.transitioning && !st.roundVote && st.phaseEndsAt && st.phaseEndsAt <= now) this.advance();
   }
 
   tableView() {

@@ -19,6 +19,8 @@ const messages = { type: 'array', items: obj({ player_id: str, text: str }) };
 export const SCENARIO_SCHEMA = obj({
   title: str,
   setting_summary: str,
+  background: strArr,
+  public_timeline: { type: 'array', items: obj({ order: { type: 'integer' }, time: str, event: str, reveal_round: { type: 'integer', minimum: 0, maximum: 5 } }) },
   opening_scene: str,
   truth: obj({
     summary: str,
@@ -42,6 +44,7 @@ export const SCENARIO_SCHEMA = obj({
       hidden_facts: { type: 'array', items: obj({ id: str, fact: str }) },
       starting_knowledge: str,
       start_location: str,
+      icon: str,
     }),
   },
   npcs: {
@@ -57,6 +60,7 @@ export const SCENARIO_SCHEMA = obj({
       reveals_freely: str,
       reveals_under_pressure: str,
       start_location: str,
+      icon: str,
     }),
   },
   locations: {
@@ -68,6 +72,7 @@ export const SCENARIO_SCHEMA = obj({
       x: { type: 'integer', minimum: 0, maximum: 100 },
       y: { type: 'integer', minimum: 0, maximum: 100 },
       neighbors: strArr,
+      icon: str,
     }),
   },
   clues: {
@@ -83,7 +88,20 @@ export const SCENARIO_SCHEMA = obj({
     }),
   },
   key_deductions: { type: 'array', items: obj({ id: str, statement: str, clue_ids: strArr }) },
-  phases: { type: 'array', items: obj({ name: str, planned_beat: str }) },
+  phases: {
+    type: 'array',
+    items: obj({
+      name: str,
+      planned_beat: str,
+      question: str,
+      options: strArr,
+      answer_index: { type: 'integer', minimum: 0, maximum: 3 },
+      reward: str,
+      reward_time: str,
+      reward_order: { type: 'integer' },
+      wrong_nudge: str,
+    }),
+  },
   hint_ladder: { type: 'array', items: obj({ text: str, is_false: { type: 'boolean' } }) },
   twists: { type: 'array', items: obj({ name: str, description: str }) },
   music: obj({
@@ -186,9 +204,12 @@ Design rules:
 - public_info, setting_summary and opening_scene are read by everyone. They must never reveal a culprit, a secret or a hidden fact.
 - The hint ladder runs from vague to specific. Write at least as many hints as requested. If you use the false-hint twist, mark exactly one hint is_false: true and make it plausible but refutable by evidence.
 - Use exactly the twists listed in the request, woven into the characters and phases. Record each in twists with a description of how it works in this game.
-- Phase plan: one entry per phase, with a short evocative name and a planned beat (an event that changes the situation: a discovery, a departure, a new body, a storm). The first phase is the start of the investigation.
+- Background: 5 to 8 short lines everyone reads at the start. Cover: the place and the year, why everyone is here tonight, who the victim is and what they were like, what just happened, what is cut off or blocked, and one or two things everyone in this world would know. No secrets.
+- Public timeline: 3 to 8 times everyone knows or can learn. reveal_round 0 means known from the start; 1 to the number of rounds means it is announced when that round starts. order sorts the whole story in time (use 10, 20, 30... so new entries fit between). Never put a secret in it.
+- Rounds (phases): one entry per round, with a short name and a planned beat (an event that changes the situation). Each round has a clear goal: question is what the group must work out this round, answerable from clues and talk in that round (for example "How did the lights go out?"). options are 3 or 4 short answers; answer_index is the right one. The last round's question must not be "who did it" (that is the final vote). reward is one new fact the group unlocks if they get it right; reward_time and reward_order place it on the timeline ('' and 0 if it has no time). wrong_nudge is one gentle line pointing them the right way if they get it wrong. The questions should build: each round's answer helps the next.
 - Character names are in-world names that fit the setting. Use the player's wish if they gave one.
 - Ids: players are p1, p2, ... exactly as given. GM characters n1, n2, ...; locations l1, ...; clues c1, ...; key deductions k1, ...; hidden facts h1, h2, ... (unique across all players).
+- Icons: give every location, player and GM character an icon: one emoji that fits it (a candle, a key, a teacup). Keep it simple and readable.
 - Map: give every location x and y from 0 to 100, laid out like a simple floor plan (places next to each other are close). neighbors lists the ids of places you can walk to directly. Every player and GM character gets a start_location: the id of the place they are when the game starts. Spread people out, one to three per place.
 - music: the game's soundtrack, played live in the room. Pick a root, mode, tempo, instrument palette and percussion that fit this setting and tone (a cozy village fair is not a dark ship), and a motif of 5 to 8 scale degrees (0 is the root, 7 the octave) that is easy to recognise. description is one line a host could read aloud ("slow music box over a heartbeat").
 - Length limits (hard): title up to 6 words. setting_summary 1 or 2 short sentences. opening_scene 40 to 70 words. public_info 1 sentence. private_info 3 to 5 short sentences. goal 1 sentence. side_explanation 1 sentence. hidden fact 1 sentence. clue shows 1 sentence. planned_beat 1 or 2 sentences. Each hint 1 sentence. Each twist description 1 sentence. Location public_info 1 short sentence.
@@ -246,13 +267,13 @@ Request from ${player.id} (${player.character_name}), type "${kind}":
 ${text}`;
 }
 
-export function phasePrompt({ snapshot, nextPhase }) {
+export function phasePrompt({ snapshot, nextPhase, lastRound }) {
   return `The game is moving to the next phase: "${nextPhase.name}" (planned beat: ${nextPhase.planned_beat}).
 
 Game state:
 ${JSON.stringify(snapshot)}
 
-Move the world on. Write the public_event announced on the table and read out loud (15 to 40 words): use the planned beat, adapted to what players actually did. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Use positions for people who visibly move now (GM characters wander off, people gather somewhere); list only changes, with location ids. Leave arrays empty if nothing applies.`;
+${lastRound ? `Last round's question was "${lastRound.question}". The group ${lastRound.correct ? 'got it right, so the reward is now public' : 'got it wrong, so the culprit gains a little cover'}. Build on that.\n\n` : ''}Move the world on. Write the public_event announced on the table and read out loud (15 to 40 words): use the planned beat, adapted to what players actually did. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Use positions for people who visibly move now (GM characters wander off, people gather somewhere); list only changes, with location ids. Leave arrays empty if nothing applies.`;
 }
 
 export function scorePrompt({ snapshot, submissions, verdict }) {
@@ -266,4 +287,24 @@ ${JSON.stringify(snapshot)}
 
 Score each player: method_score and motive_score from 0 (wrong or missing) to 2 (essentially right), judged only against the truth and evidence. goal_achieved and goal_outcome judge their personal goal from what they actually did in the game record (one sentence). comment is one short, friendly sentence on their play.
 Then write reveal_story (80 to 160 words, short sentences): what really happened, in order, the key lies, and who was who. It is read aloud to the room.`;
+}
+
+export const PUBLIC_ANSWER_SCHEMA = obj({ answer: str });
+
+export function publicSystem(publicView) {
+  return `You answer questions about the setting of a mystery game, for everyone in the room to hear.
+You only know what is below. It is all public. Answer from it, or say "Nobody knows that yet." Never invent clues, secrets or facts about who did it. You may add harmless everyday detail about the world (the weather, how far a town is, what a room looks like) if it fits.
+Answer in 1 to 3 short sentences.
+
+${PLAIN_STYLE}
+
+PUBLIC INFORMATION:
+${JSON.stringify(publicView)}`;
+}
+
+export const ILLUSTRATION_SCHEMA = obj({ svg: str });
+
+export function illustrationPrompt(scenario) {
+  return `Draw one simple, moody picture of this setting as SVG: ${scenario.setting_summary} ${scenario.background?.slice(0, 3).join(' ')}
+Rules: start with <svg and use viewBox="0 0 800 400". Flat shapes and gradients, 4 to 7 colours, a clear silhouette of the place. No text, no people's faces, no scripts, no links, no external images, no foreignObject. Under 7000 characters.`;
 }

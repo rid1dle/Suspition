@@ -3,6 +3,7 @@ import { Score } from '/music.js';
 import { intensityFor, cuesBetween } from '/music-theory.js';
 import { Narrator, narrationFor } from '/narration.js';
 import { mapHtml } from '/map.js';
+import { pictureHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, resultsHtml, stepHtml } from '/panels.js';
 
 const app = document.getElementById('app');
 const fromHash = hashParam('host');
@@ -52,7 +53,7 @@ function header(title, sub = '') {
 
 function castHtml(cast) {
   if (!cast) return '';
-  const person = (c, extra = '') => `<div class="person"><b>${esc(c.name)}</b> <span class="muted small">${esc(c.role)}${extra}</span><div class="small">${esc(c.info)}</div></div>`;
+  const person = (c, extra = '') => `<div class="person">${c.icon ? `${esc(c.icon)} ` : ''}<b>${esc(c.name)}</b> <span class="muted small">${esc(c.role)}${extra}</span><div class="small">${esc(c.info)}</div></div>`;
   return `<div class="panel stack">
     <div><div class="label">Players</div>${cast.players.map((c) => person(c, ` &middot; ${esc(c.player)}`)).join('')}</div>
     <div><div class="label">Played by the GM</div>${cast.npcs.map((n) => person(n)).join('')}</div>
@@ -95,14 +96,16 @@ const skeletons = {
   failed: () => `${header('Something went wrong')}<div class="banner error" id="error"></div>
     ${isHost() ? '<p style="margin-top:12px"><button class="primary" id="retry">Try again</button></p>' : ''}`,
   reading: () => `${header(view.title, view.setting)}${hostNote()}
-    <div class="grid" style="grid-template-columns:minmax(300px,1.5fr) minmax(260px,1fr)">
+    <div class="grid" style="grid-template-columns:minmax(320px,1.7fr) minmax(260px,1fr)">
       <div class="stack">
-        <div class="panel"><div class="row between"><div class="label">The story so far</div><button class="chip" id="read-opening">Read it out</button></div><p class="opening">${esc(view.opening)}</p></div>
-        <div class="panel"><div class="label">Read your card on your phone. Then tap "Done".</div><div id="ready"></div>
-        ${isHost() ? '<button class="primary" id="start" style="margin-top:10px">Start</button>' : ''}</div>
-        ${mapPanel()}
+        <div class="panel" id="brief"></div>
+        ${isHost() ? `<div class="row"><button id="brief-back">Back</button><button class="primary" id="brief-next">Next</button><button class="chip" id="read-step">Read it again</button></div>` : ''}
       </div>
-      ${castHtml(view.cast)}
+      <div class="stack">
+        <div class="panel"><div class="label">Read your card on your phone. Then tap "Done".</div><div id="ready"></div>
+        ${isHost() ? '<button class="primary" id="start" style="margin-top:10px">Start round 1</button>' : ''}</div>
+        <div class="panel"><div class="label">Questions about the world</div><div id="qa"></div></div>
+      </div>
     </div>`,
   playing: () => `<div class="row between" style="margin-bottom:14px">
       <div><h1>${esc(view.title)}</h1><div class="serif" style="color:var(--accent);font-size:1.2rem" id="phase-name"></div></div>
@@ -112,21 +115,29 @@ const skeletons = {
     <div id="banner"></div>
     <div class="grid" style="grid-template-columns:minmax(320px,1.5fr) minmax(260px,1fr)">
       <div class="stack">
-        <div class="row" style="align-items:stretch">
-          <div class="panel" style="flex:1"><div class="label">Group hints</div><div id="pips"></div><div class="small muted">Ask for one on your phone. Most votes wins.</div></div>
-          <div class="panel" style="flex:1.3"><div class="label">Suspicion</div><div class="meter"><div id="meter"></div></div><div class="small" id="susp" style="margin-top:6px"></div></div>
-        </div>
+        <div class="panel" id="round"></div>
         <div id="vote"></div>
         ${mapPanel()}
-        <div class="panel"><div class="label">News</div><ul class="feed" id="feed"></ul></div>
+        <div class="panel"><div class="label">News</div><div id="feed"></div></div>
       </div>
-      ${castHtml(view.cast)}
+      <div class="stack">
+        <div id="picture"></div>
+        <div class="row" style="align-items:stretch">
+          <div class="panel" style="flex:1"><div class="label">Group hints</div><div id="pips"></div><div class="small muted">Ask for one on your phone.</div></div>
+          <div class="panel" style="flex:1"><div class="label">Suspicion</div><div class="meter"><div id="meter"></div></div><div class="small" id="susp" style="margin-top:6px"></div></div>
+        </div>
+        <div class="panel"><div class="label">Timeline</div><div id="timeline"></div></div>
+        <div class="panel"><div class="label">Shared clues</div><div id="shared"></div></div>
+        ${castHtml(view.cast)}
+      </div>
     </div>`,
   final: () => `${header('Who did it?', view.title)}${hostNote()}<div id="banner"></div>
     <div class="grid"><div class="panel stack"><p class="opening">Everyone picks on their phone. Culprits too.</p>
       <div id="submitted"></div>
       ${isHost() ? '<button class="primary" id="finish">Show the answer</button><div class="small muted">It shows by itself when everyone has picked.</div>' : ''}</div>
-      <div class="panel"><div class="label">News</div><ul class="feed" id="feed"></ul></div></div>`,
+      <div class="stack"><div class="panel"><div class="label">Timeline</div><div id="timeline"></div></div>
+      <div class="panel"><div class="label">Rounds</div><div id="results"></div></div>
+      <div class="panel"><div class="label">Shared clues</div><div id="shared"></div></div></div></div>`,
   reveal: () => revealHtml(),
 };
 
@@ -145,6 +156,7 @@ function revealHtml() {
       <div class="panel"><div class="row between"><div class="label">What really happened</div><button class="chip" id="read-story">Read it out</button></div><p class="opening" style="white-space:pre-wrap">${esc(r.reveal_story)}</p>
         <div class="label" style="margin-top:12px">Timeline</div>${r.truth.timeline.map((t) => `<div class="small"><b>${esc(t.time)}</b> ${esc(t.event)}</div>`).join('')}</div>
       <div class="stack">
+        <div class="panel"><div class="label">Rounds</div>${resultsHtml(view.roundResults) || '<p class="small muted">No round votes.</p>'}</div>
         <div class="panel"><div class="label">Twists</div>${r.twists.map((t) => `<div class="small" style="margin-bottom:6px"><b>${esc(t.name)}</b>: ${esc(t.description)}</div>`).join('')}
           ${r.false_hint ? `<div class="small"><b>The fake hint:</b> ${esc(r.false_hint)}</div>` : ''}</div>
       </div>
@@ -204,7 +216,12 @@ function wire() {
   $('extend')?.addEventListener('click', () => act('extend'));
   $('next')?.addEventListener('click', () => confirmTwice($('next')) && act('next'));
   $('finish')?.addEventListener('click', () => act('finish'));
-  $('read-opening')?.addEventListener('click', () => readNow([`${view.title}.`, view.opening]));
+  $('brief-back')?.addEventListener('click', () => act('brief', { delta: -1 }));
+  $('brief-next')?.addEventListener('click', () => act('brief', { delta: 1 }));
+  $('read-step')?.addEventListener('click', () => {
+    const step = view.briefing?.steps?.[view.briefing.step];
+    if (step) readNow([`${step.title}.`, ...step.lines]);
+  });
   $('edit-map')?.addEventListener('click', () => {
     editingMap = !editingMap;
     $('edit-map').textContent = editingMap ? 'Done' : 'Edit map';
@@ -276,10 +293,30 @@ function update() {
   }
   if ($('feed')) {
     const events = v.events.filter((e) => e.kind !== 'opening');
-    $('feed').innerHTML = events.slice().reverse().map((e, i) => `<li class="${esc(e.kind)}${i < events.length - seenEvents ? ' fresh' : ''}">${esc(e.text)}</li>`).join('');
+    $('feed').innerHTML = newsHtml(events, { fresh: events.length - seenEvents });
     seenEvents = events.length;
   }
-  if ($('next') && v.phase) $('next').textContent = v.phase.index + 1 >= v.phase.count ? 'Go to the vote' : 'Next round';
+  if ($('brief')) {
+    $('brief').innerHTML = stepHtml(v);
+    if ($('brief-back')) $('brief-back').disabled = v.briefing.step === 0;
+    if ($('brief-next')) $('brief-next').disabled = v.briefing.step >= v.briefing.steps.length - 1;
+  }
+  if ($('qa')) $('qa').innerHTML = newsHtml(v.events.filter((e) => e.kind === 'qa')).replace('No news yet.', 'Ask on your phone. Everyone sees the answer.');
+  if ($('round')) {
+    $('round').innerHTML = v.round ? roundHtml(v.round) : '<div class="label">This round</div><p class="muted">Talk, look around and share clues.</p>';
+    $('round').hidden = false;
+  }
+  if ($('timeline')) $('timeline').innerHTML = timelineHtml(v.timeline);
+  if ($('shared')) $('shared').innerHTML = sharedCluesHtml(v.sharedClues);
+  if ($('results')) $('results').innerHTML = resultsHtml(v.roundResults) || '<p class="small muted">No round votes.</p>';
+  if ($('picture') && !$('picture').dataset.done && v.illustration) {
+    $('picture').innerHTML = pictureHtml(v.illustration);
+    $('picture').dataset.done = '1';
+  }
+  if ($('next') && v.phase) {
+    const last = v.phase.index + 1 >= v.phase.count;
+    $('next').textContent = v.round?.vote ? 'Close the vote' : v.round && !v.round.done ? 'Start the vote' : last ? 'Go to the final vote' : 'Next round';
+  }
   tick();
 }
 
@@ -336,6 +373,12 @@ function wireMapEditing(box) {
 
 function tick() {
   if (!view) return;
+  if ($('round') && view.round?.vote) {
+    const c = countdown(view.round.vote.endsAt);
+    const t = $('round').querySelector('.timer');
+    if (t) t.textContent = c.text;
+    else $('round').innerHTML = roundHtml(view.round, { countdown: c.text });
+  }
   if ($('timer') && view.phase?.endsAt) {
     const c = countdown(view.phase.endsAt);
     $('timer').textContent = c.text;
