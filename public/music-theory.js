@@ -80,7 +80,7 @@ export function cuesBetween(prev, next) {
   if (!prev || !next || prev.gameId !== next.gameId) return [];
   const cues = [];
   if (next.status === 'reveal' && prev.status !== 'reveal') cues.push('reveal');
-  if (next.phase && prev.phase && next.phase.index !== prev.phase.index) cues.push('phase');
+  if (next.phase && prev.phase && (next.phase.index !== prev.phase.index || next.phase.number !== prev.phase.number)) cues.push('phase');
   if (next.status === 'playing' && prev.status === 'reading') cues.push('phase');
   if (next.hintsLeft != null && prev.hintsLeft != null && next.hintsLeft < prev.hintsLeft) cues.push('hint');
   if (next.status === 'final' && prev.status === 'playing') cues.push('final');

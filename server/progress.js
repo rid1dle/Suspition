@@ -76,6 +76,7 @@ export const GENERATION_STEPS = [
   { id: 'phases', label: 'What happens each round', keys: ['phases'] },
   { id: 'hints', label: 'Hints and twists', keys: ['hint_ladder', 'twists'] },
   { id: 'checking', label: 'Checking it', keys: [] },
+  { id: 'cards', label: 'Making sure everyone knows their own story', keys: [] },
 ];
 
 export function stepForKey(key) {

@@ -33,6 +33,12 @@ export class App {
       st.publicPending = {};
       st.knowledge ??= [];
       st.moments ??= [];
+      st.roundNumber ??= st.phaseIndex + 1;
+      st.replays ??= 0;
+      st.persona ??= {};
+      st.facts ??= [];
+      G.backfillFacts(this.game);
+      if (this.game.setup) this.game.setup.replays ??= G.MAX_REPLAYS;
       st.overridesLeft ??= Object.fromEntries(this.game.players.map((p) => [p.id, this.game.setup?.overrides ?? 3]));
       for (const pid of Object.keys(this.game.state.pending ?? {})) {
         G.failAsk(this.game, pid);
@@ -146,6 +152,7 @@ export class App {
     } else if (e.kind === 'key') p.step = stepForKey(e.key) ?? p.step;
     else if (e.kind === 'item') p.counts[e.key] = e.count;
     else if (e.kind === 'checking') p.step = 'checking';
+    else if (e.kind === 'cards') p.step = 'cards';
     else if (e.kind !== 'thinking') return;
     if (!p.seen.includes(p.step)) p.seen.push(p.step);
     if (p.step !== before) this.log(`gm generate: ${GENERATION_STEPS.find((s) => s.id === p.step)?.label ?? p.step}`);
@@ -176,10 +183,16 @@ export class App {
     if (result) this.advance();
   }
 
-  async moment(tok, id, action) {
+  async moment(tok, id, action, text) {
     const p = G.playerByToken(this.game, tok);
     if (action === 'ready') G.readyMoment(this.game, p.id, id, this.clock());
-    else G.answerMoment(this.game, p.id, id, action, this.clock());
+    else G.answerMoment(this.game, p.id, id, action, this.clock(), { text });
+    await this.changed();
+  }
+
+  async note(hostToken, text) {
+    this.requireHost(hostToken);
+    G.addNote(this.game, text, this.clock());
     await this.changed();
   }
 
@@ -195,9 +208,9 @@ export class App {
     const q = G.beginPublicAsk(game, p.id, text);
     this.background(`public ${p.id}`, async () => {
       try {
-        const { answer } = await this.gm.publicAnswer(game, q);
+        const { answer, asker_read: read } = await this.gm.publicAnswer(game, q);
         if (this.game !== game) return;
-        G.completePublicAsk(game, p.id, answer, this.clock());
+        G.completePublicAsk(game, p.id, answer, this.clock(), read);
       } catch (err) {
         if (this.game !== game) return;
         G.failPublicAsk(game, p.id);
@@ -288,7 +301,7 @@ export class App {
     return this.background('phase', async () => {
       try {
         await Promise.allSettled([...this.asks.values()]);
-        const result = G.isLastPhase(game) ? {} : await this.gm.phase(game);
+        const result = G.goesToFinal(game) ? {} : await this.gm.phase(game);
         if (this.game !== game) return;
         G.completePhase(game, result, this.clock());
         game.error = null;

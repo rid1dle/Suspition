@@ -8,6 +8,8 @@
     "start": "node server/index.js",
     "fresh": "node server/index.js --new",
     "simplify": "node scripts/simplify-game.js",
+    "rework": "node scripts/rework-cast.js",
+    "fix-cards": "node scripts/fix-cards.js",
     "test": "node --test test/*.test.js"
   },
   "engines": {

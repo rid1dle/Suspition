@@ -26,7 +26,7 @@ export function mapHtml(view, { me = null, before = null, editing = false } = {}
     const chips = here.map((c) => {
       const moved = before && before[c.id] && before[c.id] !== p.id;
       const label = c.id === me ? 'You' : shortName(c.name);
-      return `<span class="who ${c.kind}${c.id === me ? ' me' : ''}${moved ? ' moved' : ''}" title="${esc(c.name)}">${esc(label)}</span>`;
+      return `<span class="who ${c.kind}${c.minor ? ' minor' : ''}${c.id === me ? ' me' : ''}${moved ? ' moved' : ''}" title="${esc(c.name)}${c.minor ? ' (minor)' : ''}">${esc(label)}</span>`;
     }).join('');
     const room = editing
       ? `<input class="room-input" data-room="${esc(p.id)}" value="${esc(p.room)}" placeholder="Spot in our room" maxlength="40">`
@@ -34,5 +34,5 @@ export function mapHtml(view, { me = null, before = null, editing = false } = {}
     return `<div class="place${editing ? ' editing' : ''}" data-place="${esc(p.id)}" style="left:${p.x}%;top:${p.y}%"><div class="place-name">${p.icon ? `${esc(p.icon)} ` : ''}${esc(p.name)}</div>${room}<div class="whos">${chips}</div></div>`;
   }).join('');
   return `<div class="map${editing ? ' editing' : ''}"><svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${lines}</svg>${places}</div>
-    <div class="map-key small muted"><span class="who player">Player</span> <span class="who npc">Played by the GM</span></div>`;
+    <div class="map-key small muted"><span class="who player">Player</span> <span class="who npc">Played by the GM</span>${(view.cast?.npcs ?? []).some((n) => n.minor) ? ' <span class="who npc minor">Minor</span>' : ''}</div>`;
 }

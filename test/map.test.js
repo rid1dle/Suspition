@@ -66,3 +66,13 @@ describe('shortName', () => {
     assert.equal(shortName('Madonna'), 'Madonna');
   });
 });
+
+describe('mapHtml minor people', () => {
+  test('should draw minor GM people faded and add them to the key', () => {
+    const v = { ...view, cast: { ...view.cast, npcs: [{ id: 'n1', name: 'Florrie Dann', minor: true }] } };
+    const html = mapHtml(v);
+    assert.match(html, /class="who npc minor" title="Florrie Dann \(minor\)"/);
+    assert.match(html, /<span class="who npc minor">Minor<\/span>/);
+    assert.ok(!mapHtml(view).includes('Minor'));
+  });
+});

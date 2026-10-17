@@ -2,13 +2,13 @@ import { readFile, writeFile, copyFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gameFile, serverIsUp } from './offline.js';
 import { GM } from '../server/gm.js';
 import { validateScenario, startPositions } from '../server/game.js';
 import { LENGTHS, GENERATION_SYSTEM, SCENARIO_SCHEMA } from '../server/prompts.js';
 import { GENERATION_STEPS, stepForKey } from '../server/progress.js';
 
-const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const file = resolve(process.argv[2] ?? join(process.env.DETECTIVE_DATA_DIR ?? join(ROOT, 'game-data'), 'current-game.json'));
+const file = gameFile(process.argv[2]);
 const port = Number(process.env.PORT) || 4321;
 
 export function sameStory(before, after) {
@@ -27,15 +27,6 @@ export function sameStory(before, after) {
   });
   if (before.phases.length !== after.phases.length) problems.push('number of rounds changed');
   return problems;
-}
-
-async function serverIsUp() {
-  try {
-    await fetch(`http://localhost:${port}/api/info`, { signal: AbortSignal.timeout(1500) });
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 async function main() {

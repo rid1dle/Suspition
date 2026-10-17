@@ -72,12 +72,21 @@ export function applySetup(game, input = {}) {
   if (!Number.isInteger(hints) || hints < 1 || hints > 5) fail('Hints must be between 1 and 5.');
   const overrides = input.overrides === undefined ? 3 : Number(input.overrides);
   if (!Number.isInteger(overrides) || overrides < 0 || overrides > 5) fail('Overrides must be between 0 and 5.');
+  const npcs = input.npcs === undefined ? 3 : Number(input.npcs);
+  if (!Number.isInteger(npcs) || npcs < 0 || npcs > 6) fail('GM characters must be between 0 and 6.');
+  const replays = input.replays === undefined ? 2 : Number(input.replays);
+  if (!Number.isInteger(replays) || replays < 0 || replays > MAX_REPLAYS) fail(`Replays must be between 0 and ${MAX_REPLAYS}.`);
+  const npcRole = input.npcRole ?? 'mixed';
+  if (!NPC_ROLES.includes(npcRole)) fail('Pick what the GM characters do.');
   game.setup = {
     setting: String(input.setting ?? '').trim().slice(0, 200),
     tone,
     length: input.length,
     hints,
     overrides,
+    npcs,
+    npcRole,
+    replays,
     notes: String(input.notes ?? '').trim().slice(0, 500),
   };
   game.status = 'generating';
@@ -85,7 +94,119 @@ export function applySetup(game, input = {}) {
   return game.setup;
 }
 
-export function validateScenario(s, { playerCount, phases, hints }) {
+export const isMinor = (npc) => npc?.importance === 'minor';
+
+export function applyAudit(scenario, audit) {
+  let changes = 0;
+  for (const entry of audit?.players ?? []) {
+    const p = scenario.players.find((x) => x.id === entry?.player_id);
+    if (!p) continue;
+    const known = [p.public_info, p.private_info, p.starting_knowledge].join(' ').toLowerCase();
+    const moved = (p.hidden_facts ?? []).filter((h) => (entry.known_hidden_fact_ids ?? []).includes(h.id));
+    p.hidden_facts = (p.hidden_facts ?? []).filter((h) => !moved.includes(h));
+    const adds = [...(entry.add ?? []), ...moved.map((h) => h.fact)]
+      .map((t) => String(t ?? '').trim())
+      .filter((t, i, all) => t && all.indexOf(t) === i && !known.includes(t.toLowerCase()));
+    if (adds.length) p.starting_knowledge = [String(p.starting_knowledge ?? '').trim(), ...adds].filter(Boolean).join(' ');
+    changes += adds.length;
+    for (const key of ['wants', 'fears', 'goal_why']) {
+      const text = String(entry[key] ?? '').trim();
+      if (text && !String(p[key] ?? '').trim()) {
+        p[key] = text;
+        changes += 1;
+      }
+    }
+    const reasons = (entry.reasons ?? []).map((t) => String(t ?? '').trim()).filter((t) => t && !(p.reasons ?? []).includes(t));
+    if (reasons.length) p.reasons = [...(p.reasons ?? []), ...reasons];
+    changes += reasons.length;
+    const night = cleanSlots(entry.night, ['time', 'where', 'doing']);
+    if (night.length && !p.night?.length) {
+      p.night = night;
+      changes += 1;
+    }
+  }
+  const times = cleanSlots(audit?.key_times, ['time', 'what']);
+  if (times.length && !scenario.key_times?.length) {
+    scenario.key_times = times;
+    changes += 1;
+  }
+  for (const entry of audit?.alibis ?? []) {
+    const c = [...scenario.players, ...scenario.npcs].find((x) => x.id === entry?.id);
+    const alibi = cleanSlots(entry?.alibi, ['time', 'where']);
+    if (c && alibi.length && !c.alibi?.length) {
+      c.alibi = alibi;
+      changes += 1;
+    }
+  }
+  for (const r of audit?.rounds ?? []) {
+    const ph = scenario.phases?.[r?.index];
+    if (!ph) continue;
+    if (String(r.objective ?? '').trim() && !String(ph.objective ?? '').trim()) {
+      ph.objective = String(r.objective).trim();
+      changes += 1;
+    }
+    const tips = (r.try ?? []).map((t) => String(t ?? '').trim()).filter(Boolean).slice(0, 3);
+    if (tips.length && !ph.try?.length) ph.try = tips;
+  }
+  return changes;
+}
+
+function cleanSlots(list, keys) {
+  return (Array.isArray(list) ? list : [])
+    .map((x) => Object.fromEntries(keys.map((k) => [k, String(x?.[k] ?? '').trim().slice(0, 120)])))
+    .filter((x) => x[keys[0]] && x[keys[1]]);
+}
+
+const sentences = (text) => {
+  const t = String(text ?? '').trim();
+  return t ? (t.match(/[^.!?]+[.!?]+["']?|[^.!?]+$/g) ?? [t]).map((s) => s.trim()).filter(Boolean) : [];
+};
+
+// Short reminders of who a player is, shown one at a time during play.
+export function pelletsFor(c) {
+  return [
+    `You are ${c.character_name}, ${c.role_title}.`,
+    ...sentences(c.public_info).map((s) => `Everyone knows: ${s}`),
+    c.goal ? `Your secret goal: ${c.goal}` : '',
+    ...sentences(c.wants),
+    ...sentences(c.fears),
+    ...sentences(c.private_info),
+    ...(c.reasons ?? []),
+    ...(c.night ?? []).map((n) => `At ${n.time} you were at ${n.where}. ${n.doing}`),
+  ].map((s) => String(s).trim().slice(0, 180)).filter(Boolean);
+}
+
+export function peopleView(game) {
+  const sc = game.scenario;
+  const facts = game.state?.facts ?? [];
+  const person = (c, extra) => ({
+    id: c.id,
+    icon: c.icon ?? '',
+    role: c.role_title,
+    info: c.public_info,
+    alibi: (c.alibi ?? []).map((a) => ({ time: a.time, where: a.where })),
+    facts: facts.filter((f) => f.id === c.id).map((f) => ({ fact: f.fact, round: f.round, at: f.at })).reverse(),
+    ...extra,
+  });
+  return [
+    ...sc.players.map((c) => person(c, { name: c.character_name, player: game.players.find((p) => p.id === c.id)?.name ?? '', kind: 'player', minor: false })),
+    ...[...sc.npcs].sort((a, b) => isMinor(a) - isMinor(b)).map((n) => person(n, { name: n.name, player: '', kind: 'npc', minor: isMinor(n) })),
+  ];
+}
+
+export function alibiTable(scenario) {
+  const times = scenario?.key_times ?? [];
+  if (!times.length) return null;
+  const row = (c, name, kind) => ({ name, kind, minor: isMinor(c), cells: times.map((t) => c.alibi?.find((a) => a.time === t.time)?.where ?? '') });
+  const rows = [
+    ...scenario.players.map((c) => row(c, c.character_name, 'player')),
+    ...[...scenario.npcs].sort((a, b) => isMinor(a) - isMinor(b)).map((n) => row(n, n.name, 'npc')),
+  ].filter((r) => r.cells.some(Boolean));
+  return rows.length ? { times: times.map((t) => ({ time: t.time, what: t.what })), rows } : null;
+}
+export const NPC_ROLES = ['mixed', 'background'];
+
+export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole = 'mixed', culprits }) {
   const errors = [];
   if (!s || typeof s !== 'object') return ['Scenario is not an object.'];
   const ids = (list) => (Array.isArray(list) ? list.map((x) => x?.id) : []);
@@ -98,6 +219,17 @@ export function validateScenario(s, { playerCount, phases, hints }) {
   }
 
   const npcIds = ids(s.npcs);
+  if (npcs !== undefined && (npcIds.length > npcs || npcIds.length < npcs - 1)) errors.push(`Need exactly ${npcs} GM characters; got ${npcIds.length}.`);
+  if (npcRole === 'background') {
+    if (!(s.npcs ?? []).every(isMinor)) errors.push('Every GM character must be minor (background only).');
+    const names = (s.npcs ?? []).map((n) => String(n.name ?? '').split(/\s+/).find((w) => w.length > 3 && !/^(dr|mr|mrs|ms)\.?$/i.test(w))).filter(Boolean);
+    for (const c of s.clues ?? []) {
+      const where = String(c.where ?? '');
+      if (npcIds.includes(where.trim()) || names.some((n) => where.includes(n))) errors.push(`Clue ${c.id} sits with a GM character; background GM characters hold no clues.`);
+    }
+  } else if (npcIds.length && (s.npcs ?? []).every(isMinor)) {
+    errors.push('At least one GM character must be important.');
+  }
   const clueIds = ids(s.clues);
   for (const [label, list] of [['npc', npcIds], ['clue', clueIds], ['location', ids(s.locations)]]) {
     if (new Set(list).size !== list.length) errors.push(`Duplicate ${label} ids.`);
@@ -110,16 +242,23 @@ export function validateScenario(s, { playerCount, phases, hints }) {
     }
   }
 
-  const culprits = s.truth?.culprit_ids ?? [];
-  if (!culprits.length) errors.push('truth.culprit_ids is empty.');
+  const named = s.truth?.culprit_ids ?? [];
+  if (!named.length) errors.push('truth.culprit_ids is empty.');
+  if (culprits && [...named].filter((id) => got.includes(id)).sort().join() !== [...culprits].sort().join()) {
+    errors.push(`The culprits among the players must be exactly ${culprits.join(' and ')}.`);
+  }
+  for (const id of named) {
+    const npc = (s.npcs ?? []).find((n) => n.id === id);
+    if (npc && (isMinor(npc) || npcRole === 'background')) errors.push(`${id} is a background GM character and cannot be a culprit.`);
+  }
   const known = new Set([...got, ...npcIds]);
-  for (const id of culprits) if (!known.has(id)) errors.push(`Culprit ${id} is not a character.`);
+  for (const id of named) if (!known.has(id)) errors.push(`Culprit ${id} is not a character.`);
   const playerCulprits = players.filter((p) => p.side === 'culprit').map((p) => p.id);
   if (!playerCulprits.length) errors.push('At least one player character must be a culprit.');
   for (const id of playerCulprits) {
-    if (!culprits.includes(id)) errors.push(`${id} has side culprit but is not in truth.culprit_ids.`);
+    if (!named.includes(id)) errors.push(`${id} has side culprit but is not in truth.culprit_ids.`);
   }
-  for (const id of culprits.filter((c) => got.includes(c))) {
+  for (const id of named.filter((c) => got.includes(c))) {
     if (!playerCulprits.includes(id)) errors.push(`${id} is a culprit but its side is not culprit.`);
   }
 
@@ -240,20 +379,39 @@ function enterPhase(game, index, now) {
 export function startPlay(game, now = Date.now()) {
   if (game.status !== 'reading') fail('The game is not ready to start.', 409);
   game.status = 'playing';
+  game.state.roundNumber = 1;
+  game.state.replays = 0;
   enterPhase(game, 0, now);
   game.state.events.push({ at: now, phase: 0, kind: 'phase', text: phaseLine(game, 0) });
   announceRound(game, 0, now);
 }
 
-function announceRound(game, index, now) {
-  for (const t of game.scenario.public_timeline ?? []) {
+function announceRound(game, index, now, again = false) {
+  for (const t of again ? [] : game.scenario.public_timeline ?? []) {
     if (Number(t.reveal_round) === index + 1) addEvent(game, `New on the timeline: ${t.time ? `${t.time}, ` : ''}${t.event}`, 'timeline', now);
   }
+  const job = game.state.job?.round === game.state.roundNumber ? game.state.job.objective : '';
+  const objective = job || String(game.scenario.phases[index]?.objective ?? '').trim();
+  if (objective) addEvent(game, `This round, your job: ${objective}`, 'goal', now);
   const q = roundQuestion(game, index);
   if (q) addEvent(game, `This round's goal: ${q.question}`, 'goal', now);
 }
 
-const phaseLine = (game, i) => `Round ${i + 1} of ${game.scenario.phases.length}: ${game.scenario.phases[i].name}`;
+const phaseLine = (game, i, again = false) => `Round ${game.state.roundNumber ?? i + 1} of ${totalRounds(game)}: ${game.scenario.phases[i].name}${again ? ' (second try)' : ''}`;
+
+function setJob(game, result) {
+  const objective = String(result.job ?? '').trim();
+  const tips = (result.job_tips ?? []).map((t) => String(t ?? '').trim()).filter(Boolean).slice(0, 3);
+  game.state.job = objective ? { round: game.state.roundNumber, objective, tips } : null;
+}
+
+function setRecap(game, result, now) {
+  const lines = (result.recap ?? []).map((t) => String(t ?? '').trim()).filter(Boolean).slice(0, 4);
+  const open = (result.open_questions ?? []).map((t) => String(t ?? '').trim()).filter(Boolean).slice(0, 3);
+  if (!lines.length) return;
+  game.state.recap = { round: game.state.roundNumber, lines, open };
+  addEvent(game, `Where we are now. ${lines.join(' ')}`, 'recap', now);
+}
 
 export function extendPhase(game, now = Date.now()) {
   if (game.status !== 'playing') fail('No phase is running.', 409);
@@ -285,9 +443,9 @@ export function failAsk(game, playerId) {
   st.questionsLeft[playerId] += 1;
 }
 
-function addEvent(game, text, kind, now) {
+function addEvent(game, text, kind, now, extra = {}) {
   const clean = String(text ?? '').trim();
-  if (clean) game.state.events.push({ at: now, phase: game.state.phaseIndex, kind, text: clean });
+  if (clean) game.state.events.push({ at: now, phase: game.state.phaseIndex, kind, text: clean, ...extra });
 }
 
 function whisper(game, messages, now) {
@@ -341,7 +499,9 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
       return [l];
     });
   const text = lines.length ? lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n') : String(result.answer ?? '').trim();
-  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), at: now });
+  const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
+  readPlayer(game, playerId, result.player_read, 'private', now);
+  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), at: now });
 
   const clueIds = new Set(game.scenario.clues.map((c) => c.id));
   for (const id of result.clues_found ?? []) {
@@ -366,8 +526,43 @@ export function isLastPhase(game) {
   return game.state.phaseIndex >= game.scenario.phases.length - 1;
 }
 
+export const MAX_REPLAYS = 2;
+export const roundNumber = (game) => game.state.roundNumber ?? game.state.phaseIndex + 1;
+export const totalRounds = (game) => game.scenario.phases.length + (game.state.replays ?? 0);
+const resultsThisRound = (game) => game.state.roundResults.filter((r) => r.phaseIndex === game.state.phaseIndex && (r.round ?? r.phaseIndex + 1) === roundNumber(game));
+
+// A round the group voted on and got wrong is played again, up to the number of replays chosen at setup.
+export function willReplay(game) {
+  const last = resultsThisRound(game).at(-1);
+  const voted = (last?.counts ?? []).some((n) => n > 0);
+  return Boolean(last && !last.correct && voted && (game.state.replays ?? 0) < (game.setup?.replays ?? 0));
+}
+
+export function goesToFinal(game) {
+  return isLastPhase(game) && !willReplay(game);
+}
+
+const STAGES = [
+  ['opening', 'Meet the problem. Give the first clear leads.'],
+  ['digging', 'Alibis start to crack and motives show.'],
+  ['turn', 'Something comes out that changes how things look.'],
+  ['closing', 'Everything needed to name the culprit, and how and why, is within reach.'],
+];
+
+export function storyStage(game, index) {
+  const count = game.scenario.phases.length;
+  const at = count <= 1 ? 3 : index >= count - 1 ? 3 : index === 0 ? 0 : index >= count - 2 && count > 3 ? 2 : 1;
+  return { name: STAGES[at][0], aim: STAGES[at][1] };
+}
+
 export function nextPhaseInfo(game) {
-  return isLastPhase(game) ? null : game.scenario.phases[game.state.phaseIndex + 1];
+  if (willReplay(game)) {
+    const index = game.state.phaseIndex;
+    return { ...game.scenario.phases[index], again: true, stage: storyStage(game, index) };
+  }
+  if (isLastPhase(game)) return null;
+  const index = game.state.phaseIndex + 1;
+  return { ...game.scenario.phases[index], stage: storyStage(game, index) };
 }
 
 export function beginPhaseChange(game) {
@@ -385,23 +580,29 @@ export function completePhase(game, result, now = Date.now()) {
   if (game.status !== 'playing') fail('No phase is running.', 409);
   const st = game.state;
   st.transitioning = false;
-  if (isLastPhase(game)) {
+  const replay = willReplay(game);
+  if (isLastPhase(game) && !replay) {
     game.status = 'final';
     st.phaseEndsAt = null;
     st.hintVote = null;
     addEvent(game, 'Time is up. Everyone, pick who did it on your phone.', 'phase', now);
     return;
   }
-  const next = st.phaseIndex + 1;
+  const next = replay ? st.phaseIndex : st.phaseIndex + 1;
   destroy(game, result.clues_destroyed);
   for (const p of result.positions ?? []) move(game, p?.character_id, p?.location_id);
   learn(game, result.learned, 'round change', now);
   closeOpenMoments(game, now);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -20, 20), 0, 100);
+  if (replay) st.replays = (st.replays ?? 0) + 1;
+  st.roundNumber = roundNumber(game) + 1;
   enterPhase(game, next, now);
-  addEvent(game, phaseLine(game, next), 'phase', now);
+  setJob(game, result);
+  addEvent(game, phaseLine(game, next, replay), 'phase', now);
   addEvent(game, result.public_event, 'event', now);
-  announceRound(game, next, now);
+  setRecap(game, result, now);
+  addFacts(game, result.public_facts, 'round change', now);
+  announceRound(game, next, now, replay);
   addMoments(game, result.moments, now);
   whisper(game, result.messages_to_players, now);
 }
@@ -554,19 +755,27 @@ export function readyMoment(game, playerId, momentId, now = Date.now()) {
   if (m.status === 'getready') callMoment(game, m, now);
 }
 
-export function answerMoment(game, playerId, momentId, choice, now = Date.now()) {
+export function answerMoment(game, playerId, momentId, choice, now = Date.now(), { text = '' } = {}) {
   const m = ownMoment(game, playerId, momentId);
   const st = game.state;
   const name = nameOf(game, playerId);
+  const own = String(text ?? '').trim().replace(/^["“]|["”]$/g, '').slice(0, 200);
   if (choice === 'said') {
     if (m.status !== 'called') callMoment(game, m, now);
     m.status = 'said';
     addEvent(game, `${name} said: "${m.line}"`, 'said', now);
+    addFacts(game, [{ person: playerId, fact: `Said out loud: "${m.line}"` }], 'said', now);
   } else if (choice === 'quiet' || choice === 'own') {
     if ((st.overridesLeft[playerId] ?? 0) < 1) fail('No overrides left. You have to say it.', 409);
     st.overridesLeft[playerId] -= 1;
     m.status = choice;
-    addEvent(game, choice === 'quiet' ? `${name} chose to stay quiet.` : `${name} told it their own way.`, 'override', now);
+    if (choice === 'own' && own) {
+      m.saidInstead = own;
+      addEvent(game, `${name}, in their own words: "${own}"`, 'said', now);
+      addFacts(game, [{ person: playerId, fact: `Said out loud: "${own}"` }], 'said', now);
+    } else {
+      addEvent(game, choice === 'quiet' ? `${name} chose to stay quiet.` : `${name} told it their own way.`, 'override', now);
+    }
   } else {
     fail('Pick: I said it, stay quiet, or say it my way.');
   }
@@ -586,6 +795,7 @@ export function closeOpenMoments(game, now = Date.now()) {
     } else {
       m.status = 'forced';
       addEvent(game, `${name} could not keep it in: "${m.line}"`, 'forced', now);
+      addFacts(game, [{ person: m.player_id, fact: `Said out loud: "${m.line}"` }], 'said', now);
     }
     m.resolvedAt = now;
   }
@@ -601,7 +811,7 @@ export function roundQuestion(game, index) {
 
 export function needsRoundVote(game) {
   const st = game.state;
-  return Boolean(roundQuestion(game, st.phaseIndex)) && !st.roundResults.some((r) => r.phaseIndex === st.phaseIndex);
+  return Boolean(roundQuestion(game, st.phaseIndex)) && !resultsThisRound(game).length;
 }
 
 export function beginRoundVote(game, now = Date.now()) {
@@ -637,13 +847,14 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   const winners = counts.flatMap((c, i) => (c === top && top > 0 ? [i] : []));
   const picked = winners.length === 1 ? winners[0] : null;
   const correct = picked === q.answer;
-  const result = { phaseIndex: vote.phaseIndex, question: q.question, picked, pickedText: picked === null ? null : q.options[picked], correct, counts };
+  const result = { phaseIndex: vote.phaseIndex, round: roundNumber(game), question: q.question, picked, pickedText: picked === null ? null : q.options[picked], correct, counts };
   st.roundResults.push(result);
   st.roundVote = null;
   const said = picked === null ? 'The group could not agree.' : `The group picked: ${q.options[picked]}.`;
   if (correct) {
     addEvent(game, `${said} That is right! ${q.reward}`, 'round', now);
     if (q.reward) st.timelineExtra.push({ order: q.rewardOrder, time: q.rewardTime, event: q.reward });
+    addFacts(game, mentions(game, q.reward).map((id) => ({ person: id, fact: q.reward })), 'round', now);
     st.suspicion = clamp(st.suspicion + 10, 0, 100);
   } else {
     addEvent(game, `${said} Not quite. ${q.nudge}`, 'round', now);
@@ -652,12 +863,24 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   return result;
 }
 
+export const MAX_POINTS = 6;
+
+export function caseQuestion(sc) {
+  return String(sc?.case_question ?? '').trim() || 'Who did it, how, and why?';
+}
+
+const WIN = {
+  investigator: 'You win if most players name the right culprit at the end.',
+  culprit: 'You win if most players name the wrong person. Do not get caught.',
+  wildcard: 'You win by reaching your own goal, whoever gets caught.',
+};
+
 export function briefingSteps(game) {
   const sc = game.scenario;
   if (!sc) return [];
   const steps = [
     { kind: 'scene', title: sc.title, lines: [sc.setting_summary] },
-    { kind: 'story', title: 'What just happened', lines: [sc.opening_scene] },
+    { kind: 'story', title: 'What just happened', lines: [sc.opening_scene, `The big question: ${caseQuestion(sc)}`] },
     { kind: 'background', title: 'What everyone knows', lines: sc.background ?? [] },
     { kind: 'map', title: 'The place', lines: ['This is the map. It shows every place and who is there.', 'Players are gold. People the GM plays are grey.'] },
   ];
@@ -666,13 +889,19 @@ export function briefingSteps(game) {
     const line = c.intro_line?.trim() || `I am ${c.character_name}, ${c.role_title}. ${c.public_info}`;
     steps.push({ kind: 'intro', playerId: c.id, title: `Meet ${c.character_name}`, lines: [`${player?.name ?? 'This player'}, stand up and say: "${line}"`], icon: c.icon ?? '' });
   }
-  steps.push({ kind: 'npcs', title: 'People the GM plays', lines: sc.npcs.map((n) => `${n.name}, ${n.role_title}. ${n.public_info}`) });
+  const minor = sc.npcs.filter(isMinor);
+  steps.push({ kind: 'npcs', title: 'People the GM plays', lines: [
+    ...sc.npcs.filter((n) => !isMinor(n)).map((n) => `${n.name}, ${n.role_title}. ${n.public_info}`),
+    ...(minor.length ? [`Minor people: ${minor.map((n) => `${n.name} (${n.role_title})`).join(', ')}. They are part of the place, but they hold nothing big.`] : []),
+  ] });
   steps.push({ kind: 'timeline', title: 'The timeline so far', lines: publicTimeline(game).map((t) => `${t.time ? `${t.time}: ` : ''}${t.event}`) });
-  steps.push({ kind: 'goal', title: 'How to play', lines: [
-    `There are ${sc.phases.length} rounds. Each round has one question.`,
-    'Talk. Ask the GM on your phone. Look around. Share clues.',
-    'At the end of each round, everyone votes on the answer.',
-    'At the very end, everyone votes on who did it. Culprits vote too.',
+  steps.push({ kind: 'goal', title: 'Your goals and how to win', lines: [
+    caseQuestion(sc),
+    'Each of you also has a secret goal of your own. It is on your phone.',
+    `There are ${sc.phases.length} rounds. Each round has one question to answer together. Talk, ask the GM on your phone, and share clues.`,
+    'At the end, everyone names who did it, how and why. Culprits vote too.',
+    'Detectives win if most players name the right culprit. Culprits win if they do not.',
+    `Points: 1 for the right culprit, up to 2 for how, up to 2 for why, and 1 for your own goal. ${MAX_POINTS} in all.`,
   ] });
   return steps.filter((st) => st.lines.length);
 }
@@ -705,7 +934,8 @@ export function shareClue(game, playerId, clueId, now = Date.now()) {
   const clue = game.scenario.clues.find((c) => c.id === clueId);
   const name = game.players.find((p) => p.id === playerId)?.name;
   st.shared.push({ clueId, by: playerId, at: now });
-  addEvent(game, `${name} shows a clue. ${clue.name}: ${clue.shows}`, 'clue', now);
+  addEvent(game, `${name} shows a clue. ${clue.name}: ${clue.shows}`, 'clue', now, { by: name, name: clue.name });
+  addFacts(game, mentions(game, `${clue.name} ${clue.shows}`).map((id) => ({ person: id, fact: `Clue, ${clue.name}: ${clue.shows}` })), 'clue', now);
 }
 
 export function beginPublicAsk(game, playerId, text) {
@@ -718,17 +948,97 @@ export function beginPublicAsk(game, playerId, text) {
   return clean;
 }
 
-export function completePublicAsk(game, playerId, answer, now = Date.now()) {
+export function readPlayer(game, playerId, read, from, now = Date.now()) {
+  const intent = String(read?.intent ?? '').trim().slice(0, 160);
+  const persona = String(read?.persona ?? '').trim().slice(0, 160);
+  if (!intent && !persona) return;
+  const st = game.state;
+  st.persona ??= {};
+  const before = st.persona[playerId] ?? {};
+  st.persona[playerId] = { intent: intent || before.intent || '', persona: persona || before.persona || '', from, round: st.roundNumber ?? st.phaseIndex + 1, at: now };
+}
+
+export function addNote(game, text, now = Date.now()) {
+  if (!['reading', 'playing'].includes(game.status)) fail('You can add notes during the game.', 409);
+  const clean = String(text ?? '').trim().slice(0, 200);
+  if (!clean) fail('Write what the room thinks.');
+  addEvent(game, `The room thinks: ${clean}`, 'note', now);
+}
+
+export function completePublicAsk(game, playerId, answer, now = Date.now(), read = null) {
   const st = game.state;
   const q = st.publicPending[playerId];
   if (!q) return;
   delete st.publicPending[playerId];
+  readPlayer(game, playerId, read, 'out loud', now);
+  addFacts(game, read?.facts, 'asked out loud', now);
   const name = game.players.find((p) => p.id === playerId)?.name;
   st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text: String(answer ?? '').trim() || 'Nobody knows that yet.' });
 }
 
 export function failPublicAsk(game, playerId) {
   delete game.state.publicPending[playerId];
+}
+
+const wordsOf = (text) => String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
+const nameWords = (name) => wordsOf(name).filter((w) => (w.length >= 3 || /^\d+$/.test(w)) && !['the', 'dr', 'mr', 'mrs', 'miss', 'sir'].includes(w));
+
+// Ids of the characters a text names, by their character name or the player's own name.
+export function mentions(game, text) {
+  const words = wordsOf(text);
+  const sc = game.scenario;
+  const people = [
+    ...sc.players.map((c) => [c.id, new Set([...nameWords(c.character_name), ...nameWords(game.players.find((p) => p.id === c.id)?.name)])]),
+    ...sc.npcs.map((n) => [n.id, new Set(nameWords(n.name))]),
+  ];
+  const owners = {};
+  for (const [, names] of people) for (const w of names) owners[w] = (owners[w] ?? 0) + 1;
+  const spoken = words.join(' ');
+  return people.filter(([id, names]) => {
+    const full = [...names].join(' ');
+    return (full && spoken.includes(full)) || [...names].some((w) => owners[w] === 1 && words.includes(w));
+  }).map(([id]) => id);
+}
+
+const SAID = [/^(.+?) said: "(.*)"$/, /^(.+?), in their own words: "(.*)"$/, /^(.+?) could not keep it in: "(.*)"$/];
+
+// Older saves: rebuild the facts list from lines players said out loud.
+export function backfillFacts(game) {
+  if (!game.state || game.state.facts?.length) return;
+  for (const e of game.state.events ?? []) {
+    if (!['said', 'forced'].includes(e.kind)) continue;
+    const m = SAID.map((re) => re.exec(e.text)).find(Boolean);
+    const player = m && game.players.find((p) => p.name === m[1]);
+    if (player) addFacts(game, [{ person: player.id, fact: `Said out loud: "${m[2]}"` }], 'said', e.at);
+  }
+}
+
+export function addFacts(game, items, source, now = Date.now()) {
+  const st = game.state;
+  st.facts ??= [];
+  const ids = new Set([...game.scenario.players, ...game.scenario.npcs].map((c) => c.id));
+  for (const item of items ?? []) {
+    const fact = String(item?.fact ?? '').trim().slice(0, 200);
+    const who = String(item?.person ?? item?.person_id ?? '').trim();
+    const id = ids.has(who) ? who : mentions(game, who)[0];
+    if (!fact || !id || st.facts.some((f) => f.id === id && f.fact === fact)) continue;
+    st.facts.push({ id, fact, source, round: st.roundNumber ?? st.phaseIndex + 1, at: now });
+  }
+}
+
+export function peopleAsked(game, text) {
+  const words = wordsOf(text);
+  return game.scenario.npcs.filter((n) => nameWords(n.name).some((w) => words.includes(w))).map((n) => ({
+    name: n.name,
+    role: n.role_title,
+    importance: n.importance ?? 'important',
+    knows: n.knows,
+    lies: n.lies,
+    reveals_freely: n.reveals_freely,
+    reveals_under_pressure: n.reveals_under_pressure,
+    says_they_were: n.alibi ?? [],
+    has_learned: (game.state.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => k.fact),
+  }));
 }
 
 export function publicKnowledge(game) {
@@ -745,6 +1055,8 @@ export function publicKnowledge(game) {
     places: sc.locations.map((l) => ({ name: l.name, about: l.public_info })),
     timeline: publicTimeline(game),
     news: game.state.events.filter((e) => !['opening', 'qa'].includes(e.kind)).slice(-20).map((e) => e.text),
+    asked_out_loud_before: game.state.events.filter((e) => e.kind === 'qa').slice(-15).map((e) => `${e.by} asked: ${e.q} Answer: ${e.text}`),
+    where_people_say_they_were: alibiTable(sc),
     shared_clues: game.state.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
       return `${c.name}: ${c.shows}`;
@@ -763,18 +1075,20 @@ export function cleanSvg(svg) {
 export function snapshotForGM(game) {
   const st = game.state;
   return {
-    phase: st.phaseIndex >= 0 ? { number: st.phaseIndex + 1, of: game.scenario.phases.length, name: game.scenario.phases[st.phaseIndex]?.name } : null,
+    phase: st.phaseIndex >= 0 ? { number: roundNumber(game), of: totalRounds(game), name: game.scenario.phases[st.phaseIndex]?.name, stage: storyStage(game, st.phaseIndex) } : null,
+    where_we_are: st.recap ?? null,
+    players_now: st.persona ?? {},
     suspicion: st.suspicion,
     destroyed_clues: st.destroyed,
     where_everyone_is: st.positions,
     round_results: st.roundResults,
-    moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status })),
+    moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.saidInstead } : {}) })),
     overrides_left: st.overridesLeft,
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     shared_clues: st.shared.map((x) => x.clueId),
     clues_found_by_player: st.found,
     revealed_hidden_facts: st.revealed,
-    public_events: st.events.filter((e) => e.kind !== 'opening').map((e) => e.text),
+    public_events: st.events.filter((e) => e.kind !== 'opening').map((e) => (e.kind === 'qa' ? `${e.by} asked out loud: ${e.q} Answer: ${e.text}` : e.text)),
     record: Object.fromEntries(
       Object.entries(st.threads).map(([pid, msgs]) => [pid, msgs.map((m) => `${m.from}${m.kind ? `(${m.kind})` : ''}: ${m.text}`)]),
     ),
@@ -792,7 +1106,7 @@ function publicCast(game) {
       info: c.public_info,
       icon: c.icon ?? '',
     })),
-    npcs: game.scenario.npcs.map((n) => ({ id: n.id, name: n.name, role: n.role_title, info: n.public_info, icon: n.icon ?? '' })),
+    npcs: [...game.scenario.npcs].sort((a, b) => isMinor(a) - isMinor(b)).map((n) => ({ id: n.id, name: n.name, role: n.role_title, info: n.public_info, icon: n.icon ?? '', minor: isMinor(n) })),
     locations: game.scenario.locations.map((l) => ({ id: l.id, name: l.name, info: l.public_info, icon: l.icon ?? '' })),
   };
 }
@@ -800,12 +1114,17 @@ function publicCast(game) {
 function roundView(game, now) {
   const st = game.state;
   const q = roundQuestion(game, st.phaseIndex);
-  if (!q) return null;
-  const vote = st.roundVote;
+  const ph = game.scenario.phases[st.phaseIndex] ?? {};
+  const job = st.job?.round === roundNumber(game) ? st.job : null;
+  const objective = job?.objective ?? String(ph.objective ?? '').trim();
+  if (!q && !objective) return null;
+  const vote = q ? st.roundVote : null;
   return {
-    question: q.question,
-    options: q.options,
-    done: st.roundResults.some((r) => r.phaseIndex === st.phaseIndex),
+    objective,
+    tips: (job?.tips?.length ? job.tips : ph.try ?? []).map(String).filter(Boolean).slice(0, 3),
+    question: q?.question ?? null,
+    options: q?.options ?? [],
+    done: resultsThisRound(game).length > 0,
     vote: vote ? { endsAt: vote.endsAt, voted: Object.keys(vote.votes).length, of: game.players.length } : null,
   };
 }
@@ -822,6 +1141,8 @@ function publicCore(game, now) {
     setup: game.setup,
     title: sc?.title ?? null,
     background: sc?.background ?? [],
+    caseQuestion: sc ? caseQuestion(sc) : null,
+    alibis: game.state ? alibiTable(sc) : null,
     timeline: publicTimeline(game),
     briefing: game.status === 'reading' && st ? { step: st.brief?.step ?? 0, steps: briefingSteps(game) } : null,
     round: st && game.status === 'playing' ? roundView(game, now) : null,
@@ -839,7 +1160,9 @@ function publicCore(game, now) {
     opening: sc?.opening_scene ?? null,
     cast: publicCast(game),
     map: sc ? { places: mapOf(sc, st?.mapEdits), positions: st?.positions ?? startPositions(sc) } : null,
-    phase: st && st.phaseIndex >= 0 ? { index: st.phaseIndex, count: sc.phases.length, name: sc.phases[st.phaseIndex].name, endsAt: st.phaseEndsAt } : null,
+    phase: st && st.phaseIndex >= 0 ? { index: st.phaseIndex, number: roundNumber(game), count: totalRounds(game), name: sc.phases[st.phaseIndex].name, endsAt: st.phaseEndsAt } : null,
+    recap: st?.recap ?? null,
+    people: sc && st ? peopleView(game) : null,
     hintsLeft: st?.hintsLeft ?? null,
     hintsTotal: game.setup?.hints ?? null,
     hintVote: vote && {
@@ -907,9 +1230,17 @@ export function playerView(game, playerId, now = Date.now()) {
     public_info: card.public_info,
     private_info: card.private_info,
     goal: card.goal,
+    win: WIN[card.side] ?? '',
     side: card.side,
     side_explanation: card.side_explanation,
     starting_knowledge: card.starting_knowledge,
+    wants: card.wants ?? '',
+    fears: card.fears ?? '',
+    goal_why: card.goal_why ?? '',
+    reasons: card.reasons ?? [],
+    pellets: pelletsFor(card),
+    night: card.night ?? [],
+    alibi: card.alibi ?? [],
     hidden_known: card.hidden_facts.filter((h) => revealed.includes(h.id)).map((h) => h.fact),
     hidden_unknown: card.hidden_facts.filter((h) => !revealed.includes(h.id)).length,
   };
@@ -923,6 +1254,7 @@ export function playerView(game, playerId, now = Date.now()) {
   view.myVote = st.hintVote ? st.hintVote.votes[playerId] ?? null : null;
   view.myRoundVote = st.roundVote ? st.roundVote.votes[playerId] ?? null : null;
   view.publicPending = st.publicPending?.[playerId] ?? null;
+  view.persona = st.persona?.[playerId] ?? null;
   view.moments = (st.moments ?? []).filter((m) => m.player_id === playerId && OPEN.includes(m.status))
     .map((m) => ({ id: m.id, line: m.line, why: m.why, status: m.status, readyAt: m.readyAt }));
   view.overridesLeft = st.overridesLeft?.[playerId] ?? 0;

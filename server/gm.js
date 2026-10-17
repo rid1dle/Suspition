@@ -2,8 +2,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt } from './prompts.js';
-import { validateScenario, snapshotForGM, nextPhaseInfo, publicKnowledge } from './game.js';
+import { PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt } from './prompts.js';
+import { validateScenario, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked } from './game.js';
 import { TopLevelTracker } from './progress.js';
 
 const ISOLATION = [
@@ -163,10 +163,11 @@ export class GM {
   }
 
   async generate(game, onProgress = () => {}) {
-    const rules = { playerCount: game.players.length, phases: LENGTHS[game.setup.length].phases, hints: game.setup.hints };
     const twists = pickTwists(game.players.length);
+    const culprits = pickCulprits(game.players.length, twists);
+    const rules = { playerCount: game.players.length, phases: LENGTHS[game.setup.length].phases, hints: game.setup.hints, npcs: game.setup.npcs, npcRole: game.setup.npcRole };
     this.log(`gm twists: ${twists.map((t) => t.id).join(', ')}`);
-    let prompt = generationPrompt(game, twists);
+    let prompt = generationPrompt(game, twists, culprits);
     let errors = [];
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       onProgress({ kind: 'attempt', attempt });
@@ -181,11 +182,35 @@ export class GM {
       });
       onProgress({ kind: 'checking' });
       errors = validateScenario(scenario, rules);
-      if (!errors.length) return scenario;
+      if (!errors.length) {
+        onProgress({ kind: 'cards' });
+        await this.completeCards(scenario);
+        return scenario;
+      }
       this.log(`gm generate#${attempt} invalid: ${errors.join(' | ')}`);
-      prompt = `${generationPrompt(game, twists)}\n\nA previous draft broke these rules, avoid them:\n- ${errors.join('\n- ')}`;
+      prompt = `${generationPrompt(game, twists, culprits)}\n\nA previous draft broke these rules, avoid them:\n- ${errors.join('\n- ')}`;
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
+  }
+
+  async auditCards(scenario) {
+    return this.call('audit', {
+      system: GENERATION_SYSTEM,
+      prompt: auditPrompt(scenario),
+      schema: AUDIT_SCHEMA,
+      model: this.setupModel,
+      effort: 'medium',
+      timeoutMs: 600_000,
+    });
+  }
+
+  async completeCards(scenario) {
+    try {
+      const n = applyAudit(scenario, await this.auditCards(scenario));
+      this.log(`gm audit: ${n} fact${n === 1 ? '' : 's'} added to player cards`);
+    } catch (err) {
+      this.log(`gm audit skipped: ${err.message}`);
+    }
   }
 
   answer(game, playerId, ask) {
@@ -204,7 +229,7 @@ export class GM {
       prompt: phasePrompt({
         snapshot: snapshotForGM(game),
         nextPhase: nextPhaseInfo(game),
-        lastRound: game.state.roundResults.find((r) => r.phaseIndex === game.state.phaseIndex) ?? null,
+        lastRound: game.state.roundResults.filter((r) => r.phaseIndex === game.state.phaseIndex).at(-1) ?? null,
       }),
       schema: PHASE_SCHEMA,
       model: this.playModel,
@@ -213,7 +238,7 @@ export class GM {
 
   publicAnswer(game, question) {
     return this.call('public', {
-      system: publicSystem(publicKnowledge(game)),
+      system: publicSystem(publicKnowledge(game), peopleAsked(game, question)),
       prompt: `Question from a player: ${question}`,
       schema: PUBLIC_ANSWER_SCHEMA,
       model: this.playModel,

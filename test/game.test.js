@@ -827,3 +827,474 @@ describe('never speaking for players', () => {
     ]);
   });
 });
+
+describe('saying a moment in your own words', () => {
+  const called = (overrides = 2) => {
+    const game = playing(3);
+    game.setup.overrides = overrides;
+    game.state.overridesLeft = { p1: overrides, p2: overrides, p3: overrides };
+    G.beginPhaseChange(game);
+    G.completePhase(game, { ...emptyPhase, moments: [{ player_id: 'p2', line: 'I saw a light.', why: 'You remember.' }] }, 2_000);
+    return { game, m: game.state.moments.at(-1) };
+  };
+
+  test('should post the words the player typed and spend one override', () => {
+    const { game, m } = called();
+    G.answerMoment(game, 'p2', m.id, 'own', 3_000, { text: '"Something glowed out there."' });
+    assert.deepEqual(game.state.events.at(-1), { at: 3_000, phase: 1, kind: 'said', text: 'Player2, in their own words: "Something glowed out there."' });
+    assert.equal(game.state.overridesLeft.p2, 1);
+    assert.ok(!JSON.stringify(G.tableView(game)).includes('I saw a light'));
+  });
+
+  test('should tell the GM what the player really said', () => {
+    const { game, m } = called();
+    G.answerMoment(game, 'p2', m.id, 'own', 3_000, { text: 'Something glowed.' });
+    assert.equal(G.snapshotForGM(game).moments_so_far[0].said_instead, 'Something glowed.');
+  });
+
+  test('should still need an override to say it your way', () => {
+    const { game, m } = called(0);
+    assert.throws(() => G.answerMoment(game, 'p2', m.id, 'own', 3_000, { text: 'Hi' }), /No overrides left/);
+  });
+});
+
+describe('the group goal and personal goals', () => {
+  test('should use the case question the GM wrote, or a plain default', () => {
+    const game = gameInReading(3);
+    assert.equal(G.tableView(game).caseQuestion, 'Who did it, how, and why?');
+    game.scenario.case_question = 'Who poisoned Mr Rao, and why?';
+    assert.equal(G.tableView(game).caseQuestion, 'Who poisoned Mr Rao, and why?');
+  });
+
+  test('should end the intro with the group goal, the secret goal reminder and how points work', () => {
+    const game = gameInReading(3);
+    game.scenario.case_question = 'Who poisoned Mr Rao?';
+    const goal = G.tableView(game).briefing.steps.at(-1);
+    assert.equal(goal.title, 'Your goals and how to win');
+    assert.equal(goal.lines[0], 'Who poisoned Mr Rao?');
+    assert.ok(goal.lines.some((l) => /secret goal of your own/.test(l)));
+    assert.ok(goal.lines.some((l) => /Points: .* 6 in all\./.test(l)));
+    assert.ok(G.tableView(game).briefing.steps[1].lines.includes('The big question: Who poisoned Mr Rao?'));
+  });
+
+  test('should tell each player how their side wins, only on their own phone', () => {
+    const game = gameInReading(3);
+    assert.match(G.playerView(game, 'p1').card.win, /name the wrong person/);
+    assert.match(G.playerView(game, 'p2').card.win, /name the right culprit/);
+    assert.ok(!JSON.stringify(G.tableView(game)).includes('name the wrong person'));
+  });
+
+  test('should record who showed a clue and its name on the news item', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'look' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, clues_found: ['c1'] });
+    G.shareClue(game, 'p2', 'c1', 2_000);
+    assert.equal(game.state.events.at(-1).by, 'Player2');
+    assert.equal(game.state.events.at(-1).name, 'Torn glove');
+  });
+});
+
+describe('how many people the GM plays, and which ones matter', () => {
+  const setup = (input) => {
+    const game = G.createGame();
+    for (const name of ['A', 'B', 'C']) G.addPlayer(game, { name });
+    return G.applySetup(game, { tone: 'tense', length: 'short', hints: 2, ...input });
+  };
+
+  test('should default to three GM characters with some that matter, and accept zero to six', () => {
+    assert.deepEqual([setup({}).npcs, setup({}).npcRole], [3, 'mixed']);
+    assert.equal(setup({ npcs: 0 }).npcs, 0);
+    assert.equal(setup({ npcs: 6, npcRole: 'background' }).npcRole, 'background');
+    assert.throws(() => setup({ npcs: 7 }), /between 0 and 6/);
+    assert.throws(() => setup({ npcRole: 'boss' }), /what the GM characters do/);
+  });
+
+  test('should never accept more GM characters than chosen, and at most one fewer', () => {
+    const rules = { playerCount: 4, phases: 3, hints: 3 };
+    assert.deepEqual(G.validateScenario(makeScenario(4), { ...rules, npcs: 2 }), []);
+    assert.match(G.validateScenario(makeScenario(4), { ...rules, npcs: 1 }).join(), /Need exactly 1 GM characters; got 2/);
+  });
+
+  test('should keep background-only GM characters minor and away from every clue', () => {
+    const rules = { playerCount: 4, phases: 3, hints: 3, npcRole: 'background' };
+    const s = makeScenario(4);
+    assert.match(G.validateScenario(s, rules).join(), /Every GM character must be minor/);
+    s.npcs.forEach((n) => (n.importance = 'minor'));
+    s.clues[0].where = 'In the Butler pocket';
+    assert.match(G.validateScenario(s, rules).join(), /Clue c1 sits with a GM character/);
+    s.clues[0].where = 'Under the rug';
+    assert.match(G.validateScenario(s, rules).join(), /Clue c3 sits with a GM character/);
+    s.clues[2].where = 'l2';
+    assert.deepEqual(G.validateScenario(s, rules), []);
+  });
+
+  test('should ask for a redraft when the GM cast is far from the number chosen', () => {
+    const rules = { playerCount: 4, phases: 3, hints: 3 };
+    assert.deepEqual(G.validateScenario(makeScenario(4), { ...rules, npcs: 3 }), []);
+    assert.match(G.validateScenario(makeScenario(4), { ...rules, npcs: 5 }).join(), /Need exactly 5 GM characters; got 2/);
+  });
+
+  test('should need at least one important GM character', () => {
+    const s = makeScenario(4);
+    s.npcs.forEach((n) => (n.importance = 'minor'));
+    assert.match(G.validateScenario(s, { playerCount: 4, phases: 3, hints: 3 }).join(), /At least one GM character must be important/);
+  });
+
+  test('should list important GM people first and mark minor ones on every screen', () => {
+    const game = gameInReading(3);
+    game.scenario.npcs[0].importance = 'minor';
+    game.scenario.npcs[1].importance = 'important';
+    const cast = G.tableView(game).cast.npcs;
+    assert.deepEqual(cast.map((n) => [n.name, n.minor]), [['The Widow', false], ['The Butler', true]]);
+    assert.deepEqual(G.playerView(game, 'p2').cast.npcs.map((n) => n.minor), [false, true]);
+  });
+
+  test('should sum up minor people in one line in the intro', () => {
+    const game = gameInReading(3);
+    game.scenario.npcs[0].importance = 'minor';
+    const step = G.tableView(game).briefing.steps.find((s) => s.kind === 'npcs');
+    assert.deepEqual(step.lines, ['The Widow, Widow. Grieving', 'Minor people: The Butler (Butler). They are part of the place, but they hold nothing big.']);
+  });
+});
+
+describe('players always know their own story', () => {
+  const scenario = () => {
+    const s = makeScenario(3);
+    s.players[1].starting_knowledge = 'You heard a door.';
+    s.players[1].hidden_facts = [{ id: 'h2', fact: 'You slipped on the stairs at 10:20.' }, { id: 'h9', fact: 'You were adopted.' }];
+    return s;
+  };
+
+  test('should add what the check found to the player own card', () => {
+    const s = scenario();
+    const n = G.applyAudit(s, { players: [{ player_id: 'p2', add: ['You walked to the shed at 9.'], known_hidden_fact_ids: [] }] });
+    assert.equal(n, 1);
+    assert.equal(s.players[1].starting_knowledge, 'You heard a door. You walked to the shed at 9.');
+  });
+
+  test('should move a hidden fact the player would really know onto their card', () => {
+    const s = scenario();
+    G.applyAudit(s, { players: [{ player_id: 'p2', add: [], known_hidden_fact_ids: ['h2', 'h1'] }] });
+    assert.deepEqual(s.players[1].hidden_facts.map((h) => h.id), ['h9']);
+    assert.match(s.players[1].starting_knowledge, /You slipped on the stairs at 10:20\.$/);
+  });
+
+  test('should skip repeats, unknown players and a broken answer', () => {
+    const s = scenario();
+    assert.equal(G.applyAudit(s, { players: [{ player_id: 'p2', add: ['You heard a door.', 'X', 'X'] }, { player_id: 'zz', add: ['Y'] }] }), 1);
+    assert.equal(s.players[1].starting_knowledge, 'You heard a door. X');
+    assert.equal(G.applyAudit(s, { title: 'not an audit' }), 0);
+    assert.equal(G.applyAudit(s, null), 0);
+  });
+
+  test('should show the new knowledge on the player card only', () => {
+    const game = gameInReading(3);
+    G.applyAudit(game.scenario, { players: [{ player_id: 'p2', add: ['You hid the key in the boot.'] }] });
+    assert.match(G.playerView(game, 'p2').card.starting_knowledge, /You hid the key in the boot\./);
+    assert.ok(!JSON.stringify([G.tableView(game), G.playerView(game, 'p3')]).includes('hid the key'));
+  });
+});
+
+describe('players feel why they act', () => {
+  test('should fill wants, fears and why the goal matters, and list a reason for each action', () => {
+    const s = makeScenario(3);
+    G.applyAudit(s, { players: [{ player_id: 'p2', add: [], known_hidden_fact_ids: [], wants: 'You want the farm back for your mother.', fears: 'You fear the loan comes out.', goal_why: 'The book proves your father was honest.', reasons: ['You went to the shed because you heard your name.'] }] });
+    const p = s.players[1];
+    assert.deepEqual([p.wants, p.fears, p.goal_why, p.reasons], ['You want the farm back for your mother.', 'You fear the loan comes out.', 'The book proves your father was honest.', ['You went to the shed because you heard your name.']]);
+  });
+
+  test('should keep motives the world already had and never repeat a reason', () => {
+    const s = makeScenario(3);
+    s.players[1].wants = 'ORIGINAL';
+    const audit = { players: [{ player_id: 'p2', wants: 'NEW', reasons: ['R1'] }] };
+    G.applyAudit(s, audit);
+    G.applyAudit(s, audit);
+    assert.equal(s.players[1].wants, 'ORIGINAL');
+    assert.deepEqual(s.players[1].reasons, ['R1']);
+  });
+
+  test('should show what drives a player only on their own phone', () => {
+    const game = gameInReading(3);
+    G.applyAudit(game.scenario, { players: [{ player_id: 'p2', wants: 'MOTIVE-WANTS', fears: 'MOTIVE-FEARS', goal_why: 'MOTIVE-WHY', reasons: ['MOTIVE-REASON'] }] });
+    const card = G.playerView(game, 'p2').card;
+    assert.deepEqual([card.wants, card.fears, card.goal_why, card.reasons], ['MOTIVE-WANTS', 'MOTIVE-FEARS', 'MOTIVE-WHY', ['MOTIVE-REASON']]);
+    assert.ok(!JSON.stringify([G.tableView(game), G.playerView(game, 'p3')]).includes('MOTIVE-'));
+  });
+});
+
+describe('who was where, and each round job', () => {
+  const audit = {
+    players: [{ player_id: 'p2', night: [{ time: '9:40 pm', where: 'Kitchen', doing: 'You washed cups.' }] }],
+    key_times: [{ time: '9:00 pm', what: 'Dinner ends' }, { time: '9:40 pm', what: 'Lights go out' }],
+    alibis: [{ id: 'p1', alibi: [{ time: '9:00 pm', where: 'Ballroom' }, { time: '9:40 pm', where: 'Garden' }] }, { id: 'n1', alibi: [{ time: '9:40 pm', where: 'Cellar' }] }],
+    rounds: [{ index: 0, objective: 'Find out who cut the lights.', try: ['Ask the butler.', 'Look at the fuse box.', 'Check the cellar.', 'Extra'] }],
+  };
+
+  test('should show everyone where each person says they were at the key times', () => {
+    const game = gameInReading(3);
+    G.applyAudit(game.scenario, audit);
+    assert.deepEqual(G.tableView(game).alibis, {
+      times: [{ time: '9:00 pm', what: 'Dinner ends' }, { time: '9:40 pm', what: 'Lights go out' }],
+      rows: [
+        { name: 'Character 1', kind: 'player', minor: false, cells: ['Ballroom', 'Garden'] },
+        { name: 'The Butler', kind: 'npc', minor: false, cells: ['', 'Cellar'] },
+      ],
+    });
+  });
+
+  test('should show a player where they really were only on their own phone', () => {
+    const game = gameInReading(3);
+    G.applyAudit(game.scenario, audit);
+    assert.deepEqual(G.playerView(game, 'p2').card.night, [{ time: '9:40 pm', where: 'Kitchen', doing: 'You washed cups.' }]);
+    assert.ok(!JSON.stringify([G.tableView(game), G.playerView(game, 'p3')]).includes('washed cups'));
+  });
+
+  test('should have no alibi table before anyone has an alibi', () => {
+    assert.equal(G.tableView(gameInReading(3)).alibis, null);
+  });
+
+  test('should give each round a clear job with up to three pointers, and announce it', () => {
+    const game = gameInReading(3);
+    G.applyAudit(game.scenario, audit);
+    G.startPlay(game, 1_000);
+    const round = G.tableView(game).round;
+    assert.equal(round.objective, 'Find out who cut the lights.');
+    assert.deepEqual(round.tips, ['Ask the butler.', 'Look at the fuse box.', 'Check the cellar.']);
+    assert.ok(game.state.events.some((e) => e.text === 'This round, your job: Find out who cut the lights.'));
+  });
+
+  test('should keep a job the world already had', () => {
+    const s = makeScenario(3);
+    s.phases[0].objective = 'ORIGINAL JOB';
+    G.applyAudit(s, audit);
+    assert.equal(s.phases[0].objective, 'ORIGINAL JOB');
+  });
+});
+
+describe('asking a GM character out loud', () => {
+  test('should hand the GM the sheet of each GM character named in the question', () => {
+    const game = gameInReading(3);
+    const people = G.peopleAsked(game, 'Butler, when did the music stop?');
+    assert.deepEqual(people.map((p) => [p.name, p.knows]), [['The Butler', 'NPC-KNOWS']]);
+    assert.deepEqual(G.peopleAsked(game, 'Who was in the library?'), []);
+    assert.deepEqual(G.peopleAsked(game, 'Is the widow sad?').map((p) => p.name), ['The Widow']);
+  });
+
+  test('should remember earlier questions asked out loud so answers stay the same', () => {
+    const game = gameInReading(3);
+    G.beginPublicAsk(game, 'p1', 'How far is town?');
+    G.completePublicAsk(game, 'p1', 'Two hours.', 2_000);
+    assert.deepEqual(G.publicKnowledge(game).asked_out_loud_before, ['Player1 asked: How far is town? Answer: Two hours.']);
+  });
+
+  test('should keep the GM ideas for what the player could try next', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'chat', text: 'I look around.' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, ideas: ['Ask the Butler about the gate.', '', 'Check the cellar.', 'One', 'Two'] });
+    assert.deepEqual(G.playerView(game, 'p2').thread.at(-1).ideas, ['Ask the Butler about the gate.', 'Check the cellar.', 'One']);
+  });
+});
+
+describe('reminders of who you are', () => {
+  test('should start with who you are, then goal, feelings, story, reasons and your night, one short line each', () => {
+    const pellets = G.pelletsFor({
+      character_name: 'Nikhil Rao', role_title: 'Bank Manager', public_info: 'A former college captain. Everyone liked him.',
+      goal: 'Get the ledger back.', wants: 'You want your job safe.', fears: 'You fear the loan comes out.',
+      private_info: 'You lent Arjun money. He never paid.', reasons: ['You went upstairs to ask for it.'],
+      night: [{ time: '9:40 pm', where: 'Library', doing: 'You argued with Arjun.' }],
+    });
+    assert.deepEqual(pellets, [
+      'You are Nikhil Rao, Bank Manager.',
+      'Everyone knows: A former college captain.',
+      'Everyone knows: Everyone liked him.',
+      'Your secret goal: Get the ledger back.',
+      'You want your job safe.',
+      'You fear the loan comes out.',
+      'You lent Arjun money.',
+      'He never paid.',
+      'You went upstairs to ask for it.',
+      'At 9:40 pm you were at Library. You argued with Arjun.',
+    ]);
+  });
+
+  test('should send reminders only to that player phone', () => {
+    const game = gameInReading(3);
+    assert.equal(G.playerView(game, 'p2').card.pellets[0], 'You are Character 2, Role 2.');
+    assert.ok(!JSON.stringify(G.tableView(game)).includes('Your secret goal'));
+  });
+});
+
+describe('playing a round again when the group got it wrong', () => {
+  const voting = (replays = 2) => {
+    const game = gameInReading(3, 1_000, { questions: true });
+    game.setup.replays = replays;
+    G.startPlay(game, 1_000);
+    return game;
+  };
+  const voteAll = (game, choice) => {
+    G.beginRoundVote(game, 2_000);
+    for (const p of ['p1', 'p2', 'p3']) G.voteRound(game, p, choice, 2_000);
+  };
+  const change = (game, extra = {}) => {
+    G.beginPhaseChange(game);
+    G.completePhase(game, { ...emptyPhase, ...extra }, 3_000);
+  };
+
+  test('should replay the same round as a second try, with one more round in all', () => {
+    const game = voting();
+    voteAll(game, 2);
+    assert.equal(G.willReplay(game), true);
+    assert.equal(G.nextPhaseInfo(game).again, true);
+    change(game);
+    assert.equal(game.state.phaseIndex, 0);
+    assert.deepEqual([G.tableView(game).phase.number, G.tableView(game).phase.count], [2, 4]);
+    assert.ok(game.state.events.some((e) => /^Round 2 of 4: .* \(second try\)$/.test(e.text)));
+    assert.equal(G.needsRoundVote(game), true);
+  });
+
+  test('should move on after a right answer, when nobody voted, or when replays run out', () => {
+    const right = voting();
+    voteAll(right, 1);
+    assert.equal(G.willReplay(right), false);
+    const silent = voting();
+    G.beginRoundVote(silent, 2_000);
+    G.resolveRoundVote(silent, 2_000, true);
+    assert.equal(G.willReplay(silent), false);
+    const none = voting(0);
+    voteAll(none, 2);
+    assert.equal(G.willReplay(none), false);
+  });
+
+  test('should replay the last round instead of jumping to the final vote', () => {
+    const game = voting();
+    game.state.phaseIndex = 2;
+    game.state.roundNumber = 3;
+    voteAll(game, 2);
+    assert.equal(G.goesToFinal(game), false);
+    change(game);
+    assert.deepEqual([game.status, game.state.phaseIndex], ['playing', 2]);
+  });
+
+  test('should use the job the GM wrote from what players did, and keep a recap for everyone', () => {
+    const game = voting();
+    change(game, { job: 'Find out who moved the lamp.', job_tips: ['Ask Gopi.'], recap: ['The lamp moved at ten.'], open_questions: ['Who moved it?'] });
+    const view = G.tableView(game);
+    assert.equal(view.round.objective, 'Find out who moved the lamp.');
+    assert.deepEqual(view.round.tips, ['Ask Gopi.']);
+    assert.deepEqual(view.recap, { round: 2, lines: ['The lamp moved at ten.'], open: ['Who moved it?'] });
+  });
+
+  test('should give the GM the story stage for pacing', () => {
+    const game = voting();
+    assert.equal(G.storyStage(game, 0).name, 'opening');
+    assert.equal(G.storyStage(game, 2).name, 'closing');
+    assert.equal(G.nextPhaseInfo(game).stage.name, 'digging');
+  });
+});
+
+describe('keeping the GM in step with the players and the room', () => {
+  test('should keep a private read of each player from private and out-loud questions', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'chat', text: 'I watch Ramesh.' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, player_read: { intent: 'You are watching Ramesh.', persona: 'You are calm.' } });
+    assert.equal(G.playerView(game, 'p2').persona.intent, 'You are watching Ramesh.');
+    G.beginPublicAsk(game, 'p2', 'Ramesh, where were you?');
+    G.completePublicAsk(game, 'p2', 'He says the gate.', 2_000, { intent: '', persona: 'You come across as sharp.' });
+    assert.deepEqual([G.playerView(game, 'p2').persona.intent, G.playerView(game, 'p2').persona.persona], ['You are watching Ramesh.', 'You come across as sharp.']);
+    assert.equal(G.playerView(game, 'p3').persona, null);
+    assert.ok(!JSON.stringify(G.tableView(game)).includes('watching Ramesh'));
+    assert.equal(G.snapshotForGM(game).players_now.p2.intent, 'You are watching Ramesh.');
+  });
+
+  test('should let the host tell the GM what the room thinks', () => {
+    const game = gameInReading(3);
+    G.addNote(game, ' We think the butler lied. ', 2_000);
+    assert.equal(game.state.events.at(-1).text, 'The room thinks: We think the butler lied.');
+    assert.throws(() => G.addNote(game, ''), /Write what the room thinks/);
+  });
+
+  test('should show the GM questions asked out loud with who asked them', () => {
+    const game = gameInReading(3);
+    G.beginPublicAsk(game, 'p1', 'Cold?');
+    G.completePublicAsk(game, 'p1', 'Yes.', 2_000);
+    assert.ok(G.snapshotForGM(game).public_events.includes('Player1 asked out loud: Cold? Answer: Yes.'));
+  });
+});
+
+describe('who decides the culprits', () => {
+  test('should refuse a world whose player culprits are not the ones the game picked, or a background culprit', () => {
+    const rules = { playerCount: 4, phases: 3, hints: 3 };
+    assert.match(G.validateScenario(makeScenario(4), { ...rules, culprits: ['p2'] }).join(), /must be exactly p2/);
+    assert.deepEqual(G.validateScenario(makeScenario(4), { ...rules, culprits: ['p1'] }), []);
+    const s = makeScenario(4);
+    s.truth.culprit_ids = ['p1', 'n1'];
+    s.npcs[0].importance = 'minor';
+    assert.match(G.validateScenario(s, rules).join(), /n1 is a background GM character and cannot be a culprit/);
+  });
+});
+
+describe('public facts about each person', () => {
+  const playing3 = () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    return game;
+  };
+  const factsOf = (game, id) => G.tableView(game).people.find((p) => p.id === id).facts.map((f) => f.fact);
+
+  test('should find people named in a text by character name or player name', () => {
+    const game = playing3();
+    assert.deepEqual(G.mentions(game, 'Player2 saw the Butler near Character 3.').sort(), ['n1', 'p2', 'p3']);
+    assert.deepEqual(G.mentions(game, 'Nobody here.'), []);
+  });
+
+  test('should add what a player says out loud to their facts', () => {
+    const game = playing3();
+    G.addMoments(game, [{ player_id: 'p2', line: 'I saw a light.' }], 1_000);
+    G.answerMoment(game, 'p2', game.state.moments[0].id, 'said', 2_000);
+    assert.deepEqual(factsOf(game, 'p2'), ['Said out loud: "I saw a light."']);
+  });
+
+  test('should add facts from round changes and from answers given out loud, by id or name, once', () => {
+    const game = playing3();
+    G.beginPhaseChange(game);
+    G.completePhase(game, { ...emptyPhase, public_facts: [{ person_id: 'n1', fact: 'He was at the gate.' }, { person_id: 'zz', fact: 'Nobody.' }] }, 2_000);
+    G.beginPublicAsk(game, 'p1', 'Butler?');
+    G.completePublicAsk(game, 'p1', 'He shrugs.', 3_000, { intent: '', persona: '', facts: [{ person: 'The Butler', fact: 'He was at the gate.' }, { person: 'Widow', fact: 'She hates rain.' }] });
+    assert.deepEqual(factsOf(game, 'n1'), ['He was at the gate.']);
+    assert.deepEqual(factsOf(game, 'n2'), ['She hates rain.']);
+  });
+
+  test('should file a shared clue under every person it names', () => {
+    const game = playing3();
+    game.scenario.clues[0].shows = 'A glove with Character 3 initials.';
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'look' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, clues_found: ['c1'] });
+    G.shareClue(game, 'p2', 'c1', 2_000);
+    assert.deepEqual(factsOf(game, 'p3'), ['Clue, Torn glove: A glove with Character 3 initials.']);
+  });
+
+  test('should list players first, then important and minor GM people, with only public things', () => {
+    const game = playing3();
+    game.scenario.npcs[0].importance = 'minor';
+    const people = G.tableView(game).people;
+    assert.deepEqual(people.map((p) => [p.id, p.kind, p.minor]), [['p1', 'player', false], ['p2', 'player', false], ['p3', 'player', false], ['n2', 'npc', false], ['n1', 'npc', true]]);
+    const body = JSON.stringify(people);
+    for (const secret of ['PRIVATE-', 'NPC-KNOWS', 'NPC-SECRET', 'GOAL-', 'HIDDEN-']) assert.ok(!body.includes(secret), secret);
+  });
+});
+
+describe('people facts for a game saved before facts existed', () => {
+  test('should rebuild what players said out loud from the news', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    game.state.events.push({ at: 2_000, phase: 0, kind: 'said', text: 'Player2 said: "I fell."' }, { at: 3_000, phase: 0, kind: 'said', text: 'Player3, in their own words: "Not me."' });
+    G.backfillFacts(game);
+    const facts = (id) => G.tableView(game).people.find((p) => p.id === id).facts.map((f) => f.fact);
+    assert.deepEqual([facts('p2'), facts('p3')], [['Said out loud: "I fell."'], ['Said out loud: "Not me."']]);
+    G.backfillFacts(game);
+    assert.equal(game.state.facts.length, 2);
+  });
+});

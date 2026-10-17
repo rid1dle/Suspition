@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { novelHtml, pictureHtml, timelineHtml, newsHtml, roundHtml, stepHtml, sharedCluesHtml } from '../public/panels.js';
+import { novelHtml, pictureHtml, timelineHtml, newsHtml, roundHtml, stepHtml, sharedCluesHtml, caseHtml, pointsOf, alibiHtml, nightHtml, whoisLines, peopleHtml } from '../public/panels.js';
 
 describe('panels', () => {
   test('should show speech with the speaker name and narration as plain lines', () => {
@@ -47,5 +47,100 @@ describe('panels', () => {
 
   test('should say how to share a clue when none are shared', () => {
     assert.match(sharedCluesHtml([]), /Show everyone/);
+  });
+});
+
+describe('goals in the intro', () => {
+  const goalStep = { kind: 'goal', title: 'Your goals and how to win', lines: ['Who poisoned Rao?', 'Each of you also has a secret goal of your own.'] };
+  const view = (card) => ({ briefing: { step: 0, steps: [goalStep] }, card });
+
+  test('should show the group goal big on the table and keep secret goals off it', () => {
+    const html = stepHtml(view(undefined));
+    assert.match(html, /The group&#39;s goal|The group's goal/);
+    assert.match(html, /<div class="question">Who poisoned Rao\?<\/div>/);
+    assert.ok(!html.includes('Your secret goal'));
+  });
+
+  test('should show a player their own secret goal and how they win on their phone', () => {
+    const html = stepHtml(view({ goal: 'Get the ledger back.', win: 'You win if most players name the right culprit at the end.' }), { me: 'p1' });
+    assert.match(html, /Your secret goal<\/div><div class="question">Get the ledger back.<\/div><div class="small">You win if most players/);
+  });
+
+  test('should show the big question inside the opening story', () => {
+    const html = stepHtml({ briefing: { step: 0, steps: [{ kind: 'story', title: 'What just happened', lines: ['A scream.', 'The big question: Who did it?'] }] } });
+    assert.match(html, /<div class="label">The big question<\/div><div class="question">Who did it\?<\/div>/);
+  });
+
+  test('should add up points out of six', () => {
+    assert.equal(pointsOf({ culprit_correct: true, method_score: 2, motive_score: 1, goal_achieved: true }), 5);
+    assert.equal(pointsOf(undefined), 0);
+    assert.equal(caseHtml(''), '');
+  });
+});
+
+describe('why your goal matters', () => {
+  test('should show why the secret goal matters under it in the intro', () => {
+    const view = { briefing: { step: 0, steps: [{ kind: 'goal', title: 'Goals', lines: ['Who?'] }] }, card: { goal: 'Get the book.', goal_why: 'It clears your father.', win: 'WIN' } };
+    assert.match(stepHtml(view, { me: 'p1' }), /Get the book.<\/div><div class="small">It clears your father.<\/div><div class="small">WIN/);
+  });
+});
+
+describe('round job and alibis', () => {
+  test('should put the round job first and the question to answer after it', () => {
+    const html = roundHtml({ objective: 'Find who cut the lights.', tips: ['Ask the butler.'], question: 'How?', options: ['Fuse'], done: false, vote: null });
+    assert.ok(html.indexOf('Find who cut the lights.') < html.indexOf('At the end, answer together'));
+    assert.match(html, /<ul class="tips"><li>Ask the butler.<\/li><\/ul>/);
+    assert.match(roundHtml({ objective: 'Look around.', tips: [], question: null, options: [] }), /Look around./);
+  });
+
+  test('should draw a grid of who says they were where, with gaps as question marks', () => {
+    const html = alibiHtml({ times: [{ time: '9:40 pm', what: 'Lights out' }], rows: [{ name: 'Asha', kind: 'player', minor: false, cells: [''] }] }, { me: 'Asha' });
+    assert.match(html, /<tr class="player me"><th>Asha<\/th><td><span class="muted">\?<\/span><\/td><\/tr>/);
+    assert.match(alibiHtml(null), /Nobody has said/);
+  });
+
+  test('should point out where a player told people something different from the truth', () => {
+    const html = nightHtml({ night: [{ time: '9:40 pm', where: 'Shed', doing: 'You hid the key.' }], alibi: [{ time: '9:40 pm', where: 'Kitchen' }] });
+    assert.match(html, /<b>Shed<\/b>. You hid the key.<span class="small told"> You told people: Kitchen.<\/span>/);
+    assert.equal(nightHtml({ night: [] }), '');
+  });
+});
+
+describe('tappable round pointers', () => {
+  test('should turn round pointers into buttons on phones and a plain list on the table', () => {
+    const round = { objective: 'Find who cut the lights.', tips: ['Ask "the" butler.'], question: null, options: [] };
+    assert.match(roundHtml(round, { tappable: true }), /<button class="chip tip" data-idea="Ask &quot;the&quot; butler.">/);
+    assert.match(roundHtml(round), /<ul class="tips"><li>/);
+  });
+});
+
+describe('who is who on the table', () => {
+  test('should list who plays whom and the important GM people, never minor ones', () => {
+    const lines = whoisLines({ players: [{ player: 'Nikhil', name: 'Nikhil Rao', role: 'Bank Manager', info: 'A former captain.' }], npcs: [{ name: 'Lata', role: 'Cook', info: 'Cooks.', minor: true }, { name: 'Ramesh', role: 'Watchman', info: 'Guards.', minor: false }] });
+    assert.deepEqual(lines, ['Nikhil plays Nikhil Rao, Bank Manager. A former captain.', 'Ramesh, Watchman, is played by the GM. Guards.']);
+    assert.deepEqual(whoisLines(null), []);
+  });
+});
+
+describe('people page', () => {
+  const people = [
+    { id: 'p1', icon: '', name: 'Nikhil Rao', role: 'Bank Manager', player: 'Nikhil', info: 'A former captain.', kind: 'player', minor: false, alibi: [{ time: '9:40 pm', where: 'Library' }], facts: [{ fact: 'Said out loud: "I fell."', round: 2 }] },
+    { id: 'n1', icon: '', name: 'Lata', role: 'Cook', player: '', info: 'Cooks.', kind: 'npc', minor: true, alibi: [], facts: [] },
+  ];
+
+  test('should show one line per person with a fact count, grouped by what they are', () => {
+    const html = peopleHtml(people);
+    assert.ok(html.indexOf('Players') < html.indexOf('Minor, just part of the place'));
+    assert.match(html, /<b>Nikhil Rao<\/b> <span class="muted small">Bank Manager &middot; Nikhil<\/span>/);
+    assert.match(html, /<span class="count new">1 fact<\/span>/);
+    assert.ok(!html.includes('Played by the GM'));
+  });
+
+  test('should mark only facts not seen yet as new, and open the rows the reader opened', () => {
+    const html = peopleHtml(people, { open: new Set(['p1']), seen: { p1: 1 } });
+    assert.match(html, /data-person="p1" open>/);
+    assert.match(html, /<span class="count">1 fact<\/span>/);
+    assert.match(html, /Says they were:<\/span> <span class="when">9:40 pm<\/span> Library/);
+    assert.match(peopleHtml(people), /Nothing new about them yet/);
   });
 });

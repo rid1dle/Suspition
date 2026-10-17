@@ -37,12 +37,24 @@ If macOS asks whether `node` may accept incoming connections, allow it, or phone
 
 ### On the table screen
 
-- **Who is where**: a map of every place and who is in it. Phones have it too (Map tab).
+- **Who is where**: a map of every place and who is in it. Phones have it too (People tab).
+- **People**: everything public about each person, growing as things come out: what they said out loud,
+  clues that name them, answers given out loud, and where they say they were.
   Press **Edit map** to drag places around and type where each place is in your real room
   ("Lobby = big sofa"). Every phone shows those spots.
 - **Music**: press Music for a soundtrack made for this mystery. It gets tenser each round.
 - **Voice**: press Voice and the table reads the story, news, hints and the ending out loud.
   Private phone text is never read out. The music goes quiet while it speaks.
+
+### Fix a game that is already running
+
+Both commands ask the GM while the server keeps running, save a draft, and tell you to stop the server.
+Run the same command again with the server stopped to put the draft in, then start the server.
+
+- `npm run fix-cards`: makes every card say what that character did, saw and said, adds what drives them
+  (wants, fears, reasons), key times with alibis, and a clear job for each round.
+- `npm run rework -- --npcs 2`: before round 1 only. Re-centres the story on the players with that many
+  background-only GM characters.
 
 ### Rewrite an old game in simple words
 

@@ -161,3 +161,35 @@ describe('GM.generate', () => {
     assert.equal(peak, 2);
   });
 });
+
+describe('GM card check after writing a world', () => {
+  const game = () => {
+    const g = createGame();
+    for (const name of ['A', 'B', 'C']) addPlayer(g, { name });
+    applySetup(g, { tone: 'tense', length: 'short', hints: 2 });
+    return g;
+  };
+
+  test('should check every card after a valid world and add what each player is missing', async () => {
+    const steps = [];
+    const calls = [];
+    const gm = new GM({ workDir, run: async ({ prompt }) => {
+      calls.push(prompt);
+      return calls.length === 1 ? makeScenario(3, { phases: 3, hints: 2 }) : { players: [{ player_id: 'p3', add: ['You locked the gate.'], known_hidden_fact_ids: [] }] };
+    } });
+    const s = await gm.generate(game(), (e) => steps.push(e.kind));
+    assert.match(calls[1], /a player who does not know their own story/);
+    assert.match(s.players[2].starting_knowledge, /You locked the gate\.$/);
+    assert.ok(steps.includes('cards'));
+  });
+
+  test('should still hand over the world when the card check fails', async () => {
+    let n = 0;
+    const gm = new GM({ workDir, run: async () => {
+      n += 1;
+      if (n === 1) return makeScenario(3, { phases: 3, hints: 2 });
+      throw new Error('check broke');
+    } });
+    assert.equal((await gm.generate(game())).players.length, 3);
+  });
+});

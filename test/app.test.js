@@ -425,3 +425,16 @@ describe('App moments', () => {
     assert.equal(ctx.app.tableView().events.at(-1).text, 'P2 told it their own way.');
   });
 });
+
+describe('App moments in your own words', () => {
+  test('should pass the typed words through to the table', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    ctx.gm.phaseResult = { ...ctx.gm.phaseResult, moments: [{ player_id: 'p2', line: 'I heard a splash.', why: 'It comes back to you.' }] };
+    await ctx.app.nextPhase(ctx.host);
+    await ctx.app.idle();
+    const m = ctx.app.playerView(ctx.tokens[1]).moments[0];
+    await ctx.app.moment(ctx.tokens[1], m.id, 'own', 'Someone fell in the water.');
+    assert.equal(ctx.app.tableView().events.at(-1).text, 'P2, in their own words: "Someone fell in the water."');
+  });
+});

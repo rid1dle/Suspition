@@ -3,7 +3,10 @@ import { Score } from '/music.js';
 import { intensityFor, cuesBetween } from '/music-theory.js';
 import { Narrator, narrationFor } from '/narration.js';
 import { mapHtml } from '/map.js';
-import { pictureHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, resultsHtml, stepHtml } from '/panels.js';
+import { pictureHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, resultsHtml, stepHtml, caseHtml, pointsOf, alibiHtml, whoisLines, recapHtml, peopleHtml } from '/panels.js';
+import { feedHtml, visibleCount } from '/feed.js';
+import { tableSound } from '/alerts.js';
+import { Sfx } from '/sfx.js';
 
 const app = document.getElementById('app');
 const fromHash = hashParam('host');
@@ -15,11 +18,15 @@ let seenEvents = 0;
 let positionsBefore = null;
 let editingMap = false;
 let dragging = null;
-const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, overrides: 3, notes: '' };
+let sideTab = 'map';
+const openRounds = new Set();
+const seenCounts = {};
+const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, notes: '' };
 
 const SETTINGS = ['A 1950s Bombay hotel party', 'A snowed-in ski lodge', 'A 1920s ocean liner', 'A space station', 'A college reunion', 'A village fair'];
 const TONES = [['cozy', 'Cozy'], ['tense', 'Tense'], ['dark', 'Dark'], ['funny', 'Funny']];
 const LENGTHS = [['short', 'Short', '3 rounds, ~30 min'], ['standard', 'Normal', '4 rounds, ~1 hour'], ['long', 'Long', '5 rounds, ~1.5 hours']];
+const REPLAYS = [[0, 'Never'], [1, 'Once'], [2, 'Up to twice']];
 const SIDES = { investigator: 'Detective', culprit: 'Culprit', wildcard: 'Wildcard' };
 
 const isHost = () => Boolean(host);
@@ -41,7 +48,7 @@ function hostNote() {
 function endButton() {
   if (!isHost()) return '';
   const fresh = ['lobby', 'reveal'].includes(view?.status);
-  return `<button id="new-game" class="danger" style="flex:none" data-confirm="${fresh ? 'Tap again' : 'Tap again to end it'}">${fresh ? 'New game' : 'End game'}</button>`;
+  return `<button id="new-game" class="${fresh ? 'danger' : 'quiet danger-text'}" style="flex:none" data-confirm="${fresh ? 'Tap again' : 'Tap again to end it'}">${fresh ? 'New game' : 'End game'}</button>`;
 }
 
 function header(title, sub = '') {
@@ -51,17 +58,30 @@ function header(title, sub = '') {
   </div>`;
 }
 
-function castHtml(cast) {
-  if (!cast) return '';
-  const person = (c, extra = '') => `<div class="person">${c.icon ? `${esc(c.icon)} ` : ''}<b>${esc(c.name)}</b> <span class="muted small">${esc(c.role)}${extra}</span><div class="small">${esc(c.info)}</div></div>`;
-  return `<div class="panel stack">
-    <div><div class="label">Players</div>${cast.players.map((c) => person(c, ` &middot; ${esc(c.player)}`)).join('')}</div>
-    <div><div class="label">Played by the GM</div>${cast.npcs.map((n) => person(n)).join('')}</div>
-  </div>`;
+
+function showSide() {
+  document.querySelectorAll('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== sideTab));
+  document.querySelectorAll('[data-side]').forEach((b) => b.classList.toggle('on', b.dataset.side === sideTab));
+  sideCounts();
 }
 
-const mapPanel = () => `<div class="panel"><div class="row between"><div class="label">Who is where</div>${isHost() ? '<button class="chip" id="edit-map">Edit map</button>' : ''}</div>
-  <div class="small muted" id="map-help" hidden>Drag places to move them. Type where each place is in your room.</div><div id="map"></div></div>`;
+function sideCounts() {
+  if (!view || !$('side-tabs')) return;
+  const counts = { timeline: view.timeline?.length ?? 0, clues: view.sharedClues?.length ?? 0, people: (view.people ?? []).reduce((n, p) => n + p.facts.length, 0) };
+  for (const [t, n] of Object.entries(counts)) {
+    if (sideTab === t || seenCounts[t] === undefined) seenCounts[t] = n;
+    const el = document.querySelector(`[data-count="${t}"]`);
+    if (el) {
+      el.textContent = n ? ` ${n}` : '';
+      el.classList.toggle('new', n > seenCounts[t]);
+    }
+  }
+}
+
+const mapPanel = () => `<div class="row between"><div class="small muted">Who is where right now</div>${isHost() ? '<button class="quiet" id="edit-map">Edit map</button>' : ''}</div>
+  <div class="small muted" id="map-help" hidden>Drag places to move them. Type where each place is in your room.</div><div id="map"></div>`;
+
+const SIDE_TABS = [['map', 'Map'], ['timeline', 'Timeline'], ['alibis', 'Alibis'], ['clues', 'Clues'], ['people', 'People']];
 
 const skeletons = {
   lobby: () => `${header('Detective', 'A mystery game for this room')}${hostNote()}
@@ -80,9 +100,14 @@ const skeletons = {
         </div>
         <div class="field"><div class="label">Mood</div><div class="row" style="gap:6px" id="tone">${TONES.map(([v, l]) => `<button class="chip" data-v="${v}">${l}</button>`).join('')}</div></div>
         <div class="field"><div class="label">How long?</div><div class="row" style="gap:6px" id="length">${LENGTHS.map(([v, l, d]) => `<button class="chip" data-v="${v}">${l} <span class="muted small">${d}</span></button>`).join('')}</div></div>
+        <div class="field"><div class="label">Got a round wrong? Play it again</div><div class="row" style="gap:6px" id="replays">${REPLAYS.map(([v, l]) => `<button class="chip" data-v="${v}">${l}</button>`).join('')}</div>
+          <div class="small muted" style="margin-top:4px">A round you vote wrong is played again, with a clearer job.</div></div>
         <div class="field"><div class="label">Group hints</div><div class="row" style="gap:6px" id="hints">${[1, 2, 3, 4, 5].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div></div>
         <div class="field"><div class="label">Overrides per player</div><div class="row" style="gap:6px" id="overrides">${[0, 1, 2, 3, 4, 5].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div>
           <div class="small muted" style="margin-top:4px">Sometimes the story makes your character speak. An override lets you stay quiet or say it your way.</div></div>
+        <div class="field"><div class="label">People the GM plays</div><div class="row" style="gap:6px" id="npcs">${[0, 1, 2, 3, 4, 5, 6].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div>
+          <div class="row" style="gap:6px;margin-top:8px" id="npcRole"><button class="chip" data-v="mixed">Some matter to the case</button><button class="chip" data-v="background">Background only</button></div>
+          <div class="small muted" style="margin-top:4px">Fewer is easier to follow. Background only means the story is all about the players.</div></div>
         <div class="field"><div class="label">Anything the GM should know?</div>
           <textarea id="notes" maxlength="500" placeholder="Jokes, things you like, things to avoid"></textarea></div>
         <button class="primary wide" id="write">Make our mystery</button>
@@ -106,33 +131,36 @@ const skeletons = {
       <div class="stack">
         <div class="panel"><div class="label">Read your card on your phone. Then tap "Done".</div><div id="ready"></div>
         ${isHost() ? '<button class="primary" id="start" style="margin-top:10px">Start round 1</button>' : ''}</div>
+        <div class="panel"><div class="label">Timeline so far</div><div id="timeline"></div><div class="small muted" style="margin-top:6px">More times show up as the rounds go on.</div></div>
+        <div class="panel"><div class="label">Alibis: where people say they were</div><div id="alibis"></div></div>
         <div class="panel"><div class="label">Questions about the world</div><div id="qa"></div></div>
       </div>
     </div>`,
-  playing: () => `<div class="row between" style="margin-bottom:14px">
-      <div><h1>${esc(view.title)}</h1><div class="serif" style="color:var(--accent);font-size:1.2rem" id="phase-name"></div></div>
-      <div class="row"><div class="big-timer" id="timer">--:--</div>
-        ${isHost() ? '<div style="display:flex;flex-direction:column;gap:6px"><button id="extend">+5 min</button><button class="primary" id="next">Next round</button></div>' : ''}${endButton()}</div>
-    </div>${hostNote()}
+  playing: () => `<header class="bar">
+      <div class="bar-title"><div class="small muted">${esc(view.title)}</div><div class="round-name" id="phase-name"></div></div>
+      <div class="bar-stats small"><span id="pips"></span><span id="susp"></span></div>
+      <div class="big-timer" id="timer">--:--</div>
+      ${isHost() ? '<button class="quiet" id="extend">+5 min</button><button class="primary" id="next">Next round</button>' : ''}${endButton()}
+    </header>${hostNote()}
     <div id="banner"></div>
-    <div id="calling"></div>
-    <div class="grid" style="grid-template-columns:minmax(320px,1.5fr) minmax(260px,1fr)">
+    <div class="layout">
       <div class="stack">
-        <div class="panel" id="round"></div>
+        <div id="calling"></div>
         <div id="vote"></div>
-        ${mapPanel()}
-        <div class="panel"><div class="label">News</div><div id="feed"></div></div>
+        <div class="now" id="round"></div>
+        <div id="recap"></div>
+        <div class="whois small" id="whois"></div>
+        ${isHost() ? '<div class="note-box"><input type="text" id="note-text" maxlength="200" placeholder="Tell the GM what the room thinks. &quot;We think Ramesh lied about the gate.&quot;"><button class="quiet" id="note-send">Tell the GM</button></div>' : ''}
+        <section><div id="feed"></div></section>
       </div>
-      <div class="stack">
-        <div id="picture"></div>
-        <div class="row" style="align-items:stretch">
-          <div class="panel" style="flex:1"><div class="label">Group hints</div><div id="pips"></div><div class="small muted">Ask for one on your phone.</div></div>
-          <div class="panel" style="flex:1"><div class="label">Suspicion</div><div class="meter"><div id="meter"></div></div><div class="small" id="susp" style="margin-top:6px"></div></div>
-        </div>
-        <div class="panel"><div class="label">Timeline</div><div id="timeline"></div></div>
-        <div class="panel"><div class="label">Shared clues</div><div id="shared"></div></div>
-        ${castHtml(view.cast)}
-      </div>
+      <aside class="side">
+        <nav class="utabs" id="side-tabs">${SIDE_TABS.map(([t, l]) => `<button data-side="${t}">${l}<span class="count" data-count="${t}"></span></button>`).join('')}</nav>
+        <div data-pane="map">${mapPanel()}</div>
+        <div data-pane="timeline" hidden><div id="timeline"></div></div>
+        <div data-pane="alibis" hidden><div class="small muted" style="margin-bottom:8px">Where each person says they were</div><div id="alibis"></div></div>
+        <div data-pane="clues" hidden><div id="shared"></div></div>
+        <div data-pane="people" hidden><div id="picture"></div><div id="people"></div></div>
+      </aside>
     </div>`,
   final: () => `${header('Who did it?', view.title)}${hostNote()}<div id="banner"></div>
     <div class="grid"><div class="panel stack"><p class="opening">Everyone picks on their phone. Culprits too.</p>
@@ -173,7 +201,7 @@ function revealHtml() {
         <div class="layer private small"><div class="label">Secret</div>${esc(c.private_info)}<div style="margin-top:4px"><b>Goal:</b> ${esc(c.goal)}</div></div>
         <div class="layer hidden small"><div class="label">They never knew</div>${c.hidden_facts.map((f) => `<div>${esc(f)}</div>`).join('')}</div>
         <div class="small"><b>Picked:</b> ${c.submission ? c.submission.culprit_ids.map((id) => esc(nameOf(id))).join(', ') : '<span class="muted">nobody</span>'}</div>
-        <div class="small score">Culprit ${s.culprit_correct ? '&#10003;' : '&#10007;'} &middot; How ${s.method_score ?? 0}/2 &middot; Why ${s.motive_score ?? 0}/2 &middot; Goal ${s.goal_achieved ? '&#10003;' : '&#10007;'}</div>
+        <div class="small score"><b>${pointsOf(s)} of 6 points</b> &middot; Culprit ${s.culprit_correct ? '&#10003;' : '&#10007;'} &middot; How ${s.method_score ?? 0}/2 &middot; Why ${s.motive_score ?? 0}/2 &middot; Goal ${s.goal_achieved ? '&#10003;' : '&#10007;'}</div>
         <div class="small muted">${esc(s.goal_outcome)} ${esc(s.comment)}</div>
       </div>`;
     }).join('')}</div>`;
@@ -204,9 +232,9 @@ function wire() {
     document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => {
       form.setting = setting.value = b.dataset.setting;
     }));
-    for (const key of ['tone', 'length', 'hints', 'overrides']) {
+    for (const key of ['tone', 'length', 'hints', 'overrides', 'npcs', 'npcRole', 'replays']) {
       $(key).querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
-        form[key] = ['hints', 'overrides'].includes(key) ? Number(b.dataset.v) : b.dataset.v;
+        form[key] = ['hints', 'overrides', 'npcs', 'replays'].includes(key) ? Number(b.dataset.v) : b.dataset.v;
         chipGroup(key, form[key]);
       }));
       chipGroup(key, form[key]);
@@ -234,6 +262,29 @@ function wire() {
     renderMap(true);
   });
   $('read-story')?.addEventListener('click', () => readNow([view.reveal.reveal_story]));
+  const sendNote = async () => {
+    if (await act('note', { text: $('note-text').value })) $('note-text').value = '';
+  };
+  $('note-send')?.addEventListener('click', sendNote);
+  $('note-text')?.addEventListener('keydown', (e) => e.key === 'Enter' && sendNote());
+  document.querySelectorAll('[data-side]').forEach((b) => b.addEventListener('click', () => {
+    sideTab = b.dataset.side;
+    showSide();
+  }));
+  if ($('side-tabs')) showSide();
+  $('feed')?.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-go]');
+    if (go) {
+      sideTab = go.dataset.go;
+      showSide();
+    }
+  });
+  $('feed')?.addEventListener('toggle', (e) => {
+    const r = Number(e.target.dataset?.round);
+    if (Number.isNaN(r)) return;
+    if (e.target.open) openRounds.add(r);
+    else openRounds.delete(r);
+  }, true);
 }
 
 function confirmTwice(btn) {
@@ -279,12 +330,10 @@ function update() {
   if ($('submitted')) {
     $('submitted').innerHTML = v.players.map((p) => `<div>${v.submitted.includes(p.id) ? '&#10003;' : '&#8230;'} ${esc(p.name)}</div>`).join('');
   }
-  if ($('phase-name') && v.phase) $('phase-name').textContent = `Round ${v.phase.index + 1} of ${v.phase.count}: ${v.phase.name}`;
-  if ($('pips')) $('pips').innerHTML = `<span class="pips">${'&#9679;'.repeat(v.hintsLeft)}${'&#9675;'.repeat(Math.max(0, v.hintsTotal - v.hintsLeft))}</span> <span class="small muted">${v.hintsLeft} of ${v.hintsTotal} left</span>`;
-  if ($('meter')) {
-    $('meter').style.width = `${v.suspicion}%`;
-    $('susp').textContent = suspicionLabel(v.suspicion);
-  }
+  if ($('phase-name') && v.phase) $('phase-name').textContent = `Round ${v.phase.number ?? v.phase.index + 1} of ${v.phase.count} · ${v.phase.name}`;
+  if ($('recap')) $('recap').innerHTML = recapHtml(v.recap);
+  if ($('pips')) $('pips').innerHTML = `<span class="muted" title="Group hints left. Ask for one on your phone.">Hints</span> <span class="pips">${'&#9679;'.repeat(v.hintsLeft)}${'&#9675;'.repeat(Math.max(0, v.hintsTotal - v.hintsLeft))}</span>`;
+  if ($('susp') && v.suspicion !== null) $('susp').innerHTML = `<span class="muted" title="How close the group is to the culprit">Suspicion</span> ${esc(suspicionLabel(v.suspicion))}`;
   if ($('vote')) {
     $('vote').innerHTML = v.hintVote ? `<div class="banner"><b>${esc(v.hintVote.proposer)}</b> wants a hint. Vote on your phone: ${v.hintVote.yes} yes, ${v.hintVote.no} no. Needs ${v.hintVote.need}.</div>` : '';
   }
@@ -296,10 +345,11 @@ function update() {
       : v.scoring ? '<div class="banner" style="margin-bottom:12px">The GM is checking your answers<span class="dots"></span></div>' : '';
   }
   if ($('feed')) {
-    const events = v.events.filter((e) => e.kind !== 'opening');
-    $('feed').innerHTML = newsHtml(events, { fresh: events.length - seenEvents });
-    seenEvents = events.length;
+    const n = visibleCount(v.events);
+    $('feed').innerHTML = feedHtml(v.events, { fresh: n - seenEvents, open: openRounds });
+    seenEvents = n;
   }
+  sideCounts();
   if ($('brief')) {
     $('brief').innerHTML = stepHtml(v);
     if ($('brief-back')) $('brief-back').disabled = v.briefing.step === 0;
@@ -307,11 +357,13 @@ function update() {
   }
   if ($('qa')) $('qa').innerHTML = newsHtml(v.events.filter((e) => e.kind === 'qa')).replace('No news yet.', 'Ask on your phone. Everyone sees the answer.');
   if ($('round')) {
-    $('round').innerHTML = v.round ? roundHtml(v.round) : '<div class="label">This round</div><p class="muted">Talk, look around and share clues.</p>';
+    $('round').innerHTML = caseHtml(v.caseQuestion) + (v.round ? roundHtml(v.round) : '<div class="label">This round</div><div class="question">Talk, look around and share clues.</div>');
     $('round').hidden = false;
   }
-  if ($('calling')) $('calling').innerHTML = v.calling?.length ? `<div class="calling">${v.calling.map((n) => `<b>${esc(n)}</b>`).join(' and ')} ${v.calling.length > 1 ? 'have' : 'has'} something to say. Listen.</div>` : '';
+  if ($('calling')) $('calling').innerHTML = v.calling?.length ? `<div class="calling">${v.calling.map((n) => `<b>${esc(n)}</b>`).join(' and ')}, the story turns to you. Everyone, listen.</div>` : '';
   if ($('timeline')) $('timeline').innerHTML = timelineHtml(v.timeline);
+  if ($('alibis')) $('alibis').innerHTML = alibiHtml(v.alibis);
+  if ($('people')) $('people').innerHTML = peopleHtml(v.people, { openAll: true });
   if ($('shared')) $('shared').innerHTML = sharedCluesHtml(v.sharedClues);
   if ($('results')) $('results').innerHTML = resultsHtml(v.roundResults) || '<p class="small muted">No round votes.</p>';
   if ($('picture') && !$('picture').dataset.done && v.illustration) {
@@ -319,7 +371,7 @@ function update() {
     $('picture').dataset.done = '1';
   }
   if ($('next') && v.phase) {
-    const last = v.phase.index + 1 >= v.phase.count;
+    const last = (v.phase.number ?? v.phase.index + 1) >= v.phase.count;
     $('next').textContent = v.round?.vote ? 'Close the vote' : v.round && !v.round.done ? 'Start the vote' : last ? 'Go to the final vote' : 'Next round';
   }
   tick();
@@ -382,12 +434,20 @@ function tick() {
     const c = countdown(view.round.vote.endsAt);
     const t = $('round').querySelector('.timer');
     if (t) t.textContent = c.text;
-    else $('round').innerHTML = roundHtml(view.round, { countdown: c.text });
+    else $('round').innerHTML = caseHtml(view.caseQuestion) + roundHtml(view.round, { countdown: c.text });
   }
   if ($('timer') && view.phase?.endsAt) {
     const c = countdown(view.phase.endsAt);
     $('timer').textContent = c.text;
     $('timer').classList.toggle('low', c.low);
+  }
+  if ($('whois') && view.cast) {
+    const lines = whoisLines(view.cast);
+    const line = lines[Math.floor(Date.now() / 20_000) % lines.length];
+    if (line && $('whois').dataset.line !== line) {
+      $('whois').dataset.line = line;
+      $('whois').innerHTML = `<span class="muted">Who's who</span> ${esc(line)}`;
+    }
   }
   if ($('elapsed')) {
     const s = Math.round((Date.now() - (view.progress?.startedAt ?? skeleton?.since ?? Date.now())) / 1000);
@@ -483,11 +543,38 @@ function readNow(lines) {
   narrator.enabled = was;
 }
 
+const sfx = new Sfx();
+window.detectiveSfx = sfx;
+sfx.enabled = store('detective-sfx') !== 'off';
+function sfxLabel() {
+  const locked = sfx.enabled && sfx.ctx?.state !== 'running';
+  $('sfx-toggle').classList.toggle('on', sfx.enabled && !locked);
+  $('sfx-toggle').setAttribute('aria-pressed', String(sfx.enabled));
+  $('sfx-label').textContent = !sfx.enabled ? 'Sounds off' : locked ? 'Tap anywhere for sounds' : 'Sounds on';
+}
+tickers.add(sfxLabel);
+$('sfx-toggle').addEventListener('click', () => {
+  if (sfx.enabled && sfx.ctx?.state !== 'running') {
+    sfx.unlock();
+    setTimeout(() => sfx.play('news'), 60);
+    return sfxLabel();
+  }
+  sfx.enabled = !sfx.enabled;
+  store('detective-sfx', sfx.enabled ? 'on' : 'off');
+  sfx.unlock();
+  if (sfx.enabled) setTimeout(() => sfx.play('news'), 60);
+  sfxLabel();
+});
+sfxLabel();
+
 let lastView = null;
 function onSound(v) {
   score.setTheme(v.music, v.setup?.tone);
   score.setIntensity(intensityFor(v));
-  for (const cue of cuesBetween(lastView, v)) score.cue(cue);
+  const cues = cuesBetween(lastView, v);
+  for (const cue of cues) score.cue(cue);
+  const sound = tableSound(lastView, v);
+  if (sound && !(score.playing && ((sound === 'phase' && cues.includes('phase')) || (sound === 'hint' && cues.includes('hint'))))) sfx.play(sound);
   narrator.say(narrationFor(lastView, v));
   lastView = v;
   $('music-desc').textContent = v.musicDescription ?? '';
@@ -499,7 +586,7 @@ stream('', (v) => {
   view = v;
   if (skeleton?.key !== key) {
     skeleton = { key, since: Date.now() };
-    seenEvents = v.events.filter((e) => e.kind !== 'opening').length;
+    seenEvents = visibleCount(v.events);
     positionsBefore = null;
     editingMap = false;
     dragging = null;
