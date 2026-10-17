@@ -1,6 +1,6 @@
 import { api, esc, stream, countdown, suspicionLabel, hashParam, toast, tickers } from '/common.js';
 import { mapHtml } from '/map.js';
-import { novelHtml, pictureHtml, backgroundHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, stepHtml, caseHtml, pointsOf, alibiHtml, nightHtml, recapHtml, peopleHtml } from '/panels.js';
+import { novelHtml, pictureHtml, backgroundHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, stepHtml, caseHtml, alibiHtml, nightHtml, recapHtml, peopleHtml, playLine, totalLine, questionHtml, profileHtml, skillBars } from '/panels.js';
 import { feedHtml, visibleCount } from '/feed.js';
 import { phoneAlerts } from '/alerts.js';
 import { Sfx } from '/sfx.js';
@@ -37,10 +37,24 @@ async function act(path, body = {}) {
   }
 }
 
+const store = {
+  get: (k) => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* private window */ } },
+};
+
 function saveToken(t) {
   token = t;
   localStorage.setItem('detective-token', t);
   history.replaceState(null, '', `#t=${t}`);
+}
+
+async function joinAs(body, { full }) {
+  const res = await api('join', body).catch((err) => toast(err.message));
+  if (!res?.token) return;
+  store.set('detective-full', full ? '1' : '0');
+  if (body.username) store.set('detective-username', body.username);
+  saveToken(res.token);
+  connect();
 }
 
 function joinScreen(publicView, message = '') {
@@ -48,16 +62,47 @@ function joinScreen(publicView, message = '') {
   app.innerHTML = `<h1 style="margin-top:20px">Detective</h1>
     ${message ? `<p class="banner small">${esc(message)}</p>` : ''}
     ${open ? `<div class="panel stack" style="margin-top:14px">
+      <div id="known" hidden><div class="label">Played before? Tap your name</div><div class="chips-wrap" id="known-chips"></div></div>
       <label><div class="label">Your name</div><input type="text" id="name" maxlength="24" autocomplete="given-name"></label>
+      <div id="is-you" class="small" hidden></div>
       <label><div class="label">Who do you want to be? (optional)</div><input type="text" id="wish" maxlength="200" placeholder="A spy, someone funny, anything"></label>
+      <details><summary class="small muted">Or type your username</summary><input type="text" id="username" maxlength="40" placeholder="nikhil" style="margin-top:6px"></details>
       <button class="primary wide" id="join">Join</button></div>`
       : '<p class="muted" style="margin-top:14px">This game already started. Ask the host for a new game.</p>'}`;
-  $('join')?.addEventListener('click', async () => {
-    const res = await api('join', { name: $('name').value, wish: $('wish').value }).catch((err) => toast(err.message));
-    if (res?.token) {
-      saveToken(res.token);
-      connect();
-    }
+  if (!open) return;
+  const remembered = store.get('detective-username');
+  let linked = null;
+  const link = (person) => {
+    linked = person;
+    $('name').value = person.name;
+    document.querySelectorAll('[data-user]').forEach((b) => b.classList.toggle('on', b.dataset.user === person.username));
+    $('is-you').hidden = true;
+  };
+  fetch('/api/people').then((r) => r.json()).then(({ people = [] }) => {
+    if (!people.length) return;
+    $('known').hidden = false;
+    $('known-chips').innerHTML = people.map((p) => `<button class="chip" data-user="${esc(p.username)}">${esc(p.name)}</button>`).join('');
+    $('known-chips').querySelectorAll('[data-user]').forEach((b) => b.addEventListener('click', () => link(people.find((p) => p.username === b.dataset.user))));
+    const mine = people.find((p) => p.username === remembered);
+    if (mine) link(mine);
+  }).catch(() => {});
+  $('name').addEventListener('input', () => {
+    linked = null;
+    document.querySelectorAll('[data-user]').forEach((b) => b.classList.remove('on'));
+    $('is-you').hidden = true;
+  });
+  $('join').addEventListener('click', async () => {
+    const name = $('name').value;
+    const wish = $('wish').value;
+    const typed = $('username').value.trim();
+    if (linked) return joinAs({ name, wish, username: linked.username }, { full: linked.username === remembered });
+    if (typed) return joinAs({ name, wish, username: typed }, { full: typed === remembered });
+    const { match } = await api('checkname', { name }).catch(() => ({ match: null }));
+    if (!match) return joinAs({ name, wish }, { full: true });
+    $('is-you').hidden = false;
+    $('is-you').innerHTML = `Is this you, ${esc(match.name)}? <button class="chip" id="yes-me">Yes</button> <button class="chip" id="not-me">No, I'm new</button>`;
+    $('yes-me').addEventListener('click', () => joinAs({ name: match.name, wish, username: match.username }, { full: match.username === remembered }));
+    $('not-me').addEventListener('click', () => joinAs({ name, wish, newPerson: true }, { full: true }));
   });
 }
 
@@ -83,7 +128,7 @@ function cardHtml() {
       ${caseHtml(view.caseQuestion, "The group's goal")}
       <div class="case mine"><div class="label">Your secret goal</div><div class="question">${esc(c.goal)}</div>${c.goal_why ? `<div class="small" style="margin-top:4px">${esc(c.goal_why)}</div>` : ''}</div>
       <div class="small"><b>You are a ${esc(side)}.</b> ${esc(c.win)}</div>
-      <div class="small muted">Points: 1 for the right culprit, up to 2 for how, up to 2 for why, 1 for your own goal.</div>
+      <div class="small muted">Points: 1 for the right culprit, up to 2 for how, up to 2 for why, 1 for your own goal. Plus up to 3 play points for good moves.</div>
     </div>
     ${c.wants || c.fears || c.reasons?.length ? `<div class="layer private drives"><div class="label">What drives you</div>
       ${c.wants ? `<p>${esc(c.wants)}</p>` : ''}
@@ -108,6 +153,8 @@ function cardHtml() {
 const skeletons = {
   waiting: () => `<h1 style="margin-top:20px">You're in, ${esc(view.me.name)}</h1>
     <div class="panel stack" style="margin-top:12px"><p id="wait-msg"></p><div><div class="label">Players here</div><div id="players"></div></div></div>
+    <div id="question" class="panel" style="margin-top:12px" hidden></div>
+    <details class="panel" id="me-profile" style="margin-top:12px" hidden><summary>What the game knows about you</summary><div id="profile" style="margin-top:8px"></div></details>
     <p class="small muted" style="margin-top:12px">Keep this page open. Your card shows up here.</p>`,
   reading: () => `
     <section id="t-story" class="tab"><div id="brief" class="panel"></div>
@@ -160,8 +207,11 @@ const skeletons = {
     return `<h1 style="margin-top:12px">${win ? 'The detectives win' : 'The culprits got away'}</h1>
       <p class="muted">The full story is on the big screen.</p>
       <div class="panel stack"><div class="label">How you did</div>
-        <div class="score"><b>${pointsOf(mine)} of 6 points</b> &middot; Culprit ${mine.culprit_correct ? '&#10003;' : '&#10007;'} &middot; How ${mine.method_score ?? 0}/2 &middot; Why ${mine.motive_score ?? 0}/2 &middot; Goal ${mine.goal_achieved ? '&#10003;' : '&#10007;'}</div>
-        <p class="small">${esc(mine.goal_outcome)}</p><p class="small muted">${esc(mine.comment)}</p></div>
+        <div class="score"><b>${esc(totalLine(mine))}</b> &middot; Culprit ${mine.culprit_correct ? '&#10003;' : '&#10007;'} &middot; How ${mine.method_score ?? 0}/2 &middot; Why ${mine.motive_score ?? 0}/2 &middot; Goal ${mine.goal_achieved ? '&#10003;' : '&#10007;'}</div>
+        ${r.bestPlay?.includes(view.me.id) ? '<p class="small"><b>Best play this game.</b></p>' : ''}
+        <p class="small">${esc(mine.goal_outcome)}</p><p class="small muted">${esc(mine.comment)}</p>
+        ${Object.keys(mine.skills ?? {}).length ? `<div class="label">Your skills this game</div>${skillBars(Object.entries(mine.skills).map(([skill, points]) => ({ skill, points })))}` : ''}
+        ${mine.coaching ? `<p class="small"><b>Tip:</b> ${esc(mine.coaching)}</p>` : ''}</div>
       <div class="layer hidden" style="margin-top:12px"><div class="label">What you never knew</div>
         ${r.cards.find((c) => c.id === view.me.id).hidden_facts.map((f) => `<p>${esc(f)}</p>`).join('')}</div>
       <div class="panel" style="margin-top:12px"><div class="label">What really happened</div><p style="white-space:pre-wrap">${esc(r.reveal_story)}</p></div>`;
@@ -409,9 +459,10 @@ function finalBody() {
       ${people.map((c) => `<label class="check"><input type="checkbox" data-c="${esc(c.id)}" ${picked.has(c.id) ? 'checked' : ''}><span><b>${esc(c.name)}</b> <span class="muted small">${esc(c.role)}${c.id === v.me.id ? ' (you)' : ''}</span></span></label>`).join('')}
     </div>
     <p class="small muted" style="margin-top:12px">Type, or tap the &#127908; mic on your keyboard to speak.</p>
-    <label class="field"><div class="label">How?</div><textarea id="how"></textarea></label>
-    <label class="field"><div class="label">Why?</div><textarea id="why"></textarea></label>
+    <label class="field"><div class="label">How? <span class="muted">(up to 2 points, one line is enough)</span></div><textarea id="how"></textarea></label>
+    <label class="field"><div class="label">Why? <span class="muted">(up to 2 points, one line is enough)</span></div><textarea id="why"></textarea></label>
     <label class="field"><div class="label">Did you get your goal?</div><textarea id="goal"></textarea></label>
+    <div id="empty-warn" class="banner small" hidden></div>
     <button class="primary wide" id="submit">Send my answer</button>`;
 }
 
@@ -521,7 +572,8 @@ function update() {
     const items = v.pending ? [...v.thread, { from: 'you', text: v.pending.text }, { from: 'gm', text: 'Thinking...' }] : v.thread;
     $('thread').innerHTML = items.map((m) => {
       const tag = m.from === 'you' && TAGS[m.kind] ? `<span class="tag">${esc(TAGS[m.kind])}</span>` : '';
-      return `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${tag}</div>${m.lines ? novelHtml(m.lines) : esc(m.text)}</div>`;
+      const scored = m.from === 'gm' && m.play ? `<div class="play-line small">${esc(playLine(m.play))}</div>` : '';
+      return `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${tag}</div>${m.lines ? novelHtml(m.lines) : esc(m.text)}${scored}</div>`;
     }).join('') || '<p class="small muted">Nothing yet. Try: "I ask the cook where he was at nine."</p>';
     if (tab === 'ask') scrollChat();
   }
@@ -535,7 +587,35 @@ function update() {
   if ($('final-body')) {
     $('final-body').innerHTML = finalBody();
     $('final-body').querySelectorAll('[data-c]').forEach((b) => b.addEventListener('change', () => (b.checked ? picked.add(b.dataset.c) : picked.delete(b.dataset.c))));
-    $('submit')?.addEventListener('click', () => act('submit', { culprit_ids: [...picked], how: $('how').value, why: $('why').value, goal: $('goal').value }));
+    const send = () => act('submit', { culprit_ids: [...picked], how: $('how').value, why: $('why').value, goal: $('goal').value });
+    $('submit')?.addEventListener('click', () => {
+      const empty = [['How', $('how').value], ['Why', $('why').value]].filter(([, t]) => !t.trim()).map(([n]) => n);
+      if (!empty.length) return send();
+      $('empty-warn').hidden = false;
+      $('empty-warn').innerHTML = `${empty.join(' and ')} ${empty.length > 1 ? 'are' : 'is'} empty, that is ${empty.length * 2} points. Send anyway? <button class="chip" id="send-anyway">Send</button> <button class="chip" id="go-back">Go back</button>`;
+      $('send-anyway').addEventListener('click', send);
+      $('go-back').addEventListener('click', () => { $('empty-warn').hidden = true; $(empty[0].toLowerCase()).focus(); });
+    });
+  }
+  if ($('question')) {
+    const q = v.question;
+    $('question').hidden = !q;
+    if (q && $('question').dataset.q !== q.id) {
+      $('question').dataset.q = q.id;
+      $('question').innerHTML = questionHtml(q);
+      $('question').querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => act('answer', { id: q.id, choice: Number(b.dataset.choice) })));
+      $('q-send').addEventListener('click', () => $('q-own').value.trim() && act('answer', { id: q.id, text: $('q-own').value }));
+      $('question').querySelector('[data-skip]').addEventListener('click', () => act('answer', { id: q.id }));
+    }
+  }
+  if ($('profile') && v.profile) {
+    $('me-profile').hidden = false;
+    const sig = JSON.stringify(v.profile);
+    if ($('profile').dataset.sig !== sig) {
+      $('profile').dataset.sig = sig;
+      $('profile').innerHTML = profileHtml(v.profile);
+      $('forget')?.addEventListener('click', () => act('forget'));
+    }
   }
   markTabs();
   tick();
@@ -587,7 +667,7 @@ function connect() {
     });
     return;
   }
-  stream(`?token=${encodeURIComponent(token)}`, onView, () => {
+  stream(`?token=${encodeURIComponent(token)}${store.get('detective-full') === '1' ? '&full=1' : ''}`, onView, () => {
     localStorage.removeItem('detective-token');
     token = null;
     history.replaceState(null, '', location.pathname);

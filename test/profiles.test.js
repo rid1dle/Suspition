@@ -88,6 +88,8 @@ describe('profiles', () => {
     p.skills = { questioning: { points: 4, moves: 3 }, searching: { points: 2, moves: 2 }, swaying: { points: -1, moves: 1 } };
     const v = profileView(p);
     assert.equal(v.change, 'Questioning up, Searching down');
+    p.games.push({ gameId: 'c', skills: { questioning: 3, swaying: -1 } });
+    assert.equal(profileView(p).change, 'Swaying the GM more');
     assert.equal(v.coaching, 'Keep asking.');
     assert.deepEqual(v.skills.map((s) => s.skill), ['questioning', 'searching', 'swaying']);
     assert.equal(v.skills[2].label, 'Swaying the GM');

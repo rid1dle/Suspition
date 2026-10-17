@@ -1,5 +1,6 @@
 import { esc } from './text.js';
 import { mapHtml } from './map.js';
+import { SKILL_LABELS, PENALTY_SKILLS } from './skill-labels.js';
 
 export function novelHtml(lines) {
   return `<div class="novel">${lines.map((l, i) => {
@@ -160,4 +161,41 @@ export function whoisLines(cast) {
 
 export function pointsOf(s) {
   return (s?.culprit_correct ? 1 : 0) + (s?.method_score ?? 0) + (s?.motive_score ?? 0) + (s?.goal_achieved ? 1 : 0);
+}
+
+const signed = (n) => (n > 0 ? `+${n}` : `${n}`);
+
+export function playLine(play) {
+  if (!play) return '';
+  return [signed(play.points ?? 0), play.skill && SKILL_LABELS[play.skill], play.why].filter(Boolean).join(' · ');
+}
+
+export function skillBars(skills = []) {
+  if (!skills.length) return '<p class="small muted">No skills yet. They show up after your first game.</p>';
+  const list = [...skills].sort((a, b) => (PENALTY_SKILLS.includes(a.skill) - PENALTY_SKILLS.includes(b.skill)) || b.points - a.points);
+  const top = Math.max(1, ...list.map((s) => Math.abs(s.points)));
+  return `<div class="skills">${list.map((s) => `<div class="skill${PENALTY_SKILLS.includes(s.skill) ? ' minus' : ''}">
+    <span class="skill-name">${esc(s.label ?? SKILL_LABELS[s.skill] ?? s.skill)}</span>
+    <span class="skill-bar"><i style="width:${Math.round((Math.abs(s.points) / top) * 100)}%"></i></span>
+    <span class="skill-pts">${signed(s.points)}</span></div>`).join('')}</div>`;
+}
+
+export const totalLine = (s) => `Case ${pointsOf(s)}/6 · Play ${signed(s?.play ?? 0)}`;
+
+export function questionHtml(q) {
+  return `<div class="question" data-q="${esc(q.id)}"><div class="label">Quick question</div><p><b>${esc(q.question)}</b></p>
+    <div class="chips-wrap">${q.choices.map((c, i) => `<button class="chip" data-choice="${i}">${esc(c)}</button>`).join('')}</div>
+    <div class="row" style="margin-top:8px;gap:6px"><input type="text" id="q-own" maxlength="200" placeholder="Or say it your way"><button id="q-send">Send</button></div>
+    <button class="quiet small" data-skip>Skip</button></div>`;
+}
+
+export function profileHtml(p) {
+  return `<div class="stack">
+    <p class="small muted">${p.games ? `${p.games} game${p.games === 1 ? '' : 's'} played.` : 'Your first game.'} Only you see this.</p>
+    ${skillBars(p.skills)}
+    ${p.change ? `<p class="small"><b>Since last game:</b> ${esc(p.change)}</p>` : ''}
+    ${p.coaching ? `<p class="small"><b>Tip:</b> ${esc(p.coaching)}</p>` : ''}
+    ${p.answers ? `<div><div class="label">Your answers</div>${p.answers.map((a) => `<div class="small">${esc(a.question)} <b>${esc(a.answer)}</b></div>`).join('') || '<p class="small muted">None yet.</p>'}
+      <button class="quiet small" id="forget">Clear my answers</button></div>` : ''}
+  </div>`;
 }

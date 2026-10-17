@@ -3,7 +3,7 @@ import { Score } from '/music.js';
 import { intensityFor, cuesBetween } from '/music-theory.js';
 import { Narrator, narrationFor } from '/narration.js';
 import { mapHtml } from '/map.js';
-import { pictureHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, resultsHtml, stepHtml, caseHtml, pointsOf, alibiHtml, whoisLines, recapHtml, peopleHtml } from '/panels.js';
+import { pictureHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, resultsHtml, stepHtml, caseHtml, alibiHtml, whoisLines, recapHtml, peopleHtml, totalLine } from '/panels.js';
 import { feedHtml, visibleCount } from '/feed.js';
 import { tableSound } from '/alerts.js';
 import { Sfx } from '/sfx.js';
@@ -201,7 +201,7 @@ function revealHtml() {
         <div class="layer private small"><div class="label">Secret</div>${esc(c.private_info)}<div style="margin-top:4px"><b>Goal:</b> ${esc(c.goal)}</div></div>
         <div class="layer hidden small"><div class="label">They never knew</div>${c.hidden_facts.map((f) => `<div>${esc(f)}</div>`).join('')}</div>
         <div class="small"><b>Picked:</b> ${c.submission ? c.submission.culprit_ids.map((id) => esc(nameOf(id))).join(', ') : '<span class="muted">nobody</span>'}</div>
-        <div class="small score"><b>${pointsOf(s)} of 6 points</b> &middot; Culprit ${s.culprit_correct ? '&#10003;' : '&#10007;'} &middot; How ${s.method_score ?? 0}/2 &middot; Why ${s.motive_score ?? 0}/2 &middot; Goal ${s.goal_achieved ? '&#10003;' : '&#10007;'}</div>
+        <div class="small score"><b>${esc(totalLine(s))}</b>${r.bestPlay?.includes(c.id) ? ' &middot; <b>Best play</b>' : ''} &middot; Culprit ${s.culprit_correct ? '&#10003;' : '&#10007;'} &middot; How ${s.method_score ?? 0}/2 &middot; Why ${s.motive_score ?? 0}/2 &middot; Goal ${s.goal_achieved ? '&#10003;' : '&#10007;'}</div>
         <div class="small muted">${esc(s.goal_outcome)} ${esc(s.comment)}</div>
       </div>`;
     }).join('')}</div>`;

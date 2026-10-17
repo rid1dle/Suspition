@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { novelHtml, pictureHtml, timelineHtml, newsHtml, roundHtml, stepHtml, sharedCluesHtml, caseHtml, pointsOf, alibiHtml, nightHtml, whoisLines, peopleHtml } from '../public/panels.js';
+import { novelHtml, pictureHtml, timelineHtml, newsHtml, roundHtml, stepHtml, sharedCluesHtml, caseHtml, pointsOf, alibiHtml, nightHtml, whoisLines, peopleHtml, playLine, skillBars, totalLine, questionHtml, profileHtml } from '../public/panels.js';
 
 describe('panels', () => {
   test('should show speech with the speaker name and narration as plain lines', () => {
@@ -142,5 +142,42 @@ describe('people page', () => {
     assert.match(html, /<span class="count">1 fact<\/span>/);
     assert.match(html, /Says they were:<\/span> <span class="when">9:40 pm<\/span> Library/);
     assert.match(peopleHtml(people), /Nothing new about them yet/);
+  });
+});
+
+describe('play points and skills on screen', () => {
+  test('should show a plus sign and the skill name on a scored move', () => {
+    assert.equal(playLine({ points: 1, skill: 'questioning', why: 'Checking the cuffs helps your goal.' }), '+1 · Questioning · Checking the cuffs helps your goal.');
+    assert.equal(playLine({ points: 0, skill: null, why: 'You can only play your own character.' }), '0 · You can only play your own character.');
+    assert.equal(playLine({ points: -1, skill: 'swaying', why: 'Aimed at the GM.' }), '-1 · Swaying the GM · Aimed at the GM.');
+    assert.equal(playLine(null), '');
+  });
+
+  test('should list penalties last as minus', () => {
+    const html = skillBars([{ skill: 'questioning', label: 'Questioning', points: 4, moves: 3 }, { skill: 'swaying', label: 'Swaying the GM', points: -1, moves: 1 }]);
+    assert.ok(html.indexOf('Questioning') < html.indexOf('Swaying the GM'));
+    assert.match(html, /-1/);
+    assert.match(html, /\+4/);
+    assert.equal(skillBars([]), '<p class="small muted">No skills yet. They show up after your first game.</p>');
+  });
+
+  test('should show case and play points apart in the total line', () => {
+    assert.equal(totalLine({ culprit_correct: true, method_score: 2, motive_score: 1, goal_achieved: false, play: 2 }), 'Case 4/6 · Play +2');
+    assert.equal(totalLine({ play: -1 }), 'Case 0/6 · Play -1');
+  });
+
+  test('should render four choices, own words and skip for a question', () => {
+    const html = questionHtml({ id: 'party', question: 'At a party you are usually...', choices: ['A', 'B', 'C', 'D'] });
+    assert.equal((html.match(/data-choice=/g) ?? []).length, 4);
+    assert.match(html, /id="q-own"/);
+    assert.match(html, /data-skip/);
+  });
+
+  test('should show the change and coaching in the profile, and answers only when given', () => {
+    const html = profileHtml({ name: 'Ben', games: 2, skills: [], coaching: 'Share sooner.', change: 'Questioning up', rating: 0.5 });
+    assert.match(html, /Share sooner\./);
+    assert.match(html, /Questioning up/);
+    assert.ok(!html.includes('Your answers'));
+    assert.match(profileHtml({ name: 'Ben', games: 0, skills: [], answers: [{ question: 'Q?', answer: 'Yes' }] }), /Your answers/);
   });
 });

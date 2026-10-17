@@ -61,7 +61,7 @@ function changeLine(games) {
     .filter(([, d]) => d)
     .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
     .slice(0, 3)
-    .map(([k, d]) => `${SKILL_LABELS[k] ?? k} ${d > 0 ? 'up' : 'down'}`)
+    .map(([k, d]) => `${SKILL_LABELS[k] ?? k} ${PENALTIES.includes(k) ? (d < 0 ? 'more' : 'less') : d > 0 ? 'up' : 'down'}`)
     .join(', ');
 }
 

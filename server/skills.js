@@ -1,19 +1,11 @@
+import { SKILL_LABELS, PENALTY_SKILLS } from '../public/skill-labels.js';
+
 // Play points: what a move does in the story, never what it claims. Each move keeps the rubric it
 // was scored under, so the basis can change later without mixing old and new scores.
 
 export const SKILLS = ['searching', 'questioning', 'connecting', 'persuading', 'bluffing', 'own_goal', 'teamwork'];
-export const PENALTIES = ['breaking', 'swaying'];
-export const SKILL_LABELS = {
-  searching: 'Searching',
-  questioning: 'Questioning',
-  connecting: 'Connecting',
-  persuading: 'Persuading',
-  bluffing: 'Bluffing',
-  own_goal: 'Own goal',
-  teamwork: 'Teamwork',
-  breaking: 'Breaking the rules',
-  swaying: 'Swaying the GM',
-};
+export const PENALTIES = PENALTY_SKILLS;
+export { SKILL_LABELS };
 export const RUBRIC_VERSION = 1;
 export const PLAY_MIN = -2;
 export const PLAY_MAX = 3;
