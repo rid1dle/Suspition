@@ -1485,3 +1485,35 @@ describe('the room on the screens', () => {
     assert.deepEqual([room.fontPair, room.ambient, room.intensity], ['storybook', 'snow', 'medium']);
   });
 });
+
+describe('third-person reminders', () => {
+  const card = (over = {}) => ({
+    character_name: 'Nikhil Rao', role_title: 'Bank Manager', public_info: 'A former college captain. You are loud.',
+    night: [{ time: '9:40 pm', where: 'Library', doing: 'You argued with Arjun.' }], ...over,
+  });
+
+  test("should use the GM's third-person reminders when the card has them", () => {
+    assert.deepEqual(G.remindersFor(card({ reminders: ['Nikhil Rao runs the bank on MG Road.', '  ', 'You hid the ledger.'] })), ['Nikhil Rao runs the bank on MG Road.']);
+  });
+
+  test('should build third-person reminders from the card when it has none', () => {
+    assert.deepEqual(G.remindersFor(card()), ['Nikhil Rao is the Bank Manager.', 'A former college captain.', 'At 9:40 pm, Nikhil Rao was in the Library.']);
+  });
+
+  test('should never start a reminder with "You"', () => {
+    for (const line of [...G.remindersFor(card()), ...G.remindersFor(card({ reminders: ['You are scared.', 'Your hands shake.'] }))]) assert.ok(!/^you\b|^your\b/i.test(line), line);
+  });
+
+  test('should put reminders on the phone card', () => {
+    const game = gameInReading(3);
+    assert.equal(G.playerView(game, 'p1').card.reminders[0], 'Character 1 is the Role 1.');
+  });
+
+  test('should fill missing reminders from the card check', () => {
+    const sc = makeScenario(3);
+    G.applyAudit(sc, { players: [{ player_id: 'p1', add: [], known_hidden_fact_ids: [], wants: '', fears: '', goal_why: '', reasons: [], night: [], reminders: ['Character 1 keeps the keys.'] }] });
+    assert.deepEqual(sc.players[0].reminders, ['Character 1 keeps the keys.']);
+    G.applyAudit(sc, { players: [{ player_id: 'p1', reminders: ['Something else.'] }] });
+    assert.deepEqual(sc.players[0].reminders, ['Character 1 keeps the keys.']);
+  });
+});

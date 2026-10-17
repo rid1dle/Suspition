@@ -128,6 +128,11 @@ export function applyAudit(scenario, audit) {
     const reasons = (entry.reasons ?? []).map((t) => String(t ?? '').trim()).filter((t) => t && !(p.reasons ?? []).includes(t));
     if (reasons.length) p.reasons = [...(p.reasons ?? []), ...reasons];
     changes += reasons.length;
+    const reminders = remindersFor({ reminders: entry.reminders ?? [] });
+    if (reminders.length && !(p.reminders ?? []).length) {
+      p.reminders = reminders;
+      changes += 1;
+    }
     const night = cleanSlots(entry.night, ['time', 'where', 'doing']);
     if (night.length && !p.night?.length) {
       p.night = night;
@@ -183,6 +188,23 @@ export function pelletsFor(c) {
     ...(c.reasons ?? []),
     ...(c.night ?? []).map((n) => `At ${n.time} you were at ${n.where}. ${n.doing}`),
   ].map((s) => String(s).trim().slice(0, 180)).filter(Boolean);
+}
+
+const SECOND_PERSON = /^\s*(you|your|you're|yours)\b/i;
+
+// Short third-person lines that remind a player who their character is. The GM writes them;
+// old worlds build them from the card. Never "You ...".
+export function remindersFor(c) {
+  const clean = (list) => list.map((t) => String(t ?? '').replace(/\s+/g, ' ').trim().slice(0, 160)).filter((t) => t && !SECOND_PERSON.test(t));
+  const written = clean(Array.isArray(c.reminders) ? c.reminders : []);
+  if (written.length) return written;
+  const name = c.character_name;
+  const role = String(c.role_title ?? '').trim();
+  return clean([
+    role ? `${name} is ${/^(a|an|the)\s/i.test(role) ? role : `the ${role}`}.` : '',
+    ...sentences(c.public_info),
+    ...(c.night ?? []).map((n) => `At ${n.time}, ${name} was in the ${String(n.where).replace(/^the\s+/i, '')}.`),
+  ]);
 }
 
 export function peopleView(game) {
@@ -1381,6 +1403,7 @@ export function playerView(game, playerId, now = Date.now()) {
     goal_why: card.goal_why ?? '',
     reasons: card.reasons ?? [],
     pellets: pelletsFor(card),
+    reminders: remindersFor(card),
     night: card.night ?? [],
     alibi: card.alibi ?? [],
     hidden_known: card.hidden_facts.filter((h) => revealed.includes(h.id)).map((h) => h.fact),

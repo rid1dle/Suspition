@@ -47,6 +47,7 @@ const WORLD_SCHEMA = obj({
       role_title: str,
       public_info: str,
       private_info: str,
+      reminders: strArr,
       wants: str,
       fears: str,
       goal: str,
@@ -264,6 +265,8 @@ Each player is a character inside the mystery. Some are investigators with their
 
 Write progress first: 3 to 7 short steps for how you will build this world, in its own flavour and in plain words, each under 8 words ("Booking a monsoon wedding in Goa", "Giving each of you a secret"). The whole room sees these while you work, so never name the culprit, a secret, a hidden fact or a clue. covers lists the sections each step writes; together the steps cover every section once.
 
+Reminders: for each player character write 6 to 10 reminders, short lines the phone shows now and then so the player remembers who they are. Third person, plain words, under 18 words each, only things that character knows ("Nikhil Rao runs the bank on MG Road.", "At 10:30 pm Nikhil Rao was by the library window."). Never start with "You".
+
 Pick the room: how this world looks and sounds on every screen. seed_color is one hex colour that feels like this place (deep monsoon blue, palace gold, forest green); the screens build a readable palette from it. Choose the font pair, texture, ambient effect (keep it gentle: low unless the setting is wild) and sound set that fit the setting and tone.
 
 Design rules:
@@ -444,7 +447,7 @@ Rules: start with <svg and use viewBox="0 0 800 400". Flat shapes and gradients,
 export const AUDIT_SCHEMA = obj({
   players: {
     type: 'array',
-    items: obj({ player_id: str, add: strArr, known_hidden_fact_ids: strArr, wants: str, fears: str, goal_why: str, reasons: strArr, night: { type: 'array', items: obj({ time: str, where: str, doing: str }) } }),
+    items: obj({ player_id: str, add: strArr, known_hidden_fact_ids: strArr, wants: str, fears: str, goal_why: str, reasons: strArr, night: { type: 'array', items: obj({ time: str, where: str, doing: str }) }, reminders: strArr }),
   },
   key_times: { type: 'array', items: obj({ time: str, what: str }) },
   alibis: { type: 'array', items: obj({ id: str, alibi: { type: 'array', items: obj({ time: str, where: str }) } }) },
@@ -473,5 +476,6 @@ Then lay out who was where, so the group can work it out:
 - rounds: for each round (index from 0) a clear job: objective starts with a verb, under 15 words, says what the group should find out this round; try is 2 or 3 pointers under 10 words, naming people or places to check, never the answer. The job must lead toward that round's question.
 
 THE MYSTERY:
-${JSON.stringify(scenario)}`;
+${JSON.stringify(scenario)}
+reminders: only for a player whose card has no reminders, 6 to 10 short third-person lines (under 18 words, never starting with "You") that remind them who they are: job, ties to others, where they were and when. Leave it empty otherwise.`;
 }
