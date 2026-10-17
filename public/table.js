@@ -21,7 +21,7 @@ let dragging = null;
 let sideTab = 'map';
 const openRounds = new Set();
 const seenCounts = {};
-const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, notes: '' };
+const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 3, notes: '' };
 
 const SETTINGS = ['A 1950s Bombay hotel party', 'A snowed-in ski lodge', 'A 1920s ocean liner', 'A space station', 'A college reunion', 'A village fair'];
 const TONES = [['cozy', 'Cozy'], ['tense', 'Tense'], ['dark', 'Dark'], ['funny', 'Funny']];
@@ -102,6 +102,8 @@ const skeletons = {
         <div class="field"><div class="label">How long?</div><div class="row" style="gap:6px" id="length">${LENGTHS.map(([v, l, d]) => `<button class="chip" data-v="${v}">${l} <span class="muted small">${d}</span></button>`).join('')}</div></div>
         <div class="field"><div class="label">Got a round wrong? Play it again</div><div class="row" style="gap:6px" id="replays">${REPLAYS.map(([v, l]) => `<button class="chip" data-v="${v}">${l}</button>`).join('')}</div>
           <div class="small muted" style="margin-top:4px">A round you vote wrong is played again, with a clearer job.</div></div>
+        <div class="field"><div class="label">Private questions per round</div><div class="row" style="gap:6px" id="questions">${[1, 2, 3, 4, 5, 6].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div>
+          <div class="small muted" style="margin-top:4px">Questions asked out loud are always free.</div></div>
         <div class="field"><div class="label">Group hints</div><div class="row" style="gap:6px" id="hints">${[1, 2, 3, 4, 5].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div></div>
         <div class="field"><div class="label">Overrides per player</div><div class="row" style="gap:6px" id="overrides">${[0, 1, 2, 3, 4, 5].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div>
           <div class="small muted" style="margin-top:4px">Sometimes the story makes your character speak. An override lets you stay quiet or say it your way.</div></div>
@@ -232,9 +234,9 @@ function wire() {
     document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => {
       form.setting = setting.value = b.dataset.setting;
     }));
-    for (const key of ['tone', 'length', 'hints', 'overrides', 'npcs', 'npcRole', 'replays']) {
+    for (const key of ['tone', 'length', 'hints', 'overrides', 'npcs', 'npcRole', 'replays', 'questions']) {
       $(key).querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
-        form[key] = ['hints', 'overrides', 'npcs', 'replays'].includes(key) ? Number(b.dataset.v) : b.dataset.v;
+        form[key] = ['hints', 'overrides', 'npcs', 'replays', 'questions'].includes(key) ? Number(b.dataset.v) : b.dataset.v;
         chipGroup(key, form[key]);
       }));
       chipGroup(key, form[key]);

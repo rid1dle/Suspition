@@ -81,6 +81,8 @@ export function applySetup(game, input = {}) {
   if (!Number.isInteger(npcs) || npcs < 0 || npcs > 6) fail('GM characters must be between 0 and 6.');
   const replays = input.replays === undefined ? 2 : Number(input.replays);
   if (!Number.isInteger(replays) || replays < 0 || replays > MAX_REPLAYS) fail(`Replays must be between 0 and ${MAX_REPLAYS}.`);
+  const questions = input.questions === undefined ? LENGTHS[input.length].questions : Number(input.questions);
+  if (!Number.isInteger(questions) || questions < 1 || questions > 6) fail('Private questions must be between 1 and 6.');
   const npcRole = input.npcRole ?? 'mixed';
   if (!NPC_ROLES.includes(npcRole)) fail('Pick what the GM characters do.');
   game.setup = {
@@ -92,6 +94,7 @@ export function applySetup(game, input = {}) {
     npcs,
     npcRole,
     replays,
+    questions,
     notes: String(input.notes ?? '').trim().slice(0, 500),
   };
   game.status = 'generating';
@@ -336,7 +339,7 @@ export function attachScenario(game, scenario, now = Date.now()) {
   game.state = {
     phaseIndex: -1,
     phaseEndsAt: null,
-    questionsPerPhase: length.questions,
+    questionsPerPhase: game.setup.questions ?? length.questions,
     phaseMinutes: length.minutes,
     hintsLeft: game.setup.hints,
     hintCursor: 0,

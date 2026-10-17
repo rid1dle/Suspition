@@ -1427,3 +1427,30 @@ describe('fair play filter with shared titles', () => {
     assert.equal(G.dropPuppeting(game, 'p1', 'Rishabh agrees with Nikhil.', { to: 'p3' }).dropped, 1);
   });
 });
+
+describe('private questions per round', () => {
+  const lobby = () => {
+    const game = G.createGame(1_000);
+    for (const name of ['A', 'B', 'C']) G.addPlayer(game, { name });
+    return game;
+  };
+
+  test('should use the chosen number of private questions each round', () => {
+    const game = lobby();
+    G.applySetup(game, { tone: 'tense', length: 'short', hints: 2, questions: 5 });
+    G.attachScenario(game, makeScenario(3), 1_000);
+    G.startPlay(game, 1_000);
+    assert.equal(game.state.questionsLeft.p1, 5);
+  });
+
+  test('should refuse private questions outside 1 to 6', () => {
+    assert.throws(() => G.applySetup(lobby(), { tone: 'tense', length: 'short', hints: 2, questions: 0 }), /Private questions must be between 1 and 6/);
+    assert.throws(() => G.applySetup(lobby(), { tone: 'tense', length: 'short', hints: 2, questions: 7 }), /Private questions must be between 1 and 6/);
+  });
+
+  test('should default private questions to the game length', () => {
+    const game = lobby();
+    G.applySetup(game, { tone: 'tense', length: 'long', hints: 2 });
+    assert.equal(game.setup.questions, 4);
+  });
+});
