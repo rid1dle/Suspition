@@ -92,3 +92,40 @@ describe('game database', () => {
     assert.throws(() => openDb(f), (err) => err instanceof DbError && /The game database is newer or broken/.test(err.message));
   });
 });
+
+describe('database safety', () => {
+  test('should only learn from finished real games', async () => {
+    const db = openDb(await file());
+    const done = finished();
+    const half = finished();
+    half.status = 'playing';
+    db.saveGame(done);
+    db.saveGame(half);
+    assert.deepEqual(db.realGamesFor('asha').map((g) => g.id), [done.id]);
+    assert.deepEqual(db.realMovesFor('asha').map((m) => m.gameId), [done.id]);
+    assert.ok(db.realPlayers().has('asha'));
+    db.close();
+  });
+
+  test('should refuse a database written by a newer version', async () => {
+    const f = await file();
+    openDb(f).close();
+    const Database = (await import('better-sqlite3')).default;
+    const raw = new Database(f);
+    raw.prepare('insert into __drizzle_migrations (hash, created_at) values (?, ?)').run('future', 9_999_999_999_999);
+    raw.close();
+    assert.throws(() => openDb(f), (err) => err instanceof DbError && /newer/.test(err.message));
+  });
+
+  test('should stop with a clear message when the current game cannot be read', async () => {
+    const f = await file();
+    const db = openDb(f);
+    const game = finished();
+    db.saveGame(game);
+    db.setCurrent(game.id);
+    db.sqlite.prepare('update games set state = ? where id = ?').run('{broken', game.id);
+    assert.throws(() => db.loadCurrent(), (err) => err instanceof DbError && /cannot be read/.test(err.message));
+    assert.equal(db.listGames()[0].status, 'unreadable');
+    db.close();
+  });
+});

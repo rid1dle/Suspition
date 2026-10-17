@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { and, asc, desc, eq, inArray, like } from 'drizzle-orm';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as schema from './schema.ts';
@@ -68,13 +68,15 @@ export class Db {
       status: game.status,
       title: String(game.scenario?.title ?? ''),
       usernames: `|${(game.players ?? []).map((p) => p.username).filter(Boolean).join('|')}|`,
+      names: JSON.stringify((game.players ?? []).map((p) => p.name)),
+      winner: (st.result?.verdict?.winner as string | undefined) ?? null,
       createdAt: game.createdAt ?? now,
       updatedAt: now,
       state: JSON.stringify(game),
     };
     this.sqlite.transaction(() => {
       this.orm.insert(schema.games).values({ ...row, learning: game.learning ?? 'real', note: game.note ?? '' })
-        .onConflictDoUpdate({ target: schema.games.id, set: { status: row.status, title: row.title, usernames: row.usernames, updatedAt: row.updatedAt, state: row.state } }).run();
+        .onConflictDoUpdate({ target: schema.games.id, set: { status: row.status, title: row.title, usernames: row.usernames, names: row.names, winner: row.winner, updatedAt: row.updatedAt, state: row.state } }).run();
       this.orm.delete(schema.events).where(eq(schema.events.gameId, game.id)).run();
       this.orm.delete(schema.moves).where(eq(schema.moves.gameId, game.id)).run();
       (st.events ?? []).forEach((e: { kind?: string }, seq: number) => {
@@ -105,7 +107,12 @@ export class Db {
 
   loadCurrent(): Game | null {
     const row = this.orm.select().from(schema.meta).where(eq(schema.meta.key, 'current')).get();
-    return row ? this.loadGame(row.value) : null;
+    if (!row) return null;
+    const exists = this.orm.select({ id: schema.games.id }).from(schema.games).where(eq(schema.games.id, row.value)).get();
+    if (!exists) return null;
+    const game = this.loadGame(row.value);
+    if (!game) throw new DbError(`The current game cannot be read (game ${row.value}). The database file may be damaged.`);
+    return game;
   }
 
   hasGames(): boolean {
@@ -117,14 +124,14 @@ export class Db {
       .where(learning ? eq(schema.games.learning, learning) : undefined)
       .orderBy(desc(schema.games.createdAt)).all();
     return rows.map((r) => {
-      const g = parse<Game>(r.state, { players: [] } as unknown as Game);
+      const readable = parse<Game | null>(r.state, null) !== null;
       return {
         id: r.id,
         title: r.title,
         day: new Date(r.createdAt).toISOString().slice(0, 10),
-        status: r.status,
-        players: (g.players ?? []).map((p) => p.name),
-        winner: (g.state?.result?.verdict?.winner as string | undefined) ?? null,
+        status: readable ? r.status : 'unreadable',
+        players: parse<string[]>(r.names, []),
+        winner: r.winner ?? null,
         learning: r.learning as Learning,
         note: r.note,
         createdAt: r.createdAt,
@@ -142,8 +149,13 @@ export class Db {
       .map((e) => parse(e.payload, {}));
   }
 
+  // Only finished games tagged real teach the game.
+  private learnable() {
+    return and(eq(schema.games.learning, 'real'), eq(schema.games.status, 'reveal'));
+  }
+
   private realGameIds(): string[] {
-    return this.orm.select({ id: schema.games.id }).from(schema.games).where(eq(schema.games.learning, 'real')).all().map((r) => r.id);
+    return this.orm.select({ id: schema.games.id }).from(schema.games).where(this.learnable()).all().map((r) => r.id);
   }
 
   realMovesFor(username: string): StoredMove[] {
@@ -157,7 +169,7 @@ export class Db {
 
   realGamesFor(username: string): Game[] {
     return this.orm.select({ id: schema.games.id }).from(schema.games)
-      .where(and(eq(schema.games.learning, 'real'), like(schema.games.usernames, `%|${username}|%`)))
+      .where(and(this.learnable(), like(schema.games.usernames, `%|${username}|%`)))
       .orderBy(asc(schema.games.createdAt)).all()
       .map((r) => this.loadGame(r.id))
       .filter((g): g is Game => Boolean(g));
@@ -171,7 +183,7 @@ export class Db {
 
   // Usernames that played at least one real game.
   realPlayers(): Set<string> {
-    const rows = this.orm.select({ u: schema.games.usernames }).from(schema.games).where(eq(schema.games.learning, 'real')).all();
+    const rows = this.orm.select({ u: schema.games.usernames }).from(schema.games).where(this.learnable()).all();
     return new Set(rows.flatMap((r) => r.u.split('|').filter(Boolean)));
   }
 
@@ -208,6 +220,9 @@ export function openDb(file: string): Db {
     sqlite.pragma('journal_mode = WAL');
     const db = new Db(sqlite);
     migrate(db.orm, { migrationsFolder: MIGRATIONS });
+    const known = Math.max(...JSON.parse(readFileSync(resolve(MIGRATIONS, 'meta', '_journal.json'), 'utf8')).entries.map((e: { when: number }) => e.when));
+    const applied = (sqlite.prepare('select max(created_at) as at from __drizzle_migrations').get() as { at: number | null }).at ?? 0;
+    if (applied > known) throw new Error('it was written by a newer version of the game; update the game first');
     return db;
   } catch (err) {
     sqlite?.close();
