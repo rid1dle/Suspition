@@ -213,3 +213,12 @@ img.scene { width: 100%; aspect-ratio: 2 / 1; object-fit: cover; border-radius: 
 .moment-actions { display: grid; gap: 6px; margin: 6px 0; }
 .feed li.clue::before { content: '\1F50E  '; }
 .feed li.timeline::before { content: '\23F1  '; }
+
+.chips-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.chips-scroll::-webkit-scrollbar { display: none; }
+.chips-scroll .chip { flex: none; }
+.composer { position: sticky; bottom: calc(60px + env(safe-area-inset-bottom, 0px)); background: var(--bg); padding: 8px 0 6px; margin-top: 10px; border-top: 1px solid var(--line); display: grid; gap: 6px; z-index: 3; }
+.composer-row { display: flex; gap: 8px; align-items: flex-end; }
+.composer-row textarea { min-height: 48px; max-height: 30vh; }
+.composer-row button { flex: none; min-width: 72px; }
+.msg .tag { margin-left: 6px; padding: 0 6px; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); text-transform: none; letter-spacing: 0; }

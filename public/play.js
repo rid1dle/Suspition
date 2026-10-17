@@ -8,18 +8,13 @@ let token = fromHash || localStorage.getItem('detective-token');
 let view = null;
 let skeleton = null;
 let tab = 'story';
-let kind = 'question';
 let draft = '';
 let picked = new Set();
 let positionsBefore = null;
 
 const $ = (id) => document.getElementById(id);
-const KINDS = [
-  ['question', 'Ask or look', 'Talk to someone, or look at a place or thing.'],
-  ['self', 'About me', 'What do you try to remember about yourself?'],
-  ['action', 'Secret move', 'What do you do when no one is looking?'],
-  ['world', 'Ask everyone', 'A question about the world. Free. Everyone sees the answer.'],
-];
+const TAGS = { self: 'about you', action: 'secret' };
+const STARTERS = [['Talk to…', 'I ask '], ['Look at…', 'I look at '], ['Secretly…', 'Secretly, I '], ['Remember…', 'I try to remember ']];
 
 async function act(path, body = {}) {
   try {
@@ -81,7 +76,7 @@ function cardHtml() {
     </div>
     <div class="layer hidden"><div class="label">You don't know yet</div>
       ${c.hidden_known.map((f) => `<p>&#10022; ${esc(f)}</p>`).join('')}
-      <p class="small muted">${c.hidden_unknown ? `${c.hidden_unknown} secret${c.hidden_unknown > 1 ? 's' : ''} about you. Use "About me" to find out.` : 'You found out everything about yourself.'}</p>
+      <p class="small muted">${c.hidden_unknown ? `${c.hidden_unknown} secret${c.hidden_unknown > 1 ? 's' : ''} about you. Ask the GM about your past to find out.` : 'You found out everything about yourself.'}</p>
     </div>
   </div>`;
 }
@@ -100,20 +95,25 @@ const skeletons = {
   playing: () => `${topbar()}
     <section id="t-story" class="tab">
       <div class="panel" id="round"></div>
+      <button class="wide" id="hint" style="margin-top:8px">Ask the group for a hint</button>
       <div id="picture" style="margin-top:12px"></div>
       <div class="panel" style="margin-top:12px"><div class="label">Background</div><div id="background"></div></div>
       <div class="panel" style="margin-top:12px"><div class="label">Timeline</div><div id="timeline"></div></div>
       <div class="panel" style="margin-top:12px"><div class="label">Shared clues</div><div id="shared"></div></div>
       <div class="panel" style="margin-top:12px"><div class="label">News</div><div id="news"></div></div>
+      <div class="panel" style="margin-top:12px"><div class="label">Ask about the world (free)</div>
+        <textarea id="world-text" maxlength="200" placeholder="How far is the town? Who owns the hotel?" style="min-height:60px"></textarea>
+        <button class="wide" id="world-send" style="margin-top:6px">Ask everyone</button><div id="qa" style="margin-top:8px"></div></div>
     </section>
     <section id="t-card" class="tab"><div id="card-body">${cardHtml()}</div></section>
     <section id="t-ask" class="tab">
-      <div class="row" style="gap:6px;margin-bottom:8px" id="kinds">${KINDS.map(([k, l]) => `<button class="chip" data-k="${k}">${l}</button>`).join('')}</div>
-      <textarea id="ask-text" maxlength="500"></textarea>
-      <div class="row" style="gap:6px;margin:8px 0" id="targets"></div>
-      <button class="primary wide" id="send">Send</button>
-      <button class="wide" id="hint" style="margin-top:8px">Ask the group for a hint</button>
-      <div class="thread" id="thread" style="margin-top:16px"></div>
+      <div class="small muted" style="margin-bottom:8px">Private chat with the GM. Write what you do, in your own words.</div>
+      <div class="thread" id="thread"></div>
+      <div class="composer">
+        <div class="chips-scroll" id="starters">${STARTERS.map(([l, t]) => `<button class="chip" data-start="${esc(t)}">${esc(l)}</button>`).join('')}</div>
+        <div class="chips-scroll" id="targets"></div>
+        <div class="composer-row"><textarea id="ask-text" maxlength="500" rows="2" placeholder="I ask the cook where he was at nine."></textarea><button class="primary" id="send">Send</button></div>
+      </div>
     </section>
     <section id="t-map" class="tab"><h2>Who is where</h2><div id="map"></div></section>
     <section id="t-clues" class="tab"><h2>Your clues</h2><div id="clues"></div>
@@ -145,28 +145,32 @@ function wire() {
     tab = b.dataset.tab;
     showTab();
   }));
-  document.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('click', () => {
-    kind = b.dataset.k;
-    showKind();
-  }));
   $('world-send')?.addEventListener('click', async () => {
     const res = await act('public', { text: $('world-text').value });
     if (res) $('world-text').value = '';
   });
-  if (document.querySelector('[data-tab]') && !$('ask-text')) showTab();
+  if (document.querySelector('[data-tab]')) showTab();
+  $('hint')?.addEventListener('click', () => act('hint'));
   const text = $('ask-text');
   if (text) {
     text.value = draft;
     text.addEventListener('input', () => (draft = text.value));
-    $('send').addEventListener('click', async () => {
-      const res = kind === 'world' ? await act('public', { text: text.value }) : await act('ask', { kind, text: text.value });
-      if (res) {
-        draft = text.value = '';
-      }
+    const insert = (words) => {
+      text.value = draft = `${text.value}${text.value && !text.value.endsWith(' ') ? ' ' : ''}${words}`;
+      text.focus();
+    };
+    document.querySelectorAll('[data-start]').forEach((b) => b.addEventListener('click', () => {
+      text.value = draft = '';
+      insert(b.dataset.start);
+    }));
+    $('targets').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-target]');
+      if (b) insert(b.dataset.target);
     });
-    $('hint').addEventListener('click', () => act('hint'));
-    showKind();
-    showTab();
+    $('send').addEventListener('click', async () => {
+      const res = await act('ask', { kind: 'chat', text: text.value });
+      if (res) draft = text.value = '';
+    });
   }
   const notes = $('notes');
   if (notes) {
@@ -180,12 +184,14 @@ function showTab() {
   if (!document.getElementById(`t-${tab}`)) tab = 'story';
   document.querySelectorAll('.tab').forEach((s) => s.classList.toggle('hidden-el', s.id !== `t-${tab}`));
   document.querySelectorAll('[data-tab]').forEach((b) => b.classList.toggle('on', b.dataset.tab === tab));
+  if (tab === 'ask') scrollChat(true);
 }
 
-function showKind() {
-  document.querySelectorAll('[data-k]').forEach((b) => b.classList.toggle('on', b.dataset.k === kind));
-  const k = KINDS.find(([x]) => x === kind);
-  if ($('ask-text')) $('ask-text').placeholder = k[2];
+let chatKey = '';
+function scrollChat(force = false) {
+  const key = `${view?.thread?.length ?? 0}:${view?.pending ? 1 : 0}`;
+  if (force || key !== chatKey) requestAnimationFrame(() => window.scrollTo(0, document.body.scrollHeight));
+  chatKey = key;
 }
 
 function momentHtml(v) {
@@ -282,32 +288,23 @@ function update() {
   }
   if ($('send')) {
     const blocked = v.pending || v.transitioning || v.questionsLeft < 1;
-    const world = kind === 'world';
-    $('send').disabled = world ? Boolean(v.publicPending) : blocked || Boolean(v.round?.vote);
-    $('send').innerHTML = world ? (v.publicPending ? 'Waiting for the answer<span class="dots"></span>' : 'Ask everyone')
-      : v.pending ? 'The GM is thinking<span class="dots"></span>' : v.round?.vote ? 'Voting now' : v.transitioning ? 'Things are changing<span class="dots"></span>' : v.questionsLeft < 1 ? 'No questions left this round' : 'Send';
+    $('send').disabled = blocked || Boolean(v.round?.vote);
+    $('send').innerHTML = v.pending ? 'Thinking<span class="dots"></span>' : v.round?.vote ? 'Voting' : v.transitioning ? 'Wait' : v.questionsLeft < 1 ? 'No questions left' : 'Send';
     $('hint').disabled = v.hintsLeft < 1 || Boolean(v.hintVote);
     $('hint').textContent = v.hintsLeft < 1 ? 'No hints left' : `Ask the group for a hint (${v.hintsLeft} left)`;
   }
-  if ($('targets') && v.cast) {
+  if ($('targets') && v.cast && !$('targets').childElementCount) {
     const names = [...v.cast.npcs.map((n) => n.name), ...v.cast.locations.map((l) => l.name)];
     $('targets').innerHTML = names.map((n) => `<button class="chip" data-target="${esc(n)}">${esc(n)}</button>`).join('');
-    $('targets').querySelectorAll('[data-target]').forEach((b) => b.addEventListener('click', () => {
-      const t = $('ask-text');
-      t.value = draft = `${t.value}${t.value && !t.value.endsWith(' ') ? ' ' : ''}${b.dataset.target}`;
-      t.focus();
-    }));
   }
   if ($('thread')) {
     const label = { you: 'You', gm: 'GM', whisper: 'Secret note', system: 'Problem' };
-    const groups = [];
-    for (const m of v.thread) {
-      if (m.from === 'gm' && groups.at(-1)?.[0].from === 'you') groups.at(-1).push(m);
-      else groups.push([m]);
-    }
-    if (v.pending) groups.push([{ from: 'you', kind: v.pending.kind, text: v.pending.text }, { from: 'gm', text: 'Thinking...' }]);
-    $('thread').innerHTML = groups.reverse().flat().map((m) => `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${m.kind ? ` &middot; ${esc(KINDS.find(([k]) => k === m.kind)?.[1] ?? m.kind)}` : ''}</div>${m.lines ? novelHtml(m.lines) : esc(m.text)}</div>`).join('')
-      || '<p class="small muted">Your private chat with the GM shows here.</p>';
+    const items = v.pending ? [...v.thread, { from: 'you', text: v.pending.text }, { from: 'gm', text: 'Thinking...' }] : v.thread;
+    $('thread').innerHTML = items.map((m) => {
+      const tag = m.from === 'you' && TAGS[m.kind] ? `<span class="tag">${esc(TAGS[m.kind])}</span>` : '';
+      return `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${tag}</div>${m.lines ? novelHtml(m.lines) : esc(m.text)}</div>`;
+    }).join('') || '<p class="small muted">Nothing yet. Try: "I ask the cook where he was at nine."</p>';
+    if (tab === 'ask') scrollChat();
   }
   if ($('clues')) {
     const shared = new Set((v.sharedClues ?? []).map((c) => c.id));

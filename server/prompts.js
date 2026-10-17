@@ -118,6 +118,7 @@ export const SCENARIO_SCHEMA = obj({
 });
 
 export const ASK_SCHEMA = obj({
+  kind: { type: 'string', enum: ['question', 'self', 'action'] },
   lines: { type: 'array', items: obj({ speaker: str, text: str }) },
   clues_found: strArr,
   suspicion_change: { type: 'integer', minimum: -10, maximum: 25 },
@@ -265,6 +266,11 @@ How to answer a player:
 - Never state the truth outright. Give evidence, testimony and observations; let players reason.
 - When a sensible search or question would find a clue, describe what the player finds concretely and list its id in clues_found. Searching the right place should find obvious evidence without luck. A destroyed clue cannot be found.
 - Never reveal another player's private card directly. Players can learn about each other only through in-world evidence and testimony.
+- The player writes in their own words. First decide what they mean and put it in kind:
+  "question": they talk to someone, look at something, or go somewhere.
+  "self": they think about or dig into their own past or who they are.
+  "action": they do something secretly or sneakily (hide, take, destroy, follow, plant, lie in wait).
+  If a message mixes them, pick the one that matters most. Then answer it by the rules below.
 - "self" requests: the player investigates their own past. If the request reasonably targets one of their hidden facts, reveal at most one (put its id in hidden_fact_revealed) through in-world means. Otherwise give a useful partial memory and leave hidden_fact_revealed empty.
 - "action" requests: a secret action. Decide plausibly what happens. Covert actions by a careful player can succeed; sloppy or loud ones raise suspicion. Destroying evidence: only clues with can_be_destroyed true, and list them in clues_destroyed. If someone would plausibly witness it, add a public_event (without naming the actor unless they were clearly seen) or a message to that witness's player.
 - suspicion_change: 0 for ordinary questions, positive for aggressive or careless moves (culprit actions especially), negative only if someone convincingly calms things down.
@@ -283,7 +289,7 @@ export function askPrompt({ snapshot, player, kind, text }) {
   return `Game state:
 ${JSON.stringify(snapshot)}
 
-Request from ${player.id} (${player.character_name}), type "${kind}":
+Request from ${player.id} (${player.character_name})${kind === 'chat' ? '' : `, type "${kind}"`}:
 ${text}`;
 }
 

@@ -260,7 +260,8 @@ export function extendPhase(game, now = Date.now()) {
   game.state.phaseEndsAt = Math.max(game.state.phaseEndsAt, now) + EXTEND_MS;
 }
 
-export const ASK_KINDS = ['question', 'self', 'action'];
+export const ASK_KINDS = ['chat', 'question', 'self', 'action'];
+const ANSWER_KINDS = ['question', 'self', 'action'];
 
 export function beginAsk(game, playerId, { kind, text }) {
   if (game.status !== 'playing') fail('You can only ask during a round.', 409);
@@ -318,8 +319,9 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const ask = st.pending[playerId];
   if (!ask) fail('No request is waiting for an answer.', 409);
   delete st.pending[playerId];
+  const kind = ask.kind === 'chat' ? (ANSWER_KINDS.includes(result.kind) ? result.kind : 'question') : ask.kind;
   const thread = st.threads[playerId];
-  thread.push({ from: 'you', kind: ask.kind, text: ask.text, at: now });
+  thread.push({ from: 'you', kind, text: ask.text, at: now });
   const myName = game.scenario.players.find((p) => p.id === playerId)?.character_name?.toLowerCase();
   const players = new Set(game.scenario.players.map((p) => p.character_name.toLowerCase()));
   const names = Object.fromEntries([
@@ -354,7 +356,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   }
   destroy(game, result.clues_destroyed);
   learn(game, result.learned, playerId, now);
-  if (result.player_location && (ask.kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
+  if (result.player_location && (kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
   addEvent(game, result.public_event, 'event', now);
   whisper(game, result.messages_to_players, now);

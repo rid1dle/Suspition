@@ -115,6 +115,22 @@ describe('asking the GM', () => {
     assert.throws(() => G.beginAsk(game, 'p2', { kind: 'question', text: 'q4' }), /No questions left this round/);
   });
 
+  test('should let the GM decide what a plain chat message was, and keep a secret move off the map', () => {
+    const game = playing();
+    G.beginAsk(game, 'p1', { kind: 'chat', text: 'I sneak into the kitchen and hide the knife' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, kind: 'action', player_location: 'l2', move_is_public: false });
+    assert.equal(game.state.threads.p1.at(-2).kind, 'action');
+    assert.equal(game.state.positions.p1, 'l1');
+  });
+
+  test('should treat a chat message as a question when the GM does not say', () => {
+    const game = playing();
+    G.beginAsk(game, 'p1', { kind: 'chat', text: 'I go to the kitchen' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, kind: 'nonsense', player_location: 'l2' });
+    assert.equal(game.state.threads.p1.at(-2).kind, 'question');
+    assert.equal(game.state.positions.p1, 'l2');
+  });
+
   test('should refuse an unknown request type', () => {
     assert.throws(() => G.beginAsk(playing(), 'p2', { kind: 'magic', text: 'x' }), /Unknown request type/);
   });
