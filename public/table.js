@@ -1,4 +1,6 @@
 import { api, esc, stream, countdown, suspicionLabel, hashParam, toast, tickers } from '/common.js';
+import { Score } from '/music.js';
+import { intensityFor, cuesBetween } from '/music-theory.js';
 
 const app = document.getElementById('app');
 const fromHash = hashParam('host');
@@ -273,7 +275,60 @@ function tick() {
 }
 tickers.add(tick);
 
+const score = new Score();
+window.detectiveMusic = score;
+const store = (k, v) => {
+  try {
+    if (v === undefined) return localStorage.getItem(k);
+    localStorage.setItem(k, v);
+  } catch {
+    return null;
+  }
+  return null;
+};
+score.volume = Number(store('detective-music-volume') ?? 0.6);
+$('music-volume').value = score.volume;
+$('music-volume').addEventListener('input', (e) => {
+  score.setVolume(Number(e.target.value));
+  store('detective-music-volume', e.target.value);
+});
+function musicLabel() {
+  const on = score.playing;
+  $('music-toggle').classList.toggle('on', on);
+  $('music-toggle').setAttribute('aria-pressed', String(on));
+  $('music-label').textContent = on ? 'Music on' : store('detective-music') === 'on' ? 'Tap for music' : 'Music off';
+}
+$('music-toggle').addEventListener('click', async () => {
+  if (score.playing) {
+    score.stop();
+    store('detective-music', 'off');
+  } else {
+    await score.start();
+    store('detective-music', 'on');
+  }
+  musicLabel();
+});
+musicLabel();
+tickers.add(() => {
+  if (view) score.setIntensity(intensityFor(view));
+});
+setInterval(() => {
+  if (!score.playing) return;
+  const { rms } = score.level();
+  $('music-meter').style.transform = `scale(${1 + Math.min(1.2, rms * 6)})`;
+}, 80);
+
+let lastView = null;
+function onMusic(v) {
+  score.setTheme(v.music, v.setup?.tone);
+  score.setIntensity(intensityFor(v));
+  for (const cue of cuesBetween(lastView, v)) score.cue(cue);
+  lastView = v;
+  $('music-desc').textContent = v.musicDescription ?? '';
+}
+
 stream('', (v) => {
+  onMusic(v);
   const key = `${v.gameId}:${v.status}`;
   view = v;
   if (skeleton?.key !== key) {

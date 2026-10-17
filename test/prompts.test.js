@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { pickTwists, generationPrompt, TWISTS } from '../server/prompts.js';
+import { pickTwists, generationPrompt, TWISTS, SCENARIO_SCHEMA, GENERATION_SYSTEM } from '../server/prompts.js';
 import { createGame, addPlayer, applySetup } from '../server/game.js';
 
 const seq = (...values) => {
@@ -53,5 +53,15 @@ describe('generationPrompt', () => {
   test('should ask for two unaware culprits when the culprit-team twist is drawn', () => {
     const team = TWISTS.find((t) => t.id === 'culprit-team');
     assert.match(generationPrompt(game(6), [team]), /Exactly two culprits/);
+  });
+});
+
+describe('scenario schema', () => {
+  test('should require a soundtrack with closed choices the browser can play', () => {
+    assert.ok(SCENARIO_SCHEMA.required.includes('music'));
+    const music = SCENARIO_SCHEMA.properties.music;
+    assert.ok(music.properties.palette.enum.includes('music_box'));
+    assert.ok(music.properties.mode.enum.includes('phrygian'));
+    assert.match(GENERATION_SYSTEM, /music: the game's soundtrack/);
   });
 });

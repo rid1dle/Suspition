@@ -1,3 +1,5 @@
+import { ROOTS, MODES, PALETTES, PERCUSSION } from '../public/music-theory.js';
+
 export const LENGTHS = {
   short: { phases: 3, minutes: 10, questions: 3 },
   standard: { phases: 4, minutes: 15, questions: 3 },
@@ -72,6 +74,15 @@ export const SCENARIO_SCHEMA = obj({
   phases: { type: 'array', items: obj({ name: str, planned_beat: str }) },
   hint_ladder: { type: 'array', items: obj({ text: str, is_false: { type: 'boolean' } }) },
   twists: { type: 'array', items: obj({ name: str, description: str }) },
+  music: obj({
+    root: { type: 'string', enum: ROOTS },
+    mode: { type: 'string', enum: Object.keys(MODES) },
+    tempo: { type: 'integer', minimum: 50, maximum: 140 },
+    palette: { type: 'string', enum: PALETTES },
+    percussion: { type: 'string', enum: PERCUSSION },
+    motif: { type: 'array', items: { type: 'integer', minimum: 0, maximum: 7 } },
+    description: str,
+  }),
 });
 
 export const ASK_SCHEMA = obj({
@@ -152,6 +163,7 @@ Design rules:
 - Phase plan: one entry per phase, with a short evocative name and a planned beat (an event that changes the situation: a discovery, a departure, a new body, a storm). The first phase is the start of the investigation.
 - Character names are in-world names that fit the setting. Use the player's wish if they gave one.
 - Ids: players are p1, p2, ... exactly as given. GM characters n1, n2, ...; locations l1, ...; clues c1, ...; key deductions k1, ...; hidden facts h1, h2, ... (unique across all players).
+- music: the game's soundtrack, played live in the room. Pick a root, mode, tempo, instrument palette and percussion that fit this setting and tone (a cozy village fair is not a dark ship), and a motif of 5 to 8 scale degrees (0 is the root, 7 the octave) that is easy to recognise. description is one line a host could read aloud ("slow music box over a heartbeat").
 - Never use em dashes; use commas, colons or full stops.
 - Ids (p1, n1, c3, l2, k1, h1) belong only in id and *_ids fields. Never write an id inside any prose field, including twists, hints and truth; name the thing instead.
 - Keep every text field tight: public_info 1 to 2 sentences, private_info up to 5 sentences, clue shows 1 to 2 sentences, opening_scene 80 to 150 words.`;

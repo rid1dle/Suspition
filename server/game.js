@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { LENGTHS } from './prompts.js';
 import { GENERATION_STEPS } from './progress.js';
+import { sanitizeMusic } from '../public/music-theory.js';
 
 export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 10;
@@ -435,6 +436,8 @@ function publicCore(game, now) {
     players: game.players.map((p) => ({ id: p.id, name: p.name })),
     setup: game.setup,
     title: sc?.title ?? null,
+    music: sanitizeMusic(sc?.music, game.setup?.tone ?? 'cozy'),
+    musicDescription: sc?.music?.description ?? null,
     setting: sc?.setting_summary ?? null,
     opening: sc?.opening_scene ?? null,
     cast: publicCast(game),

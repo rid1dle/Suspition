@@ -359,3 +359,24 @@ describe('privacy', () => {
     assert.ok(body.includes('PRIVATE-3') && body.includes('HIDDEN-4') && body.includes('TRUTH-SUMMARY'));
   });
 });
+
+describe('music in the public view', () => {
+  test('should give the lobby a calm default theme for no scenario', () => {
+    const game = G.createGame();
+    assert.equal(G.tableView(game).music.palette, 'piano');
+  });
+
+  test('should pass the scenario theme to every screen, cleaned up', () => {
+    const game = gameInReading(3);
+    game.scenario.music = { root: 'E', mode: 'dorian', tempo: 999, palette: 'bells', percussion: 'tribal', motif: [0, 2, 4, 5], description: 'Bells over toms' };
+    const music = G.tableView(game).music;
+    assert.deepEqual([music.root, music.mode, music.tempo, music.palette], ['E', 'dorian', 140, 'bells']);
+    assert.equal(G.playerView(game, 'p1').musicDescription, 'Bells over toms');
+  });
+
+  test('should fall back to the tone for a world written before music existed', () => {
+    const game = gameInReading(3);
+    delete game.scenario.music;
+    assert.equal(G.tableView(game).music.mode, 'harmonic_minor');
+  });
+});

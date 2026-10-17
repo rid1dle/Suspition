@@ -129,3 +129,14 @@ button.chip.on .muted { color: inherit; opacity: 0.75; }
 .step.now .mark { color: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
 .step.todo { color: var(--muted); opacity: 0.55; }
 @keyframes pulse { 50% { opacity: 0.3; } }
+
+.music { position: fixed; right: 16px; bottom: 16px; z-index: 10; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px 6px 6px; max-width: calc(100vw - 32px); }
+.music input[type=range] { width: 110px; accent-color: var(--accent); }
+.music #music-desc { max-width: 280px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meter-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--line); margin-right: 8px; transition: transform 0.08s linear; }
+#music-toggle.on .meter-dot { background: var(--accent-ink); }
+
+@media (max-width: 760px) {
+  .grid { grid-template-columns: 1fr !important; }
+}
