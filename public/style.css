@@ -119,3 +119,13 @@ label { display: block; }
 .opening { font-family: Georgia, serif; font-size: 1.2rem; line-height: 1.6; }
 .hidden-el { display: none !important; }
 button.chip.on .muted { color: inherit; opacity: 0.75; }
+
+.steps { list-style: none; margin: 4px 0; padding: 0; }
+.step { display: flex; gap: 10px; align-items: baseline; padding: 5px 0; font-size: 1.05rem; }
+.step .mark { width: 1.2em; text-align: center; flex: none; }
+.step.done { color: var(--muted); }
+.step.done .mark { color: var(--public); }
+.step.now { color: var(--text); font-weight: 600; }
+.step.now .mark { color: var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+.step.todo { color: var(--muted); opacity: 0.55; }
+@keyframes pulse { 50% { opacity: 0.3; } }

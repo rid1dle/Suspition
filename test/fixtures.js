@@ -65,7 +65,8 @@ export class FakeGM {
     if (this.fail[name]) throw new Error(`fake ${name} failure`);
     return typeof value === 'function' ? value() : structuredClone(value);
   }
-  generate(game) {
+  generate(game, onProgress = () => {}) {
+    for (const e of this.progressEvents ?? []) onProgress(e);
     return this.step('generate', () => makeScenario(game.players.length, { phases: 3, hints: game.setup.hints }));
   }
   answer() {

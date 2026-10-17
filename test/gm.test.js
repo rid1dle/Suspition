@@ -101,6 +101,24 @@ describe('runClaude', () => {
   });
 });
 
+describe('runClaude with progress', () => {
+  test('should stream, report thinking, sections and item counts, then return the result', async () => {
+    const events = [];
+    const out = await run({ onProgress: (e) => events.push(e.kind === 'item' ? `${e.key}:${e.count}` : e.key ?? e.kind) }, 'stream');
+    assert.deepEqual(events, ['thinking', 'draft', 'title', 'players', 'players:1', 'players:2', 'clues', 'clues:1']);
+    assert.equal(out.title, 'T');
+    const after = (flag) => out.args[out.args.indexOf(flag) + 1];
+    assert.equal(after('--output-format'), 'stream-json');
+    assert.ok(out.args.includes('--include-partial-messages') && out.args.includes('--verbose'));
+  });
+
+  test('should use plain JSON output when nobody asks for progress', async () => {
+    const { args } = await run();
+    assert.equal(args[args.indexOf('--output-format') + 1], 'json');
+    assert.ok(!args.includes('--verbose'));
+  });
+});
+
 describe('parseClaudeOutput', () => {
   test('should refuse a success with no structured answer', () => {
     assert.throws(() => parseClaudeOutput(JSON.stringify({ is_error: false, subtype: 'error_max_turns' })), GMError);

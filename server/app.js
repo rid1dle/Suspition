@@ -1,4 +1,5 @@
 import * as G from './game.js';
+import { GENERATION_STEPS, stepForKey } from './progress.js';
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
@@ -20,6 +21,7 @@ export class App {
     if (this.game.status === 'generating') {
       this.game.status = 'failed';
       this.game.error = 'The server restarted while the world was being written. Try again.';
+      this.game.progress = null;
     }
     if (this.game.state) {
       for (const pid of Object.keys(this.game.state.pending ?? {})) {
@@ -93,19 +95,50 @@ export class App {
     G.applySetup(this.game, input);
     await this.changed();
     const game = this.game;
+    game.progress = { attempt: 1, draft: 0, step: 'thinking', seen: ['thinking'], counts: {}, startedAt: this.clock() };
     this.background('generate', async () => {
       try {
-        const scenario = await this.gm.generate(game);
+        const scenario = await this.gm.generate(game, (e) => this.onGenerateProgress(game, e));
         if (this.game !== game) return;
         G.attachScenario(game, scenario, this.clock());
+        game.progress = null;
       } catch (err) {
         if (this.game !== game) return;
         game.status = 'failed';
+        game.progress = null;
         this.failed(game, 'generate', 'The GM could not write the world.', err);
       } finally {
         if (this.game === game) await this.changed();
       }
     });
+  }
+
+  onGenerateProgress(game, e) {
+    const p = game.progress;
+    if (this.game !== game || !p) return;
+    const before = p.step;
+    const restart = () => {
+      p.step = 'thinking';
+      p.seen = ['thinking'];
+      p.counts = {};
+    };
+    if (e.kind === 'attempt') {
+      p.attempt = e.attempt;
+      p.draft = 0;
+      restart();
+    } else if (e.kind === 'draft') {
+      p.draft += 1;
+      if (p.draft > 1) {
+        restart();
+        this.log(`gm generate: draft ${p.draft} (the previous one was not valid JSON, the GM is rewriting it)`);
+      }
+    } else if (e.kind === 'key') p.step = stepForKey(e.key) ?? p.step;
+    else if (e.kind === 'item') p.counts[e.key] = e.count;
+    else if (e.kind === 'checking') p.step = 'checking';
+    else if (e.kind !== 'thinking') return;
+    if (!p.seen.includes(p.step)) p.seen.push(p.step);
+    if (p.step !== before) this.log(`gm generate: ${GENERATION_STEPS.find((s) => s.id === p.step)?.label ?? p.step}`);
+    this.notify();
   }
 
   async ready(tok) {

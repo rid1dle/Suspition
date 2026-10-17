@@ -35,6 +35,59 @@ describe('App', () => {
     assert.equal(ctx.app.playerView(ctx.tokens[0]).card.private_info, 'PRIVATE-1');
   });
 
+  test('should show which part of the world is being written, then clear it', async () => {
+    const ctx = await setupApp();
+    let release;
+    ctx.gm.gate = new Promise((r) => (release = r));
+    ctx.gm.progressEvents = [
+      { kind: 'attempt', attempt: 1 }, { kind: 'thinking' }, { kind: 'draft' },
+      { kind: 'key', key: 'title' }, { kind: 'key', key: 'truth' }, { kind: 'key', key: 'players' },
+      { kind: 'item', key: 'players', count: 1 }, { kind: 'item', key: 'players', count: 2 },
+    ];
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const progress = ctx.app.tableView().progress;
+    assert.equal(progress.step, 'players');
+    assert.deepEqual(progress.seen, ['thinking', 'scene', 'truth', 'players']);
+    assert.deepEqual(progress.counts, { players: 2 });
+    assert.equal(progress.steps[0].label, 'Inventing the crime');
+    assert.equal(ctx.app.playerView(ctx.tokens[0]).progress.step, 'players');
+    release();
+    await ctx.app.idle();
+    assert.equal(ctx.app.tableView().progress, null);
+    assert.equal(ctx.app.game.progress, null);
+  });
+
+  test('should tick off sections in whatever order the GM writes them', async () => {
+    const ctx = await setupApp();
+    ctx.gm.gate = new Promise(() => {});
+    ctx.gm.progressEvents = [{ kind: 'attempt', attempt: 1 }, { kind: 'draft' }, { kind: 'key', key: 'clues' }, { kind: 'key', key: 'title' }];
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const p = ctx.app.tableView().progress;
+    assert.equal(p.step, 'scene');
+    assert.deepEqual(p.seen, ['thinking', 'clues', 'scene']);
+  });
+
+  test('should reset the checklist when a garbled draft is rewritten in the same call', async () => {
+    const ctx = await setupApp();
+    ctx.gm.gate = new Promise(() => {});
+    ctx.gm.progressEvents = [{ kind: 'attempt', attempt: 1 }, { kind: 'draft' }, { kind: 'key', key: 'players' }, { kind: 'item', key: 'players', count: 3 }, { kind: 'draft' }];
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const p = ctx.app.tableView().progress;
+    assert.deepEqual([p.draft, p.step, p.seen, p.counts], [2, 'thinking', ['thinking'], {}]);
+  });
+
+  test('should start a second draft from the top when the first is rejected', async () => {
+    const ctx = await setupApp();
+    let release;
+    ctx.gm.gate = new Promise((r) => (release = r));
+    ctx.gm.progressEvents = [{ kind: 'key', key: 'clues' }, { kind: 'item', key: 'clues', count: 9 }, { kind: 'checking' }, { kind: 'attempt', attempt: 2 }];
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const progress = ctx.app.tableView().progress;
+    assert.deepEqual([progress.attempt, progress.step, progress.counts], [2, 'thinking', {}]);
+    release();
+    await ctx.app.idle();
+  });
+
   test('should mark the game failed with a reason when generation fails, and allow a retry', async () => {
     const ctx = await setupApp();
     ctx.gm.fail.generate = true;

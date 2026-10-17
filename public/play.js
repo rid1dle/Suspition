@@ -180,7 +180,8 @@ function update() {
   const v = view;
   if ($('players')) $('players').innerHTML = v.players.map((p) => `<span class="badge" style="margin:0 6px 6px 0">${esc(p.name)}</span>`).join('');
   if ($('wait-msg')) {
-    $('wait-msg').innerHTML = v.status === 'generating' ? 'The GM is writing your world<span class="dots"></span>'
+    const step = v.progress?.steps.find((s) => s.id === v.progress.step)?.label;
+    $('wait-msg').innerHTML = v.status === 'generating' ? `The GM is writing your world${step ? `: <b>${esc(step.toLowerCase())}</b>` : ''}<span class="dots"></span>`
       : v.status === 'failed' ? 'The GM hit a problem. The host can try again from the table screen.'
       : 'Waiting for the host to set up the mystery.';
   }

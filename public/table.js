@@ -78,8 +78,9 @@ const skeletons = {
       </div>
     </div>`,
   generating: () => `${header('Writing your world')}
-    <div class="panel stack"><p class="opening">The GM is inventing a crime, a cast and everyone's secrets<span class="dots"></span></p>
-    <p class="muted">This usually takes three to five minutes. Phones will light up when it is ready.</p>
+    <div class="panel stack"><p class="opening">The GM is inventing a crime, a cast and everyone's secrets.</p>
+    <p class="muted">This usually takes four to seven minutes. Phones light up when it is ready. Nothing secret is shown here.</p>
+    <ol class="steps" id="steps"></ol>
     <div class="muted small">Elapsed: <span id="elapsed" class="timer">0:00</span></div>
     <div><div class="label">At the table</div><div id="players"></div></div></div>`,
   failed: () => `${header('Something went wrong')}<div class="banner error" id="error"></div>
@@ -215,6 +216,19 @@ function update() {
     $('write-note').textContent = enough ? `${v.players.length} players. The GM will write one character for each.` : `Need at least 3 players (${v.players.length} so far).`;
   }
   if ($('error')) $('error').textContent = v.error ?? '';
+  if ($('steps') && v.progress) {
+    const p = v.progress;
+
+    const extra = { players: () => `${p.counts.players ?? 0} of ${v.players.length}`, clues: () => (p.counts.clues ? `${p.counts.clues} so far` : ''), npcs: () => (p.counts.npcs ? `${p.counts.npcs}` : ''), locations: () => (p.counts.locations ? `${p.counts.locations}` : '') };
+    const redo = p.attempt > 1 ? 'The first world broke one of the game\'s rules, so the GM is writing a new one.'
+      : p.draft > 1 ? `The GM's draft came out garbled, so it is rewriting it (draft ${p.draft}). This is normal and costs a minute or two.` : '';
+    $('steps').innerHTML = (redo ? `<li class="banner small" style="list-style:none;margin-bottom:8px">${esc(redo)}</li>` : '')
+      + p.steps.map((s) => {
+        const state = s.id === p.step ? 'now' : p.seen.includes(s.id) ? 'done' : 'todo';
+        const note = state !== 'todo' && extra[s.id] ? extra[s.id]() : '';
+        return `<li class="step ${state}"><span class="mark">${state === 'done' ? '&#10003;' : state === 'now' ? '&#9679;' : '&#9675;'}</span>${esc(s.label)}${note ? ` <span class="muted small">${esc(note)}</span>` : ''}${state === 'now' ? '<span class="dots"></span>' : ''}</li>`;
+      }).join('');
+  }
   if ($('ready')) {
     $('ready').innerHTML = v.players.map((p) => `<span class="badge ${v.ready.includes(p.id) ? 'investigator' : ''}" style="margin:0 6px 6px 0">${v.ready.includes(p.id) ? '&#10003; ' : ''}${esc(p.name)}</span>`).join('');
   }
@@ -253,7 +267,7 @@ function tick() {
     $('timer').classList.toggle('low', c.low);
   }
   if ($('elapsed')) {
-    const s = Math.round((Date.now() - (skeleton?.since ?? Date.now())) / 1000);
+    const s = Math.round((Date.now() - (view.progress?.startedAt ?? skeleton?.since ?? Date.now())) / 1000);
     $('elapsed').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
   }
 }

@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { LENGTHS } from './prompts.js';
+import { GENERATION_STEPS } from './progress.js';
 
 export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 10;
@@ -453,6 +454,15 @@ function publicCore(game, now) {
     submitted: st ? game.players.filter((p) => st.submissions[p.id]).map((p) => p.id) : [],
     transitioning: st?.transitioning ?? false,
     scoring: st?.scoring ?? false,
+    progress: game.status === 'generating' && game.progress ? {
+      attempt: game.progress.attempt,
+      draft: game.progress.draft,
+      step: game.progress.step,
+      seen: game.progress.seen,
+      counts: game.progress.counts,
+      startedAt: game.progress.startedAt,
+      steps: GENERATION_STEPS.map(({ id, label }) => ({ id, label })),
+    } : null,
   };
 }
 
