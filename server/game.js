@@ -756,7 +756,7 @@ export function readyMoment(game, playerId, momentId, now = Date.now()) {
   if (m.status === 'getready') callMoment(game, m, now);
 }
 
-export function answerMoment(game, playerId, momentId, choice, now = Date.now(), { text = '' } = {}) {
+export function answerMoment(game, playerId, momentId, choice, now = Date.now(), { text = '', read = null } = {}) {
   const m = ownMoment(game, playerId, momentId);
   const st = game.state;
   const name = nameOf(game, playerId);
@@ -772,7 +772,8 @@ export function answerMoment(game, playerId, momentId, choice, now = Date.now(),
     m.status = choice;
     if (choice === 'own' && own) {
       m.saidInstead = own;
-      addEvent(game, `${name}, in their own words: "${own}"`, 'said', now);
+      if (read) m.readInstead = read;
+      addEvent(game, `${name}, in their own words: "${own}"`, 'said', now, read ? { by: name, read } : {});
       addFacts(game, [{ person: playerId, fact: `Said out loud: "${own}"` }], 'said', now);
     } else {
       addEvent(game, choice === 'quiet' ? `${name} chose to stay quiet.` : `${name} told it their own way.`, 'override', now);
@@ -966,7 +967,7 @@ export function addNote(game, text, now = Date.now()) {
   addEvent(game, `The room thinks: ${clean}`, 'note', now);
 }
 
-export function completePublicAsk(game, playerId, answer, now = Date.now(), read = null) {
+export function completePublicAsk(game, playerId, answer, now = Date.now(), read = null, words = null) {
   const st = game.state;
   const q = st.publicPending[playerId];
   if (!q) return;
@@ -974,7 +975,7 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   readPlayer(game, playerId, read, 'out loud', now);
   addFacts(game, read?.facts, 'asked out loud', now);
   const name = game.players.find((p) => p.id === playerId)?.name;
-  st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text: String(answer ?? '').trim() || 'Nobody knows that yet.' });
+  st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text: String(answer ?? '').trim() || 'Nobody knows that yet.', ...(words ? { read: words } : {}) });
 }
 
 export function failPublicAsk(game, playerId) {
@@ -1063,8 +1064,8 @@ export function publicKnowledge(game) {
     ],
     places: sc.locations.map((l) => ({ name: l.name, about: l.public_info })),
     timeline: publicTimeline(game),
-    news: game.state.events.filter((e) => !['opening', 'qa'].includes(e.kind)).slice(-20).map((e) => e.text),
-    asked_out_loud_before: game.state.events.filter((e) => e.kind === 'qa').slice(-15).map((e) => `${e.by} asked: ${e.q} Answer: ${e.text}`),
+    news: game.state.events.filter((e) => !['opening', 'qa'].includes(e.kind)).slice(-20).map(eventForGM),
+    asked_out_loud_before: game.state.events.filter((e) => e.kind === 'qa').slice(-15).map((e) => `${e.by} asked: ${e.read ? playerWords(e.read, e.q, 'public') : e.q} Answer: ${e.text}`),
     where_people_say_they_were: alibiTable(sc),
     shared_clues: game.state.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
@@ -1084,6 +1085,21 @@ export function cleanSvg(svg) {
 // Player-written text reaches an agent with secrets only as the reader's form, or quoted as data.
 export const playerWords = (read, text, mode = 'move') => (read ? formForGM(read, mode).replace(/\n/g, ' | ') : quoteRaw(text));
 
+// Own-words lines go to the GM as the reader's form; host notes are player-written, so they are quoted.
+function eventForGM(e) {
+  if (e.kind === 'said' && e.read) return `${e.by} said out loud in their own words: ${playerWords(e.read, '', 'said')}`;
+  if (e.kind === 'note') return `The room thinks: ${quoteRaw(e.text.replace(/^The room thinks: /, ''))}`;
+  return e.text;
+}
+
+// Final answers as the scorer may see them: the reader's cleaned text, never the raw words.
+export function forScore(game) {
+  return Object.fromEntries(Object.entries(game.state.submissions).map(([pid, s]) => [pid, {
+    culprit_ids: s.culprit_ids,
+    ...(s.read ? { how: s.read.how, why: s.read.why, goal: s.read.goal } : { how: quoteRaw(s.how), why: quoteRaw(s.why), goal: quoteRaw(s.goal) }),
+  }]));
+}
+
 export function snapshotForGM(game) {
   const st = game.state;
   return {
@@ -1094,13 +1110,13 @@ export function snapshotForGM(game) {
     destroyed_clues: st.destroyed,
     where_everyone_is: st.positions,
     round_results: st.roundResults,
-    moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.saidInstead } : {}) })),
+    moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.readInstead ? playerWords(m.readInstead, m.saidInstead, 'said') : m.saidInstead } : {}) })),
     overrides_left: st.overridesLeft,
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     shared_clues: st.shared.map((x) => x.clueId),
     clues_found_by_player: st.found,
     revealed_hidden_facts: st.revealed,
-    public_events: st.events.filter((e) => e.kind !== 'opening').map((e) => (e.kind === 'qa' ? `${e.by} asked out loud: ${e.q} Answer: ${e.text}` : e.text)),
+    public_events: st.events.filter((e) => e.kind !== 'opening').map((e) => (e.kind === 'qa' ? `${e.by} asked out loud: ${e.read ? playerWords(e.read, e.q, 'public') : e.q} Answer: ${e.text}` : eventForGM(e))),
     record: Object.fromEntries(
       Object.entries(st.threads).map(([pid, msgs]) => [pid, msgs.map((m) => `${m.from}${m.kind ? `(${m.kind})` : ''}: ${m.from === 'you' ? playerWords(m.read, m.text, 'move') : m.text}`)]),
     ),
@@ -1185,7 +1201,7 @@ function publicCore(game, now) {
       endsAt: vote.endsAt,
     },
     suspicion: st?.suspicion ?? null,
-    events: st?.events ?? [],
+    events: (st?.events ?? []).map(({ read, ...e }) => e),
     ready: st ? game.players.filter((p) => st.ready[p.id]).map((p) => p.id) : [],
     submitted: st ? game.players.filter((p) => st.submissions[p.id]).map((p) => p.id) : [],
     transitioning: st?.transitioning ?? false,
@@ -1256,7 +1272,7 @@ export function playerView(game, playerId, now = Date.now()) {
     hidden_known: card.hidden_facts.filter((h) => revealed.includes(h.id)).map((h) => h.fact),
     hidden_unknown: card.hidden_facts.filter((h) => !revealed.includes(h.id)).length,
   };
-  view.thread = st.threads[playerId];
+  view.thread = st.threads[playerId].map(({ read, ...m }) => m);
   view.questionsLeft = st.questionsLeft[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;
   view.clues = st.found[playerId].map((id) => {

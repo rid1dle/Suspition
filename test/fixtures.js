@@ -85,7 +85,7 @@ export class FakeGM {
   read(game, playerId, text, mode) {
     this.lastRead = { playerId, text, mode };
     return this.step('read', this.readResult ?? (mode === 'final'
-      ? { how: text?.how ?? '', why: text?.why ?? '', goal: text?.goal ?? '', claims: [], sways_gm: false }
+      ? { how: /How: (.*)/.exec(text)?.[1] ?? '', why: /Why: (.*)/.exec(text)?.[1] ?? '', goal: /Own goal: (.*)/.exec(text)?.[1] ?? '', claims: [], sways_gm: false }
       : { kind: 'question', target: '', place: '', attempt: 'P tries something', said_aloud: '', out_of_world: false, sways_gm: false, claims: [] }));
   }
   answer(game, playerId, ask) {
@@ -95,7 +95,8 @@ export class FakeGM {
   phase() {
     return this.step('phase', this.phaseResult);
   }
-  publicAnswer() {
+  publicAnswer(game, question, read) {
+    this.lastPublic = { question, read };
     return this.step('public', { answer: 'PUBLIC ANSWER' });
   }
   illustrate() {

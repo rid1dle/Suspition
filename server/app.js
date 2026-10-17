@@ -194,10 +194,23 @@ export class App {
     if (result) this.advance();
   }
 
+  async readOrRefuse(game, playerId, text, mode) {
+    try {
+      return await this.gm.read(game, playerId, text, mode);
+    } catch (err) {
+      this.log(`read ${playerId} failed: ${err.message}`);
+      throw new GameError('The GM could not read that. Try again.', 503);
+    }
+  }
+
   async moment(tok, id, action, text) {
-    const p = G.playerByToken(this.game, tok);
-    if (action === 'ready') G.readyMoment(this.game, p.id, id, this.clock());
-    else G.answerMoment(this.game, p.id, id, action, this.clock(), { text });
+    const game = this.game;
+    const p = G.playerByToken(game, tok);
+    const own = action === 'own' && String(text ?? '').trim();
+    const read = own ? await this.readOrRefuse(game, p.id, own, 'said') : null;
+    if (this.game !== game) return;
+    if (action === 'ready') G.readyMoment(game, p.id, id, this.clock());
+    else G.answerMoment(game, p.id, id, action, this.clock(), { text, read });
     await this.changed();
   }
 
@@ -219,9 +232,11 @@ export class App {
     const q = G.beginPublicAsk(game, p.id, text);
     this.background(`public ${p.id}`, async () => {
       try {
-        const { answer, asker_read: read } = await this.gm.publicAnswer(game, q);
+        const words = await this.gm.read(game, p.id, q, 'public');
         if (this.game !== game) return;
-        G.completePublicAsk(game, p.id, answer, this.clock(), read);
+        const { answer, asker_read: read } = await this.gm.publicAnswer(game, q, words);
+        if (this.game !== game) return;
+        G.completePublicAsk(game, p.id, answer, this.clock(), read, words);
       } catch (err) {
         if (this.game !== game) return;
         G.failPublicAsk(game, p.id);
@@ -341,8 +356,9 @@ export class App {
   }
 
   async submit(tok, input) {
-    const p = G.playerByToken(this.game, tok);
-    G.submitFinal(this.game, p.id, input);
+    const game = this.game;
+    const p = G.playerByToken(game, tok);
+    G.submitFinal(game, p.id, input);
     await this.changed();
     if (G.allSubmitted(this.game)) this.reveal();
   }
@@ -354,6 +370,17 @@ export class App {
     this.reveal();
   }
 
+  // Final answers reach the scorer only as the reader's cleaned text; if the reader fails they go quoted as data.
+  async readFinals(game) {
+    await Promise.all(Object.entries(game.state.submissions).filter(([, s]) => !s.read).map(async ([pid, s]) => {
+      try {
+        s.read = await this.gm.read(game, pid, `How: ${s.how}\nWhy: ${s.why}\nOwn goal: ${s.goal}`, 'final');
+      } catch (err) {
+        this.log(`read final ${pid} failed: ${err.message}`);
+      }
+    }));
+  }
+
   reveal() {
     const game = this.game;
     if (game.state.scoring) return null;
@@ -362,6 +389,7 @@ export class App {
     return this.background('score', async () => {
       try {
         const verdict = G.computeVerdict(game);
+        await this.readFinals(game);
         const score = await this.gm.score(game, verdict);
         if (this.game !== game) return;
         G.applyScore(game, verdict, score);
