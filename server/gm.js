@@ -41,9 +41,15 @@ export async function runClaude({ system, prompt, schema, model, effort, workDir
   return spawnClaude(bin, args, workDir, prompt, timeoutMs).finally(() => unlink(systemFile).catch(() => {}));
 }
 
+export function claudeEnv(env = process.env) {
+  if (env.DETECTIVE_USE_API_KEY === '1') return env;
+  const { ANTHROPIC_API_KEY, ...rest } = env;
+  return rest;
+}
+
 function spawnClaude(bin, args, workDir, prompt, timeoutMs) {
   return new Promise((resolve, reject) => {
-    const child = spawn(bin, args, { cwd: workDir, stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(bin, args, { cwd: workDir, env: claudeEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
     const timer = setTimeout(() => {

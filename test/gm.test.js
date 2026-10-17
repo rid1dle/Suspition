@@ -42,6 +42,31 @@ describe('runClaude', () => {
     assert.equal(after('--output-format'), 'json');
   });
 
+  test('should use the Claude login, not an ANTHROPIC_API_KEY from the shell', async () => {
+    const saved = process.env.ANTHROPIC_API_KEY;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-from-the-shell';
+    try {
+      assert.equal((await run()).apiKeySet, false);
+    } finally {
+      if (saved === undefined) delete process.env.ANTHROPIC_API_KEY;
+      else process.env.ANTHROPIC_API_KEY = saved;
+    }
+  });
+
+  test('should keep ANTHROPIC_API_KEY when DETECTIVE_USE_API_KEY=1', async () => {
+    const saved = [process.env.ANTHROPIC_API_KEY, process.env.DETECTIVE_USE_API_KEY];
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-from-the-shell';
+    process.env.DETECTIVE_USE_API_KEY = '1';
+    try {
+      assert.equal((await run()).apiKeySet, true);
+    } finally {
+      for (const [k, v] of [['ANTHROPIC_API_KEY', saved[0]], ['DETECTIVE_USE_API_KEY', saved[1]]]) {
+        if (v === undefined) delete process.env[k];
+        else process.env[k] = v;
+      }
+    }
+  });
+
   test('should pass model and effort only when set', async () => {
     assert.ok(!(await run()).args.includes('--model'));
     const { args } = await run({ model: 'sonnet', effort: 'medium' });

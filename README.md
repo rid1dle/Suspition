@@ -9,7 +9,8 @@ Design notes: [docs/design.md](docs/design.md).
 
 ## Run a game
 
-Needs Node 20+ and Claude Code signed in on the host laptop (`claude` on the PATH). No API key.
+Needs Node 20+ and Claude Code signed in on the host laptop (`claude` on the PATH). No API key:
+the GM always uses your Claude login and ignores any `ANTHROPIC_API_KEY` in your shell.
 
 ```bash
 npm install
@@ -44,6 +45,7 @@ If macOS asks whether `node` may accept incoming connections, allow it, or phone
 | `DETECTIVE_SETUP_EFFORT` | `medium` | Effort for writing the world (`high` is richer and slower) |
 | `DETECTIVE_PLAY_MODEL` | Claude Code default | Model that answers questions during play |
 | `NO_OPEN` | | Set to `1` to stop the table screen opening on start |
+| `DETECTIVE_USE_API_KEY` | | Set to `1` to let the GM use `ANTHROPIC_API_KEY` instead of your Claude login |
 | `DETECTIVE_DATA_DIR` | `game-data/` | Where the current game is saved |
 
 The current game is saved in `game-data/current-game.json`; restarting the server resumes it.

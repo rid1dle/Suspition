@@ -17,6 +17,6 @@ process.stdin.on('end', () => {
   process.stdout.write(JSON.stringify({
     is_error: false,
     subtype: 'success',
-    structured_output: { args, stdin, system: readFileSync(systemFile, 'utf8'), cwd: process.cwd() },
+    structured_output: { args, stdin, system: readFileSync(systemFile, 'utf8'), cwd: process.cwd(), apiKeySet: 'ANTHROPIC_API_KEY' in process.env },
   }));
 });

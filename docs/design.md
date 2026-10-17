@@ -134,6 +134,10 @@ Visual style, exact prompt wording, timer defaults, retry and concurrency limits
 - Twists are drawn at random in code, not chosen by the model: left to itself it picked the
   same three twists in two different worlds.
 - The join link prefers the Wi-Fi card over VPN and container interfaces.
+- The GM is started without `ANTHROPIC_API_KEY`. `claude -p` prefers that variable over the
+  Claude login, and a stale key in the host's shell profile failed every GM call with
+  "Invalid API key". Tests run inside a Claude Code session never saw it, because the session's
+  own variables override the key. `DETECTIVE_USE_API_KEY=1` opts back in.
 
 ## Calls I made (not discussed)
 
