@@ -1385,3 +1385,19 @@ describe('play points in the game', () => {
     assert.equal(lines[i + 1], 'Plus up to 3 play points for good moves.');
   });
 });
+
+describe('quiet players', () => {
+  test('should list players who made no private move this round', () => {
+    const game = playing(3, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'chat', text: 'x' });
+    G.completeAsk(game, 'p2', emptyAsk, 2_000);
+    assert.deepEqual(G.quietPlayers(game), ['p1', 'p3']);
+    assert.deepEqual(G.snapshotForGM(game).quiet_players, ['p1', 'p3']);
+  });
+
+  test('should give the scorer each player\'s play by skill', () => {
+    const game = playing(3);
+    game.state.play = { p2: [{ points: 2, skill: 'questioning', rubric: 1 }] };
+    assert.deepEqual(G.snapshotForGM(game).play_by_player.p2, { questioning: 2 });
+  });
+});

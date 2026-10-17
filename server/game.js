@@ -1135,12 +1135,20 @@ export function forScore(game) {
   }]));
 }
 
+export function quietPlayers(game) {
+  const st = game.state;
+  const since = st.events.filter((e) => e.kind === 'phase').at(-1)?.at ?? 0;
+  return game.players.map((p) => p.id).filter((pid) => !(st.threads[pid] ?? []).some((m) => m.from === 'you' && m.at >= since));
+}
+
 export function snapshotForGM(game) {
   const st = game.state;
   return {
     phase: st.phaseIndex >= 0 ? { number: roundNumber(game), of: totalRounds(game), name: game.scenario.phases[st.phaseIndex]?.name, stage: storyStage(game, st.phaseIndex) } : null,
     where_we_are: st.recap ?? null,
     players_now: st.persona ?? {},
+    quiet_players: quietPlayers(game),
+    play_by_player: Object.fromEntries(game.players.map((p) => [p.id, skillSplit(st.play?.[p.id])])),
     suspicion: st.suspicion,
     destroyed_clues: st.destroyed,
     where_everyone_is: st.positions,
