@@ -178,3 +178,35 @@ describe('choosing what the game learns from', () => {
     assert.deepEqual(await app.importGame(host, forDataset(g)), { skipped: g.id });
   });
 });
+
+describe('first start import safety', () => {
+  test('should still import when a playtest made the database first', async () => {
+    const dir = await tmp();
+    await mkdir(join(dir, 'dataset', 'games'), { recursive: true });
+    const old = played('asha');
+    await writeFile(join(dir, 'dataset', 'games', `2026-10-17-x-${old.id}.json`), JSON.stringify(forDataset(old)));
+    const db = await dbIn(dir);
+    db.saveGame({ ...played('guest'), learning: 'playtest' });
+    const out = await importOnce(db, { gameData: join(dir, 'game-data'), dataset: join(dir, 'dataset') });
+    assert.equal(out.games, 1);
+    assert.ok(db.loadGame(old.id));
+    assert.deepEqual(await importOnce(db, { gameData: join(dir, 'game-data'), dataset: join(dir, 'dataset') }), { skipped: true });
+  });
+
+  test('should import nothing if it fails halfway, and try again next start', async () => {
+    const dir = await tmp();
+    await mkdir(join(dir, 'dataset', 'games'), { recursive: true });
+    for (let i = 0; i < 3; i += 1) {
+      const g = played('asha');
+      await writeFile(join(dir, 'dataset', 'games', `2026-10-17-x-${g.id}.json`), JSON.stringify(forDataset(g)));
+    }
+    const db = await dbIn(dir);
+    const save = db.saveGame.bind(db);
+    let n = 0;
+    db.saveGame = (g) => { n += 1; if (n === 2) throw new Error('disk full'); return save(g); };
+    await assert.rejects(() => importOnce(db, { gameData: join(dir, 'game-data'), dataset: join(dir, 'dataset') }), /disk full/);
+    assert.equal(db.listGames().length, 0);
+    db.saveGame = save;
+    assert.equal((await importOnce(db, { gameData: join(dir, 'game-data'), dataset: join(dir, 'dataset') })).games, 3);
+  });
+});

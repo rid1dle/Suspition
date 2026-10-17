@@ -101,6 +101,18 @@ export class Db {
     return game && { ...game, learning: row.learning as Learning, note: row.note };
   }
 
+  getMeta(key: string): string | null {
+    return this.orm.select().from(schema.meta).where(eq(schema.meta.key, key)).get()?.value ?? null;
+  }
+
+  setMeta(key: string, value: string) {
+    this.orm.insert(schema.meta).values({ key, value }).onConflictDoUpdate({ target: schema.meta.key, set: { value } }).run();
+  }
+
+  transaction<T>(fn: () => T): T {
+    return this.sqlite.transaction(fn)();
+  }
+
   setCurrent(id: string) {
     this.orm.insert(schema.meta).values({ key: 'current', value: id }).onConflictDoUpdate({ target: schema.meta.key, set: { value: id } }).run();
   }
@@ -137,6 +149,11 @@ export class Db {
         createdAt: r.createdAt,
       };
     });
+  }
+
+  tags(id: string): { learning: Learning; note: string } | null {
+    const r = this.orm.select({ learning: schema.games.learning, note: schema.games.note }).from(schema.games).where(eq(schema.games.id, id)).get();
+    return r ? { learning: r.learning as Learning, note: r.note } : null;
   }
 
   setLearning(id: string, learning: Learning, note?: string) {

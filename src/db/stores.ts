@@ -31,7 +31,7 @@ export class DbArchive {
   async save(game: Game, label = '') {
     if (!game?.players?.length) return null;
     this.db.saveGame(game);
-    const row = this.db.listGames().find((g) => g.id === game.id);
+    const row = this.db.tags(game.id);
     return this.files.save({ ...game, learning: row?.learning ?? game.learning ?? 'real', note: row?.note ?? game.note ?? '' }, label);
   }
 }

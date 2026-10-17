@@ -149,9 +149,15 @@ async function main() {
     console.error(err instanceof DbError ? err.message : err);
     process.exit(1);
   }
-  const imported = await importOnce(db, { gameData: dataDir, dataset: datasetDir });
-  if (!imported.skipped) log(`First start on the database: brought in ${imported.games} games, ${imported.people} people and ${imported.playtests} playtests. The JSON files are untouched.`);
-  const app = await new App({ gm, store: new DbStore(db), archive: new DbArchive(db, datasetDir), people: new DbPeople(db), library: new GameLibrary(db), log }).init();
+  let app;
+  try {
+    const imported = await importOnce(db, { gameData: dataDir, dataset: datasetDir });
+    if (!imported.skipped) log(`First start on the database: brought in ${imported.games} games, ${imported.people} people and ${imported.playtests} playtests. The JSON files are untouched.`);
+    app = await new App({ gm, store: new DbStore(db), archive: new DbArchive(db, datasetDir), people: new DbPeople(db), library: new GameLibrary(db), log }).init();
+  } catch (err) {
+    console.error(`The game could not start: ${err.message}`);
+    process.exit(1);
+  }
   if (process.argv.includes('--new')) await app.newGame(app.game.hostToken);
   const joinUrl = `http://${process.env.DETECTIVE_HOST || lanAddress()}:${port}/play`;
   const dev = process.argv.includes('--dev');
