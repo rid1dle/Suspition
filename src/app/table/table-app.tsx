@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useLowFrameRate } from '@/components/world/table-effects';
+import { PARTICLE_AMBIENTS } from '@/lib/effects';
 import { toast } from 'sonner';
 import { Music2Icon, Volume2Icon, VolumeXIcon, MicIcon, SparklesIcon, LibraryIcon } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
@@ -17,6 +20,8 @@ import { Setup, Generating, Failed } from './setup';
 import { Reading } from './reading';
 import { Playing } from './playing';
 import { FinalWait, Reveal } from './endgame';
+
+const TableEffects = dynamic(() => import('@/components/world/table-effects'), { ssr: false });
 
 export function useHost() {
   const [host, setHost] = useState<string | null>(null);
@@ -135,8 +140,12 @@ export function TableApp() {
     n.enabled = was;
   };
   const props = { view: view!, host, act, readNow, onNewGame: (h: string) => setHost(h) };
+  const low = useLowFrameRate();
+  const room = view?.room ?? null;
+  const rich = Boolean(room && !calm && !low && room.ambient !== 'none');
   return (
-    <WorldRoom room={view?.room ?? null} calm={calm}>
+    <WorldRoom room={room} calm={calm || (rich && PARTICLE_AMBIENTS.has(room!.ambient))}>
+      {rich && <TableEffects room={room!} />}
       <Toaster theme="dark" position="top-center" />
       <div className="min-h-dvh pb-16">
         {!view && <div className="flex min-h-dvh items-center justify-center text-muted-foreground">Connecting…</div>}
