@@ -45,6 +45,7 @@ export const SCENARIO_SCHEMA = obj({
       starting_knowledge: str,
       start_location: str,
       icon: str,
+      intro_line: str,
     }),
   },
   npcs: {
@@ -209,6 +210,7 @@ Design rules:
 - Rounds (phases): one entry per round, with a short name and a planned beat (an event that changes the situation). Each round has a clear goal: question is what the group must work out this round, answerable from clues and talk in that round (for example "How did the lights go out?"). options are 3 or 4 short answers; answer_index is the right one. The last round's question must not be "who did it" (that is the final vote). reward is one new fact the group unlocks if they get it right; reward_time and reward_order place it on the timeline ('' and 0 if it has no time). wrong_nudge is one gentle line pointing them the right way if they get it wrong. The questions should build: each round's answer helps the next.
 - Character names are in-world names that fit the setting. Use the player's wish if they gave one.
 - Ids: players are p1, p2, ... exactly as given. GM characters n1, n2, ...; locations l1, ...; clues c1, ...; key deductions k1, ...; hidden facts h1, h2, ... (unique across all players).
+- intro_line: what each player says out loud to introduce their character, in the first person, 1 or 2 short sentences, public facts only ("I am Asha, the camp medic. I checked the body."). No secrets.
 - Icons: give every location, player and GM character an icon: one emoji that fits it (a candle, a key, a teacup). Keep it simple and readable.
 - Map: give every location x and y from 0 to 100, laid out like a simple floor plan (places next to each other are close). neighbors lists the ids of places you can walk to directly. Every player and GM character gets a start_location: the id of the place they are when the game starts. Spread people out, one to three per place.
 - music: the game's soundtrack, played live in the room. Pick a root, mode, tempo, instrument palette and percussion that fit this setting and tone (a cozy village fair is not a dark ship), and a motif of 5 to 8 scale degrees (0 is the root, 7 the octave) that is easy to recognise. description is one line a host could read aloud ("slow music box over a heartbeat").

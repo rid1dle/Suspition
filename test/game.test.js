@@ -557,6 +557,12 @@ describe('meet everyone', () => {
     assert.match(steps[4].lines[0], /Player1, stand up and say: "I am Character 1, Role 1. PUBLIC-1"/);
   });
 
+  test('should use the first-person intro line when the GM wrote one', () => {
+    const game = gameInReading(3);
+    game.scenario.players[0].intro_line = 'I am the cook. I found the body.';
+    assert.match(G.tableView(game).briefing.steps[4].lines[0], /Player1, stand up and say: "I am the cook. I found the body."/);
+  });
+
   test('should keep secrets out of the intro', () => {
     const body = JSON.stringify(G.tableView(gameInReading(3)).briefing);
     assert.ok(!body.includes('PRIVATE') && !body.includes('TRUTH') && !body.includes('HIDDEN'));

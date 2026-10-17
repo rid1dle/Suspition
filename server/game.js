@@ -538,7 +538,8 @@ export function briefingSteps(game) {
   ];
   for (const c of sc.players) {
     const player = game.players.find((p) => p.id === c.id);
-    steps.push({ kind: 'intro', playerId: c.id, title: `Meet ${c.character_name}`, lines: [`${player?.name ?? 'This player'}, stand up and say: "I am ${c.character_name}, ${c.role_title}. ${c.public_info}"`], icon: c.icon ?? '' });
+    const line = c.intro_line?.trim() || `I am ${c.character_name}, ${c.role_title}. ${c.public_info}`;
+    steps.push({ kind: 'intro', playerId: c.id, title: `Meet ${c.character_name}`, lines: [`${player?.name ?? 'This player'}, stand up and say: "${line}"`], icon: c.icon ?? '' });
   }
   steps.push({ kind: 'npcs', title: 'People the GM plays', lines: sc.npcs.map((n) => `${n.name}, ${n.role_title}. ${n.public_info}`) });
   steps.push({ kind: 'timeline', title: 'The timeline so far', lines: publicTimeline(game).map((t) => `${t.time ? `${t.time}: ` : ''}${t.event}`) });

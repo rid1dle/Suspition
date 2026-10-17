@@ -63,6 +63,12 @@ describe('chunks', () => {
     assert.equal(parts.join(' ').replace(/\s+/g, ' '), text.trim());
   });
 
+  test('should never split after a title like Dr.', () => {
+    const parts = chunks('Gopi says Dr. Mira Sen is in the pool. She is not breathing.', 30);
+    assert.ok(parts.every((p) => !/Dr\.$/.test(p)), JSON.stringify(parts));
+    assert.ok(parts.some((p) => p.includes('Dr. Mira Sen')));
+  });
+
   test('should keep short text whole', () => {
     assert.deepEqual(chunks('Hello there. Bye.'), ['Hello there. Bye.']);
   });

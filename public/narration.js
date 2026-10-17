@@ -24,8 +24,15 @@ export function stepLines(step) {
   return [`${step.title}.`, ...step.lines];
 }
 
+const ABBREV = /\b(Dr|Mr|Mrs|Ms|St|Sr|Jr|Prof|Capt|No|vs)\.\s*$/;
+
 export function chunks(text, max = 180) {
-  const sentences = String(text).match(/[^.!?]+[.!?]*["')]*\s*/g) ?? [];
+  const pieces = String(text).match(/[^.!?]+[.!?]*["')]*\s*/g) ?? [];
+  const sentences = [];
+  for (const p of pieces) {
+    if (sentences.length && ABBREV.test(sentences.at(-1))) sentences[sentences.length - 1] += p;
+    else sentences.push(p);
+  }
   const out = [];
   let cur = '';
   for (const s of sentences) {
