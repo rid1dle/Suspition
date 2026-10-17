@@ -7,7 +7,7 @@ import { GM } from '../server/gm.ts';
 import { validateScenario, attachScenario } from '../server/game.ts';
 import { GENERATION_SYSTEM, SCENARIO_SCHEMA } from '../server/prompts.ts';
 import { GENERATION_STEPS, stepForKey } from '../server/progress.ts';
-import { gameFile, serverIsUp, readJson, STOP_FIRST } from './offline.ts';
+import { currentGame, serverIsUp, readJson, STOP_FIRST } from './offline.ts';
 
 export function reworkPrompt(scenario, { npcs, players }, problems = []) {
   return `Here is a mystery that has not started yet. Rework its cast.
@@ -91,9 +91,9 @@ async function main() {
     console.log('Use --npcs with a number from 0 to 6.');
     process.exit(1);
   }
-  const file = gameFile(opts.file);
-  const draftFile = join(dirname(file), 'rework-draft.json');
-  const game = await readJson(file);
+  const current = await currentGame(opts.file);
+  const draftFile = join(current.dir, 'rework-draft.json');
+  const game = await current.load();
   if (!game?.scenario || game.status !== 'reading') {
     console.log('This only works before round 1 starts (while everyone is reading their cards).');
     process.exit(1);
@@ -113,15 +113,15 @@ async function main() {
     return;
   }
 
-  const fresh = await readJson(file);
-  await copyFile(file, file.replace(/\.json$/, '.before-rework.json'));
+  const fresh = await current.load();
   applyRework(fresh, scenario, opts);
-  await writeFile(file, JSON.stringify(fresh));
+  const backup = await current.save(fresh, 'rework');
+  current.close();
   await rm(draftFile, { force: true });
   console.log(`Done. "${scenario.title}" now centres on the players.`);
   console.log(`People the GM plays (background only): ${scenario.npcs.map((n) => `${n.name}, ${n.role_title}`).join('; ') || 'none'}`);
   console.log('Everyone should read their card again: it may have changed. Round 0 starts from the beginning.');
-  console.log(`The old version is in ${file.replace(/\.json$/, '.before-rework.json')}.`);
+  console.log(`The old version is in ${backup}.`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

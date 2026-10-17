@@ -5,13 +5,13 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GM } from '../server/gm.ts';
 import { applyAudit } from '../server/game.ts';
-import { gameFile, serverIsUp, readJson, STOP_FIRST } from './offline.ts';
+import { currentGame, serverIsUp, readJson, STOP_FIRST } from './offline.ts';
 
 // Makes every player card say what that character did, saw and said, wherever else the story mentions it.
 async function main() {
-  const file = gameFile(process.argv[2]);
-  const draftFile = join(dirname(file), 'fix-cards-draft.json');
-  const game = await readJson(file);
+  const current = await currentGame(process.argv[2]);
+  const draftFile = join(current.dir, 'fix-cards-draft.json');
+  const game = await current.load();
   if (!game?.scenario || !['reading', 'playing'].includes(game.status)) {
     console.log('There is no game in progress to fix.');
     process.exit(1);
@@ -28,12 +28,13 @@ async function main() {
   console.log(`Things to add to each card: ${counts.join(', ')}`);
   if (await serverIsUp()) {
     console.log(`The fixes are ready. ${STOP_FIRST}`);
+    current.close();
     return;
   }
-  const fresh = await readJson(file);
-  await copyFile(file, file.replace(/\.json$/, '.before-fix-cards.json'));
+  const fresh = await current.load();
   const n = applyAudit(fresh.scenario, audit);
-  await writeFile(file, JSON.stringify(fresh));
+  await current.save(fresh, 'fix-cards');
+  current.close();
   await rm(draftFile, { force: true });
   console.log(`Done. ${n} fact${n === 1 ? '' : 's'} added. Each phone shows "Your card has new things you remember."`);
 }

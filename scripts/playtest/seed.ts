@@ -40,7 +40,7 @@ export async function seedBots(gamesDir, botsDir, { db = null } = {}) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
   const { openDb } = await import('../../src/db/index.ts');
-  const db = openDb(join(root, 'game-data', 'suspition.db'));
+  const db = openDb(join(process.env.DETECTIVE_DATA_DIR ?? join(root, 'game-data'), 'suspition.db'));
   const written = await seedBots(null, join(root, 'dataset', 'bots'), { db });
   db.close();
   for (const w of written) console.log(`${w.username}: ${w.count} samples`);

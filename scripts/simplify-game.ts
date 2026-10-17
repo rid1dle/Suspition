@@ -3,13 +3,12 @@ import { readFile, writeFile, copyFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { gameFile, serverIsUp } from './offline.ts';
+import { currentGame, serverIsUp } from './offline.ts';
 import { GM } from '../server/gm.ts';
 import { validateScenario, startPositions } from '../server/game.ts';
 import { LENGTHS, GENERATION_SYSTEM, SCENARIO_SCHEMA } from '../server/prompts.ts';
 import { GENERATION_STEPS, stepForKey } from '../server/progress.ts';
 
-const file = gameFile(process.argv[2]);
 const port = Number(process.env.PORT) || 4321;
 
 export function sameStory(before, after) {
@@ -35,7 +34,12 @@ async function main() {
     console.log(`The game server is running on port ${port}. Stop it first (Ctrl+C), then run this again.`);
     process.exit(1);
   }
-  const game = JSON.parse(await readFile(file, 'utf8'));
+  const current = await currentGame(process.argv[2]);
+  const game = await current.load();
+  if (!game?.scenario) {
+    console.log('There is no game with a world to rewrite.');
+    process.exit(1);
+  }
   if (!game.scenario) {
     console.log('This game has no mystery yet. Nothing to rewrite.');
     return;
@@ -76,15 +80,15 @@ ${JSON.stringify(before)}`;
     process.exit(1);
   }
 
-  await copyFile(file, file.replace(/\.json$/, '.before-simplify.json'));
   game.scenario = after;
   if (game.state) {
     const opening = game.state.events.find((e) => e.kind === 'opening');
     if (opening) opening.text = after.opening_scene;
     game.state.positions ??= startPositions(after);
   }
-  await writeFile(file, JSON.stringify(game));
-  console.log(`Done. "${after.title}" is now in simple words, with a map and music. The old version is in ${file.replace(/\.json$/, '.before-simplify.json')}.`);
+  const backup = await current.save(game, 'simplify');
+  current.close();
+  console.log(`Done. "${after.title}" is now in simple words, with a map and music. The old version is in ${backup}.`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
