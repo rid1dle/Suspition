@@ -225,3 +225,15 @@ describe('usernames at join', () => {
     assert.equal(app.game.players[0].username, 'ben-2');
   });
 });
+
+describe('import file safety', () => {
+  test('should refuse a game whose id could write outside the dataset', async () => {
+    const db = await dbIn();
+    const { GameLibrary, ImportError } = await import('../src/db/library.ts');
+    const lib = new GameLibrary(db);
+    const g = played('asha');
+    assert.throws(() => lib.importGame({ ...forDataset(g), id: '../../../../package' }), (err) => err instanceof ImportError && /not a saved game/.test(err.message));
+    const { datasetName } = await import('../server/store.ts');
+    assert.ok(!datasetName({ id: '../../x', createdAt: 1 }).includes('/'));
+  });
+});

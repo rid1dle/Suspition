@@ -47,7 +47,7 @@ const slug = (text) => String(text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '
 
 export function datasetName(game, label = '') {
   const day = new Date(game.createdAt ?? Date.now()).toISOString().slice(0, 10);
-  return [day, slug(game.scenario?.title) || 'no-world', game.id, label].filter(Boolean).join('-') + '.json';
+  return [day, slug(game.scenario?.title) || 'no-world', slug(game.id), slug(label)].filter(Boolean).join('-') + '.json';
 }
 
 // Keeps a copy of every game, without join tokens, so the games can be studied later.

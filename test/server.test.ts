@@ -178,3 +178,11 @@ describe('games routes', () => {
     assert.equal((await post('games/import', { host: 'nope', game: {} })).status, 403);
   });
 });
+
+describe('importing a big game', () => {
+  test('should accept a saved game far larger than a normal request', async () => {
+    const big = { id: 'abc123', players: [], filler: 'x'.repeat(300_000) };
+    assert.equal((await post('games/import', { host: 'nope', game: big })).status, 403);
+    assert.equal((await post('join', { name: 'x'.repeat(60_000) })).status, 413);
+  });
+});

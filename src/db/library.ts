@@ -8,6 +8,8 @@ export type ImportResult = { imported: string } | { skipped: string } | { ask: {
 
 export class ImportError extends Error {}
 
+const GAME_ID = /^[a-z0-9-]{1,40}$/;
+
 // The host's view of every saved game: which ones teach the game, and bringing in games from elsewhere.
 export class GameLibrary {
   db: Db;
@@ -29,7 +31,7 @@ export class GameLibrary {
 
   importGame(input: unknown, answers: SamePerson = {}, now = Date.now()): ImportResult {
     const game = input as Game;
-    if (!game || typeof game.id !== 'string' || !Array.isArray(game.players)) throw new ImportError('That is not a saved game.');
+    if (!game || typeof game.id !== 'string' || !GAME_ID.test(game.id) || !Array.isArray(game.players)) throw new ImportError('That is not a saved game.');
     if (this.db.loadGame(game.id)) return { skipped: game.id };
     const known = this.db.allUsernames();
     const clashes = game.players.filter((p) => p.username && known.has(p.username));

@@ -36,11 +36,14 @@ const send = (res, status, body, type = 'application/json') => {
   res.end(type === 'application/json' ? JSON.stringify(body) : body);
 };
 
-async function readBody(req) {
+// Most requests are small; an imported saved game can be a few megabytes.
+const BODY_LIMITS = { '/api/games/import': 10_000_000 };
+
+async function readBody(req, limit = 50_000) {
   let raw = '';
   for await (const chunk of req) {
     raw += chunk;
-    if (raw.length > 50_000) throw new GameError('Request too large.', 413);
+    if (raw.length > limit) throw new GameError('Request too large.', 413);
   }
   try {
     return raw ? JSON.parse(raw) : {};
@@ -98,7 +101,7 @@ export function createHandler(app, { joinUrl, next = null }) {
     const url = new URL(req.url, 'http://x');
     try {
       const action = actions[`${req.method} ${url.pathname}`];
-      if (action) return send(res, 200, (await action(await readBody(req))) ?? { ok: true });
+      if (action) return send(res, 200, (await action(await readBody(req, BODY_LIMITS[url.pathname]))) ?? { ok: true });
 
       if (url.pathname === '/events' || url.pathname === '/api/stream') {
         const s = { res, token: url.searchParams.get('token'), full: url.searchParams.get('full') === '1' };
