@@ -122,3 +122,19 @@ describe('HTTP API', () => {
     assert.equal(res.status, 400);
   });
 });
+
+describe('profile routes', () => {
+  test('should list saved people, check a name, and answer a lobby question', async () => {
+    await post('new', { host: app.game.hostToken });
+    const join = await post('join', { name: 'Zed' });
+    assert.equal(join.status, 200);
+    const people = await (await fetch(`${base}/api/people`)).json();
+    assert.ok(people.people.some((p) => p.username === 'zed'));
+    assert.deepEqual((await post('checkname', { name: 'zed' })).body, { match: { username: 'zed', name: 'Zed' } });
+    const view = (await firstEvent(`?token=${join.body.token}`)).data;
+    assert.equal((await post('answer', { token: join.body.token, id: view.question.id, choice: 0 })).status, 200);
+    const full = (await firstEvent(`?token=${join.body.token}&full=1`)).data;
+    assert.equal(full.profile.answers.length, 1);
+    assert.equal((await post('forget', { token: join.body.token })).status, 200);
+  });
+});

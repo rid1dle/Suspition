@@ -40,7 +40,7 @@ export function createGame(now = Date.now()) {
   };
 }
 
-export function addPlayer(game, { name, wish } = {}) {
+export function addPlayer(game, { name, wish, username } = {}) {
   if (game.status !== 'lobby') fail('The game has already started.', 409);
   const clean = String(name ?? '').trim().slice(0, 24);
   if (!clean) fail('Enter a name.');
@@ -48,11 +48,13 @@ export function addPlayer(game, { name, wish } = {}) {
   if (game.players.some((p) => p.name.toLowerCase() === clean.toLowerCase())) {
     fail('Someone already has that name.', 409);
   }
+  if (username && game.players.some((p) => p.username === username)) fail('Someone in this game already uses that username.', 409);
   const player = {
     id: `p${game.players.length + 1}`,
     token: token(),
     name: clean,
     wish: String(wish ?? '').trim().slice(0, 200),
+    ...(username ? { username } : {}),
   };
   game.players.push(player);
   return player;

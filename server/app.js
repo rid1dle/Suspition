@@ -1,12 +1,17 @@
 import * as G from './game.js';
 import { GENERATION_STEPS, stepForKey } from './progress.js';
+import { MemoryPeople } from './store.js';
+import { QUESTIONS, pickQuestions } from './questions.js';
+import { usernameFor, newProfile, addAnswer, aboutForGM, recordGame, profileView } from './profiles.js';
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
 
 export class App {
-  constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null }) {
+  constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null, people = new MemoryPeople() }) {
     this.gm = gm;
+    this.people = people;
+    this.profiles = new Map();
     this.store = store;
     this.archive = archive;
     this.clock = clock;
@@ -50,6 +55,7 @@ export class App {
       this.game.state.transitioning = false;
       this.game.state.scoring = false;
     }
+    for (const p of this.game.players) if (p.username) this.profiles.set(p.username, (await this.people.load(p.username)) ?? newProfile(p.username, p.name, this.clock()));
     await this.changed();
     return this;
   }
@@ -111,15 +117,75 @@ export class App {
     return this.game.hostToken;
   }
 
-  async join(input) {
-    const player = G.addPlayer(this.game, input);
+  async join(input = {}) {
+    const name = String(input.name ?? '').trim();
+    const taken = (await this.people.list()).map((p) => p.username);
+    const username = input.username ? usernameFor(input.username) : usernameFor(name, taken);
+    const player = G.addPlayer(this.game, { ...input, username });
+    const profile = (await this.people.load(username)) ?? newProfile(username, player.name, this.clock());
+    profile.name = player.name;
+    player.questions = pickQuestions(profile.answers.map((a) => a.id)).map((q) => q.id);
+    player.skipped = [];
+    this.profiles.set(username, profile);
+    await this.people.save(profile);
     await this.changed();
     return player.token;
+  }
+
+  knownPeople() {
+    return this.people.list();
+  }
+
+  async checkName(name) {
+    const slug = usernameFor(name);
+    const match = (await this.people.list()).find((p) => p.username === slug) ?? null;
+    return { match };
+  }
+
+  async answerQuestion(tok, { id, choice, text } = {}) {
+    const game = this.game;
+    const p = G.playerByToken(game, tok);
+    if (!['lobby', 'generating', 'reading'].includes(game.status)) throw new G.GameError('Questions are only before the game starts.', 409);
+    const q = QUESTIONS.find((x) => x.id === id);
+    if (!q || !p.questions?.includes(id)) throw new G.GameError('That question is not yours.', 409);
+    const profile = this.profiles.get(p.username);
+    const own = String(text ?? '').trim();
+    let answer = null;
+    if (own) {
+      const read = await this.readOrRefuse(game, p.id, own.slice(0, 300), 'answer');
+      answer = read.said_aloud || read.attempt;
+    } else if (Number.isInteger(choice) && q.choices[choice]) answer = q.choices[choice];
+    if (answer && profile) {
+      addAnswer(profile, { id, answer }, this.clock());
+      await this.people.save(profile);
+    } else p.skipped.push(id);
+    await this.changed();
+  }
+
+  async forget(tok) {
+    const p = G.playerByToken(this.game, tok);
+    const profile = this.profiles.get(p.username);
+    if (!profile) return;
+    profile.answers = [];
+    await this.people.save(profile);
+    await this.changed();
+  }
+
+  // Each player's profile learns from a finished game. Only the reveal calls this.
+  async learn(game) {
+    for (const p of game.players) {
+      if (!p.username) continue;
+      const profile = this.profiles.get(p.username) ?? (await this.people.load(p.username)) ?? newProfile(p.username, p.name, this.clock());
+      recordGame(profile, game, p.id);
+      this.profiles.set(p.username, profile);
+      await this.people.save(profile);
+    }
   }
 
   async setup(hostToken, input) {
     this.requireHost(hostToken);
     G.applySetup(this.game, input);
+    for (const p of this.game.players) Object.assign(p, aboutForGM(this.profiles.get(p.username)));
     await this.changed();
     const game = this.game;
     game.progress = { attempt: 1, draft: 0, step: 'thinking', seen: ['thinking'], counts: {}, startedAt: this.clock() };
@@ -395,6 +461,7 @@ export class App {
         G.applyScore(game, verdict, score);
         game.error = null;
         await this.keep(game);
+        await this.learn(game).catch((err) => this.log(`profile save failed: ${err.message}`));
       } catch (err) {
         if (this.game !== game) return;
         this.failed(game, 'score', 'The GM could not check the answers. Press Show the answer to try again.', err);
@@ -425,8 +492,18 @@ export class App {
     return G.tableView(this.game, this.clock());
   }
 
-  playerView(tok) {
-    const p = G.playerByToken(this.game, tok);
-    return G.playerView(this.game, p.id, this.clock());
+  playerView(tok, { full = false } = {}) {
+    const game = this.game;
+    const p = G.playerByToken(game, tok);
+    const view = G.playerView(game, p.id, this.clock());
+    const profile = this.profiles.get(p.username);
+    if (!profile) return view;
+    view.profile = profileView(profile, { full });
+    if (['lobby', 'generating', 'reading'].includes(game.status)) {
+      const done = new Set([...profile.answers.map((a) => a.id), ...(p.skipped ?? [])]);
+      const q = QUESTIONS.find((x) => (p.questions ?? []).includes(x.id) && !done.has(x.id));
+      view.question = q ? { id: q.id, question: q.question, choices: q.choices } : null;
+    }
+    return view;
   }
 }

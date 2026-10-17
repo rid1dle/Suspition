@@ -7,7 +7,7 @@ import { exec } from 'node:child_process';
 import QRCode from 'qrcode';
 import { App } from './app.js';
 import { GM } from './gm.js';
-import { Store, Archive } from './store.js';
+import { Store, Archive, People } from './store.js';
 import { GameError } from './game.js';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -49,7 +49,7 @@ export function createHandler(app, { joinUrl }) {
 
   const push = (s) => {
     try {
-      const view = s.token ? app.playerView(s.token) : app.tableView();
+      const view = s.token ? app.playerView(s.token, { full: s.full }) : app.tableView();
       s.res.write(`data: ${JSON.stringify(view)}\n\n`);
     } catch (err) {
       s.res.write(`event: gone\ndata: ${JSON.stringify({ message: err.message })}\n\n`);
@@ -80,6 +80,9 @@ export function createHandler(app, { joinUrl }) {
     'POST /api/public': (b) => app.askPublic(b.token, b.text),
     'POST /api/vote': (b) => app.voteHint(b.token, b.yes),
     'POST /api/submit': (b) => app.submit(b.token, b),
+    'POST /api/checkname': (b) => app.checkName(b.name),
+    'POST /api/answer': (b) => app.answerQuestion(b.token, b),
+    'POST /api/forget': (b) => app.forget(b.token),
   };
 
   const pages = { '/': 'table.html', '/table': 'table.html', '/play': 'play.html' };
@@ -91,13 +94,14 @@ export function createHandler(app, { joinUrl }) {
       if (action) return send(res, 200, (await action(await readBody(req))) ?? { ok: true });
 
       if (url.pathname === '/api/stream') {
-        const s = { res, token: url.searchParams.get('token') };
+        const s = { res, token: url.searchParams.get('token'), full: url.searchParams.get('full') === '1' };
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
         streams.add(s);
         req.on('close', () => streams.delete(s));
         return push(s);
       }
       if (url.pathname === '/api/info') return send(res, 200, { joinUrl });
+      if (url.pathname === '/api/people') return send(res, 200, { people: await app.knownPeople() });
       if (url.pathname === '/api/qr.svg') {
         return send(res, 200, await QRCode.toString(joinUrl, { type: 'svg', margin: 1 }), TYPES['.svg']);
       }
@@ -128,7 +132,7 @@ async function main() {
     log,
   });
   const datasetDir = process.env.DETECTIVE_DATASET_DIR ? resolve(process.env.DETECTIVE_DATASET_DIR) : join(ROOT, 'dataset');
-  const app = await new App({ gm, store: new Store(dataDir), archive: new Archive(datasetDir), log }).init();
+  const app = await new App({ gm, store: new Store(dataDir), archive: new Archive(datasetDir), people: new People(join(datasetDir, 'people')), log }).init();
   if (process.argv.includes('--new')) await app.newGame(app.game.hostToken);
   const joinUrl = `http://${process.env.DETECTIVE_HOST || lanAddress()}:${port}/play`;
   const server = createServer(createHandler(app, { joinUrl }));

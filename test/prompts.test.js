@@ -202,3 +202,17 @@ describe('fewer dead ends and fairer scoring', () => {
     assert.match(p, /play_by_player/);
   });
 });
+
+describe('world writing from the people', () => {
+  test("should give the world writer each player's answers and past games", () => {
+    const g = createGame();
+    for (const name of ['A', 'B', 'C']) addPlayer(g, { name });
+    applySetup(g, { tone: 'tense', length: 'short', hints: 2 });
+    g.players[0].about = [{ question: 'In a mystery you most enjoy...', answer: 'Catching a liar' }];
+    g.players[0].played_before = [{ side: 'culprit', persona: 'You went quiet.', points: 2, play: 1 }];
+    const p = generationPrompt(g);
+    assert.ok(p.includes('Catching a liar'));
+    assert.ok(p.includes('You went quiet.'));
+    assert.match(p, /Never use them to decide sides or culprits/);
+  });
+});

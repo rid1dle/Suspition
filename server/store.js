@@ -1,4 +1,4 @@
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { forDataset } from './game.js';
 
@@ -61,5 +61,58 @@ export class Archive {
     const file = join(this.dir, datasetName(game, label));
     await writeFile(file, `${JSON.stringify(forDataset(game), null, 1)}\n`);
     return file;
+  }
+}
+
+const USERNAME = /^[a-z0-9][a-z0-9-]{0,40}$/;
+
+// One JSON file per person under <dataset>/people. A database or an online store can replace this class.
+export class People {
+  constructor(dir) {
+    this.dir = dir;
+  }
+
+  async list() {
+    const files = await readdir(this.dir).catch((err) => (err.code === 'ENOENT' ? [] : Promise.reject(err)));
+    const out = [];
+    for (const f of files.filter((x) => x.endsWith('.json')).sort()) {
+      const p = await this.load(f.slice(0, -5));
+      if (p) out.push({ username: p.username, name: p.name });
+    }
+    return out;
+  }
+
+  async load(username) {
+    if (!USERNAME.test(String(username ?? ''))) return null;
+    try {
+      return JSON.parse(await readFile(join(this.dir, `${username}.json`), 'utf8'));
+    } catch (err) {
+      if (err.code === 'ENOENT') return null;
+      throw err;
+    }
+  }
+
+  async save(profile) {
+    if (!USERNAME.test(profile.username)) throw new Error(`bad username ${profile.username}`);
+    await mkdir(this.dir, { recursive: true });
+    const file = join(this.dir, `${profile.username}.json`);
+    await writeFile(`${file}.tmp`, `${JSON.stringify(profile, null, 1)}\n`);
+    await rename(`${file}.tmp`, file);
+  }
+}
+
+export class MemoryPeople {
+  constructor(profiles = []) {
+    this.map = new Map(profiles.map((p) => [p.username, structuredClone(p)]));
+  }
+  async list() {
+    return [...this.map.values()].map((p) => ({ username: p.username, name: p.name }));
+  }
+  async load(username) {
+    const p = this.map.get(username);
+    return p ? structuredClone(p) : null;
+  }
+  async save(profile) {
+    this.map.set(profile.username, structuredClone(profile));
   }
 }
