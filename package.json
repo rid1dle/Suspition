@@ -5,18 +5,18 @@
   "type": "module",
   "main": "server/index.ts",
   "scripts": {
-    "start": "node scripts/build-if-needed.ts && node server/index.ts",
-    "fresh": "node scripts/build-if-needed.ts && node server/index.ts --new",
-    "simplify": "node scripts/simplify-game.ts",
-    "rework": "node scripts/rework-cast.ts",
-    "fix-cards": "node scripts/fix-cards.ts",
-    "dataset": "node scripts/export-dataset.ts",
-    "test": "node --test test/*.test.js test/*.test.ts",
-    "playtest": "node scripts/playtest.ts",
-    "seed-bots": "node scripts/playtest/seed.ts",
-    "attacks": "node scripts/attacks.ts",
+    "start": "node scripts/check-node.cjs && node scripts/build-if-needed.ts && node server/index.ts",
+    "fresh": "node scripts/check-node.cjs && node scripts/build-if-needed.ts && node server/index.ts --new",
+    "simplify": "node scripts/check-node.cjs && node scripts/simplify-game.ts",
+    "rework": "node scripts/check-node.cjs && node scripts/rework-cast.ts",
+    "fix-cards": "node scripts/check-node.cjs && node scripts/fix-cards.ts",
+    "dataset": "node scripts/check-node.cjs && node scripts/export-dataset.ts",
+    "test": "node scripts/check-node.cjs && node --test test/*.test.js test/*.test.ts",
+    "playtest": "node scripts/check-node.cjs && node scripts/playtest.ts",
+    "seed-bots": "node scripts/check-node.cjs && node scripts/playtest/seed.ts",
+    "attacks": "node scripts/check-node.cjs && node scripts/attacks.ts",
     "build": "next build",
-    "dev": "node server/index.ts --dev"
+    "dev": "node scripts/check-node.cjs && node server/index.ts --dev"
   },
   "engines": {
     "node": ">=24"
