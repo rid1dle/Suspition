@@ -223,7 +223,7 @@ export class GM {
       schema: mode === 'final' ? FINAL_READER_SCHEMA : READER_SCHEMA,
       model: this.readerModel,
       effort: 'low',
-      timeoutMs: 60_000,
+      timeoutMs: 90_000,
     });
     return cleanRead(raw, mode);
   }

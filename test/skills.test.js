@@ -17,9 +17,11 @@ describe('play points', () => {
     assert.deepEqual([m.points, m.skill], [-1, 'breaking']);
   });
 
-  test("should keep a real move's points when it also made a claim", () => {
-    const m = scoreMove({ points: 1, skill: 'searching', why: 'found the glove' }, { ...clean, claims: ['no one sees me'] }, { from: 'private' });
+  test('should take one point off a real move that also made a claim', () => {
+    const m = scoreMove({ points: 2, skill: 'searching', why: 'found the glove' }, { ...clean, claims: ['no one sees me'] }, { from: 'private' });
     assert.deepEqual([m.points, m.skill], [1, 'searching']);
+    const thin = scoreMove({ points: 1, skill: 'bluffing', why: 'x' }, { ...clean, claims: ['the world helps me'] }, { from: 'private' });
+    assert.deepEqual([thin.points, thin.skill], [0, null]);
   });
 
   test('should cap out-loud questions at one point and never below zero for asking', () => {

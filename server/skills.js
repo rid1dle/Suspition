@@ -18,8 +18,12 @@ export function scoreMove(play, read, { from = 'private' } = {}) {
   const why = String(play?.why ?? '').trim().slice(0, 160);
   const base = { why, rubric: RUBRIC_VERSION, from };
   if (read?.sways_gm) return { ...base, points: -1, skill: 'swaying' };
-  const points = clamp(Math.round(Number(play?.points) || 0), outLoud ? 0 : -1, outLoud ? 1 : 2);
-  if ((read?.claims?.length || read?.out_of_world) && points <= 0) return { ...base, points: -1, skill: 'breaking' };
+  let points = clamp(Math.round(Number(play?.points) || 0), outLoud ? 0 : -1, outLoud ? 1 : 2);
+  if (read?.claims?.length || read?.out_of_world) {
+    points = Math.max(-1, points - 1);
+    if (points < 0) return { ...base, points, skill: 'breaking', why: why || 'Claims about others or the game do not count. Play your own character.' };
+    base.why = `${why} A claim about others cost one point.`.trim();
+  }
   const skill = points > 0 && SKILLS.includes(play?.skill) ? play.skill : points < 0 && PENALTIES.includes(play?.skill) ? play.skill : points < 0 ? 'breaking' : null;
   return { ...base, points, skill };
 }

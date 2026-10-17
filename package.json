@@ -13,7 +13,8 @@
     "dataset": "node scripts/export-dataset.js",
     "test": "node --test test/*.test.js",
     "playtest": "node scripts/playtest.js",
-    "seed-bots": "node scripts/playtest/seed.js"
+    "seed-bots": "node scripts/playtest/seed.js",
+    "attacks": "node scripts/attacks.js"
   },
   "engines": {
     "node": ">=20"
