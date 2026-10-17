@@ -119,6 +119,23 @@ describe('asking the GM', () => {
     assert.throws(() => G.beginAsk(playing(), 'p2', { kind: 'magic', text: 'x' }), /Unknown request type/);
   });
 
+  test('should keep the answer as novel lines, one speaker per line, with quote marks stripped', () => {
+    const game = playing();
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'Talk to the butler' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, lines: [{ speaker: '', text: 'The butler freezes.' }, { speaker: 'The Butler', text: '"I saw nothing, sir."' }, { speaker: '', text: '  ' }] });
+    const msg = game.state.threads.p2.at(-1);
+    assert.deepEqual(msg.lines, [{ speaker: '', text: 'The butler freezes.' }, { speaker: 'The Butler', text: 'I saw nothing, sir.' }]);
+    assert.equal(msg.text, 'The butler freezes.\nThe Butler: "I saw nothing, sir."');
+  });
+
+  test('should fall back to a plain answer when there are no lines', () => {
+    const game = playing();
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'x' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, answer: 'Plain.' });
+    assert.equal(game.state.threads.p2.at(-1).text, 'Plain.');
+    assert.equal(game.state.threads.p2.at(-1).lines, undefined);
+  });
+
   test('should record found clues, ignoring unknown and destroyed ids', () => {
     const game = playing();
     game.state.destroyed.push('c3');

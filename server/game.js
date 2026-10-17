@@ -304,7 +304,11 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   delete st.pending[playerId];
   const thread = st.threads[playerId];
   thread.push({ from: 'you', kind: ask.kind, text: ask.text, at: now });
-  thread.push({ from: 'gm', text: String(result.answer ?? '').trim() || '(No answer.)', at: now });
+  const lines = (Array.isArray(result.lines) ? result.lines : [])
+    .map((l) => ({ speaker: String(l?.speaker ?? '').trim().slice(0, 40), text: String(l?.text ?? '').trim().replace(/^["“]|["”]$/g, '') }))
+    .filter((l) => l.text);
+  const text = lines.length ? lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n') : String(result.answer ?? '').trim();
+  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), at: now });
 
   const clueIds = new Set(game.scenario.clues.map((c) => c.id));
   for (const id of result.clues_found ?? []) {

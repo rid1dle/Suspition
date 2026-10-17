@@ -1,6 +1,14 @@
 import { esc } from './text.js';
 import { mapHtml } from './map.js';
 
+export function novelHtml(lines) {
+  return `<div class="novel">${lines.map((l, i) => {
+    if (!l.speaker) return `<p class="act">${esc(l.text)}</p>`;
+    const same = lines[i - 1]?.speaker === l.speaker;
+    return `<p class="say">${same ? '' : `<span class="who-says">${esc(l.speaker)}</span>`}&ldquo;${esc(l.text)}&rdquo;</p>`;
+  }).join('')}</div>`;
+}
+
 export function pictureHtml(svg, cls = 'scene') {
   if (!svg) return '';
   return `<img class="${cls}" alt="" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}">`;

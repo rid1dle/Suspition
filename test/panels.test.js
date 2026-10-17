@@ -1,8 +1,19 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { pictureHtml, timelineHtml, newsHtml, roundHtml, stepHtml, sharedCluesHtml } from '../public/panels.js';
+import { novelHtml, pictureHtml, timelineHtml, newsHtml, roundHtml, stepHtml, sharedCluesHtml } from '../public/panels.js';
 
 describe('panels', () => {
+  test('should show speech with the speaker name and narration as plain lines', () => {
+    const html = novelHtml([{ speaker: '', text: 'She looks away.' }, { speaker: 'Leela', text: 'Money, <b>Miss</b> Nair.' }]);
+    assert.match(html, /<p class="act">She looks away.<\/p>/);
+    assert.match(html, /<span class="who-says">Leela<\/span>&ldquo;Money, &lt;b&gt;Miss&lt;\/b&gt; Nair.&rdquo;/);
+  });
+
+  test('should name a speaker only once for lines in a row', () => {
+    const html = novelHtml([{ speaker: 'Gopi', text: 'One.' }, { speaker: 'Gopi', text: 'Two.' }, { speaker: '', text: 'He sighs.' }, { speaker: 'Gopi', text: 'Three.' }]);
+    assert.equal((html.match(/who-says/g) ?? []).length, 2);
+  });
+
   test('should embed the picture as an image, never as live SVG', () => {
     const html = pictureHtml('<svg><rect/></svg>');
     assert.match(html, /^<img class="scene" alt="" src="data:image\/svg\+xml;charset=utf-8,%3Csvg/);

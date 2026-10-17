@@ -117,7 +117,7 @@ export const SCENARIO_SCHEMA = obj({
 });
 
 export const ASK_SCHEMA = obj({
-  answer: str,
+  lines: { type: 'array', items: obj({ speaker: str, text: str }) },
   clues_found: strArr,
   suspicion_change: { type: 'integer', minimum: -10, maximum: 25 },
   public_event: str,
@@ -243,7 +243,12 @@ export function playSystem(scenario) {
 The scenario below is the canonical truth. It never changes. Every answer you give must be consistent with it and with everything you have already told anyone (the record is in each request).
 
 How to answer a player:
-- Speak to them by their character name, in second person, 20 to 60 words. GM characters talk in their own voice and follow their sheet: they reveal what is in reveals_freely, reveal reveals_under_pressure only when pushed with evidence or leverage, and tell their lies unless confronted with contradicting evidence.
+- Write the answer like a page of a novel, in lines. 3 to 8 lines, each under 15 words.
+  Each line is either narration (speaker is "") or one thing a person says (speaker is their name, text is only the spoken words, no quote marks).
+  Narration is second person ("You kneel by the pool."). Use the player's character name once.
+  Let people sound like themselves: a nervous cook stammers, a captain barks, a liar changes the subject. Show small actions between lines (she looks away, he wipes his hands).
+  Make it fun: one vivid or funny detail when it fits the tone. Never a wall of text.
+- GM characters talk in their own voice and follow their sheet: they reveal what is in reveals_freely, reveal reveals_under_pressure only when pushed with evidence or leverage, and tell their lies unless confronted with contradicting evidence.
 - Never state the truth outright. Give evidence, testimony and observations; let players reason.
 - When a sensible search or question would find a clue, describe what the player finds concretely and list its id in clues_found. Searching the right place should find obvious evidence without luck. A destroyed clue cannot be found.
 - Never reveal another player's private card directly. Players can learn about each other only through in-world evidence and testimony.

@@ -1,6 +1,6 @@
 import { api, esc, stream, countdown, suspicionLabel, hashParam, toast, tickers } from '/common.js';
 import { mapHtml } from '/map.js';
-import { pictureHtml, backgroundHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, stepHtml } from '/panels.js';
+import { novelHtml, pictureHtml, backgroundHtml, timelineHtml, newsHtml, sharedCluesHtml, roundHtml, stepHtml } from '/panels.js';
 
 const app = document.getElementById('app');
 const fromHash = hashParam('t');
@@ -283,7 +283,7 @@ function update() {
       else groups.push([m]);
     }
     if (v.pending) groups.push([{ from: 'you', kind: v.pending.kind, text: v.pending.text }, { from: 'gm', text: 'Thinking...' }]);
-    $('thread').innerHTML = groups.reverse().flat().map((m) => `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${m.kind ? ` &middot; ${esc(KINDS.find(([k]) => k === m.kind)?.[1] ?? m.kind)}` : ''}</div>${esc(m.text)}</div>`).join('')
+    $('thread').innerHTML = groups.reverse().flat().map((m) => `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${m.kind ? ` &middot; ${esc(KINDS.find(([k]) => k === m.kind)?.[1] ?? m.kind)}` : ''}</div>${m.lines ? novelHtml(m.lines) : esc(m.text)}</div>`).join('')
       || '<p class="small muted">Your private chat with the GM shows here.</p>';
   }
   if ($('clues')) {
