@@ -32,6 +32,10 @@ anything, so they need to choose which games it learns from.
 - Accounts or passwords.
 - A cloud database or cloud real-time service.
 - Changing game rules, scoring or prompts beyond what the goals above need.
+- Python in the game server. The game, the GM calls and the live updates stay in one TypeScript
+  process, so friends install one runtime. Python earns its place later in a separate, optional
+  `analysis/` folder (pandas or polars over the SQLite file, read-only) for studying the dataset and
+  tuning the scoring rules. Nothing in the game will depend on it.
 
 ## Anti-goals
 
@@ -126,6 +130,20 @@ Phone (private, one hand):
 - Final answer: drag suspects into order of suspicion (dnd-kit), then How and Why with points shown.
 - Lobby: the quick questions as swipeable cards; the profile with animated skill bars.
 - Joining unlocks sound on iOS (the Join tap).
+
+## 4b. Small changes asked for alongside
+
+- **Reminders look better and speak in the third person.** Today a reminder is a plain line ("You are
+  Nikhil Rao..."). New: the GM writes 6 to 10 short reminder lines per character when it writes the
+  world (`reminders`), in the third person and plain words ("Nikhil Rao runs the bank on MG Road.",
+  "At 10:30 pm Nikhil Rao was by the library window."). On the phone a reminder is a small card that
+  slides in: the character's initial in the world colour, "Remember" and the character name, the line,
+  a thin bar that runs down until it hides itself, swipe to dismiss, tap to open the card. Old worlds
+  with no `reminders` get them from the card check, and until then from the card's own fields
+  (name and role, where they were at each time).
+- **Private questions per round are set in the room setup.** A new setup choice: 1 to 6 private
+  questions per round, defaulting to the game length's number (3, or 4 for long). Out-loud questions
+  stay free.
 
 ## 5. Architecture
 

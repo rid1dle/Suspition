@@ -27,7 +27,8 @@
   "overrides": 5,
   "notes": "",
   "npcs": 2,
-  "npcRole": "background"
+  "npcRole": "background",
+  "replays": 2
  },
  "scenario": {
   "background": [
@@ -2681,7 +2682,55 @@
     }
    ]
   },
-  "scoring": false
+  "scoring": false,
+  "roundNumber": 4,
+  "replays": 0,
+  "persona": {},
+  "facts": [
+   {
+    "id": "p1",
+    "fact": "Said out loud: \"I hold the only keys to this wing. But that fuse box door has no lock at all.\"",
+    "source": "said",
+    "round": 4,
+    "at": 1792256193007
+   },
+   {
+    "id": "p3",
+    "fact": "Said out loud: \"At about ten past ten I passed the corridor window. I heard Arjun arguing inside the library.\"",
+    "source": "said",
+    "round": 4,
+    "at": 1792256226724
+   },
+   {
+    "id": "p1",
+    "fact": "Said out loud: \"That pen is mine. I left it in my bag in Room 302. I never gave it to Arjun.\"",
+    "source": "said",
+    "round": 4,
+    "at": 1792257044203
+   },
+   {
+    "id": "p2",
+    "fact": "Said out loud: \"Before the lights died, I saw Himanshu standing at that little fuse box door.\"",
+    "source": "said",
+    "round": 4,
+    "at": 1792257074713
+   },
+   {
+    "id": "p3",
+    "fact": "Said out loud: \"Nikhil, you walked off while we stood at the fuse box. You came back from the library side.\"",
+    "source": "said",
+    "round": 4,
+    "at": 1792258110711
+   },
+   {
+    "id": "p2",
+    "fact": "Said out loud: \"I remember himanshu and arjun having bad blood from then\"",
+    "source": "said",
+    "round": 4,
+    "at": 1792258118993
+   }
+  ],
+  "play": {}
  },
  "error": null,
  "progress": null
