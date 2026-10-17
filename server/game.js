@@ -502,7 +502,7 @@ export function playerView(game, playerId, now = Date.now()) {
   };
   view.thread = st.threads[playerId];
   view.questionsLeft = st.questionsLeft[playerId];
-  view.pending = Boolean(st.pending[playerId]);
+  view.pending = st.pending[playerId] ?? null;
   view.clues = st.found[playerId].map((id) => {
     const c = game.scenario.clues.find((x) => x.id === id);
     return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id) };

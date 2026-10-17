@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { App } from '../server/app.js';
 import { MemoryStore } from '../server/store.js';
-import { createHandler } from '../server/index.js';
+import { createHandler, lanAddress } from '../server/index.js';
 import { FakeGM } from './fixtures.js';
 
 let server;
@@ -36,6 +36,22 @@ async function firstEvent(query = '') {
   const event = text.match(/^event: (\w+)/m)?.[1] ?? 'message';
   return { event, data: JSON.parse(text.match(/^data: (.*)$/m)[1]) };
 }
+
+describe('lanAddress', () => {
+  const v4 = (address) => [{ family: 'IPv4', internal: false, address }];
+
+  test('should prefer the Wi-Fi card over VPN and container interfaces', () => {
+    assert.equal(lanAddress({ feth2714: v4('172.29.222.16'), en0: v4('192.168.1.16'), utun4: v4('10.100.0.3') }), '192.168.1.16');
+  });
+
+  test('should skip loopback and IPv6', () => {
+    assert.equal(lanAddress({ lo0: [{ family: 'IPv4', internal: true, address: '127.0.0.1' }], en1: [{ family: 'IPv6', internal: false, address: 'fe80::1' }, ...v4('10.0.0.7')] }), '10.0.0.7');
+  });
+
+  test('should fall back to localhost with no usable interface', () => {
+    assert.equal(lanAddress({ utun0: v4('10.1.1.1') }), 'localhost');
+  });
+});
 
 describe('HTTP API', () => {
   test('should serve the table and phone pages', async () => {

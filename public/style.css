@@ -118,3 +118,4 @@ label { display: block; }
 .score { font-variant-numeric: tabular-nums; }
 .opening { font-family: Georgia, serif; font-size: 1.2rem; line-height: 1.6; }
 .hidden-el { display: none !important; }
+button.chip.on .muted { color: inherit; opacity: 0.75; }

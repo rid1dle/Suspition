@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { networkInterfaces } from 'node:os';
+import { networkInterfaces, tmpdir } from 'node:os';
 import { extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
@@ -14,11 +14,16 @@ const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const PUBLIC = join(ROOT, 'public');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' };
 
-export function lanAddress() {
-  for (const list of Object.values(networkInterfaces())) {
-    for (const a of list ?? []) if (a.family === 'IPv4' && !a.internal) return a.address;
-  }
-  return 'localhost';
+const VIRTUAL = /^(utun|feth|bridge|docker|veth|vboxnet|vmnet|tun|tap|awdl|llw|ipsec|ppp|zt|tailscale|wg)/i;
+const PHYSICAL = /^(en|eth|wlan|wl|wifi)/i;
+
+export function lanAddress(interfaces = networkInterfaces()) {
+  const candidates = Object.entries(interfaces)
+    .flatMap(([name, list]) => (list ?? []).filter((a) => a.family === 'IPv4' && !a.internal).map((a) => ({ name, address: a.address })))
+    .filter((c) => !VIRTUAL.test(c.name));
+  const rank = (c) => (PHYSICAL.test(c.name) ? 0 : 1) + (c.address.startsWith('192.168.') ? 0 : 0.5);
+  candidates.sort((a, b) => rank(a) - rank(b));
+  return candidates[0]?.address ?? 'localhost';
 }
 
 const send = (res, status, body, type = 'application/json') => {
@@ -108,14 +113,14 @@ async function main() {
   const dataDir = join(ROOT, 'game-data');
   const log = (m) => console.log(`[${new Date().toLocaleTimeString()}] ${m}`);
   const gm = new GM({
-    workDir: join(dataDir, 'gm'),
+    workDir: join(tmpdir(), 'detective-gm'),
     setupModel: process.env.DETECTIVE_SETUP_MODEL || undefined,
     setupEffort: process.env.DETECTIVE_SETUP_EFFORT || 'medium',
     playModel: process.env.DETECTIVE_PLAY_MODEL || undefined,
     log,
   });
   const app = await new App({ gm, store: new Store(dataDir), log }).init();
-  const joinUrl = `http://${lanAddress()}:${port}/play`;
+  const joinUrl = `http://${process.env.DETECTIVE_HOST || lanAddress()}:${port}/play`;
   const server = createServer(createHandler(app, { joinUrl }));
   setInterval(() => app.tick().catch((err) => log(`tick failed: ${err.message}`)), 1000).unref();
   server.listen(port, '0.0.0.0', () => {

@@ -215,7 +215,13 @@ function update() {
   }
   if ($('thread')) {
     const label = { you: 'You', gm: 'GM', whisper: 'Whisper', system: 'Problem' };
-    $('thread').innerHTML = v.thread.slice().reverse().map((m) => `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${m.kind ? ` &middot; ${esc(KINDS.find(([k]) => k === m.kind)?.[1] ?? m.kind)}` : ''}</div>${esc(m.text)}</div>`).join('')
+    const groups = [];
+    for (const m of v.thread) {
+      if (m.from === 'gm' && groups.at(-1)?.[0].from === 'you') groups.at(-1).push(m);
+      else groups.push([m]);
+    }
+    if (v.pending) groups.push([{ from: 'you', kind: v.pending.kind, text: v.pending.text }, { from: 'gm', text: 'Thinking...' }]);
+    $('thread').innerHTML = groups.reverse().flat().map((m) => `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${m.kind ? ` &middot; ${esc(KINDS.find(([k]) => k === m.kind)?.[1] ?? m.kind)}` : ''}</div>${esc(m.text)}</div>`).join('')
       || '<p class="small muted">Your private conversation with the GM appears here.</p>';
   }
   if ($('clues')) {

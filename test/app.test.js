@@ -57,7 +57,7 @@ describe('App', () => {
     let release;
     ctx.gm.gate = new Promise((r) => (release = r));
     await ctx.app.ask(ctx.tokens[1], { kind: 'question', text: 'Where were you?' });
-    assert.equal(ctx.app.playerView(ctx.tokens[1]).pending, true);
+    assert.deepEqual(ctx.app.playerView(ctx.tokens[1]).pending, { kind: 'question', text: 'Where were you?' });
     release();
     await ctx.app.idle();
     const thread = ctx.app.playerView(ctx.tokens[1]).thread;
@@ -73,7 +73,7 @@ describe('App', () => {
     await ctx.app.idle();
     const view = ctx.app.playerView(ctx.tokens[0]);
     assert.equal(view.questionsLeft, 3);
-    assert.equal(view.pending, false);
+    assert.equal(view.pending, null);
     assert.match(view.thread.at(-1).text, /could not answer/);
   });
 

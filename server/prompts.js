@@ -152,6 +152,8 @@ Design rules:
 - Phase plan: one entry per phase, with a short evocative name and a planned beat (an event that changes the situation: a discovery, a departure, a new body, a storm). The first phase is the start of the investigation.
 - Character names are in-world names that fit the setting. Use the player's wish if they gave one.
 - Ids: players are p1, p2, ... exactly as given. GM characters n1, n2, ...; locations l1, ...; clues c1, ...; key deductions k1, ...; hidden facts h1, h2, ... (unique across all players).
+- Never use em dashes; use commas, colons or full stops.
+- Ids (p1, n1, c3, l2, k1, h1) belong only in id and *_ids fields. Never write an id inside any prose field, including twists, hints and truth; name the thing instead.
 - Keep every text field tight: public_info 1 to 2 sentences, private_info up to 5 sentences, clue shows 1 to 2 sentences, opening_scene 80 to 150 words.`;
 
 export function generationPrompt(game, twists = pickTwists(game.players.length)) {
@@ -189,6 +191,8 @@ How to answer a player:
 - public_event: empty string unless something happens that everyone in the room would notice.
 - messages_to_players: private notes to other players caused by this action (they were followed, an NPC tells them someone was asking about them). Use player ids. Usually empty.
 - Out-of-world questions (rules, "who is the killer") get a short in-character deflection.
+- Never use em dashes in anything you write; use commas, colons or full stops.
+- Never write an id (p1, n2, c3...) in prose; use names. Ids go only in the id fields of your answer.
 
 SCENARIO (secret, never quote it wholesale):
 ${JSON.stringify(scenario)}`;
@@ -208,7 +212,7 @@ export function phasePrompt({ snapshot, nextPhase }) {
 Game state:
 ${JSON.stringify(snapshot)}
 
-Move the world on. Write the public_event announced on the table (40 to 100 words): use the planned beat, adapted to what players actually did. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Leave arrays empty if nothing applies.`;
+Move the world on. Write the public_event announced on the table (40 to 100 words): use the planned beat, adapted to what players actually did. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Leave arrays empty if nothing applies.`;
 }
 
 export function scorePrompt({ snapshot, submissions, verdict }) {

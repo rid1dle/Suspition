@@ -120,6 +120,21 @@ card, a goal that changes mid-game, one false hint on the ladder (always exposed
 
 Visual style, exact prompt wording, timer defaults, retry and concurrency limits.
 
+## Measured on the real GM
+
+| Call | Time | Notes |
+| --- | --- | --- |
+| Write the world (3 to 4 players, effort medium) | about 3 to 4.5 min | Valid on the first attempt in every run. Effort high took 5.6 min. |
+| Answer a question | 12 to 18 s | The default model was faster than Sonnet (12 s vs 18 s) on the same question. |
+| Change phase | 27 to 37 s | Waits for answers already in flight first. |
+| Score and reveal | about 33 s | |
+
+- The GM runs from a folder outside the repo (the OS temp dir). Run from inside, it picks up
+  the project and user CLAUDE.md files and plays with developer instructions in its context.
+- Twists are drawn at random in code, not chosen by the model: left to itself it picked the
+  same three twists in two different worlds.
+- The join link prefers the Wi-Fi card over VPN and container interfaces.
+
 ## Calls I made (not discussed)
 
 - Setup uses a fixed form, not a GM-led conversation.

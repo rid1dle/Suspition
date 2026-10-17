@@ -30,9 +30,9 @@ function hostNote() {
 }
 
 function header(title, sub = '') {
-  return `<div class="row between" style="margin-bottom:16px">
-    <div><h1>${esc(title)}</h1>${sub ? `<div class="muted">${esc(sub)}</div>` : ''}</div>
-    ${isHost() ? '<button id="new-game" class="danger">New game</button>' : ''}
+  return `<div class="row between" style="margin-bottom:16px;flex-wrap:nowrap;align-items:flex-start">
+    <div style="flex:1;min-width:0"><h1>${esc(title)}</h1>${sub ? `<div class="muted">${esc(sub)}</div>` : ''}</div>
+    ${isHost() ? '<button id="new-game" class="danger" style="flex:none">New game</button>' : ''}
   </div>`;
 }
 
@@ -94,7 +94,7 @@ const skeletons = {
     <div class="grid" style="grid-template-columns:minmax(320px,1.5fr) minmax(260px,1fr)">
       <div class="stack">
         <div class="row" style="align-items:stretch">
-          <div class="panel" style="flex:1"><div class="label">Global hints</div><div class="pips" id="pips"></div><div class="small muted">Propose one from any phone. Majority decides.</div></div>
+          <div class="panel" style="flex:1"><div class="label">Global hints</div><div id="pips"></div><div class="small muted">Propose one from any phone. Majority decides.</div></div>
           <div class="panel" style="flex:1.3"><div class="label">Suspicion</div><div class="meter"><div id="meter"></div></div><div class="small" id="susp" style="margin-top:6px"></div></div>
         </div>
         <div id="vote"></div>
@@ -216,7 +216,7 @@ function update() {
     $('submitted').innerHTML = v.players.map((p) => `<div>${v.submitted.includes(p.id) ? '&#10003;' : '&#8230;'} ${esc(p.name)}</div>`).join('');
   }
   if ($('phase-name') && v.phase) $('phase-name').textContent = `Phase ${v.phase.index + 1} of ${v.phase.count}: ${v.phase.name}`;
-  if ($('pips')) $('pips').innerHTML = `${'&#9679;'.repeat(v.hintsLeft)}${'&#9675;'.repeat(Math.max(0, v.hintsTotal - v.hintsLeft))} <span class="small muted">${v.hintsLeft} of ${v.hintsTotal} left</span>`;
+  if ($('pips')) $('pips').innerHTML = `<span class="pips">${'&#9679;'.repeat(v.hintsLeft)}${'&#9675;'.repeat(Math.max(0, v.hintsTotal - v.hintsLeft))}</span> <span class="small muted">${v.hintsLeft} of ${v.hintsTotal} left</span>`;
   if ($('meter')) {
     $('meter').style.width = `${v.suspicion}%`;
     $('susp').textContent = suspicionLabel(v.suspicion);
