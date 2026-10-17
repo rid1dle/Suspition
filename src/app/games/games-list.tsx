@@ -36,6 +36,43 @@ function summaryLine(g: GameSummary) {
   return parts.join(' · ');
 }
 
+interface Detail {
+  setting: string;
+  story: string | null;
+  players: { name: string; username: string; character: string; side: string; total: string; coaching: string }[];
+  playtest: { judge?: { story?: string; breaches?: unknown[]; fixes?: string[] }; metrics?: Record<string, unknown> } | null;
+}
+
+function GameDetail({ id }: { id: string }) {
+  const [d, setD] = useState<Detail | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => { hostApi<Detail>(`game?id=${encodeURIComponent(id)}`).then(setD).catch((e) => setError(e.message)); }, [id]);
+  if (error) return <p className="text-sm text-destructive">{error}</p>;
+  if (!d) return <p className="text-sm text-muted-foreground">Opening…</p>;
+  return (
+    <div className="mt-3 flex flex-col gap-3 rounded-lg bg-card p-4 text-sm text-foreground">
+      {d.setting && <p className="text-muted-foreground">{d.setting}</p>}
+      <div className="flex flex-col gap-1">
+        {d.players.map((p) => (
+          <div key={p.name} className="flex flex-wrap gap-x-2">
+            <b>{p.name}</b>{p.character && <span className="text-muted-foreground">as {p.character}{p.side ? ` · ${p.side}` : ''}</span>}{p.total && <span>· {p.total}</span>}
+            {p.coaching && <span className="w-full text-xs text-muted-foreground">Tip: {p.coaching}</span>}
+          </div>
+        ))}
+      </div>
+      {d.story ? <p className="leading-relaxed whitespace-pre-wrap">{d.story}</p> : <p className="text-muted-foreground">This game is not finished, so its story stays hidden.</p>}
+      {d.playtest && (
+        <div className="flex flex-col gap-1 border-t border-border pt-3">
+          <b>Playtest report</b>
+          {d.playtest.judge?.story && <p>{d.playtest.judge.story}</p>}
+          <p className="text-muted-foreground">Breaches: {d.playtest.judge?.breaches?.length ?? 0}</p>
+          {!!d.playtest.judge?.fixes?.length && <ol className="list-decimal pl-5">{d.playtest.judge.fixes.slice(0, 5).map((f, i) => <li key={i}>{f}</li>)}</ol>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NoteField({ game, onSave }: { game: GameSummary; onSave: (note: string) => void }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(game.note);
@@ -63,6 +100,7 @@ export function GamesList() {
   const [games, setGames] = useState<GameSummary[] | null>(null);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<Learning | 'all'>('all');
+  const [openId, setOpenId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [pending, setPending] = useState<{ game: unknown; ask: { username: string; name: string }[]; answers: Record<string, 'same' | 'different'> } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -186,9 +224,12 @@ export function GamesList() {
         {shown.map((g) => (
           <li key={g.id} className={cn('flex flex-wrap items-start justify-between gap-3 py-4', g.learning !== 'real' && 'text-muted-foreground')}>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <span className={cn('font-medium', g.learning === 'real' && 'text-foreground')}>{g.title || (g.status === 'failed' ? 'A game that never started' : 'Untitled game')}</span>
+              <button onClick={() => setOpenId(openId === g.id ? null : g.id)} className={cn('self-start text-left font-medium hover:underline', g.learning === 'real' && 'text-foreground')} aria-expanded={openId === g.id}>
+                {g.title || (g.status === 'failed' ? 'A game that never started' : 'Untitled game')}
+              </button>
               <span className="text-xs">{summaryLine(g)}</span>
               <NoteField game={g} onSave={(note) => update(g, { note })} />
+              {openId === g.id && <GameDetail id={g.id} />}
             </div>
             {g.learning === 'playtest' ? (
               <Badge variant="secondary">Playtest</Badge>

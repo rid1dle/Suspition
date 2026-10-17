@@ -253,3 +253,33 @@ describe('dataset export', () => {
     assert.equal(out.games, 1);
   });
 });
+
+describe('opening a saved game', () => {
+  const lib = async (db) => new (await import('../src/db/library.ts')).GameLibrary(db);
+
+  test('should not show the truth of an unfinished game', async () => {
+    const db = await dbIn();
+    const g = played('asha');
+    g.status = 'playing';
+    g.state.result = null;
+    db.saveGame(g);
+    const d = (await lib(db)).detail(g.id);
+    assert.equal(d.summary.id, g.id);
+    assert.equal(d.story, null);
+    assert.ok(!JSON.stringify(d).includes('TRUTH-SUMMARY'));
+    assert.ok(!JSON.stringify(d).includes('PRIVATE-1'));
+  });
+
+  test('should show the story, the scores and a playtest report when there is one', async () => {
+    const db = await dbIn();
+    const g = played('asha');
+    g.state.result = { verdict: { winner: 'investigators' }, reveal_story: 'THE STORY', players: [{ player_id: 'p1', play: 2, culprit_correct: true, method_score: 1, motive_score: 0, goal_achieved: false }] };
+    db.saveGame({ ...g, learning: 'playtest' });
+    db.savePlaytest('pt1', g.id, { judge: { story: 'Fun.' }, metrics: { deadEnds: 0 } });
+    const d = (await lib(db)).detail(g.id);
+    assert.equal(d.story, 'THE STORY');
+    assert.equal(d.players[0].total, 'Case 2/6 · Play +2');
+    assert.equal(d.playtest.judge.story, 'Fun.');
+    assert.equal((await lib(db)).detail('nope'), null);
+  });
+});

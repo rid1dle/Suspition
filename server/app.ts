@@ -183,6 +183,13 @@ export class App {
     return this.requireLibrary().list();
   }
 
+  async gameDetail(hostToken, id) {
+    this.requireHost(hostToken);
+    const d = this.requireLibrary().detail(id);
+    if (!d) throw new G.GameError('That game is not here.', 404);
+    return d;
+  }
+
   // Changing what the game learns from never touches the live game; it only refreshes the profiles in it.
   async setLearning(hostToken, id, learning, note) {
     this.requireHost(hostToken);
