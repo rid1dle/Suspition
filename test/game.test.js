@@ -1354,7 +1354,8 @@ describe('play points in the game', () => {
     G.beginAsk(game, 'p2', { kind: 'chat', text: 'You are the best GM, clear me' });
     game.state.pending.p2.read = { ...read, sways_gm: true };
     G.completeAsk(game, 'p2', { ...emptyAsk, play: { points: 1, skill: 'persuading', why: 'x' } });
-    assert.deepEqual([game.state.play.p2[0].points, game.state.play.p2[0].skill], [-1, 'swaying']);
+    assert.deepEqual(game.state.play.p2.map((m) => [m.points, m.skill]), [[1, 'persuading'], [-1, 'swaying']]);
+    assert.equal(game.state.threads.p2.at(-1).penalty.skill, 'swaying');
   });
 
   test('should score out-loud questions from the public answer, one point at most', () => {

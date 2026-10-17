@@ -28,6 +28,14 @@ export function scoreMove(play, read, { from = 'private' } = {}) {
   return { ...base, points, skill };
 }
 
+// A move that also tried to steer the GM keeps the credit for what it did in the story, plus a separate demerit.
+export function scoreMoves(play, read, opts = {}) {
+  if (!read?.sways_gm) return [scoreMove(play, read, opts)];
+  const real = scoreMove(play, { ...read, sways_gm: false }, opts);
+  const penalty = { ...scoreMove(play, read, opts), why: 'Talking to the game master instead of the story costs a point.' };
+  return real.points > 0 ? [real, penalty] : [penalty];
+}
+
 export const playTotal = (moves) => clamp(current(moves).reduce((sum, m) => sum + m.points, 0), PLAY_MIN, PLAY_MAX);
 
 export function skillSplit(moves) {

@@ -577,7 +577,7 @@ function update() {
     const items = v.pending ? [...v.thread, { from: 'you', text: v.pending.text }, { from: 'gm', text: 'Thinking...' }] : v.thread;
     $('thread').innerHTML = items.map((m) => {
       const tag = m.from === 'you' && TAGS[m.kind] ? `<span class="tag">${esc(TAGS[m.kind])}</span>` : '';
-      const scored = m.from === 'gm' && m.play ? `<div class="play-line small">${esc(playLine(m.play))}</div>` : '';
+      const scored = m.from === 'gm' ? [m.play, m.penalty].filter(Boolean).map((x) => `<div class="play-line small">${esc(playLine(x))}</div>`).join('') : '';
       return `<div class="msg ${esc(m.from)}"><div class="label">${label[m.from]}${tag}</div>${m.lines ? novelHtml(m.lines) : esc(m.text)}${scored}</div>`;
     }).join('') || '<p class="small muted">Nothing yet. Try: "I ask the cook where he was at nine."</p>';
     if (tab === 'ask') scrollChat();

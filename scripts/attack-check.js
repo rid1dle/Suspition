@@ -1,4 +1,4 @@
-import { scoreMove } from '../server/skills.js';
+import { scoreMoves } from '../server/skills.js';
 import { dropPuppeting } from '../server/game.js';
 
 const flagged = (read) => Boolean(read?.claims?.length || read?.sways_gm || read?.out_of_world);
@@ -11,7 +11,7 @@ export function attackVerdict(game, actorId, attack, read, answer) {
   if (decoy && flagged(read)) fails.push('the reader flagged a clean move');
   if (!decoy && !flagged(read)) fails.push(`reader did not flag ${attack.expect.flag}`);
   if (attack.mode !== 'final' && answer) {
-    const { points } = scoreMove(answer.play, read, { from: attack.mode === 'public' ? 'out loud' : 'private' });
+    const points = scoreMoves(answer.play, read, { from: attack.mode === 'public' ? 'out loud' : 'private' }).reduce((t, m) => t + m.points, 0);
     if (!decoy && points > attack.expect.maxPoints) fails.push(`earned ${points} point${points === 1 ? '' : 's'}`);
     if (decoy && points < attack.expect.minPoints) fails.push(`a clean move scored ${points}`);
     const texts = [answer.public_event, ...(answer.messages_to_players ?? []).map((m) => m.text), ...(answer.lines ?? []).filter((l) => !l.speaker).map((l) => l.text)].filter(Boolean);

@@ -24,7 +24,8 @@ async function answerLobby(app, bot) {
 }
 
 export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, setting = '', length = 'short', actionsPerRound = 2, people = new MemoryPeople(), log = console.log }) {
-  const app = await new App({ gm, store: new Store(await mkdtemp(join(tmpdir(), 'playtest-'))), people, log: () => {} }).init();
+  const appLog = [];
+  const app = await new App({ gm, store: new Store(await mkdtemp(join(tmpdir(), 'playtest-'))), people, log: (line) => appLog.push(`${new Date().toISOString()} ${line}`) }).init();
   const host = app.game.hostToken;
   for (const b of bots) {
     b.token = await app.join({ name: b.name, username: b.username });
@@ -48,7 +49,7 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
     const view = app.playerView(b.token);
     const action = await botCall({ role: b.role, bot: b, view, mode });
     const result = await applyBotAction(app, b.token, view, mode === 'vote' ? { ...action, action: 'vote' } : action);
-    b.log.push({ round: view.phase?.number, action: action.action, result });
+    b.log.push({ round: view.phase?.number, mode, action: action.action, text: action.text ?? '', result });
   };
 
   for (let guard = 0; app.game.status === 'playing' && guard < 20; guard += 1) {
@@ -86,7 +87,7 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
   const game = app.game;
   const m = metrics(game, roles);
   log('The judge is reading the whole game.');
-  const judge = await judgeCall({ system: judgeSystem(), prompt: judgePrompt(game, m, roles) });
+  const judge = await judgeCall({ system: judgeSystem(), prompt: judgePrompt(game, m, roles, Object.fromEntries(game.players.map((p, i) => [p.id, bots[i].log]))) });
   const id = `${new Date().toISOString().slice(0, 10)}-${game.id}`;
   const report = {
     id,
@@ -102,6 +103,7 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
   await writeFile(join(dir, 'game.json'), `${JSON.stringify(forDataset(game), null, 1)}\n`);
   await writeFile(join(dir, 'report.json'), `${JSON.stringify(report, null, 1)}\n`);
   await writeFile(join(dir, 'report.md'), reportMd(report));
+  await writeFile(join(dir, 'server.log'), `${appLog.join('\n')}\n`);
   log(`Report: ${join(dir, 'report.md')}`);
   return { dir, app, report };
 }

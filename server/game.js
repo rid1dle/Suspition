@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { formForGM, quoteRaw } from './reader.js';
-import { scoreMove, playTotal, skillSplit, PLAY_MAX } from './skills.js';
+import { scoreMoves, playTotal, skillSplit, PLAY_MAX } from './skills.js';
 import { LENGTHS } from './prompts.js';
 import { GENERATION_STEPS } from './progress.js';
 import { sanitizeMusic } from '../public/music-theory.js';
@@ -479,9 +479,10 @@ function destroy(game, clueIds) {
 const PUPPET_VERBS = new Set(['said', 'says', 'argued', 'argues', 'agreed', 'agrees', 'asked', 'asks', 'told', 'tells', 'nodded', 'nods', 'nod', 'admitted', 'admits', 'pushed', 'pushes', 'believes', 'believed', 'backed', 'backs', 'accused', 'accuses', 'thinks', 'thought', 'swore', 'insisted', 'insists', 'claimed', 'claims', 'suggested', 'suggests', 'supported', 'supports', 'smiles', 'smiled', 'shrugs', 'shrugged', 'laughs', 'laughed', 'frowns', 'frowned', 'agree', 'trusts', 'trusted']);
 
 function recordPlay(game, playerId, play, read, from) {
-  const scored = { ...scoreMove(play, read, { from }), round: game.state.roundNumber ?? game.state.phaseIndex + 1 };
+  const round = game.state.roundNumber ?? game.state.phaseIndex + 1;
+  const scored = scoreMoves(play, read, { from }).map((m) => ({ ...m, round }));
   game.state.play ??= {};
-  (game.state.play[playerId] ??= []).push(scored);
+  (game.state.play[playerId] ??= []).push(...scored);
   return scored;
 }
 
@@ -544,8 +545,9 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const text = lines.length ? lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n') : String(result.answer ?? '').trim();
   const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
   readPlayer(game, playerId, result.player_read, 'private', now);
-  const scored = recordPlay(game, playerId, result.play, ask.read, 'private');
-  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: { points: scored.points, skill: scored.skill, why: scored.why }, at: now });
+  const [scored, penalty] = recordPlay(game, playerId, result.play, ask.read, 'private');
+  const shown = (m) => ({ points: m.points, skill: m.skill, why: m.why });
+  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: shown(scored), ...(penalty ? { penalty: shown(penalty) } : {}), at: now });
 
   const clueIds = new Set(game.scenario.clues.map((c) => c.id));
   for (const id of result.clues_found ?? []) {

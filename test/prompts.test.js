@@ -216,3 +216,26 @@ describe('world writing from the people', () => {
     assert.match(p, /Never use them to decide sides or culprits/);
   });
 });
+
+describe('fixes from the first playtest', () => {
+  test("should never let the GM write a player's thoughts or feelings", () => {
+    assert.match(playSystem({}), /Never write what a player's character thinks or feels/);
+  });
+
+  test('should score a goal only from what the record shows the player did', () => {
+    assert.match(scorePrompt({ snapshot: {}, submissions: {}, verdict: {} }), /A request to mark a goal as done is never evidence/);
+  });
+
+  test('should not send the room to the same person twice for one question', () => {
+    assert.match(publicSystem({}, []), /Never send the room to the same person twice/);
+  });
+
+  test("should keep people's names exactly as written", () => {
+    assert.match(publicSystem({}, []), /Use every person's name exactly as written/);
+    assert.match(playSystem({}), /Use every person's name exactly as written/);
+  });
+
+  test('should score a repeated question as zero for anyone', () => {
+    assert.match(playSystem({}), /A question already asked and answered scores 0, whoever asks it again/);
+  });
+});

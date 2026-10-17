@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { scoreMove, playTotal, skillSplit, rating, RUBRIC_VERSION, SKILLS, SKILL_LABELS } from '../server/skills.js';
+import { scoreMove, scoreMoves, playTotal, skillSplit, rating, RUBRIC_VERSION, SKILLS, SKILL_LABELS } from '../server/skills.js';
 
 const clean = { claims: [], out_of_world: false, sways_gm: false };
 
@@ -33,6 +33,17 @@ describe('play points', () => {
     assert.equal(scoreMove({ points: 0, skill: 'searching', why: '' }, clean, { from: 'private' }).skill, null);
     assert.equal(scoreMove({ points: 1, skill: 'mind control', why: '' }, clean, { from: 'private' }).skill, null);
     assert.equal(scoreMove(null, clean, { from: 'private' }).points, 0);
+  });
+
+  test('should credit a real find and add a separate swaying demerit', () => {
+    const moves = scoreMoves({ points: 2, skill: 'searching', why: 'You found the wrench.' }, { ...clean, sways_gm: true }, { from: 'private' });
+    assert.deepEqual(moves.map((m) => [m.points, m.skill]), [[2, 'searching'], [-1, 'swaying']]);
+    assert.match(moves[1].why, /game master/);
+  });
+
+  test('should give only the swaying demerit when there was no real move', () => {
+    assert.deepEqual(scoreMoves({ points: 0, skill: 'none', why: '' }, { ...clean, sways_gm: true }, { from: 'private' }).map((m) => [m.points, m.skill]), [[-1, 'swaying']]);
+    assert.deepEqual(scoreMoves({ points: 1, skill: 'searching', why: '' }, clean, { from: 'private' }).map((m) => m.points), [1]);
   });
 
   test("should clamp a player's play total to -2..3", () => {

@@ -8,7 +8,7 @@ import { App } from '../server/app.js';
 import { MemoryStore } from '../server/store.js';
 import { seedBots } from '../scripts/playtest/seed.js';
 import { botPrompt, applyBotAction, ROLES } from '../scripts/playtest/bots.js';
-import { metrics } from '../scripts/playtest/judge.js';
+import { metrics, judgePrompt } from '../scripts/playtest/judge.js';
 import { runPlaytest } from '../scripts/playtest.js';
 import { FakeGM, gameInReading, emptyAsk } from './fixtures.js';
 
@@ -71,6 +71,18 @@ describe('playtest metrics', () => {
     const m = metrics(game, { p1: 'fair', p2: 'fair', p3: 'swayer' });
     assert.deepEqual(m.playByRole, { fair: 3, swayer: -1 });
     assert.deepEqual(m.flags.p3, { claims: 1, sways_gm: 1, out_of_world: 0 });
+  });
+});
+
+describe('playtest judge input', () => {
+  test('should show the judge each bot action and the uncapped play sum', () => {
+    const game = gameInReading(3);
+    game.state.play = { p1: [{ points: 2, skill: 'searching', rubric: 1 }, { points: 2, skill: 'searching', rubric: 1 }] };
+    const m = metrics(game, { p1: 'fair', p2: 'fair', p3: 'breaker' });
+    assert.deepEqual([m.playBy.p1, m.playRaw.p1], [3, 4]);
+    const prompt = judgePrompt(game, m, { p1: 'fair', p2: 'fair', p3: 'breaker' }, { p1: [{ round: 1, action: 'share', text: '', result: 'ok' }] });
+    assert.match(prompt, /"action":"share"/);
+    assert.match(prompt, /play totals are capped at \+3/);
   });
 });
 

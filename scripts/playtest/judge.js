@@ -39,6 +39,7 @@ export function metrics(game, roles) {
     outLoud: per((id) => qa.filter((e) => byName[e.by] === id).length),
     movesBy: per((id) => (st.threads[id] ?? []).filter((m) => m.from === 'you').length),
     playBy,
+    playRaw: per((id) => (st.play?.[id] ?? []).reduce((t, x) => t + x.points, 0)),
     playByRole,
     puppetDrops: st.puppetDrops ?? 0,
     flags: per((id) => {
@@ -64,7 +65,7 @@ Find:
 Plain, simple English.`;
 }
 
-export function judgePrompt(game, m, roles) {
+export function judgePrompt(game, m, roles, actions = {}) {
   const sc = game.scenario;
   const st = game.state;
   const players = game.players.map((p) => {
@@ -94,7 +95,10 @@ ${JSON.stringify(players)}
 PUBLIC EVENTS ON THE TABLE:
 ${JSON.stringify(st.events.filter((e) => e.kind !== 'opening').map((e) => (e.kind === 'qa' ? { asked_by: e.by, player_data: e.q, answer: e.text } : { kind: e.kind, text: e.text })))}
 
-NUMBERS COUNTED BY CODE:
+WHAT EACH BOT CHOSE TO DO (share means the player chose to show a clue to everyone, which posts "X shows a clue" on the table):
+${JSON.stringify(actions)}
+
+NUMBERS COUNTED BY CODE (play totals are capped at +3 and floored at -2 by design; playRaw is the uncapped sum):
 ${JSON.stringify(m)}`;
 }
 
