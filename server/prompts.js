@@ -41,6 +41,7 @@ export const SCENARIO_SCHEMA = obj({
       side_explanation: str,
       hidden_facts: { type: 'array', items: obj({ id: str, fact: str }) },
       starting_knowledge: str,
+      start_location: str,
     }),
   },
   npcs: {
@@ -55,9 +56,20 @@ export const SCENARIO_SCHEMA = obj({
       lies: str,
       reveals_freely: str,
       reveals_under_pressure: str,
+      start_location: str,
     }),
   },
-  locations: { type: 'array', items: obj({ id: str, name: str, public_info: str }) },
+  locations: {
+    type: 'array',
+    items: obj({
+      id: str,
+      name: str,
+      public_info: str,
+      x: { type: 'integer', minimum: 0, maximum: 100 },
+      y: { type: 'integer', minimum: 0, maximum: 100 },
+      neighbors: strArr,
+    }),
+  },
   clues: {
     type: 'array',
     items: obj({
@@ -93,10 +105,15 @@ export const ASK_SCHEMA = obj({
   hidden_fact_revealed: str,
   clues_destroyed: strArr,
   messages_to_players: messages,
+  player_location: str,
+  move_is_public: { type: 'boolean' },
 });
+
+const positions = { type: 'array', items: obj({ character_id: str, location_id: str }) };
 
 export const PHASE_SCHEMA = obj({
   public_event: str,
+  positions,
   messages_to_players: messages,
   clues_destroyed: strArr,
   suspicion_change: { type: 'integer', minimum: -20, maximum: 20 },
@@ -145,6 +162,15 @@ export function pickTwists(playerCount, random = Math.random) {
   return picked;
 }
 
+export const PLAIN_STYLE = `Writing style (the most important rule):
+- Plain, simple English. Write like you are talking to a 12-year-old.
+- Short sentences, under 12 words each. One idea per sentence.
+- Common words only. No fancy, poetic or old-fashioned words.
+- Say less. Players read on phones and talk out loud. The talk is the fun, not the text.
+- Players call the phases "rounds". In any text they see, say "round", never "phase".
+- Never use em dashes; use commas or full stops.
+- Ids (p1, n1, c3, l2, k1, h1) go only in id and *_ids fields. Never write an id in text; use the name.`;
+
 export const GENERATION_SYSTEM = `You design one-session hidden-role mystery games for friends playing in the same room.
 Each player is a character inside the mystery. Some are investigators with their own secrets, one or more are the culprits, and there may be a wildcard whose goal fits neither side.
 
@@ -163,10 +189,11 @@ Design rules:
 - Phase plan: one entry per phase, with a short evocative name and a planned beat (an event that changes the situation: a discovery, a departure, a new body, a storm). The first phase is the start of the investigation.
 - Character names are in-world names that fit the setting. Use the player's wish if they gave one.
 - Ids: players are p1, p2, ... exactly as given. GM characters n1, n2, ...; locations l1, ...; clues c1, ...; key deductions k1, ...; hidden facts h1, h2, ... (unique across all players).
+- Map: give every location x and y from 0 to 100, laid out like a simple floor plan (places next to each other are close). neighbors lists the ids of places you can walk to directly. Every player and GM character gets a start_location: the id of the place they are when the game starts. Spread people out, one to three per place.
 - music: the game's soundtrack, played live in the room. Pick a root, mode, tempo, instrument palette and percussion that fit this setting and tone (a cozy village fair is not a dark ship), and a motif of 5 to 8 scale degrees (0 is the root, 7 the octave) that is easy to recognise. description is one line a host could read aloud ("slow music box over a heartbeat").
-- Never use em dashes; use commas, colons or full stops.
-- Ids (p1, n1, c3, l2, k1, h1) belong only in id and *_ids fields. Never write an id inside any prose field, including twists, hints and truth; name the thing instead.
-- Keep every text field tight: public_info 1 to 2 sentences, private_info up to 5 sentences, clue shows 1 to 2 sentences, opening_scene 80 to 150 words.`;
+- Length limits (hard): title up to 6 words. setting_summary 1 or 2 short sentences. opening_scene 40 to 70 words. public_info 1 sentence. private_info 3 to 5 short sentences. goal 1 sentence. side_explanation 1 sentence. hidden fact 1 sentence. clue shows 1 sentence. planned_beat 1 or 2 sentences. Each hint 1 sentence. Each twist description 1 sentence. Location public_info 1 short sentence.
+
+${PLAIN_STYLE}`;
 
 export function generationPrompt(game, twists = pickTwists(game.players.length)) {
   const { setup, players } = game;
@@ -193,7 +220,7 @@ export function playSystem(scenario) {
 The scenario below is the canonical truth. It never changes. Every answer you give must be consistent with it and with everything you have already told anyone (the record is in each request).
 
 How to answer a player:
-- Speak to them by their character name, in second person, 40 to 120 words. GM characters talk in their own voice and follow their sheet: they reveal what is in reveals_freely, reveal reveals_under_pressure only when pushed with evidence or leverage, and tell their lies unless confronted with contradicting evidence.
+- Speak to them by their character name, in second person, 20 to 60 words. GM characters talk in their own voice and follow their sheet: they reveal what is in reveals_freely, reveal reveals_under_pressure only when pushed with evidence or leverage, and tell their lies unless confronted with contradicting evidence.
 - Never state the truth outright. Give evidence, testimony and observations; let players reason.
 - When a sensible search or question would find a clue, describe what the player finds concretely and list its id in clues_found. Searching the right place should find obvious evidence without luck. A destroyed clue cannot be found.
 - Never reveal another player's private card directly. Players can learn about each other only through in-world evidence and testimony.
@@ -203,8 +230,9 @@ How to answer a player:
 - public_event: empty string unless something happens that everyone in the room would notice.
 - messages_to_players: private notes to other players caused by this action (they were followed, an NPC tells them someone was asking about them). Use player ids. Usually empty.
 - Out-of-world questions (rules, "who is the killer") get a short in-character deflection.
-- Never use em dashes in anything you write; use commas, colons or full stops.
-- Never write an id (p1, n2, c3...) in prose; use names. Ids go only in the id fields of your answer.
+- player_location: if the request puts the player in a place (they search it, or go to talk to someone there), the id of that place. Empty string if they did not move. move_is_public: true if others would see them go there. For secret actions it is usually false.
+
+${PLAIN_STYLE}
 
 SCENARIO (secret, never quote it wholesale):
 ${JSON.stringify(scenario)}`;
@@ -224,7 +252,7 @@ export function phasePrompt({ snapshot, nextPhase }) {
 Game state:
 ${JSON.stringify(snapshot)}
 
-Move the world on. Write the public_event announced on the table (40 to 100 words): use the planned beat, adapted to what players actually did. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Leave arrays empty if nothing applies.`;
+Move the world on. Write the public_event announced on the table and read out loud (15 to 40 words): use the planned beat, adapted to what players actually did. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Use positions for people who visibly move now (GM characters wander off, people gather somewhere); list only changes, with location ids. Leave arrays empty if nothing applies.`;
 }
 
 export function scorePrompt({ snapshot, submissions, verdict }) {
@@ -236,6 +264,6 @@ Group verdict (decided by the rules, do not change it): ${JSON.stringify(verdict
 Game state:
 ${JSON.stringify(snapshot)}
 
-Score each player: method_score and motive_score from 0 (wrong or missing) to 2 (essentially right), judged only against the truth and evidence. goal_achieved and goal_outcome judge their personal goal from what they actually did in the game record (one sentence). comment is one friendly sentence on their play.
-Then write reveal_story (150 to 300 words): what really happened, in order, explaining the key lies and red herrings and naming who was who. It is read aloud to the room.`;
+Score each player: method_score and motive_score from 0 (wrong or missing) to 2 (essentially right), judged only against the truth and evidence. goal_achieved and goal_outcome judge their personal goal from what they actually did in the game record (one sentence). comment is one short, friendly sentence on their play.
+Then write reveal_story (80 to 160 words, short sentences): what really happened, in order, the key lies, and who was who. It is read aloud to the room.`;
 }

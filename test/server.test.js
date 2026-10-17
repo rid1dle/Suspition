@@ -86,6 +86,10 @@ describe('HTTP API', () => {
     assert.equal(table.data.status, 'reading');
     assert.ok(!JSON.stringify(table.data).includes('PRIVATE'));
 
+    assert.equal((await post('place', { host: 'bad', id: 'l1', room: 'sofa' })).status, 403);
+    assert.equal((await post('place', { host: app.game.hostToken, id: 'l1', room: 'sofa' })).status, 200);
+    assert.equal((await firstEvent(`?token=${tokens[2]}`)).data.map.places[0].room, 'sofa');
+
     await post('ready', { token: tokens[0] });
     assert.equal((await post('start', { host: app.game.hostToken })).status, 200);
     assert.equal((await post('ask', { token: tokens[0], kind: 'question', text: 'Search the ballroom' })).status, 200);

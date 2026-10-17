@@ -112,7 +112,7 @@ describe('asking the GM', () => {
       G.beginAsk(game, 'p2', { kind: 'question', text: `q${i}` });
       G.completeAsk(game, 'p2', emptyAsk);
     }
-    assert.throws(() => G.beginAsk(game, 'p2', { kind: 'question', text: 'q4' }), /No questions left/);
+    assert.throws(() => G.beginAsk(game, 'p2', { kind: 'question', text: 'q4' }), /No questions left this round/);
   });
 
   test('should refuse an unknown request type', () => {
@@ -175,13 +175,13 @@ describe('phases', () => {
     assert.equal(game.state.phaseIndex, 1);
     assert.equal(game.state.questionsLeft.p2, 3);
     assert.equal(game.state.phaseEndsAt, 2_000 + 10 * 60_000);
-    assert.deepEqual(game.state.events.slice(-2).map((e) => e.text), ['Phase 2 of 3: Phase name 2', 'Something changed.']);
+    assert.deepEqual(game.state.events.slice(-2).map((e) => e.text), ['Round 2 of 3: Phase name 2', 'Something changed.']);
   });
 
   test('should block questions while the phase is changing', () => {
     const game = playing();
     G.beginPhaseChange(game);
-    assert.throws(() => G.beginAsk(game, 'p2', { kind: 'question', text: 'q' }), /world is changing/);
+    assert.throws(() => G.beginAsk(game, 'p2', { kind: 'question', text: 'q' }), /Things are changing/);
   });
 
   test('should move to the final reconstruction after the last phase', () => {
@@ -255,7 +255,7 @@ describe('final reconstruction', () => {
   });
 
   test('should refuse a submission naming nobody', () => {
-    assert.throws(() => G.submitFinal(finalGame(), 'p2', { culprit_ids: [] }), /at least one culprit/);
+    assert.throws(() => G.submitFinal(finalGame(), 'p2', { culprit_ids: [] }), /at least one person/);
   });
 
   test('should give the win to investigators when a majority names exactly the culprits', () => {
@@ -378,5 +378,78 @@ describe('music in the public view', () => {
     const game = gameInReading(3);
     delete game.scenario.music;
     assert.equal(G.tableView(game).music.mode, 'harmonic_minor');
+  });
+});
+
+describe('the map', () => {
+  const playing = (n = 4) => {
+    const game = gameInReading(n);
+    G.startPlay(game, 1_000);
+    return game;
+  };
+
+  test('should place everyone at their start, falling back for an unknown place', () => {
+    const game = playing(3);
+    assert.deepEqual(game.state.positions, { p1: 'l1', p2: 'l2', p3: 'l1', n1: 'l2', n2: 'l1' });
+  });
+
+  test('should show places and positions to everyone, with unknown neighbours dropped', () => {
+    const map = G.tableView(playing()).map;
+    assert.deepEqual(map.places[1], { id: 'l2', name: 'Kitchen', x: 80, y: 70, room: '', neighbors: ['l1'] });
+    assert.equal(G.playerView(playing(), 'p2').map.positions.p1, 'l1');
+  });
+
+  test('should lay places out in a circle for a world written before maps existed', () => {
+    const game = playing();
+    for (const l of game.scenario.locations) delete l.x;
+    const places = G.tableView(game).map.places;
+    assert.ok(places.every((p) => p.x >= 6 && p.x <= 94 && p.y >= 8 && p.y <= 92));
+    assert.notDeepEqual([places[0].x, places[0].y], [places[1].x, places[1].y]);
+  });
+
+  test('should move a player who asks about a place', () => {
+    const game = playing();
+    G.beginAsk(game, 'p1', { kind: 'question', text: 'I search the kitchen' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, player_location: 'l2', move_is_public: false });
+    assert.equal(game.state.positions.p1, 'l2');
+  });
+
+  test('should keep a secret move off the map unless someone saw it', () => {
+    const game = playing();
+    G.beginAsk(game, 'p1', { kind: 'action', text: 'I sneak to the kitchen' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, player_location: 'l2', move_is_public: false });
+    assert.equal(game.state.positions.p1, 'l1');
+    G.beginAsk(game, 'p1', { kind: 'action', text: 'I storm into the kitchen' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, player_location: 'l2', move_is_public: true });
+    assert.equal(game.state.positions.p1, 'l2');
+  });
+
+  test('should apply moves from a phase change and ignore unknown people or places', () => {
+    const game = playing();
+    G.beginPhaseChange(game);
+    G.completePhase(game, { ...emptyPhase, positions: [{ character_id: 'n1', location_id: 'l1' }, { character_id: 'zz', location_id: 'l1' }, { character_id: 'p2', location_id: 'mars' }] });
+    assert.equal(game.state.positions.n1, 'l1');
+    assert.equal(game.state.positions.p2, 'l2');
+    assert.equal(game.state.positions.zz, undefined);
+  });
+
+  test('should let the host move a place and name its spot in the room, for every screen', () => {
+    const game = playing();
+    G.editPlace(game, { id: 'l1', x: 55, y: 140, room: '  The big sofa ' });
+    const place = G.playerView(game, 'p2').map.places[0];
+    assert.deepEqual([place.x, place.y, place.room], [55, 92, 'The big sofa']);
+    G.editPlace(game, { id: 'l1', room: 'Kitchen table' });
+    assert.deepEqual([G.tableView(game).map.places[0].x, G.tableView(game).map.places[0].room], [55, 'Kitchen table']);
+  });
+
+  test('should refuse map edits for unknown places, bad positions or no game', () => {
+    const game = playing();
+    assert.throws(() => G.editPlace(game, { id: 'l99', room: 'x' }), /Unknown place/);
+    assert.throws(() => G.editPlace(game, { id: 'l1', x: 'left', y: 3 }), /Bad position/);
+    assert.throws(() => G.editPlace(G.createGame(), { id: 'l1', room: 'x' }), /during a game/);
+  });
+
+  test('should tell the GM where everyone is', () => {
+    assert.equal(G.snapshotForGM(playing()).where_everyone_is.p2, 'l2');
   });
 });

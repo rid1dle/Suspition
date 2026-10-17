@@ -35,6 +35,20 @@ If macOS asks whether `node` may accept incoming connections, allow it, or phone
 6. **Reveal**: the majority verdict decides who wins; the table shows the story, every card and
    everyone's score.
 
+### On the table screen
+
+- **Who is where**: a map of every place and who is in it. Phones have it too (Map tab).
+  Press **Edit map** to drag places around and type where each place is in your real room
+  ("Lobby = big sofa"). Every phone shows those spots.
+- **Music**: press Music for a soundtrack made for this mystery. It gets tenser each round.
+- **Voice**: press Voice and the table reads the story, news, hints and the ending out loud.
+  Private phone text is never read out. The music goes quiet while it speaks.
+
+### Rewrite an old game in simple words
+
+Stop the server, run `npm run simplify`, then start it again. It keeps every fact, name and
+culprit, adds a map and music, and saves the old version next to it.
+
 ## Settings
 
 | Variable | Default | What it does |

@@ -132,6 +132,53 @@ export function validateScenario(s, { playerCount, phases, hints }) {
   return errors;
 }
 
+export function mapOf(scenario, edits = {}) {
+  const locs = scenario?.locations ?? [];
+  const ids = locs.map((l) => l.id);
+  const hasLayout = locs.length && locs.every((l) => Number.isFinite(l.x) && Number.isFinite(l.y));
+  return locs.map((l, i) => {
+    const angle = (2 * Math.PI * i) / locs.length - Math.PI / 2;
+    const e = edits[l.id] ?? {};
+    return {
+      id: l.id,
+      name: l.name,
+      x: Number.isFinite(e.x) ? e.x : hasLayout ? clamp(Math.round(l.x), 6, 94) : Math.round(50 + 38 * Math.cos(angle)),
+      y: Number.isFinite(e.y) ? e.y : hasLayout ? clamp(Math.round(l.y), 8, 92) : Math.round(50 + 38 * Math.sin(angle)),
+      room: e.room ?? '',
+      neighbors: (l.neighbors ?? []).filter((n) => ids.includes(n) && n !== l.id),
+    };
+  });
+}
+
+export function startPositions(scenario) {
+  const ids = (scenario.locations ?? []).map((l) => l.id);
+  const people = [...scenario.players, ...scenario.npcs];
+  return Object.fromEntries(people.map((c, i) => [c.id, ids.includes(c.start_location) ? c.start_location : ids[i % ids.length]]).filter(([, l]) => l));
+}
+
+function move(game, characterId, locationId) {
+  const valid = game.scenario.locations.some((l) => l.id === locationId)
+    && [...game.scenario.players, ...game.scenario.npcs].some((c) => c.id === characterId);
+  if (valid) game.state.positions[characterId] = locationId;
+}
+
+export function editPlace(game, input = {}) {
+  if (!game.scenario || !['reading', 'playing', 'final'].includes(game.status)) fail('The map can only be changed during a game.', 409);
+  if (!game.scenario.locations.some((l) => l.id === input.id)) fail('Unknown place.');
+  game.state.mapEdits ??= {};
+  const e = { ...(game.state.mapEdits[input.id] ?? {}) };
+  if (input.x !== undefined || input.y !== undefined) {
+    const x = Number(input.x);
+    const y = Number(input.y);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) fail('Bad position.');
+    e.x = clamp(Math.round(x), 6, 94);
+    e.y = clamp(Math.round(y), 8, 92);
+  }
+  if (input.room !== undefined) e.room = String(input.room ?? '').trim().slice(0, 40);
+  game.state.mapEdits[input.id] = e;
+  return e;
+}
+
 export function attachScenario(game, scenario, now = Date.now()) {
   const length = LENGTHS[game.setup.length];
   game.scenario = scenario;
@@ -154,6 +201,8 @@ export function attachScenario(game, scenario, now = Date.now()) {
     destroyed: [],
     revealed: Object.fromEntries(game.players.map((p) => [p.id, []])),
     ready: {},
+    positions: startPositions(scenario),
+    mapEdits: {},
     submissions: {},
     transitioning: false,
     result: null,
@@ -179,7 +228,7 @@ export function startPlay(game, now = Date.now()) {
   game.state.events.push({ at: now, phase: 0, kind: 'phase', text: phaseLine(game, 0) });
 }
 
-const phaseLine = (game, i) => `Phase ${i + 1} of ${game.scenario.phases.length}: ${game.scenario.phases[i].name}`;
+const phaseLine = (game, i) => `Round ${i + 1} of ${game.scenario.phases.length}: ${game.scenario.phases[i].name}`;
 
 export function extendPhase(game, now = Date.now()) {
   if (game.status !== 'playing') fail('No phase is running.', 409);
@@ -189,14 +238,14 @@ export function extendPhase(game, now = Date.now()) {
 export const ASK_KINDS = ['question', 'self', 'action'];
 
 export function beginAsk(game, playerId, { kind, text }) {
-  if (game.status !== 'playing') fail('You can only ask during a phase.', 409);
-  if (game.state.transitioning) fail('The world is changing. Try again in a moment.', 409);
+  if (game.status !== 'playing') fail('You can only ask during a round.', 409);
+  if (game.state.transitioning) fail('Things are changing. Try again in a moment.', 409);
   if (!ASK_KINDS.includes(kind)) fail('Unknown request type.');
   const clean = String(text ?? '').trim().slice(0, 500);
   if (!clean) fail('Write what you want to do.');
   const st = game.state;
-  if (st.pending[playerId]) fail('The GM is still answering your last request.', 409);
-  if (st.questionsLeft[playerId] < 1) fail('No questions left this phase.', 409);
+  if (st.pending[playerId]) fail('The GM is still answering your last question.', 409);
+  if (st.questionsLeft[playerId] < 1) fail('No questions left this round.', 409);
   st.questionsLeft[playerId] -= 1;
   st.pending[playerId] = { kind, text: clean };
   return { kind, text: clean };
@@ -250,6 +299,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     st.revealed[playerId].push(fact);
   }
   destroy(game, result.clues_destroyed);
+  if (result.player_location && (ask.kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
   addEvent(game, result.public_event, 'event', now);
   whisper(game, result.messages_to_players, now);
@@ -282,11 +332,12 @@ export function completePhase(game, result, now = Date.now()) {
     game.status = 'final';
     st.phaseEndsAt = null;
     st.hintVote = null;
-    addEvent(game, 'Time is up. Everyone: submit your final reconstruction on your phone.', 'phase', now);
+    addEvent(game, 'Time is up. Everyone, pick who did it on your phone.', 'phase', now);
     return;
   }
   const next = st.phaseIndex + 1;
   destroy(game, result.clues_destroyed);
+  for (const p of result.positions ?? []) move(game, p?.character_id, p?.location_id);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -20, 20), 0, 100);
   enterPhase(game, next, now);
   addEvent(game, phaseLine(game, next), 'phase', now);
@@ -295,7 +346,7 @@ export function completePhase(game, result, now = Date.now()) {
 }
 
 export function proposeHint(game, playerId, now = Date.now()) {
-  if (game.status !== 'playing') fail('Hints can only be spent during a phase.', 409);
+  if (game.status !== 'playing') fail('Hints only work during a round.', 409);
   const st = game.state;
   if (st.hintsLeft < 1) fail('No hints left.', 409);
   if (st.hintVote && st.hintVote.endsAt > now) fail('A hint vote is already running.', 409);
@@ -329,18 +380,18 @@ export function resolveHintVote(game, now = Date.now()) {
   }
   if (no > n - need || vote.endsAt <= now) {
     st.hintVote = null;
-    addEvent(game, 'The group decided to save its hint.', 'hint', now);
+    addEvent(game, 'The group kept its hint.', 'hint', now);
     return 'saved';
   }
   return 'open';
 }
 
 export function submitFinal(game, playerId, input = {}) {
-  if (game.status !== 'final') fail('Final answers open after the last phase.', 409);
-  if (game.state.scoring) fail('Too late: the GM is already weighing the answers.', 409);
+  if (game.status !== 'final') fail('You can pick after the last round.', 409);
+  if (game.state.scoring) fail('Too late. The GM is already checking the answers.', 409);
   const cast = castIds(game);
   const culprits = [...new Set(input.culprit_ids ?? [])].filter((id) => cast.includes(id));
-  if (!culprits.length) fail('Name at least one culprit.');
+  if (!culprits.length) fail('Pick at least one person.');
   game.state.submissions[playerId] = {
     culprit_ids: culprits,
     how: String(input.how ?? '').trim().slice(0, 600),
@@ -401,6 +452,7 @@ export function snapshotForGM(game) {
     phase: st.phaseIndex >= 0 ? { number: st.phaseIndex + 1, of: game.scenario.phases.length, name: game.scenario.phases[st.phaseIndex]?.name } : null,
     suspicion: st.suspicion,
     destroyed_clues: st.destroyed,
+    where_everyone_is: st.positions,
     clues_found_by_player: st.found,
     revealed_hidden_facts: st.revealed,
     public_events: st.events.filter((e) => e.kind !== 'opening').map((e) => e.text),
@@ -441,6 +493,7 @@ function publicCore(game, now) {
     setting: sc?.setting_summary ?? null,
     opening: sc?.opening_scene ?? null,
     cast: publicCast(game),
+    map: sc ? { places: mapOf(sc, st?.mapEdits), positions: st?.positions ?? startPositions(sc) } : null,
     phase: st && st.phaseIndex >= 0 ? { index: st.phaseIndex, count: sc.phases.length, name: sc.phases[st.phaseIndex].name, endsAt: st.phaseEndsAt } : null,
     hintsLeft: st?.hintsLeft ?? null,
     hintsTotal: game.setup?.hints ?? null,

@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node server/index.js",
     "fresh": "node server/index.js --new",
+    "simplify": "node scripts/simplify-game.js",
     "test": "node --test test/*.test.js"
   },
   "engines": {

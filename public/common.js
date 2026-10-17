@@ -1,5 +1,4 @@
-export const esc = (v) =>
-  String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+export { esc } from '/text.js';
 
 export async function api(path, body = {}) {
   const res = await fetch(`/api/${path}`, {
@@ -41,10 +40,10 @@ export function countdown(endsAt, now = Date.now()) {
 }
 
 export function suspicionLabel(n) {
-  if (n >= 75) return 'The culprit is cornered';
-  if (n >= 50) return 'The culprit feels watched';
-  if (n >= 25) return 'Uneasy';
-  return 'Calm';
+  if (n >= 75) return 'Very high';
+  if (n >= 50) return 'High';
+  if (n >= 25) return 'Rising';
+  return 'Low';
 }
 
 export function hashParam(name) {

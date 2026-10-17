@@ -42,6 +42,11 @@ export class Score {
     if (this.playing) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.2);
   }
 
+  duck(on) {
+    this.ducked = on;
+    if (this.playing) this.master.gain.setTargetAtTime(on ? this.volume * 0.3 : this.volume, this.ctx.currentTime, 0.25);
+  }
+
   setTheme(music, tone) {
     this.theme = sanitizeMusic(music, tone);
   }

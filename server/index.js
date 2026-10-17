@@ -71,6 +71,7 @@ export function createHandler(app, { joinUrl }) {
     'POST /api/finish': (b) => app.finish(b.host),
     'POST /api/ask': (b) => app.ask(b.token, b),
     'POST /api/hint': (b) => app.proposeHint(b.token),
+    'POST /api/place': (b) => app.editPlace(b.host, b),
     'POST /api/vote': (b) => app.voteHint(b.token, b.yes),
     'POST /api/submit': (b) => app.submit(b.token, b),
   };

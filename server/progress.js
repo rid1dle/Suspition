@@ -65,17 +65,17 @@ export class TopLevelTracker {
 }
 
 export const GENERATION_STEPS = [
-  { id: 'thinking', label: 'Inventing the crime', keys: [] },
+  { id: 'thinking', label: 'Thinking up the crime', keys: [] },
   { id: 'scene', label: 'Setting the scene', keys: ['title', 'setting_summary', 'opening_scene'] },
   { id: 'truth', label: 'What really happened', keys: ['truth'] },
-  { id: 'players', label: 'Your characters and their secrets', keys: ['players'], countsTo: 'players' },
+  { id: 'players', label: 'Your characters', keys: ['players'], countsTo: 'players' },
   { id: 'npcs', label: 'People the GM plays', keys: ['npcs'] },
   { id: 'locations', label: 'Places', keys: ['locations'] },
   { id: 'clues', label: 'Clues', keys: ['clues'] },
-  { id: 'deductions', label: 'How the clues fit together', keys: ['key_deductions'] },
-  { id: 'phases', label: 'How the night unfolds', keys: ['phases'] },
+  { id: 'deductions', label: 'How the clues connect', keys: ['key_deductions'] },
+  { id: 'phases', label: 'What happens each round', keys: ['phases'] },
   { id: 'hints', label: 'Hints and twists', keys: ['hint_ladder', 'twists'] },
-  { id: 'checking', label: 'Checking it all adds up', keys: [] },
+  { id: 'checking', label: 'Checking it', keys: [] },
 ];
 
 export function stepForKey(key) {

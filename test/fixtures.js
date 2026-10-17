@@ -12,6 +12,7 @@ export function makeScenario(playerCount = 4, { phases = 3, hints = 3 } = {}) {
     side_explanation: i === 0 ? 'You did it.' : 'You did not do it.',
     hidden_facts: [{ id: `h${i + 1}`, fact: `HIDDEN-${i + 1}` }],
     starting_knowledge: `KNOWS-${i + 1}`,
+    start_location: i % 2 ? 'l2' : 'l1',
   }));
   return {
     title: 'The Test Case',
@@ -20,10 +21,13 @@ export function makeScenario(playerCount = 4, { phases = 3, hints = 3 } = {}) {
     truth: { summary: 'TRUTH-SUMMARY', timeline: [{ time: '9pm', event: 'It happened' }], culprit_ids: ['p1'], method: 'METHOD', motive: 'MOTIVE', ambiguities: '' },
     players,
     npcs: [
-      { id: 'n1', name: 'The Butler', role_title: 'Butler', public_info: 'Serves drinks', knows: 'NPC-KNOWS', secrets: 'NPC-SECRET', lies: '', reveals_freely: '', reveals_under_pressure: '' },
-      { id: 'n2', name: 'The Widow', role_title: 'Widow', public_info: 'Grieving', knows: '', secrets: '', lies: '', reveals_freely: '', reveals_under_pressure: '' },
+      { id: 'n1', name: 'The Butler', role_title: 'Butler', public_info: 'Serves drinks', knows: 'NPC-KNOWS', secrets: 'NPC-SECRET', lies: '', reveals_freely: '', reveals_under_pressure: '', start_location: 'l2' },
+      { id: 'n2', name: 'The Widow', role_title: 'Widow', public_info: 'Grieving', knows: '', secrets: '', lies: '', reveals_freely: '', reveals_under_pressure: '', start_location: 'nowhere' },
     ],
-    locations: [{ id: 'l1', name: 'Ballroom', public_info: 'Big' }, { id: 'l2', name: 'Kitchen', public_info: 'Hot' }],
+    locations: [
+      { id: 'l1', name: 'Ballroom', public_info: 'Big', x: 20, y: 30, neighbors: ['l2'] },
+      { id: 'l2', name: 'Kitchen', public_info: 'Hot', x: 80, y: 70, neighbors: ['l1', 'l9'] },
+    ],
     clues: [
       { id: 'c1', name: 'Torn glove', where: 'l1', shows: 'CLUE-1-SHOWS', does_not_prove: '', importance: 'essential', can_be_destroyed: true },
       { id: 'c2', name: 'Ledger', where: 'l2', shows: 'CLUE-2-SHOWS', does_not_prove: '', importance: 'essential', can_be_destroyed: false },

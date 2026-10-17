@@ -24,9 +24,10 @@ export class App {
       this.game.progress = null;
     }
     if (this.game.state) {
+      this.game.state.positions ??= G.startPositions(this.game.scenario);
       for (const pid of Object.keys(this.game.state.pending ?? {})) {
         G.failAsk(this.game, pid);
-        this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. Your question was not used up; ask again.', at: this.clock() });
+        this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. You did not lose a question. Ask again.', at: this.clock() });
       }
       this.game.state.pending = {};
       this.game.state.transitioning = false;
@@ -52,7 +53,7 @@ export class App {
 
   failed(game, label, publicMessage, err) {
     this.log(`${label} failed: ${err.message}`);
-    game.error = `${publicMessage} Check the terminal for details.`;
+    game.error = `${publicMessage} The terminal says why.`;
   }
 
   background(label, fn) {
@@ -106,7 +107,7 @@ export class App {
         if (this.game !== game) return;
         game.status = 'failed';
         game.progress = null;
-        this.failed(game, 'generate', 'The GM could not write the world.', err);
+        this.failed(game, 'generate', 'The GM could not make the mystery.', err);
       } finally {
         if (this.game === game) await this.changed();
       }
@@ -172,13 +173,19 @@ export class App {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
         this.log(`ask ${p.id} failed: ${err.message}`);
-        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not answer that. Your question was not used up; try again.', at: this.clock() });
+        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not answer. You did not lose a question. Try again.', at: this.clock() });
       } finally {
         if (this.game === game) await this.changed();
       }
     });
     this.asks.set(p.id, task);
     task.finally(() => this.asks.get(p.id) === task && this.asks.delete(p.id));
+    await this.changed();
+  }
+
+  async editPlace(hostToken, input) {
+    this.requireHost(hostToken);
+    G.editPlace(this.game, input);
     await this.changed();
   }
 
@@ -214,7 +221,7 @@ export class App {
         if (this.game !== game) return;
         G.cancelPhaseChange(game);
         if (game.state.phaseEndsAt <= this.clock()) game.state.phaseEndsAt = this.clock() + RETRY_MS;
-        this.failed(game, 'phase', 'The GM could not move to the next phase. It will try again in a minute, or press Next phase.', err);
+        this.failed(game, 'phase', 'The GM got stuck moving on. It will try again in a minute, or press Next round.', err);
       } finally {
         if (this.game === game) await this.changed();
       }
@@ -249,7 +256,7 @@ export class App {
         game.error = null;
       } catch (err) {
         if (this.game !== game) return;
-        this.failed(game, 'score', 'The GM could not score the game. Press Reveal to try again.', err);
+        this.failed(game, 'score', 'The GM could not check the answers. Press Show the answer to try again.', err);
       } finally {
         game.state.scoring = false;
         if (this.game === game) await this.changed();

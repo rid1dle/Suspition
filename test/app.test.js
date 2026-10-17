@@ -49,7 +49,7 @@ describe('App', () => {
     assert.equal(progress.step, 'players');
     assert.deepEqual(progress.seen, ['thinking', 'scene', 'truth', 'players']);
     assert.deepEqual(progress.counts, { players: 2 });
-    assert.equal(progress.steps[0].label, 'Inventing the crime');
+    assert.equal(progress.steps[0].label, 'Thinking up the crime');
     assert.equal(ctx.app.playerView(ctx.tokens[0]).progress.step, 'players');
     release();
     await ctx.app.idle();
@@ -94,7 +94,7 @@ describe('App', () => {
     await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
     await ctx.app.idle();
     assert.equal(ctx.app.game.status, 'failed');
-    assert.match(ctx.app.game.error, /could not write the world/);
+    assert.match(ctx.app.game.error, /could not make the mystery/);
     ctx.gm.fail.generate = false;
     await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
     await ctx.app.idle();
@@ -157,7 +157,7 @@ describe('App', () => {
     await ctx.app.idle();
     assert.equal(ctx.app.game.state.phaseIndex, 0);
     assert.equal(ctx.app.game.state.transitioning, false);
-    assert.match(ctx.app.tableView().error, /could not move/);
+    assert.match(ctx.app.tableView().error, /stuck moving on/);
   });
 
   test('should advance the phase by itself when the timer runs out', async () => {
@@ -283,7 +283,7 @@ describe('App under failure', () => {
     await ctx.app.nextPhase(ctx.host);
     await ctx.app.idle();
     const body = JSON.stringify(ctx.app.tableView());
-    assert.match(ctx.app.tableView().error, /could not move to the next phase/);
+    assert.match(ctx.app.tableView().error, /stuck moving on/);
     assert.ok(!body.includes('PRIVATE WHISPER'));
   });
 
@@ -294,7 +294,7 @@ describe('App under failure', () => {
     ctx.gm.gate = new Promise(() => {});
     await ctx.app.submit(ctx.tokens[0], { culprit_ids: ['p1'] });
     await ctx.app.finish(ctx.host);
-    await assert.rejects(() => ctx.app.submit(ctx.tokens[1], { culprit_ids: ['p1'] }), /already weighing/);
+    await assert.rejects(() => ctx.app.submit(ctx.tokens[1], { culprit_ids: ['p1'] }), /already checking/);
   });
 
   test('should refund a question that was waiting when the server restarted', async () => {
