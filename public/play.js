@@ -53,7 +53,7 @@ function joinScreen(publicView, message = '') {
 function topbar() {
   const v = view;
   return `<div class="topbar">
-    <div class="row between small"><span class="serif" style="color:var(--accent)">${esc(v.phase ? `${v.phase.name} (${v.phase.index + 1}/${v.phase.count})` : v.title ?? '')}</span>
+    <div class="row between small"><span class="serif" style="color:var(--accent)" id="phase-label"></span>
       <span class="timer" id="timer"></span></div>
     <div class="row between small muted" style="margin-top:2px"><span id="qleft"></span><span id="susp"></span></div>
     <div id="vote"></div>
@@ -189,6 +189,12 @@ function update() {
     $('read').disabled = done;
     $('read').textContent = done ? 'Ready' : "I've read it";
     $('read-note').textContent = `${v.ready.length} of ${v.players.length} ready. Keep your card secret.`;
+  }
+  if ($('phase-label')) $('phase-label').textContent = v.phase ? `${v.phase.name} (${v.phase.index + 1}/${v.phase.count})` : v.transitioning ? 'The world is changing...' : '';
+  const card = $('t-card');
+  if (card && card.dataset.sig !== JSON.stringify(v.card)) {
+    card.dataset.sig = JSON.stringify(v.card);
+    card.innerHTML = cardHtml();
   }
   if ($('qleft')) $('qleft').textContent = `${v.questionsLeft} question${v.questionsLeft === 1 ? '' : 's'} left this phase`;
   if ($('susp')) $('susp').textContent = `Suspicion: ${suspicionLabel(v.suspicion)}`;

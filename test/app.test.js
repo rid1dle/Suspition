@@ -1,7 +1,10 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { App } from '../server/app.js';
-import { MemoryStore } from '../server/store.js';
+import { App, RETRY_MS } from '../server/app.js';
+import { MemoryStore, Store } from '../server/store.js';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { FakeGM } from './fixtures.js';
 
 async function setupApp({ players = 3, gm = new FakeGM() } = {}) {
@@ -38,7 +41,7 @@ describe('App', () => {
     await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
     await ctx.app.idle();
     assert.equal(ctx.app.game.status, 'failed');
-    assert.match(ctx.app.game.error, /fake generate failure/);
+    assert.match(ctx.app.game.error, /could not write the world/);
     ctx.gm.fail.generate = false;
     await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
     await ctx.app.idle();
@@ -173,5 +176,98 @@ describe('App', () => {
     const host = await ctx.app.newGame(ctx.host);
     assert.notEqual(host, ctx.host);
     assert.throws(() => ctx.app.playerView(ctx.tokens[0]), /Unknown player/);
+  });
+});
+
+describe('App under failure', () => {
+  test('should wait a minute before retrying an automatic phase change that failed', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    ctx.gm.fail.phase = true;
+    ctx.advanceClock(10 * 60_000 + 1);
+    await ctx.app.tick();
+    await ctx.app.idle();
+    await ctx.app.tick();
+    await ctx.app.idle();
+    assert.equal(ctx.gm.calls.filter((c) => c === 'phase').length, 1);
+    assert.equal(ctx.app.game.state.phaseEndsAt, ctx.now() + RETRY_MS);
+    ctx.advanceClock(RETRY_MS);
+    await ctx.app.tick();
+    await ctx.app.idle();
+    assert.equal(ctx.gm.calls.filter((c) => c === 'phase').length, 2);
+  });
+
+  test('should start a new game at once even while the world is still being written', async () => {
+    const ctx = await setupApp();
+    ctx.gm.gate = new Promise(() => {});
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const host = await ctx.app.newGame(ctx.host);
+    assert.equal(ctx.app.game.status, 'lobby');
+    assert.equal(ctx.app.game.hostToken, host);
+  });
+
+  test('should keep raw GM error text off the shared screens', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    ctx.gm.phase = async () => {
+      throw new Error('unreadable output: {"messages_to_players":[{"text":"PRIVATE WHISPER"}]}');
+    };
+    await ctx.app.nextPhase(ctx.host);
+    await ctx.app.idle();
+    const body = JSON.stringify(ctx.app.tableView());
+    assert.match(ctx.app.tableView().error, /could not move to the next phase/);
+    assert.ok(!body.includes('PRIVATE WHISPER'));
+  });
+
+  test('should refuse a final answer once scoring has started', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    ctx.app.game.status = 'final';
+    ctx.gm.gate = new Promise(() => {});
+    await ctx.app.submit(ctx.tokens[0], { culprit_ids: ['p1'] });
+    await ctx.app.finish(ctx.host);
+    await assert.rejects(() => ctx.app.submit(ctx.tokens[1], { culprit_ids: ['p1'] }), /already weighing/);
+  });
+
+  test('should refund a question that was waiting when the server restarted', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    ctx.gm.gate = new Promise(() => {});
+    await ctx.app.ask(ctx.tokens[0], { kind: 'question', text: 'q' });
+    assert.equal(ctx.app.game.state.questionsLeft.p1, 2);
+    const restarted = await new App({ gm: new FakeGM(), store: ctx.app.store }).init();
+    const view = restarted.playerView(ctx.tokens[0]);
+    assert.equal(view.questionsLeft, 3);
+    assert.match(view.thread.at(-1).text, /restarted before the GM answered/);
+  });
+
+  test('should make a phase change wait for a question sent in the same moment', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    let release;
+    ctx.gm.gate = new Promise((r) => (release = r));
+    const asking = ctx.app.ask(ctx.tokens[0], { kind: 'question', text: 'q' });
+    await ctx.app.nextPhase(ctx.host);
+    await asking;
+    release();
+    ctx.gm.gate = null;
+    await ctx.app.idle();
+    assert.equal(ctx.app.game.state.threads.p1.length, 2);
+    assert.equal(ctx.app.game.state.phaseIndex, 1);
+    assert.equal(ctx.app.game.state.questionsLeft.p1, 3);
+  });
+});
+
+describe('Store', () => {
+  test('should keep saving after one write fails', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'detective-store-'));
+    const blocker = join(dir, 'not-a-dir');
+    await writeFile(blocker, 'x');
+    const store = new Store(join(blocker, 'inside'));
+    await assert.rejects(() => store.save({ n: 1 }));
+    store.dir = dir;
+    store.file = join(dir, 'current-game.json');
+    await store.save({ n: 2 });
+    assert.deepEqual(await store.load(), { n: 2 });
   });
 });

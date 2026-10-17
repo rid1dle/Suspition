@@ -335,6 +335,7 @@ export function resolveHintVote(game, now = Date.now()) {
 
 export function submitFinal(game, playerId, input = {}) {
   if (game.status !== 'final') fail('Final answers open after the last phase.', 409);
+  if (game.state.scoring) fail('Too late: the GM is already weighing the answers.', 409);
   const cast = castIds(game);
   const culprits = [...new Set(input.culprit_ids ?? [])].filter((id) => cast.includes(id));
   if (!culprits.length) fail('Name at least one culprit.');

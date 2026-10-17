@@ -1,6 +1,7 @@
 import * as G from './game.js';
 
 const { GameError } = G;
+export const RETRY_MS = 60_000;
 
 export class App {
   constructor({ gm, store, clock = () => Date.now(), log = () => {} }) {
@@ -21,6 +22,10 @@ export class App {
       this.game.error = 'The server restarted while the world was being written. Try again.';
     }
     if (this.game.state) {
+      for (const pid of Object.keys(this.game.state.pending ?? {})) {
+        G.failAsk(this.game, pid);
+        this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. Your question was not used up; ask again.', at: this.clock() });
+      }
       this.game.state.pending = {};
       this.game.state.transitioning = false;
       this.game.state.scoring = false;
@@ -37,6 +42,15 @@ export class App {
   async changed() {
     await this.store.save(this.game);
     for (const fn of this.listeners) fn(this.game);
+  }
+
+  notify() {
+    this.changed().catch((err) => this.log(`save failed: ${err.message}`));
+  }
+
+  failed(game, label, publicMessage, err) {
+    this.log(`${label} failed: ${err.message}`);
+    game.error = `${publicMessage} Check the terminal for details.`;
   }
 
   background(label, fn) {
@@ -62,7 +76,7 @@ export class App {
 
   async newGame(hostToken) {
     this.requireHost(hostToken);
-    await this.idle();
+    this.asks.clear();
     this.game = G.createGame(this.clock());
     await this.changed();
     return this.game.hostToken;
@@ -87,8 +101,7 @@ export class App {
       } catch (err) {
         if (this.game !== game) return;
         game.status = 'failed';
-        game.error = `The GM could not write the world: ${err.message}`;
-        throw err;
+        this.failed(game, 'generate', 'The GM could not write the world.', err);
       } finally {
         if (this.game === game) await this.changed();
       }
@@ -117,7 +130,6 @@ export class App {
     const game = this.game;
     const p = G.playerByToken(game, tok);
     const ask = G.beginAsk(game, p.id, input ?? {});
-    await this.changed();
     const task = this.background(`ask ${p.id}`, async () => {
       try {
         const result = await this.gm.answer(game, p.id, ask);
@@ -126,14 +138,15 @@ export class App {
       } catch (err) {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
-        game.state.threads[p.id].push({ from: 'system', text: `The GM could not answer that (${err.message}). Your question was not used up.`, at: this.clock() });
-        throw err;
+        this.log(`ask ${p.id} failed: ${err.message}`);
+        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not answer that. Your question was not used up; try again.', at: this.clock() });
       } finally {
         if (this.game === game) await this.changed();
       }
     });
     this.asks.set(p.id, task);
     task.finally(() => this.asks.get(p.id) === task && this.asks.delete(p.id));
+    await this.changed();
   }
 
   async proposeHint(tok) {
@@ -156,7 +169,7 @@ export class App {
   advance() {
     const game = this.game;
     G.beginPhaseChange(game);
-    this.changed();
+    this.notify();
     return this.background('phase', async () => {
       try {
         await Promise.allSettled([...this.asks.values()]);
@@ -167,8 +180,8 @@ export class App {
       } catch (err) {
         if (this.game !== game) return;
         G.cancelPhaseChange(game);
-        game.error = `The GM could not move to the next phase: ${err.message}`;
-        throw err;
+        if (game.state.phaseEndsAt <= this.clock()) game.state.phaseEndsAt = this.clock() + RETRY_MS;
+        this.failed(game, 'phase', 'The GM could not move to the next phase. It will try again in a minute, or press Next phase.', err);
       } finally {
         if (this.game === game) await this.changed();
       }
@@ -193,7 +206,7 @@ export class App {
     const game = this.game;
     if (game.state.scoring) return null;
     game.state.scoring = true;
-    this.changed();
+    this.notify();
     return this.background('score', async () => {
       try {
         const verdict = G.computeVerdict(game);
@@ -203,8 +216,7 @@ export class App {
         game.error = null;
       } catch (err) {
         if (this.game !== game) return;
-        game.error = `The GM could not score the game: ${err.message}`;
-        throw err;
+        this.failed(game, 'score', 'The GM could not score the game. Press Reveal to try again.', err);
       } finally {
         game.state.scoring = false;
         if (this.game === game) await this.changed();

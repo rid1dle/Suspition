@@ -19,7 +19,7 @@ export class Store {
 
   save(game) {
     const body = JSON.stringify(game);
-    this.writing = this.writing.then(async () => {
+    this.writing = this.writing.catch(() => {}).then(async () => {
       await mkdir(this.dir, { recursive: true });
       const tmp = `${this.file}.tmp`;
       await writeFile(tmp, body);
