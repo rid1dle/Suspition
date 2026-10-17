@@ -1,0 +1,4 @@
+node_modules/
+game-data/
+.superpowers/
+.DS_Store

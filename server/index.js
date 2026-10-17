@@ -1,0 +1,128 @@
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { networkInterfaces } from 'node:os';
+import { extname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { exec } from 'node:child_process';
+import QRCode from 'qrcode';
+import { App } from './app.js';
+import { GM } from './gm.js';
+import { Store } from './store.js';
+import { GameError } from './game.js';
+
+const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const PUBLIC = join(ROOT, 'public');
+const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' };
+
+export function lanAddress() {
+  for (const list of Object.values(networkInterfaces())) {
+    for (const a of list ?? []) if (a.family === 'IPv4' && !a.internal) return a.address;
+  }
+  return 'localhost';
+}
+
+const send = (res, status, body, type = 'application/json') => {
+  res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
+  res.end(type === 'application/json' ? JSON.stringify(body) : body);
+};
+
+async function readBody(req) {
+  let raw = '';
+  for await (const chunk of req) {
+    raw += chunk;
+    if (raw.length > 50_000) throw new GameError('Request too large.', 413);
+  }
+  try {
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    throw new GameError('Bad JSON.');
+  }
+}
+
+export function createHandler(app, { joinUrl }) {
+  const streams = new Set();
+
+  const push = (s) => {
+    try {
+      const view = s.token ? app.playerView(s.token) : app.tableView();
+      s.res.write(`data: ${JSON.stringify(view)}\n\n`);
+    } catch (err) {
+      s.res.write(`event: gone\ndata: ${JSON.stringify({ message: err.message })}\n\n`);
+      s.res.end();
+      streams.delete(s);
+    }
+  };
+  app.onChange(() => streams.forEach(push));
+  setInterval(() => streams.forEach((s) => s.res.write(': ping\n\n')), 20_000).unref();
+
+  const actions = {
+    'POST /api/new': (b) => app.newGame(b.host).then((host) => ({ host })),
+    'POST /api/join': (b) => app.join(b).then((token) => ({ token })),
+    'POST /api/setup': (b) => app.setup(b.host, b),
+    'POST /api/ready': (b) => app.ready(b.token),
+    'POST /api/start': (b) => app.start(b.host),
+    'POST /api/extend': (b) => app.extend(b.host),
+    'POST /api/next': (b) => app.nextPhase(b.host),
+    'POST /api/finish': (b) => app.finish(b.host),
+    'POST /api/ask': (b) => app.ask(b.token, b),
+    'POST /api/hint': (b) => app.proposeHint(b.token),
+    'POST /api/vote': (b) => app.voteHint(b.token, b.yes),
+    'POST /api/submit': (b) => app.submit(b.token, b),
+  };
+
+  const pages = { '/': 'table.html', '/table': 'table.html', '/play': 'play.html' };
+
+  return async (req, res) => {
+    const url = new URL(req.url, 'http://x');
+    try {
+      const action = actions[`${req.method} ${url.pathname}`];
+      if (action) return send(res, 200, (await action(await readBody(req))) ?? { ok: true });
+
+      if (url.pathname === '/api/stream') {
+        const s = { res, token: url.searchParams.get('token') };
+        res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
+        streams.add(s);
+        req.on('close', () => streams.delete(s));
+        return push(s);
+      }
+      if (url.pathname === '/api/info') return send(res, 200, { joinUrl });
+      if (url.pathname === '/api/qr.svg') {
+        return send(res, 200, await QRCode.toString(joinUrl, { type: 'svg', margin: 1 }), TYPES['.svg']);
+      }
+
+      const file = pages[url.pathname] ?? url.pathname.slice(1);
+      if (req.method === 'GET' && /^[\w-]+\.(html|css|js|svg)$/.test(file)) {
+        return send(res, 200, await readFile(join(PUBLIC, file)), TYPES[extname(file)]);
+      }
+      send(res, 404, { error: 'Not found' });
+    } catch (err) {
+      if (err.code === 'ENOENT') return send(res, 404, { error: 'Not found' });
+      if (!(err instanceof GameError)) console.error(err);
+      send(res, err.status ?? 500, { error: err instanceof GameError ? err.message : 'Something went wrong.' });
+    }
+  };
+}
+
+async function main() {
+  const port = Number(process.env.PORT) || 4321;
+  const dataDir = join(ROOT, 'game-data');
+  const log = (m) => console.log(`[${new Date().toLocaleTimeString()}] ${m}`);
+  const gm = new GM({
+    workDir: join(dataDir, 'gm'),
+    setupModel: process.env.DETECTIVE_SETUP_MODEL || undefined,
+    setupEffort: process.env.DETECTIVE_SETUP_EFFORT || 'medium',
+    playModel: process.env.DETECTIVE_PLAY_MODEL || undefined,
+    log,
+  });
+  const app = await new App({ gm, store: new Store(dataDir), log }).init();
+  const joinUrl = `http://${lanAddress()}:${port}/play`;
+  const server = createServer(createHandler(app, { joinUrl }));
+  setInterval(() => app.tick().catch((err) => log(`tick failed: ${err.message}`)), 1000).unref();
+  server.listen(port, '0.0.0.0', () => {
+    const tableUrl = `http://localhost:${port}/table#host=${app.game.hostToken}`;
+    console.log(`\nDetective is running.\n  Table screen: ${tableUrl}\n  Players join: ${joinUrl}\n`);
+    if (process.env.NO_OPEN !== '1' && process.platform === 'darwin') exec(`open "${tableUrl}"`);
+  });
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

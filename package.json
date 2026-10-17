@@ -1,0 +1,17 @@
+{
+  "name": "detective",
+  "version": "0.1.0",
+  "description": "A hidden-role mystery game for one room. Phones are character cards, Claude is the game master.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  }
+}
