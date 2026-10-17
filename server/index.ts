@@ -6,6 +6,7 @@ import { extname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
 import QRCode from 'qrcode';
+import next from 'next';
 import { App } from './app.ts';
 import { GM } from './gm.ts';
 import { Store, Archive, People } from './store.ts';
@@ -45,7 +46,7 @@ async function readBody(req) {
   }
 }
 
-export function createHandler(app, { joinUrl }) {
+export function createHandler(app, { joinUrl, next = null }) {
   const streams = new Set();
 
   const push = (s) => {
@@ -94,7 +95,7 @@ export function createHandler(app, { joinUrl }) {
       const action = actions[`${req.method} ${url.pathname}`];
       if (action) return send(res, 200, (await action(await readBody(req))) ?? { ok: true });
 
-      if (url.pathname === '/api/stream') {
+      if (url.pathname === '/events' || url.pathname === '/api/stream') {
         const s = { res, token: url.searchParams.get('token'), full: url.searchParams.get('full') === '1' };
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' });
         streams.add(s);
@@ -109,8 +110,10 @@ export function createHandler(app, { joinUrl }) {
 
       const file = pages[url.pathname] ?? url.pathname.slice(1);
       if (req.method === 'GET' && /^[\w-]+\.(html|css|js|svg)$/.test(file)) {
-        return send(res, 200, await readFile(join(PUBLIC, file)), TYPES[extname(file)]);
+        const body = await readFile(join(PUBLIC, file)).catch((err) => (err.code === 'ENOENT' ? null : Promise.reject(err)));
+        if (body) return send(res, 200, body, TYPES[extname(file)]);
       }
+      if (next && !url.pathname.startsWith('/api/')) return next(req, res);
       send(res, 404, { error: 'Not found' });
     } catch (err) {
       if (err.code === 'ENOENT') return send(res, 404, { error: 'Not found' });
@@ -136,7 +139,11 @@ async function main() {
   const app = await new App({ gm, store: new Store(dataDir), archive: new Archive(datasetDir), people: new People(join(datasetDir, 'people')), log }).init();
   if (process.argv.includes('--new')) await app.newGame(app.game.hostToken);
   const joinUrl = `http://${process.env.DETECTIVE_HOST || lanAddress()}:${port}/play`;
-  const server = createServer(createHandler(app, { joinUrl }));
+  const dev = process.argv.includes('--dev');
+  const nextApp = next({ dev, dir: ROOT });
+  await nextApp.prepare();
+  const handle = nextApp.getRequestHandler();
+  const server = createServer(createHandler(app, { joinUrl, next: (req, res) => handle(req, res) }));
   setInterval(() => app.tick().catch((err) => log(`tick failed: ${err.message}`)), 1000).unref();
   server.listen(port, '0.0.0.0', () => {
     const tableUrl = `http://localhost:${port}/table#host=${app.game.hostToken}`;

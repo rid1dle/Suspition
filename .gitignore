@@ -3,3 +3,5 @@ game-data/
 .superpowers/
 .DS_Store
 .gstack/
+.next/
+next-env.d.ts

@@ -6,13 +6,20 @@ import { MemoryStore } from '../server/store.ts';
 import { createHandler, lanAddress } from '../server/index.ts';
 import { FakeGM } from './fixtures.ts';
 
+const nextPaths = [];
+const fakeNext = (req, res) => {
+  nextPaths.push(req.url);
+  if (req.url.startsWith('/games')) return res.end('NEXT PAGE');
+  res.writeHead(404);
+  res.end();
+};
 let server;
 let base;
 let app;
 
 before(async () => {
   app = await new App({ gm: new FakeGM(), store: new MemoryStore() }).init();
-  server = createServer(createHandler(app, { joinUrl: 'http://192.168.0.2:4321/play' }));
+  server = createServer(createHandler(app, { joinUrl: 'http://192.168.0.2:4321/play', next: fakeNext }));
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   base = `http://127.0.0.1:${server.address().port}`;
 });
@@ -137,5 +144,29 @@ describe('profile routes', () => {
     const full = (await firstEvent(`?token=${join.body.token}&full=1`)).data;
     assert.equal(full.profile.answers.length, 1);
     assert.equal((await post('forget', { token: join.body.token })).status, 200);
+  });
+});
+
+describe('the new server shape', () => {
+  test('should stream the same view on /events as on /api/stream', async () => {
+    const res = await fetch(`${base}/events`);
+    const reader = res.body.getReader();
+    let text = '';
+    while (!text.includes('\n\n')) text += new TextDecoder().decode((await reader.read()).value);
+    reader.cancel();
+    assert.equal(res.headers.get('content-type'), 'text/event-stream');
+    assert.deepEqual(JSON.parse(text.match(/^data: (.*)$/m)[1]), (await firstEvent()).data);
+  });
+
+  test('should hand unknown paths to Next', async () => {
+    const res = await fetch(`${base}/games`);
+    assert.equal(await res.text(), 'NEXT PAGE');
+    assert.ok(nextPaths.includes('/games'));
+  });
+
+  test('should still serve the old table and play pages without asking Next', async () => {
+    const before = nextPaths.length;
+    for (const path of ['/table', '/play', '/play.js']) assert.equal((await fetch(base + path)).status, 200, path);
+    assert.equal(nextPaths.length, before);
   });
 });
