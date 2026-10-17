@@ -61,6 +61,7 @@ function topbar() {
       <span class="timer" id="timer"></span></div>
     <div class="row between small muted" style="margin-top:2px"><span id="qleft"></span><span id="susp"></span></div>
     <div id="vote"></div>
+    <div id="moment"></div>
     <div id="round-alert"></div>
   </div>`;
 }
@@ -75,6 +76,7 @@ function cardHtml() {
       <p>${esc(c.private_info)}</p>
       <p><b>Your goal:</b> ${esc(c.goal)}</p>
       <p><b>You are a ${esc(side)}.</b> ${esc(c.side_explanation)}</p>
+      <p class="small"><b>Overrides left:</b> ${esc(view.overridesLeft ?? 0)} of ${esc(view.overridesTotal ?? 0)}</p>
       ${c.starting_knowledge ? `<p class="small"><b>You also know:</b> ${esc(c.starting_knowledge)}</p>` : ''}
     </div>
     <div class="layer hidden"><div class="label">You don't know yet</div>
@@ -186,6 +188,25 @@ function showKind() {
   if ($('ask-text')) $('ask-text').placeholder = k[2];
 }
 
+function momentHtml(v) {
+  const m = v.moments?.[0];
+  if (!m) return '';
+  const left = v.overridesLeft;
+  const ready = m.status === 'getready';
+  const secs = Math.max(0, Math.round((m.readyAt - Date.now()) / 1000));
+  return `<div class="moment${ready ? '' : ' live'}">
+    <div class="label">${ready ? `Get ready. You are up in <span class="moment-timer" data-ready="${m.readyAt}">${secs}s</span>` : 'Your moment. Everyone is listening.'}</div>
+    ${m.why ? `<div class="small muted">${esc(m.why)}</div>` : ''}
+    <p class="moment-line">&ldquo;${esc(m.line)}&rdquo;</p>
+    <div class="moment-actions">
+      ${ready ? `<button data-moment="ready" data-id="${esc(m.id)}">I'm ready, call me now</button>` : `<button class="primary" data-moment="said" data-id="${esc(m.id)}">I said it</button>`}
+      <button data-moment="quiet" data-id="${esc(m.id)}" ${left < 1 ? 'disabled' : ''}>Stay quiet</button>
+      <button data-moment="own" data-id="${esc(m.id)}" ${left < 1 ? 'disabled' : ''}>Say it my way</button>
+    </div>
+    <div class="small muted">${left < 1 ? 'No overrides left. You have to say it.' : `Staying quiet or saying it your way uses 1 override (${left} left).`}</div>
+  </div>`;
+}
+
 function finalBody() {
   const v = view;
   if (v.submission) {
@@ -219,8 +240,8 @@ function update() {
   }
   if ($('phase-label')) $('phase-label').textContent = v.phase ? `Round ${v.phase.index + 1} of ${v.phase.count}: ${v.phase.name}` : '';
   const card = $('card-body');
-  if (card && card.dataset.sig !== JSON.stringify(v.card)) {
-    card.dataset.sig = JSON.stringify(v.card);
+  if (card && card.dataset.sig !== JSON.stringify([v.card, v.overridesLeft])) {
+    card.dataset.sig = JSON.stringify([v.card, v.overridesLeft]);
     card.innerHTML = cardHtml();
   }
   if ($('brief')) $('brief').innerHTML = stepHtml(v, { me: v.me.id });
@@ -229,6 +250,8 @@ function update() {
     $('round').innerHTML = v.round ? roundHtml(v.round, { voting: true, myVote: v.myRoundVote }) : '<div class="label">This round</div><p class="muted small">Talk, look around and share clues.</p>';
     $('round').querySelectorAll('[data-choice]').forEach((b) => b.addEventListener('click', () => act('roundvote', { choice: Number(b.dataset.choice) })));
   }
+  if ($('moment')) $('moment').innerHTML = momentHtml(v);
+  $('moment')?.querySelectorAll('[data-moment]').forEach((b) => b.addEventListener('click', () => act('moment', { id: b.dataset.id, action: b.dataset.moment })));
   if ($('round-alert')) {
     const needVote = v.round?.vote && v.myRoundVote === null && tab !== 'story';
     $('round-alert').innerHTML = needVote ? '<button class="primary wide" id="go-vote" style="margin-top:8px">Vote now</button>' : '';
@@ -302,6 +325,9 @@ function update() {
 }
 
 function tick() {
+  document.querySelectorAll('.moment-timer').forEach((el) => {
+    el.textContent = `${Math.max(0, Math.round((Number(el.dataset.ready) - Date.now()) / 1000))}s`;
+  });
   if ($('timer') && view?.phase?.endsAt) {
     const c = countdown(view.phase.endsAt);
     $('timer').textContent = c.text;

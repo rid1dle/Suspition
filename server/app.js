@@ -32,6 +32,8 @@ export class App {
       st.shared ??= [];
       st.publicPending = {};
       st.knowledge ??= [];
+      st.moments ??= [];
+      st.overridesLeft ??= Object.fromEntries(this.game.players.map((p) => [p.id, this.game.setup?.overrides ?? 3]));
       for (const pid of Object.keys(this.game.state.pending ?? {})) {
         G.failAsk(this.game, pid);
         this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. You did not lose a question. Ask again.', at: this.clock() });
@@ -172,6 +174,13 @@ export class App {
     const result = G.voteRound(this.game, p.id, choice, this.clock());
     await this.changed();
     if (result) this.advance();
+  }
+
+  async moment(tok, id, action) {
+    const p = G.playerByToken(this.game, tok);
+    if (action === 'ready') G.readyMoment(this.game, p.id, id, this.clock());
+    else G.answerMoment(this.game, p.id, id, action, this.clock());
+    await this.changed();
   }
 
   async shareClue(tok, clueId) {
@@ -340,6 +349,7 @@ export class App {
       G.resolveHintVote(game, now);
       dirty = true;
     }
+    if (G.tickMoments(game, now)) dirty = true;
     if (dirty) await this.changed();
     if (st.roundVote && st.roundVote.endsAt <= now) return this.advance();
     if (!st.transitioning && !st.roundVote && st.phaseEndsAt && st.phaseEndsAt <= now) this.advance();

@@ -9,7 +9,7 @@ export function narrationFor(prev, next) {
   }
   const before = prev.events?.length ?? 0;
   for (const e of (next.events ?? []).slice(before)) {
-    if (e.kind === 'opening' || e.kind === 'qa' || SKIP.test(e.text)) continue;
+    if (['opening', 'qa', 'said'].includes(e.kind) || SKIP.test(e.text)) continue;
     lines.push(e.kind === 'phase' ? e.text.replace(/^Round (\d+) of (\d+): /, 'Round $1 of $2. ') : e.text);
   }
   if (next.status === 'reveal' && prev.status !== 'reveal' && next.reveal) {

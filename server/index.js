@@ -75,6 +75,7 @@ export function createHandler(app, { joinUrl }) {
     'POST /api/brief': (b) => app.brief(b.host, b.delta),
     'POST /api/roundvote': (b) => app.voteRound(b.token, b.choice),
     'POST /api/share': (b) => app.shareClue(b.token, b.clueId),
+    'POST /api/moment': (b) => app.moment(b.token, b.id, b.action),
     'POST /api/public': (b) => app.askPublic(b.token, b.text),
     'POST /api/vote': (b) => app.voteHint(b.token, b.yes),
     'POST /api/submit': (b) => app.submit(b.token, b),

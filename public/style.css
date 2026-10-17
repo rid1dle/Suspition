@@ -201,6 +201,15 @@ img.scene { width: 100%; aspect-ratio: 2 / 1; object-fit: cover; border-radius: 
 .intro .big-icon { font-size: 3rem; line-height: 1.2; }
 .intro.mine { border: 2px solid var(--accent); border-radius: var(--radius); padding: 12px; }
 .your-turn { color: var(--accent); font-weight: 700; margin-bottom: 4px; }
-.feed li.round, .feed li.goal, .feed li.vote { color: var(--accent); }
+.feed li.round, .feed li.goal, .feed li.vote, .feed li.moment { color: var(--accent); }
+.feed li.said::before { content: '\1F5E3  '; }
+.feed li.forced { color: var(--danger); }
+.feed li.override { color: var(--muted); font-style: italic; }
+.calling { font-size: 1.4rem; text-align: center; padding: 14px; margin-bottom: 12px; border: 2px solid var(--accent); border-radius: var(--radius); background: rgba(224, 168, 90, 0.12); animation: glow 2.4s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 18px rgba(224, 168, 90, 0.35); } }
+.moment { margin-top: 8px; padding: 10px 12px; border: 1px dashed var(--accent); border-radius: var(--radius); background: var(--panel); }
+.moment.live { border-style: solid; border-width: 2px; }
+.moment-line { font-family: Georgia, serif; font-size: 1.1rem; margin: 6px 0; }
+.moment-actions { display: grid; gap: 6px; margin: 6px 0; }
 .feed li.clue::before { content: '\1F50E  '; }
 .feed li.timeline::before { content: '\23F1  '; }

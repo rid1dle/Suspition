@@ -406,3 +406,22 @@ describe('App rounds with goals', () => {
     assert.equal(ctx.app.tableView().briefing.step, 1);
   });
 });
+
+describe('App moments', () => {
+  test('should call a moment after the heads-up and record the answer', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    ctx.gm.phaseResult = { ...ctx.gm.phaseResult, moments: [{ player_id: 'p2', line: 'I heard a splash.', why: 'It comes back to you.' }] };
+    await ctx.app.nextPhase(ctx.host);
+    await ctx.app.idle();
+    const m = ctx.app.playerView(ctx.tokens[1]).moments[0];
+    assert.equal(m.status, 'getready');
+    ctx.advanceClock(60_000);
+    await ctx.app.tick();
+    assert.deepEqual(ctx.app.tableView().calling, ['P2']);
+    await assert.rejects(() => ctx.app.moment(ctx.tokens[0], m.id, 'said'), /not yours/);
+    await ctx.app.moment(ctx.tokens[1], m.id, 'own');
+    assert.equal(ctx.app.playerView(ctx.tokens[1]).overridesLeft, 2);
+    assert.equal(ctx.app.tableView().events.at(-1).text, 'P2 told it their own way.');
+  });
+});

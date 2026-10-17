@@ -64,6 +64,8 @@ describe('scenario schema', () => {
     assert.ok(music.properties.mode.enum.includes('phrygian'));
     assert.match(GENERATION_SYSTEM, /music: the game's soundtrack/);
     assert.match(GENERATION_SYSTEM, /12-year-old/);
+    assert.match(GENERATION_SYSTEM, /No metaphors, riddles/);
+    assert.match(playSystem({}), /The ash and the ground do not agree/);
     assert.match(GENERATION_SYSTEM, /never "phase"/);
     assert.match(GENERATION_SYSTEM, /start_location/);
   });

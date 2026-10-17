@@ -15,7 +15,7 @@ let seenEvents = 0;
 let positionsBefore = null;
 let editingMap = false;
 let dragging = null;
-const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, notes: '' };
+const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, overrides: 3, notes: '' };
 
 const SETTINGS = ['A 1950s Bombay hotel party', 'A snowed-in ski lodge', 'A 1920s ocean liner', 'A space station', 'A college reunion', 'A village fair'];
 const TONES = [['cozy', 'Cozy'], ['tense', 'Tense'], ['dark', 'Dark'], ['funny', 'Funny']];
@@ -81,6 +81,8 @@ const skeletons = {
         <div class="field"><div class="label">Mood</div><div class="row" style="gap:6px" id="tone">${TONES.map(([v, l]) => `<button class="chip" data-v="${v}">${l}</button>`).join('')}</div></div>
         <div class="field"><div class="label">How long?</div><div class="row" style="gap:6px" id="length">${LENGTHS.map(([v, l, d]) => `<button class="chip" data-v="${v}">${l} <span class="muted small">${d}</span></button>`).join('')}</div></div>
         <div class="field"><div class="label">Group hints</div><div class="row" style="gap:6px" id="hints">${[1, 2, 3, 4, 5].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div></div>
+        <div class="field"><div class="label">Overrides per player</div><div class="row" style="gap:6px" id="overrides">${[0, 1, 2, 3, 4, 5].map((n) => `<button class="chip" data-v="${n}">${n}</button>`).join('')}</div>
+          <div class="small muted" style="margin-top:4px">Sometimes the story makes your character speak. An override lets you stay quiet or say it your way.</div></div>
         <div class="field"><div class="label">Anything the GM should know?</div>
           <textarea id="notes" maxlength="500" placeholder="Jokes, things you like, things to avoid"></textarea></div>
         <button class="primary wide" id="write">Make our mystery</button>
@@ -113,6 +115,7 @@ const skeletons = {
         ${isHost() ? '<div style="display:flex;flex-direction:column;gap:6px"><button id="extend">+5 min</button><button class="primary" id="next">Next round</button></div>' : ''}${endButton()}</div>
     </div>${hostNote()}
     <div id="banner"></div>
+    <div id="calling"></div>
     <div class="grid" style="grid-template-columns:minmax(320px,1.5fr) minmax(260px,1fr)">
       <div class="stack">
         <div class="panel" id="round"></div>
@@ -201,9 +204,9 @@ function wire() {
     document.querySelectorAll('[data-setting]').forEach((b) => b.addEventListener('click', () => {
       form.setting = setting.value = b.dataset.setting;
     }));
-    for (const key of ['tone', 'length', 'hints']) {
+    for (const key of ['tone', 'length', 'hints', 'overrides']) {
       $(key).querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
-        form[key] = key === 'hints' ? Number(b.dataset.v) : b.dataset.v;
+        form[key] = ['hints', 'overrides'].includes(key) ? Number(b.dataset.v) : b.dataset.v;
         chipGroup(key, form[key]);
       }));
       chipGroup(key, form[key]);
@@ -307,6 +310,7 @@ function update() {
     $('round').innerHTML = v.round ? roundHtml(v.round) : '<div class="label">This round</div><p class="muted">Talk, look around and share clues.</p>';
     $('round').hidden = false;
   }
+  if ($('calling')) $('calling').innerHTML = v.calling?.length ? `<div class="calling">${v.calling.map((n) => `<b>${esc(n)}</b>`).join(' and ')} ${v.calling.length > 1 ? 'have' : 'has'} something to say. Listen.</div>` : '';
   if ($('timeline')) $('timeline').innerHTML = timelineHtml(v.timeline);
   if ($('shared')) $('shared').innerHTML = sharedCluesHtml(v.sharedClues);
   if ($('results')) $('results').innerHTML = resultsHtml(v.roundResults) || '<p class="small muted">No round votes.</p>';

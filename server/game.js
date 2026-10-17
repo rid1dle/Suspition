@@ -8,6 +8,7 @@ export const MAX_PLAYERS = 10;
 export const TONES = ['cozy', 'tense', 'dark', 'funny'];
 export const HINT_VOTE_MS = 60_000;
 export const ROUND_VOTE_MS = 90_000;
+export const MOMENT_READY_MS = 60_000;
 export const EXTEND_MS = 5 * 60_000;
 
 export class GameError extends Error {
@@ -69,11 +70,14 @@ export function applySetup(game, input = {}) {
   if (!LENGTHS[input.length]) fail('Pick a game length.');
   const hints = Number(input.hints);
   if (!Number.isInteger(hints) || hints < 1 || hints > 5) fail('Hints must be between 1 and 5.');
+  const overrides = input.overrides === undefined ? 3 : Number(input.overrides);
+  if (!Number.isInteger(overrides) || overrides < 0 || overrides > 5) fail('Overrides must be between 0 and 5.');
   game.setup = {
     setting: String(input.setting ?? '').trim().slice(0, 200),
     tone,
     length: input.length,
     hints,
+    overrides,
     notes: String(input.notes ?? '').trim().slice(0, 500),
   };
   game.status = 'generating';
@@ -213,6 +217,8 @@ export function attachScenario(game, scenario, now = Date.now()) {
     publicPending: {},
     illustration: null,
     knowledge: [],
+    moments: [],
+    overridesLeft: Object.fromEntries(game.players.map((p) => [p.id, game.setup.overrides ?? 3])),
     submissions: {},
     transitioning: false,
     result: null,
@@ -314,9 +320,24 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   delete st.pending[playerId];
   const thread = st.threads[playerId];
   thread.push({ from: 'you', kind: ask.kind, text: ask.text, at: now });
+  const myName = game.scenario.players.find((p) => p.id === playerId)?.character_name?.toLowerCase();
+  const players = new Set(game.scenario.players.map((p) => p.character_name.toLowerCase()));
+  const names = Object.fromEntries([
+    ...game.scenario.players.map((p) => [p.id, p.character_name]),
+    ...game.scenario.npcs.map((n) => [n.id, n.name]),
+  ]);
   const lines = (Array.isArray(result.lines) ? result.lines : [])
-    .map((l) => ({ speaker: String(l?.speaker ?? '').trim().slice(0, 40), text: String(l?.text ?? '').trim().replace(/^["“]|["”]$/g, '') }))
-    .filter((l) => l.text);
+    .map((l) => {
+      const raw = String(l?.speaker ?? '').trim();
+      return { speaker: (names[raw] ?? raw).slice(0, 40), text: String(l?.text ?? '').trim().replace(/^["“]|["”]$/g, '') };
+    })
+    .filter((l) => l.text)
+    .flatMap((l) => {
+      const who = l.speaker.toLowerCase();
+      if (who && who === myName) return [{ speaker: '', text: `You say: "${l.text}"` }];
+      if (who && players.has(who)) return [];
+      return [l];
+    });
   const text = lines.length ? lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n') : String(result.answer ?? '').trim();
   thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), at: now });
 
@@ -373,11 +394,13 @@ export function completePhase(game, result, now = Date.now()) {
   destroy(game, result.clues_destroyed);
   for (const p of result.positions ?? []) move(game, p?.character_id, p?.location_id);
   learn(game, result.learned, 'round change', now);
+  closeOpenMoments(game, now);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -20, 20), 0, 100);
   enterPhase(game, next, now);
   addEvent(game, phaseLine(game, next), 'phase', now);
   addEvent(game, result.public_event, 'event', now);
   announceRound(game, next, now);
+  addMoments(game, result.moments, now);
   whisper(game, result.messages_to_players, now);
 }
 
@@ -480,6 +503,90 @@ export function applyScore(game, verdict, score) {
     }),
   };
   game.status = 'reveal';
+}
+
+const OPEN = ['getready', 'called'];
+const nameOf = (game, pid) => game.players.find((p) => p.id === pid)?.name ?? 'Someone';
+
+export function addMoments(game, moments, now = Date.now()) {
+  const st = game.state;
+  st.moments ??= [];
+  let added = 0;
+  for (const m of moments ?? []) {
+    const line = String(m?.line ?? '').trim().replace(/^["“]|["”]$/g, '').slice(0, 200);
+    const pid = m?.player_id;
+    if (added >= 2 || !line || !game.players.some((p) => p.id === pid)) continue;
+    if (st.moments.some((x) => x.player_id === pid && OPEN.includes(x.status))) continue;
+    st.moments.push({ id: `m${st.moments.length + 1}`, player_id: pid, line, why: String(m?.why ?? '').trim().slice(0, 200), round: st.phaseIndex + 1, status: 'getready', readyAt: now + MOMENT_READY_MS, at: now });
+    added += 1;
+  }
+  return added;
+}
+
+function callMoment(game, m, now) {
+  m.status = 'called';
+  m.calledAt = now;
+  addEvent(game, `${nameOf(game, m.player_id)}, the story turns to you.`, 'moment', now);
+}
+
+export function tickMoments(game, now = Date.now()) {
+  let changed = false;
+  for (const m of game.state?.moments ?? []) {
+    if (m.status === 'getready' && m.readyAt <= now) {
+      callMoment(game, m, now);
+      changed = true;
+    }
+  }
+  return changed;
+}
+
+function ownMoment(game, playerId, momentId) {
+  const m = game.state.moments?.find((x) => x.id === momentId && x.player_id === playerId);
+  if (!m) fail('That moment is not yours.', 403);
+  if (!OPEN.includes(m.status)) fail('That moment is already done.', 409);
+  return m;
+}
+
+export function readyMoment(game, playerId, momentId, now = Date.now()) {
+  const m = ownMoment(game, playerId, momentId);
+  if (m.status === 'getready') callMoment(game, m, now);
+}
+
+export function answerMoment(game, playerId, momentId, choice, now = Date.now()) {
+  const m = ownMoment(game, playerId, momentId);
+  const st = game.state;
+  const name = nameOf(game, playerId);
+  if (choice === 'said') {
+    if (m.status !== 'called') callMoment(game, m, now);
+    m.status = 'said';
+    addEvent(game, `${name} said: "${m.line}"`, 'said', now);
+  } else if (choice === 'quiet' || choice === 'own') {
+    if ((st.overridesLeft[playerId] ?? 0) < 1) fail('No overrides left. You have to say it.', 409);
+    st.overridesLeft[playerId] -= 1;
+    m.status = choice;
+    addEvent(game, choice === 'quiet' ? `${name} chose to stay quiet.` : `${name} told it their own way.`, 'override', now);
+  } else {
+    fail('Pick: I said it, stay quiet, or say it my way.');
+  }
+  m.resolvedAt = now;
+  return m;
+}
+
+export function closeOpenMoments(game, now = Date.now()) {
+  const st = game.state;
+  for (const m of st.moments ?? []) {
+    if (!OPEN.includes(m.status)) continue;
+    const name = nameOf(game, m.player_id);
+    if ((st.overridesLeft[m.player_id] ?? 0) > 0) {
+      st.overridesLeft[m.player_id] -= 1;
+      m.status = 'quiet';
+      addEvent(game, `${name} stayed quiet. It cost an override.`, 'override', now);
+    } else {
+      m.status = 'forced';
+      addEvent(game, `${name} could not keep it in: "${m.line}"`, 'forced', now);
+    }
+    m.resolvedAt = now;
+  }
 }
 
 export function roundQuestion(game, index) {
@@ -659,6 +766,8 @@ export function snapshotForGM(game) {
     destroyed_clues: st.destroyed,
     where_everyone_is: st.positions,
     round_results: st.roundResults,
+    moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status })),
+    overrides_left: st.overridesLeft,
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     shared_clues: st.shared.map((x) => x.clueId),
     clues_found_by_player: st.found,
@@ -720,6 +829,8 @@ function publicCore(game, now) {
       return { id: x.clueId, name: c.name, shows: c.shows, by: game.players.find((p) => p.id === x.by)?.name };
     }) : [],
     illustration: st?.illustration ?? null,
+    calling: st ? (st.moments ?? []).filter((m) => m.status === 'called').map((m) => game.players.find((p) => p.id === m.player_id)?.name) : [],
+    overridesTotal: game.setup?.overrides ?? null,
     music: sanitizeMusic(sc?.music, game.setup?.tone ?? 'cozy'),
     musicDescription: sc?.music?.description ?? null,
     setting: sc?.setting_summary ?? null,
@@ -810,6 +921,9 @@ export function playerView(game, playerId, now = Date.now()) {
   view.myVote = st.hintVote ? st.hintVote.votes[playerId] ?? null : null;
   view.myRoundVote = st.roundVote ? st.roundVote.votes[playerId] ?? null : null;
   view.publicPending = st.publicPending?.[playerId] ?? null;
+  view.moments = (st.moments ?? []).filter((m) => m.player_id === playerId && OPEN.includes(m.status))
+    .map((m) => ({ id: m.id, line: m.line, why: m.why, status: m.status, readyAt: m.readyAt }));
+  view.overridesLeft = st.overridesLeft?.[playerId] ?? 0;
   view.submission = st.submissions[playerId] ?? null;
   view.reveal = game.status === 'reveal' ? revealView(game) : null;
   return view;

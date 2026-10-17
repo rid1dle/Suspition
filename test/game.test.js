@@ -690,3 +690,124 @@ describe('who knows what', () => {
     assert.deepEqual(G.tableView(game).reveal.learned, [{ who: 'The Butler', fact: 'KNOWLEDGE-FACT', how: 'told', round: 1 }]);
   });
 });
+
+describe('moments and overrides', () => {
+  const playing = (overrides = 2) => {
+    const game = G.createGame(1_000);
+    for (const name of ['A', 'B', 'C']) G.addPlayer(game, { name });
+    G.applySetup(game, { tone: 'tense', length: 'short', hints: 2, overrides });
+    G.attachScenario(game, makeScenario(3), 1_000);
+    G.startPlay(game, 1_000);
+    return game;
+  };
+  const momentFor = (game, line = 'I saw a light.') => {
+    G.beginPhaseChange(game);
+    G.completePhase(game, { ...emptyPhase, moments: [{ player_id: 'p2', line: `"${line}"`, why: 'You remember now.' }] }, 2_000);
+    return game.state.moments.at(-1);
+  };
+
+  test('should give the player a private heads-up before calling them', () => {
+    const game = playing();
+    const m = momentFor(game);
+    assert.equal(m.status, 'getready');
+    assert.equal(m.line, 'I saw a light.');
+    assert.deepEqual(G.playerView(game, 'p2').moments.map((x) => x.line), ['I saw a light.']);
+    assert.ok(!JSON.stringify([G.tableView(game), G.playerView(game, 'p3')]).includes('I saw a light'));
+    assert.deepEqual(G.tableView(game).calling, []);
+  });
+
+  test('should call the player after a minute, or sooner when they are ready', () => {
+    const game = playing();
+    const m = momentFor(game);
+    assert.equal(G.tickMoments(game, 2_000 + G.MOMENT_READY_MS - 1), false);
+    assert.equal(G.tickMoments(game, 2_000 + G.MOMENT_READY_MS), true);
+    assert.equal(m.status, 'called');
+    assert.deepEqual(G.tableView(game).calling, ['B']);
+    assert.equal(game.state.events.at(-1).text, 'B, the story turns to you.');
+    const game2 = playing();
+    const m2 = momentFor(game2);
+    G.readyMoment(game2, 'p2', m2.id, 2_500);
+    assert.equal(m2.status, 'called');
+  });
+
+  test('should post what they said when they say it', () => {
+    const game = playing();
+    const m = momentFor(game);
+    G.answerMoment(game, 'p2', m.id, 'said', 3_000);
+    assert.equal(game.state.events.at(-1).text, 'B said: "I saw a light."');
+    assert.equal(game.state.overridesLeft.p2, 2);
+  });
+
+  test('should let them stay quiet or say it their way for one override each', () => {
+    const game = playing(1);
+    const m = momentFor(game);
+    G.answerMoment(game, 'p2', m.id, 'quiet', 3_000);
+    assert.equal(game.state.events.at(-1).text, 'B chose to stay quiet.');
+    assert.equal(game.state.overridesLeft.p2, 0);
+    assert.ok(!JSON.stringify(G.tableView(game)).includes('I saw a light'));
+  });
+
+  test('should force the line out when no overrides are left', () => {
+    const game = playing(0);
+    const m = momentFor(game);
+    assert.throws(() => G.answerMoment(game, 'p2', m.id, 'own', 3_000), /No overrides left/);
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 4_000);
+    assert.equal(m.status, 'forced');
+    assert.ok(game.state.events.some((e) => e.kind === 'forced' && e.text === 'B could not keep it in: "I saw a light."'));
+  });
+
+  test('should spend an override when a moment is ignored until the round ends', () => {
+    const game = playing(2);
+    const m = momentFor(game);
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 4_000);
+    assert.deepEqual([m.status, game.state.overridesLeft.p2], ['quiet', 1]);
+  });
+
+  test('should only let the owner answer, once', () => {
+    const game = playing();
+    const m = momentFor(game);
+    assert.throws(() => G.answerMoment(game, 'p3', m.id, 'said'), /not yours/);
+    G.answerMoment(game, 'p2', m.id, 'said');
+    assert.throws(() => G.answerMoment(game, 'p2', m.id, 'said'), /already done/);
+  });
+
+  test('should give each player at most one open moment and two per round change', () => {
+    const game = playing();
+    G.addMoments(game, [{ player_id: 'p1', line: 'a' }, { player_id: 'p1', line: 'b' }, { player_id: 'p2', line: 'c' }, { player_id: 'p3', line: 'd' }, { player_id: 'zz', line: 'e' }]);
+    assert.deepEqual(game.state.moments.map((m) => m.line), ['a', 'c']);
+  });
+
+  test('should tell the GM how every moment went', () => {
+    const game = playing();
+    const m = momentFor(game);
+    G.answerMoment(game, 'p2', m.id, 'own');
+    assert.deepEqual(G.snapshotForGM(game).moments_so_far, [{ player_id: 'p2', line: 'I saw a light.', round: 2, result: 'own' }]);
+  });
+});
+
+describe('never speaking for players', () => {
+  test('should show names, never ids, as speakers', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'x' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, lines: [{ speaker: 'n1', text: 'Hello.' }, { speaker: 'p3', text: 'I did it.' }, { speaker: 'p2', text: 'Me?' }] });
+    assert.deepEqual(game.state.threads.p2.at(-1).lines, [{ speaker: 'The Butler', text: 'Hello.' }, { speaker: '', text: 'You say: "Me?"' }]);
+  });
+
+  test("should turn the asking player's spoken line into narration and drop other players' lines", () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'x' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, lines: [
+      { speaker: 'Character 2', text: 'Where were you?' },
+      { speaker: 'Character 3', text: 'I did it!' },
+      { speaker: 'The Butler', text: 'In the kitchen.' },
+    ] });
+    assert.deepEqual(game.state.threads.p2.at(-1).lines, [
+      { speaker: '', text: 'You say: "Where were you?"' },
+      { speaker: 'The Butler', text: 'In the kitchen.' },
+    ]);
+  });
+});

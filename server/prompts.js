@@ -136,6 +136,7 @@ export const PHASE_SCHEMA = obj({
   public_event: str,
   positions,
   learned,
+  moments: { type: 'array', items: obj({ player_id: str, line: str, why: str }) },
   messages_to_players: messages,
   clues_destroyed: strArr,
   suspicion_change: { type: 'integer', minimum: -20, maximum: 20 },
@@ -188,6 +189,11 @@ export const PLAIN_STYLE = `Writing style (the most important rule):
 - Plain, simple English. Write like you are talking to a 12-year-old.
 - Short sentences, under 12 words each. One idea per sentence.
 - Common words only. No fancy, poetic or old-fashioned words.
+- Say what is literally there. No metaphors, riddles or clever lines. Every sentence must make sense on the first read.
+  Bad: "The ash and the ground do not agree." Good: "There is ash on the floor, but the ground has no burn marks."
+  Bad: "The sea is doing your housekeeping." Good: "The waves are washing away your footprints."
+  Bad: "Nobody who means to die tidies the glass." Good: "The glass was wiped clean. That is odd for a suicide."
+- Clues, hints and nudges state the plain fact. They are never a puzzle about the fact.
 - Say less. Players read on phones and talk out loud. The talk is the fun, not the text.
 - Players call the phases "rounds". In any text they see, say "round", never "phase".
 - Never use em dashes; use commas or full stops.
@@ -254,6 +260,7 @@ How to answer a player:
 - What GM characters know (strict): a GM character knows only (1) the "knows" on their own sheet, (2) their entries in what_gm_characters_have_learned, and (3) what happens right in front of them in this scene. They do not know the truth, other people's secrets, or what was said in scenes they were not in. They never guess the culprit as if it were fact.
 - Things happen in order. If a GM character is going to use something new, the story first shows them learning it (they read the note, they see the mud on the boots, the player tells them), and only then do they react. If they have no way to know, they do not know.
 - learned: whenever a GM character learns something new in this scene, add {character_id, fact, how}. fact is one short sentence. how says how they learned it ("Asha showed him the torn glove"). Use GM character ids only. Empty if nobody learned anything.
+- Never write lines for a player's character. speaker is never a player character's name. What players say comes only from their own request; describe it in narration if needed ("You tell him about the boots.").
 - GM characters talk in their own voice and follow their sheet: they reveal what is in reveals_freely, reveal reveals_under_pressure only when pushed with evidence or leverage, and tell their lies unless confronted with contradicting evidence.
 - Never state the truth outright. Give evidence, testimony and observations; let players reason.
 - When a sensible search or question would find a clue, describe what the player finds concretely and list its id in clues_found. Searching the right place should find obvious evidence without luck. A destroyed clue cannot be found.
@@ -286,7 +293,7 @@ export function phasePrompt({ snapshot, nextPhase, lastRound }) {
 Game state:
 ${JSON.stringify(snapshot)}
 
-${lastRound ? `Last round's question was "${lastRound.question}". The group ${lastRound.correct ? 'got it right, so the reward is now public' : 'got it wrong, so the culprit gains a little cover'}. Build on that.\n\n` : ''}Move the world on. Write the public_event announced on the table and read out loud (15 to 40 words): use the planned beat, adapted to what players actually did. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. GM characters may only act on what they know (see the strict rule above); if one of them learns something during this change, show it happening and add it to learned. Use positions for people who visibly move now (GM characters wander off, people gather somewhere); list only changes, with location ids. Leave arrays empty if nothing applies.`;
+${lastRound ? `Last round's question was "${lastRound.question}". The group ${lastRound.correct ? 'got it right, so the reward is now public' : 'got it wrong, so the culprit gains a little cover'}. Build on that.\n\n` : ''}Move the world on. Write the public_event announced on the table and read out loud (15 to 40 words): use the planned beat, adapted to what players actually did. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Moments (optional, 0 to 2 per round change): a moment asks one player's character to say something out loud now. line is first person, under 20 words, and only things that character already knows (their card, what they found, what they were told). why is one short line, only for that player, saying why it comes out now. Use moments to push the story: a small confession, a memory, a challenge to someone. Never force a culprit to confess the crime. The player may refuse with an override; react to past moment results in moments_so_far. GM characters may only act on what they know (see the strict rule above); if one of them learns something during this change, show it happening and add it to learned. Use positions for people who visibly move now (GM characters wander off, people gather somewhere); list only changes, with location ids. Leave arrays empty if nothing applies.`;
 }
 
 export function scorePrompt({ snapshot, submissions, verdict }) {
