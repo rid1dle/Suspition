@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import type { Room } from '@/lib/views';
+import { HOUSE_ROOM } from '@/lib/house-room';
 
 // Turns the world's room into the screen's look: colours as the CSS variables shadcn reads,
 // the font pair and texture as data attributes, and a gentle ambient effect layer.
@@ -46,7 +47,8 @@ export function AmbientLayer({ ambient, intensity }: { ambient: string; intensit
   );
 }
 
-export function WorldRoom({ room, calm = false, className = '', children }: { room: Room | null; calm?: boolean; className?: string; children?: ReactNode }) {
+export function WorldRoom({ room: given, calm = false, className = '', children }: { room: Room | null; calm?: boolean; className?: string; children?: ReactNode }) {
+  const room = given ?? HOUSE_ROOM;
   const effect = room && !calm && room.ambient !== 'none' ? room.ambient : null;
   return (
     <div

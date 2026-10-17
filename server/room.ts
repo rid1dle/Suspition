@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DEFAULT_COLORS as HOUSE_COLORS } from '../src/lib/house-room.ts';
 
 // The look of each world. The GM picks from fixed lists only; colours are built here from one seed
 // and checked for contrast, so a world can never be hard to read.
@@ -34,9 +35,7 @@ export const ROOM_SCHEMA = roomJson;
 
 export interface Colors { bg: string; surface: string; surfaceAlt: string; text: string; muted: string; accent: string; accentText: string; danger: string }
 
-export const DEFAULT_COLORS: Colors = {
-  bg: '#141217', surface: '#1d1a21', surfaceAlt: '#26222b', text: '#f1ebe3', muted: '#a49c92', accent: '#e0a85a', accentText: '#1b1408', danger: '#e0715a',
-};
+export const DEFAULT_COLORS: Colors = HOUSE_COLORS;
 
 // --- colour maths (sRGB, OKLab/OKLCH, WCAG contrast) ---
 type RGB = [number, number, number];

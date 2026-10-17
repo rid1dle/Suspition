@@ -95,7 +95,8 @@ export function createHandler(app, { joinUrl, next = null }) {
     'POST /api/games/import': (b) => app.importGame(b.host, b.game, b.people ?? {}),
   };
 
-  const pages = { '/': 'table.html', '/table': 'table.html', '/play': 'play.html' };
+  // The new screens take over these paths when DETECTIVE_NEW_SCREENS=1 (until the old ones are removed).
+  const pages = process.env.DETECTIVE_NEW_SCREENS === '1' ? {} : { '/': 'table.html', '/table': 'table.html', '/play': 'play.html' };
 
   return async (req, res) => {
     const url = new URL(req.url, 'http://x');

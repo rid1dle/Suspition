@@ -1,18 +1,20 @@
 /* The world's room: fonts, textures and gentle ambient effects. Transform and opacity only. */
 
 .world { font-family: var(--font-body, var(--font-sans)), system-ui, sans-serif; }
-.world h1, .world h2, .world h3, .world .font-heading { font-family: var(--font-heading, var(--font-serif)), Georgia, serif; }
+/* Display: big titles only (it may be a script or deco face). Heading: readable emphasis for content. */
+.world h1, .world .font-display { font-family: var(--font-display, var(--font-heading)), Georgia, serif; }
+.world h2, .world h3, .world .font-heading { font-family: var(--font-heading, var(--font-serif)), Georgia, serif; }
 
-.world[data-font='noir-serif'] { --font-heading: var(--font-playfair); --font-body: var(--font-inter); }
-.world[data-font='royal-deco'] { --font-heading: var(--font-cinzel); --font-body: var(--font-cormorant); }
-.world[data-font='cozy-rounded'] { --font-heading: var(--font-fredoka); --font-body: var(--font-nunito); }
-.world[data-font='old-typewriter'] { --font-heading: var(--font-special-elite); --font-body: var(--font-courier-prime); }
-.world[data-font='neon-grotesk'] { --font-heading: var(--font-unbounded); --font-body: var(--font-space-grotesk); }
-.world[data-font='gothic-ink'] { --font-heading: var(--font-pirata); --font-body: var(--font-eb-garamond); }
-.world[data-font='storybook'] { --font-heading: var(--font-fraunces); --font-body: var(--font-nunito); }
-.world[data-font='modern-clean'] { --font-heading: var(--font-sans); --font-body: var(--font-sans); }
-.world[data-font='tropical-script'] { --font-heading: var(--font-pacifico); --font-body: var(--font-karla); }
-.world[data-font='vintage-press'] { --font-heading: var(--font-abril); --font-body: var(--font-libre-baskerville); }
+.world[data-font='noir-serif'] { --font-display: var(--font-playfair); --font-heading: var(--font-playfair); --font-body: var(--font-inter); }
+.world[data-font='royal-deco'] { --font-display: var(--font-cinzel); --font-heading: var(--font-cormorant); --font-body: var(--font-cormorant); }
+.world[data-font='cozy-rounded'] { --font-display: var(--font-fredoka); --font-heading: var(--font-fredoka); --font-body: var(--font-nunito); }
+.world[data-font='old-typewriter'] { --font-display: var(--font-special-elite); --font-heading: var(--font-courier-prime); --font-body: var(--font-courier-prime); }
+.world[data-font='neon-grotesk'] { --font-display: var(--font-unbounded); --font-heading: var(--font-space-grotesk); --font-body: var(--font-space-grotesk); }
+.world[data-font='gothic-ink'] { --font-display: var(--font-pirata); --font-heading: var(--font-eb-garamond); --font-body: var(--font-eb-garamond); }
+.world[data-font='storybook'] { --font-display: var(--font-fraunces); --font-heading: var(--font-fraunces); --font-body: var(--font-nunito); }
+.world[data-font='modern-clean'] { --font-display: var(--font-sans); --font-heading: var(--font-sans); --font-body: var(--font-sans); }
+.world[data-font='tropical-script'] { --font-display: var(--font-pacifico); --font-heading: var(--font-karla); --font-body: var(--font-karla); }
+.world[data-font='vintage-press'] { --font-display: var(--font-abril); --font-heading: var(--font-libre-baskerville); --font-body: var(--font-libre-baskerville); }
 
 /* Textures sit behind everything, very faint. */
 .world::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.5; }
@@ -73,3 +75,21 @@
 .shimmer { animation: shimmer 2.2s linear infinite; }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .shimmer { animation: none; } }
+
+/* The map (drawn by src/lib/map.ts as HTML). */
+.map { position: relative; aspect-ratio: 16 / 10; width: 100%; background: var(--card); border-radius: 0.9rem; overflow: hidden; }
+.map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map line { stroke: var(--border); stroke-width: 0.6; stroke-dasharray: 1.5 1.2; vector-effect: non-scaling-stroke; }
+.place { position: absolute; transform: translate(-50%, -50%); background: var(--background); border: 1px solid var(--border); border-radius: 0.6rem; padding: 5px 8px; text-align: center; max-width: 34%; }
+.place-name { font-family: var(--font-heading, Georgia), serif; font-size: 0.85rem; line-height: 1.2; }
+.whos { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 4px; }
+.who { font-size: 0.72rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; }
+.who.player { border-color: var(--primary); color: var(--primary); }
+.who.npc { color: var(--muted-foreground); }
+.who.npc.minor { opacity: 0.6; border-style: dashed; }
+.who.me { background: var(--primary); color: var(--primary-foreground); }
+.who.moved { animation: moved 2.4s ease-out; }
+@keyframes moved { 0% { box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 60%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
+.map-key { margin-top: 6px; display: flex; gap: 8px; font-size: 0.8rem; color: var(--muted-foreground); }
+.map .room { font-size: 0.72rem; color: var(--muted-foreground); margin-top: 2px; }
+@media (max-width: 640px) { .map { aspect-ratio: 3 / 4; } .place-name { font-size: 0.78rem; } }
