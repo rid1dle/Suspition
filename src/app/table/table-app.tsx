@@ -53,6 +53,7 @@ function useMedia(view: TableView | null) {
     const m = media.current;
     if (!m || !view) return;
     m.score.setTheme(view.music, view.setup?.tone);
+    m.sfx.setSet(view.room?.soundSet);
     m.score.setIntensity(intensityFor(view));
     const cues = cuesBetween(last.current, view) as string[];
     for (const cue of cues) m.score.cue(cue);

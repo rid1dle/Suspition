@@ -161,6 +161,7 @@ function Seat({ token, onGone }: { token: string; onGone: () => void }) {
 
   useEffect(() => {
     if (!view) return;
+    sfx?.setSet(view.room?.soundSet);
     const alerts = phoneAlerts(prev.current, view) as { sound: string; text: string; tab: string | null }[];
     prev.current = view;
     if (view.publicError && view.publicError !== shownError) toast.error(view.publicError);
