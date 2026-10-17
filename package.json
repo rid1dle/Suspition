@@ -11,7 +11,9 @@
     "rework": "node scripts/rework-cast.js",
     "fix-cards": "node scripts/fix-cards.js",
     "dataset": "node scripts/export-dataset.js",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "playtest": "node scripts/playtest.js",
+    "seed-bots": "node scripts/playtest/seed.js"
   },
   "engines": {
     "node": ">=20"
