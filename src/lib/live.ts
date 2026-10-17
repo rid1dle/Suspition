@@ -93,7 +93,8 @@ export function createLive<T>(url: string, { EventSourceImpl, setTimer = (fn, ms
 const stores = new Map<string, Live<unknown>>();
 
 export function useLive<T>(url: string | null): { view: T | null; status: LiveStatus; gone: string } {
-  const live = url ? ((stores.get(url) ?? stores.set(url, createLive<T>(url)).get(url)) as Live<T>) : null;
+  const browser = typeof window !== 'undefined';
+  const live = url && browser ? ((stores.get(url) ?? stores.set(url, createLive<T>(url)).get(url)) as Live<T>) : null;
   const subscribe = useCallback((fn: () => void) => (live ? live.subscribe(fn) : () => {}), [live]);
   const view = useSyncExternalStore(subscribe, () => live?.get() ?? null, () => null);
   const status = useSyncExternalStore(subscribe, () => live?.status() ?? 'connecting', () => 'connecting' as LiveStatus);

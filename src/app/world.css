@@ -93,3 +93,7 @@
 .map-key { margin-top: 6px; display: flex; gap: 8px; font-size: 0.8rem; color: var(--muted-foreground); }
 .map .room { font-size: 0.72rem; color: var(--muted-foreground); margin-top: 2px; }
 @media (max-width: 640px) { .map { aspect-ratio: 3 / 4; } .place-name { font-size: 0.78rem; } }
+.map.editing { outline: 2px dashed var(--primary); outline-offset: 2px; }
+.place.editing { cursor: grab; touch-action: none; user-select: none; }
+.place.dragging { cursor: grabbing; z-index: 3; box-shadow: 0 6px 20px rgb(0 0 0 / 0.5); }
+.room-input { width: 9rem; max-width: 100%; font-size: 0.75rem; padding: 3px 6px; margin-top: 4px; border-radius: 6px; background: var(--card); border: 1px solid var(--border); }
