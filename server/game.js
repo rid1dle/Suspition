@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { formForGM, quoteRaw } from './reader.js';
 import { LENGTHS } from './prompts.js';
 import { GENERATION_STEPS } from './progress.js';
 import { sanitizeMusic } from '../public/music-theory.js';
@@ -479,7 +480,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   delete st.pending[playerId];
   const kind = ask.kind === 'chat' ? (ANSWER_KINDS.includes(result.kind) ? result.kind : 'question') : ask.kind;
   const thread = st.threads[playerId];
-  thread.push({ from: 'you', kind, text: ask.text, at: now });
+  thread.push({ from: 'you', kind, text: ask.text, ...(ask.read ? { read: ask.read } : {}), at: now });
   const myName = game.scenario.players.find((p) => p.id === playerId)?.character_name?.toLowerCase();
   const players = new Set(game.scenario.players.map((p) => p.character_name.toLowerCase()));
   const names = Object.fromEntries([
@@ -1080,6 +1081,9 @@ export function cleanSvg(svg) {
   return text;
 }
 
+// Player-written text reaches an agent with secrets only as the reader's form, or quoted as data.
+export const playerWords = (read, text, mode = 'move') => (read ? formForGM(read, mode).replace(/\n/g, ' | ') : quoteRaw(text));
+
 export function snapshotForGM(game) {
   const st = game.state;
   return {
@@ -1098,7 +1102,7 @@ export function snapshotForGM(game) {
     revealed_hidden_facts: st.revealed,
     public_events: st.events.filter((e) => e.kind !== 'opening').map((e) => (e.kind === 'qa' ? `${e.by} asked out loud: ${e.q} Answer: ${e.text}` : e.text)),
     record: Object.fromEntries(
-      Object.entries(st.threads).map(([pid, msgs]) => [pid, msgs.map((m) => `${m.from}${m.kind ? `(${m.kind})` : ''}: ${m.text}`)]),
+      Object.entries(st.threads).map(([pid, msgs]) => [pid, msgs.map((m) => `${m.from}${m.kind ? `(${m.kind})` : ''}: ${m.from === 'you' ? playerWords(m.read, m.text, 'move') : m.text}`)]),
     ),
   };
 }
@@ -1254,7 +1258,7 @@ export function playerView(game, playerId, now = Date.now()) {
   };
   view.thread = st.threads[playerId];
   view.questionsLeft = st.questionsLeft[playerId];
-  view.pending = st.pending[playerId] ?? null;
+  view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;
   view.clues = st.found[playerId].map((id) => {
     const c = game.scenario.clues.find((x) => x.id === id);
     return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id) };

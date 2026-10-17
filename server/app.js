@@ -38,6 +38,7 @@ export class App {
       st.replays ??= 0;
       st.persona ??= {};
       st.facts ??= [];
+      st.play ??= {};
       G.backfillFacts(this.game);
       if (this.game.setup) this.game.setup.replays ??= G.MAX_REPLAYS;
       st.overridesLeft ??= Object.fromEntries(this.game.players.map((p) => [p.id, this.game.setup?.overrides ?? 3]));
@@ -255,8 +256,21 @@ export class App {
     const p = G.playerByToken(game, tok);
     const ask = G.beginAsk(game, p.id, input ?? {});
     const task = this.background(`ask ${p.id}`, async () => {
+      let read;
       try {
-        const result = await this.gm.answer(game, p.id, ask);
+        read = await this.gm.read(game, p.id, ask.text, 'move');
+      } catch (err) {
+        if (this.game !== game) return;
+        G.failAsk(game, p.id);
+        this.log(`read ${p.id} failed: ${err.message}`);
+        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not read that. Try saying that again. You did not lose a question.', at: this.clock() });
+        await this.changed();
+        return;
+      }
+      if (this.game !== game || !game.state.pending[p.id]) return;
+      game.state.pending[p.id].read = read;
+      try {
+        const result = await this.gm.answer(game, p.id, { ...ask, read });
         if (this.game !== game) return;
         G.completeAsk(game, p.id, result, this.clock());
       } catch (err) {

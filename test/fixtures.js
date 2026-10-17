@@ -82,7 +82,14 @@ export class FakeGM {
     for (const e of this.progressEvents ?? []) onProgress(e);
     return this.step('generate', () => makeScenario(game.players.length, { phases: 3, hints: game.setup.hints }));
   }
-  answer() {
+  read(game, playerId, text, mode) {
+    this.lastRead = { playerId, text, mode };
+    return this.step('read', this.readResult ?? (mode === 'final'
+      ? { how: text?.how ?? '', why: text?.why ?? '', goal: text?.goal ?? '', claims: [], sways_gm: false }
+      : { kind: 'question', target: '', place: '', attempt: 'P tries something', said_aloud: '', out_of_world: false, sways_gm: false, claims: [] }));
+  }
+  answer(game, playerId, ask) {
+    this.lastAsk = ask;
     return this.step('answer', this.askResult);
   }
   phase() {
