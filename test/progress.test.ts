@@ -54,3 +54,13 @@ describe('stepForKey', () => {
     assert.equal(stepForKey('nonsense'), null);
   });
 });
+
+describe('TopLevelTracker plan capture', () => {
+  test('should hand over the progress plan as soon as it is written', () => {
+    const values = [];
+    const t = new TopLevelTracker(() => {}, () => {}, (k, v) => values.push([k, v]));
+    const text = JSON.stringify({ progress: [{ title: 'Booking a "monsoon" wedding', covers: ['title', 'truth'] }, { title: 'Giving each of you a secret', covers: ['players'] }], title: 'X', players: [] });
+    for (const c of text.split('')) t.feed(c);
+    assert.deepEqual(values, [['progress', [{ title: 'Booking a "monsoon" wedding', covers: ['title', 'truth'] }, { title: 'Giving each of you a secret', covers: ['players'] }]]]);
+  });
+});

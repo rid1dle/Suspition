@@ -42,6 +42,7 @@ export function streamEvents(onProgress) {
   const tracker = new TopLevelTracker(
     (key) => onProgress({ kind: 'key', key }),
     (key, count) => onProgress({ kind: 'item', key, count }),
+    (key, value) => key === 'progress' && onProgress({ kind: 'plan', steps: value }),
   );
   let thinking = false;
   return (line) => {

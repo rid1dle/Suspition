@@ -252,6 +252,8 @@ export class App {
       p.step = 'thinking';
       p.seen = ['thinking'];
       p.counts = {};
+      p.key = null;
+      p.keys = [];
     };
     if (e.kind === 'attempt') {
       p.attempt = e.attempt;
@@ -263,7 +265,15 @@ export class App {
         restart();
         this.log(`gm generate: draft ${p.draft} (the previous one was not valid JSON, the GM is rewriting it)`);
       }
-    } else if (e.kind === 'key') p.step = stepForKey(e.key) ?? p.step;
+    } else if (e.kind === 'plan') {
+      p.plan = G.cleanPlan(e.steps);
+      this.notify();
+      return;
+    } else if (e.kind === 'key') {
+      p.step = stepForKey(e.key) ?? p.step;
+      p.key = e.key;
+      p.keys = [...new Set([...(p.keys ?? []), e.key])];
+    }
     else if (e.kind === 'item') p.counts[e.key] = e.count;
     else if (e.kind === 'checking') p.step = 'checking';
     else if (e.kind === 'cards') p.step = 'cards';

@@ -2,7 +2,7 @@
 import { randomBytes } from 'node:crypto';
 import { formForGM, quoteRaw } from './reader.ts';
 import { scoreMoves, playTotal, skillSplit, PLAY_MAX } from './skills.ts';
-import { LENGTHS } from './prompts.ts';
+import { LENGTHS, PLAN_SECTIONS } from './prompts.ts';
 import { GENERATION_STEPS } from './progress.ts';
 import { sanitizeMusic } from '../public/music-theory.js';
 
@@ -1278,8 +1278,42 @@ function publicCore(game, now) {
       counts: game.progress.counts,
       startedAt: game.progress.startedAt,
       steps: GENERATION_STEPS.map(({ id, label }) => ({ id, label })),
+      ...planView(game.progress),
     } : null,
   };
+}
+
+const SECTION_WORDS = { players: 'characters', npcs: 'people', locations: 'places', clues: 'clues', key_deductions: 'links', phases: 'rounds', hint_ladder: 'hints', twists: 'twists' };
+const PLAN_WORDS = 7;
+export const CARD_STEP = 'Making sure everyone knows their own story';
+
+// The GM's own steps, cleaned: 3 to 7 short titles, each pointing at real sections. null if it is unusable.
+export function cleanPlan(steps, sections = PLAN_SECTIONS) {
+  if (!Array.isArray(steps)) return null;
+  const known = new Set(sections);
+  const plan = steps
+    .map((st) => ({
+      title: String(st?.title ?? '').replace(/\s+/g, ' ').trim().split(' ').slice(0, PLAN_WORDS).join(' '),
+      covers: (Array.isArray(st?.covers) ? st.covers : []).map(String).filter((k) => known.has(k)),
+    }))
+    .filter((st) => st.title && st.covers.length)
+    .slice(0, 7);
+  return plan.length >= 3 ? plan : null;
+}
+
+function planView(p) {
+  const redraft = (p.attempt ?? 1) > 1 || (p.draft ?? 0) > 1;
+  if (!p.plan) return { plan: null, thinking: true, redraft };
+  const keys = new Set(p.keys ?? []);
+  const finishing = ['checking', 'cards'].includes(p.step);
+  const plan = p.plan.map((st) => {
+    const active = !finishing && st.covers.includes(p.key);
+    const done = finishing || (!active && st.covers.every((k) => keys.has(k)));
+    const counted = active ? st.covers.find((k) => SECTION_WORDS[k] && p.counts?.[k]) : null;
+    return { title: st.title, state: active ? 'active' : done ? 'done' : 'todo', ...(counted ? { count: `${p.counts[counted]} ${SECTION_WORDS[counted]} so far` } : {}) };
+  });
+  if (p.step === 'cards') plan.push({ title: CARD_STEP, state: 'active' });
+  return { plan, thinking: false, redraft };
 }
 
 function bestPlay(result) {

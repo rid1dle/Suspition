@@ -1454,3 +1454,24 @@ describe('private questions per round', () => {
     assert.equal(game.setup.questions, 4);
   });
 });
+
+describe('the plan the GM writes', () => {
+  test('should keep 3 to 7 short steps with known sections only', () => {
+    const plan = G.cleanPlan([
+      { title: 'Booking a monsoon wedding in Goa tonight with music', covers: ['title', 'nonsense'] },
+      { title: 'Giving each of you a secret', covers: ['players'] },
+      { title: 'Hiding the clues', covers: ['clues', 'key_deductions'] },
+      { title: '', covers: ['phases'] },
+    ]);
+    assert.deepEqual(plan, [
+      { title: 'Booking a monsoon wedding in Goa tonight', covers: ['title'] },
+      { title: 'Giving each of you a secret', covers: ['players'] },
+      { title: 'Hiding the clues', covers: ['clues', 'key_deductions'] },
+    ]);
+  });
+
+  test('should refuse a plan with fewer than 3 usable steps', () => {
+    assert.equal(G.cleanPlan([{ title: 'One', covers: ['title'] }, { title: 'Two', covers: ['nope'] }]), null);
+    assert.equal(G.cleanPlan('nope'), null);
+  });
+});

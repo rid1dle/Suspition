@@ -1,9 +1,16 @@
 type OnKey = (key: string) => void;
 type OnItem = (key: string, count: number) => void;
+type OnValue = (key: string, value: unknown) => void;
+
+// Top-level values handed over whole as soon as they close (the GM's own progress plan).
+const CAPTURE = new Set(['progress']);
 
 export class TopLevelTracker {
   onKey: OnKey;
   onItem: OnItem;
+  onValue: OnValue;
+  valueKey!: string | null;
+  valueBuf!: string;
   stack!: string[];
   inString!: boolean;
   escaped!: boolean;
@@ -14,9 +21,10 @@ export class TopLevelTracker {
   key!: string | null;
   counts!: Record<string, number>;
 
-  constructor(onKey: OnKey = () => {}, onItem: OnItem = () => {}) {
+  constructor(onKey: OnKey = () => {}, onItem: OnItem = () => {}, onValue: OnValue = () => {}) {
     this.onKey = onKey;
     this.onItem = onItem;
+    this.onValue = onValue;
     this.reset();
   }
 
@@ -30,6 +38,8 @@ export class TopLevelTracker {
     this.expectingKey = false;
     this.key = null;
     this.counts = {};
+    this.valueKey = null;
+    this.valueBuf = '';
   }
 
   feed(chunk: string) {
@@ -37,6 +47,20 @@ export class TopLevelTracker {
   }
 
   step(c: string) {
+    if (this.valueKey) this.valueBuf += c;
+    this.read(c);
+    if (this.valueKey && !this.inString && this.stack.length === 1 && (c === ']' || c === '}') && this.valueBuf.trim()) {
+      const key = this.valueKey;
+      this.valueKey = null;
+      try {
+        this.onValue(key, JSON.parse(this.valueBuf));
+      } catch {
+        // a garbled draft; the next draft resets the tracker
+      }
+    }
+  }
+
+  read(c: string) {
     if (this.inString) {
       if (this.escaped) this.escaped = false;
       else if (c === '\\') this.escaped = true;
@@ -60,6 +84,10 @@ export class TopLevelTracker {
       this.pendingKey = null;
       this.expectingKey = false;
       this.onKey(this.key);
+      if (CAPTURE.has(this.key)) {
+        this.valueKey = this.key;
+        this.valueBuf = '';
+      }
       return;
     }
     if (c === ',' && atTop) {

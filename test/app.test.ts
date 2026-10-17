@@ -669,3 +669,48 @@ describe('App: player profiles', () => {
     assert.equal((await store.load('asha')).answers.length, 0);
   });
 });
+
+describe('App: the plan the GM writes', () => {
+  const plan = [{ title: 'Booking the wedding', covers: ['title', 'truth'] }, { title: 'Giving each of you a secret', covers: ['players'] }, { title: 'Hiding the clues', covers: ['clues'] }];
+
+  test('should show thinking until the plan arrives', async () => {
+    const ctx = await setupApp();
+    ctx.gm.gate = new Promise(() => {});
+    ctx.gm.progressEvents = [{ kind: 'attempt', attempt: 1 }, { kind: 'thinking' }];
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const p = ctx.app.tableView().progress;
+    assert.equal(p.thinking, true);
+    assert.equal(p.plan, null);
+  });
+
+  test('should mark the step that covers the section being written as active', async () => {
+    const ctx = await setupApp();
+    ctx.gm.gate = new Promise(() => {});
+    ctx.gm.progressEvents = [{ kind: 'attempt', attempt: 1 }, { kind: 'plan', steps: plan }, { kind: 'key', key: 'title' }, { kind: 'key', key: 'truth' }, { kind: 'key', key: 'players' }, { kind: 'item', key: 'players', count: 2 }];
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const p = ctx.app.tableView().progress;
+    assert.equal(p.thinking, false);
+    assert.deepEqual(p.plan.map((s) => s.state), ['done', 'active', 'todo']);
+    assert.equal(p.plan[1].count, '2 characters so far');
+    assert.equal(p.redraft, false);
+  });
+
+  test('should keep the plan through a redraft and say so', async () => {
+    const ctx = await setupApp();
+    ctx.gm.gate = new Promise(() => {});
+    ctx.gm.progressEvents = [{ kind: 'attempt', attempt: 1 }, { kind: 'plan', steps: plan }, { kind: 'key', key: 'clues' }, { kind: 'attempt', attempt: 2 }];
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const p = ctx.app.tableView().progress;
+    assert.equal(p.plan.length, 3);
+    assert.equal(p.redraft, true);
+  });
+
+  test('should add the card check step after the world', async () => {
+    const ctx = await setupApp();
+    ctx.gm.gate = new Promise(() => {});
+    ctx.gm.progressEvents = [{ kind: 'attempt', attempt: 1 }, { kind: 'plan', steps: plan }, { kind: 'key', key: 'clues' }, { kind: 'checking' }, { kind: 'cards' }];
+    await ctx.app.setup(ctx.host, { tone: 'cozy', length: 'short', hints: 2 });
+    const p = ctx.app.tableView().progress;
+    assert.deepEqual(p.plan.map((s) => [s.title, s.state]), [['Booking the wedding', 'done'], ['Giving each of you a secret', 'done'], ['Hiding the clues', 'done'], ['Making sure everyone knows their own story', 'active']]);
+  });
+});

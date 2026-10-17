@@ -23,7 +23,7 @@ const playerRead = obj({ intent: str, persona: str });
 const skillEnum = { type: 'string', enum: [...SKILLS, ...PENALTIES, 'none'] };
 const play = (min, max) => obj({ points: { type: 'integer', minimum: min, maximum: max }, skill: skillEnum, why: str });
 
-export const SCENARIO_SCHEMA = obj({
+const WORLD_SCHEMA = obj({
   title: str,
   setting_summary: str,
   background: strArr,
@@ -129,6 +129,19 @@ export const SCENARIO_SCHEMA = obj({
     description: str,
   }),
 });
+
+// Sections the GM's own progress steps can point at.
+export const PLAN_SECTIONS = Object.keys(WORLD_SCHEMA.properties);
+
+// The plan comes first so the table can show it while the rest is written.
+export const SCENARIO_SCHEMA = {
+  ...WORLD_SCHEMA,
+  properties: {
+    progress: { type: 'array', items: obj({ title: str, covers: { type: 'array', items: { type: 'string', enum: PLAN_SECTIONS } } }) },
+    ...WORLD_SCHEMA.properties,
+  },
+  required: ['progress', ...WORLD_SCHEMA.required],
+};
 
 export const ASK_SCHEMA = obj({
   kind: { type: 'string', enum: ['question', 'self', 'action'] },
@@ -246,6 +259,8 @@ export const PLAIN_STYLE = `Writing style (the most important rule):
 
 export const GENERATION_SYSTEM = `You design one-session hidden-role mystery games for friends playing in the same room.
 Each player is a character inside the mystery. Some are investigators with their own secrets, one or more are the culprits, and there may be a wildcard whose goal fits neither side.
+
+Write progress first: 3 to 7 short steps for how you will build this world, in its own flavour and in plain words, each under 8 words ("Booking a monsoon wedding in Goa", "Giving each of you a secret"). The whole room sees these while you work, so never name the culprit, a secret, a hidden fact or a clue. covers lists the sections each step writes; together the steps cover every section once.
 
 Design rules:
 - Write the truth first: what happened, in order, who did what, when, where, how and why. Everything else must be consistent with it.
