@@ -210,3 +210,18 @@ describe('first start import safety', () => {
     assert.equal((await importOnce(db, { gameData: join(dir, 'game-data'), dataset: join(dir, 'dataset') })).games, 3);
   });
 });
+
+describe('usernames at join', () => {
+  test('should not merge a new player into someone who only played a test game', async () => {
+    const db = await dbIn();
+    const people = new DbPeople(db);
+    await people.save(addAnswer(newProfile('ben', 'Ben', 1), { id: 'party', answer: 'First to leave' }));
+    const g = played('ben');
+    db.saveGame(g);
+    db.setLearning(g.id, 'test');
+    const app = await new App({ gm: new FakeGM(), store: new DbStore(db), people }).init();
+    await app.newGame(app.game.hostToken);
+    await app.join({ name: 'Ben' });
+    assert.equal(app.game.players[0].username, 'ben-2');
+  });
+});

@@ -46,6 +46,11 @@ export class DbPeople {
     const real = this.db.realPlayers();
     return this.db.peopleList().filter((p) => real.has(p.username));
   }
+  // Every username ever used here, so a new player never takes over someone else's profile.
+  async allUsernames(): Promise<string[]> {
+    return [...this.db.allUsernames()];
+  }
+
   async load(username: string): Promise<Profile | null> {
     if (!USERNAME.test(String(username ?? ''))) return null;
     const person = this.db.person(username);

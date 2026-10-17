@@ -121,7 +121,7 @@ export class App {
 
   async join(input = {}) {
     const name = String(input.name ?? '').trim();
-    const taken = (await this.people.list()).map((p) => p.username);
+    const taken = this.people.allUsernames ? await this.people.allUsernames() : (await this.people.list()).map((p) => p.username);
     const username = input.username ? usernameFor(input.username) : usernameFor(name, taken);
     const player = G.addPlayer(this.game, { ...input, username });
     const profile = (await this.people.load(username)) ?? newProfile(username, player.name, this.clock());
