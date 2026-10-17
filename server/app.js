@@ -272,7 +272,7 @@ export class App {
   async moment(tok, id, action, text) {
     const game = this.game;
     const p = G.playerByToken(game, tok);
-    const own = action === 'own' && String(text ?? '').trim();
+    const own = action === 'own' && String(text ?? '').trim().slice(0, 200);
     const read = own ? await this.readOrRefuse(game, p.id, own, 'said') : null;
     if (this.game !== game) return;
     if (action === 'ready') G.readyMoment(game, p.id, id, this.clock());
@@ -305,7 +305,7 @@ export class App {
         G.completePublicAsk(game, p.id, answer, this.clock(), read, words);
       } catch (err) {
         if (this.game !== game) return;
-        G.failPublicAsk(game, p.id);
+        G.failPublicAsk(game, p.id, 'The GM could not read that. Try saying that again.');
         this.log(`public ${p.id} failed: ${err.message}`);
       } finally {
         if (this.game === game) await this.changed();

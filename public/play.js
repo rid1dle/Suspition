@@ -52,7 +52,7 @@ async function joinAs(body, { full }) {
   const res = await api('join', body).catch((err) => toast(err.message));
   if (!res?.token) return;
   store.set('detective-full', full ? '1' : '0');
-  if (body.username) store.set('detective-username', body.username);
+  if (res.username) store.set('detective-username', res.username);
   saveToken(res.token);
   connect();
 }
@@ -466,8 +466,13 @@ function finalBody() {
     <button class="primary wide" id="submit">Send my answer</button>`;
 }
 
+let shownPublicError = null;
 function update() {
   const v = view;
+  if (v.publicError !== shownPublicError) {
+    shownPublicError = v.publicError;
+    if (v.publicError) toast(v.publicError);
+  }
   if ($('players')) $('players').innerHTML = v.players.map((p) => `<span class="badge" style="margin:0 6px 6px 0">${esc(p.name)}</span>`).join('');
   if ($('wait-msg')) {
     const step = v.progress?.steps.find((s) => s.id === v.progress.step)?.label;

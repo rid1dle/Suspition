@@ -128,6 +128,7 @@ describe('profile routes', () => {
     await post('new', { host: app.game.hostToken });
     const join = await post('join', { name: 'Zed' });
     assert.equal(join.status, 200);
+    assert.equal(join.body.username, 'zed');
     const people = await (await fetch(`${base}/api/people`)).json();
     assert.ok(people.people.some((p) => p.username === 'zed'));
     assert.deepEqual((await post('checkname', { name: 'zed' })).body, { match: { username: 'zed', name: 'Zed' } });

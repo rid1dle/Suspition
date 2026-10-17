@@ -994,6 +994,7 @@ export function beginPublicAsk(game, playerId, text) {
   const st = game.state;
   if (st.publicPending[playerId]) fail('Wait for the answer to your last question.', 409);
   st.publicPending[playerId] = clean;
+  if (st.publicErrors) delete st.publicErrors[playerId];
   return clean;
 }
 
@@ -1026,8 +1027,9 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text: String(answer ?? '').trim() || 'Nobody knows that yet.', ...(words ? { read: words } : {}) });
 }
 
-export function failPublicAsk(game, playerId) {
+export function failPublicAsk(game, playerId, message = '') {
   delete game.state.publicPending[playerId];
+  if (message) (game.state.publicErrors ??= {})[playerId] = message;
 }
 
 const wordsOf = (text) => String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
@@ -1344,6 +1346,7 @@ export function playerView(game, playerId, now = Date.now()) {
   view.myVote = st.hintVote ? st.hintVote.votes[playerId] ?? null : null;
   view.myRoundVote = st.roundVote ? st.roundVote.votes[playerId] ?? null : null;
   view.publicPending = st.publicPending?.[playerId] ?? null;
+  view.publicError = st.publicErrors?.[playerId] ?? null;
   view.persona = st.persona?.[playerId] ?? null;
   view.playTotal = playTotal(st.play?.[playerId]);
   view.moments = (st.moments ?? []).filter((m) => m.player_id === playerId && OPEN.includes(m.status))

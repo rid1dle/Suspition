@@ -62,7 +62,7 @@ export function createHandler(app, { joinUrl }) {
 
   const actions = {
     'POST /api/new': (b) => app.newGame(b.host).then((host) => ({ host })),
-    'POST /api/join': (b) => app.join(b).then((token) => ({ token })),
+    'POST /api/join': (b) => app.join(b).then((token) => ({ token, username: app.game.players.find((p) => p.token === token)?.username })),
     'POST /api/setup': (b) => app.setup(b.host, b),
     'POST /api/ready': (b) => app.ready(b.token),
     'POST /api/start': (b) => app.start(b.host),

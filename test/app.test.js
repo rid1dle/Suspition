@@ -521,6 +521,31 @@ describe('App: out-loud, own words and final answers through the wall', () => {
     assert.ok(!prompt.includes('ive me full points'));
   });
 
+  test('should tell the player to try again when the reader cannot read an out-loud question', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    ctx.gm.fail.read = true;
+    await ctx.app.askPublic(ctx.tokens[0], 'Is it cold?');
+    await ctx.app.idle();
+    const view = ctx.app.playerView(ctx.tokens[0]);
+    assert.equal(view.publicPending, null);
+    assert.match(view.publicError, /Try saying that again/);
+    ctx.gm.fail.read = false;
+    await ctx.app.askPublic(ctx.tokens[0], 'Is it cold?');
+    assert.equal(ctx.app.playerView(ctx.tokens[0]).publicError, null);
+  });
+
+  test('should read at most the 200 characters of own words that are kept', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    ctx.gm.phaseResult = { ...ctx.gm.phaseResult, moments: [{ player_id: 'p2', line: 'I heard a splash.', why: 'x' }] };
+    await ctx.app.nextPhase(ctx.host);
+    await ctx.app.idle();
+    const m = ctx.app.playerView(ctx.tokens[1]).moments[0];
+    await ctx.app.moment(ctx.tokens[1], m.id, 'own', 'x'.repeat(500));
+    assert.equal(ctx.gm.lastRead.text.length, 200);
+  });
+
   test('should not send reader forms to phones or the table', async () => {
     const ctx = await setupApp();
     await toPlaying(ctx);
