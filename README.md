@@ -70,6 +70,7 @@ culprit, adds a map and music, and saves the old version next to it.
 | `DETECTIVE_SETUP_MODEL` | Claude Code default | Model that writes the world and the reveal |
 | `DETECTIVE_SETUP_EFFORT` | `medium` | Effort for writing the world (`high` is richer and slower) |
 | `DETECTIVE_PLAY_MODEL` | Claude Code default | Model that answers questions during play |
+| `DETECTIVE_READER_MODEL` | `sonnet` | Model that reads what players type before the GM sees it |
 | `NO_OPEN` | | Set to `1` to stop the table screen opening on start |
 | `DETECTIVE_USE_API_KEY` | | Set to `1` to let the GM use `ANTHROPIC_API_KEY` instead of your Claude login |
 | `DETECTIVE_DATA_DIR` | `game-data/` | Where the current game is saved |
@@ -81,6 +82,30 @@ Do not open that file mid-game: it holds the truth.
 
 To end a game early, press **End game** on the table screen (tap twice). If the table link is lost,
 `npm run fresh` starts the server with a new, empty lobby.
+
+## Players, the wall and play points
+
+- **Profiles:** players join by tapping their name ("Played before?") or typing a username. While they
+  wait, the phone asks 3 quick questions. Answers and how each game went are kept in
+  `dataset/people/<username>.json`. The GM uses them to shape characters, never to pick sides.
+  "What the game knows about you" on the phone shows a player their own skills and tips.
+- **The wall:** everything a player types goes first to a reader with no secrets. The GM, the scorer and
+  the judge only ever see the reader's short form. Claims ("everyone believes me"), rule talk and
+  attempts to sway the GM never reach the GM as text.
+- **Play points:** every move scores -1 to +2 for what it does in the story (out loud: 0 to +1), tagged
+  with a skill. A claim costs one point; swaying the GM is a separate -1. Up to +3 per game on top of
+  the 6 case points.
+
+## Testing with bots
+
+```bash
+npm run seed-bots     # writing samples for each real player, from dataset/games
+npm run playtest      # a whole game with 4 bots (fair, fair, breaker, swayer) and a judge; ~90 Claude calls, ~40 min
+npm run attacks       # replays every saved attack and clean decoy in test/attacks.json against the live reader and GM
+```
+
+A playtest writes `dataset/playtests/<day>-<id>/` with the game, `report.json` and `report.md`. Every
+breach the judge finds gets fixed and added to `test/attacks.json`, so it stays fixed.
 
 ## Development
 
