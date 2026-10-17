@@ -1,0 +1,71 @@
+/* The world's room: fonts, textures and gentle ambient effects. Transform and opacity only. */
+
+.world { font-family: var(--font-body, var(--font-sans)), system-ui, sans-serif; }
+.world h1, .world h2, .world h3, .world .font-heading { font-family: var(--font-heading, var(--font-serif)), Georgia, serif; }
+
+.world[data-font='noir-serif'] { --font-heading: var(--font-playfair); --font-body: var(--font-inter); }
+.world[data-font='royal-deco'] { --font-heading: var(--font-cinzel); --font-body: var(--font-cormorant); }
+.world[data-font='cozy-rounded'] { --font-heading: var(--font-fredoka); --font-body: var(--font-nunito); }
+.world[data-font='old-typewriter'] { --font-heading: var(--font-special-elite); --font-body: var(--font-courier-prime); }
+.world[data-font='neon-grotesk'] { --font-heading: var(--font-unbounded); --font-body: var(--font-space-grotesk); }
+.world[data-font='gothic-ink'] { --font-heading: var(--font-pirata); --font-body: var(--font-eb-garamond); }
+.world[data-font='storybook'] { --font-heading: var(--font-fraunces); --font-body: var(--font-nunito); }
+.world[data-font='modern-clean'] { --font-heading: var(--font-sans); --font-body: var(--font-sans); }
+.world[data-font='tropical-script'] { --font-heading: var(--font-pacifico); --font-body: var(--font-karla); }
+.world[data-font='vintage-press'] { --font-heading: var(--font-abril); --font-body: var(--font-libre-baskerville); }
+
+/* Textures sit behind everything, very faint. */
+.world::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.5; }
+.world[data-texture='paper']::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E"); }
+.world[data-texture='film-grain']::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E"); animation: grain 1.2s steps(4) infinite; }
+.world[data-texture='velvet']::before { background: radial-gradient(ellipse at 50% 0%, color-mix(in oklab, var(--primary) 14%, transparent), transparent 60%), radial-gradient(ellipse at 50% 120%, rgb(0 0 0 / 0.45), transparent 60%); }
+.world[data-texture='rain-glass']::before { background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 10%, transparent), transparent 40%, color-mix(in oklab, var(--foreground) 4%, transparent)); }
+.world[data-texture='stone']::before { background: radial-gradient(ellipse at center, transparent 40%, rgb(0 0 0 / 0.5)), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.05' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E"); }
+
+@keyframes grain { 0% { transform: translate(0, 0); } 25% { transform: translate(-2%, 1%); } 50% { transform: translate(1%, -2%); } 75% { transform: translate(2%, 2%); } }
+
+/* Ambient effects: three layers (the <i> elements), each drifting at its own pace. */
+.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.ambient i { position: absolute; inset: -20% -10%; display: block; will-change: transform, opacity; }
+.ambient[data-intensity='low'] { opacity: 0.55; }
+.ambient[data-intensity='medium'] { opacity: 0.85; }
+.ambient[data-paused] i { animation-play-state: paused !important; }
+
+.ambient[data-effect='rain'] i { background-image: repeating-linear-gradient(100deg, transparent 0 22px, color-mix(in oklab, var(--foreground) 22%, transparent) 22px 23px, transparent 23px 61px); background-size: 140px 140px; animation: fall 0.9s linear infinite; }
+.ambient[data-effect='rain'] i:nth-child(2) { background-size: 210px 210px; animation-duration: 1.3s; opacity: 0.6; }
+.ambient[data-effect='rain'] i:nth-child(3) { background-size: 90px 90px; animation-duration: 0.7s; opacity: 0.35; }
+
+.ambient[data-effect='snow'] i { background-image: radial-gradient(circle, color-mix(in oklab, white 85%, transparent) 0 2px, transparent 2.5px); background-size: 90px 110px; animation: fall 14s linear infinite; }
+.ambient[data-effect='snow'] i:nth-child(2) { background-size: 140px 150px; animation-duration: 22s; opacity: 0.7; }
+.ambient[data-effect='snow'] i:nth-child(3) { background-size: 60px 70px; animation-duration: 9s; opacity: 0.45; }
+
+.ambient[data-effect='embers'] i { background-image: radial-gradient(circle, color-mix(in oklab, #ffb347 90%, transparent) 0 1.5px, transparent 2.5px); background-size: 120px 160px; animation: rise 11s linear infinite, flicker 2.4s ease-in-out infinite alternate; }
+.ambient[data-effect='embers'] i:nth-child(2) { background-size: 180px 230px; animation-duration: 17s, 3.1s; }
+.ambient[data-effect='embers'] i:nth-child(3) { background-size: 80px 120px; animation-duration: 8s, 1.7s; opacity: 0.5; }
+
+.ambient[data-effect='fireflies'] i { background-image: radial-gradient(circle, color-mix(in oklab, #e8ff8a 90%, transparent) 0 2px, transparent 6px); background-size: 230px 190px; animation: drift 19s ease-in-out infinite alternate, flicker 3.3s ease-in-out infinite alternate; }
+.ambient[data-effect='fireflies'] i:nth-child(2) { background-size: 310px 260px; animation-duration: 27s, 4.1s; }
+.ambient[data-effect='fireflies'] i:nth-child(3) { background-size: 170px 220px; animation-duration: 23s, 2.6s; opacity: 0.6; }
+
+.ambient[data-effect='dust'] i { background-image: radial-gradient(circle, color-mix(in oklab, var(--foreground) 35%, transparent) 0 1px, transparent 1.5px); background-size: 70px 90px; animation: drift 40s linear infinite alternate; }
+.ambient[data-effect='dust'] i:nth-child(2) { background-size: 120px 100px; animation-duration: 55s; opacity: 0.6; }
+.ambient[data-effect='dust'] i:nth-child(3) { display: none; }
+
+.ambient[data-effect='fog'] i { background: radial-gradient(ellipse 40% 25% at 30% 60%, color-mix(in oklab, var(--foreground) 9%, transparent), transparent 70%), radial-gradient(ellipse 35% 20% at 75% 35%, color-mix(in oklab, var(--foreground) 7%, transparent), transparent 70%); animation: sway 38s ease-in-out infinite alternate; }
+.ambient[data-effect='fog'] i:nth-child(2) { animation-duration: 52s; animation-direction: alternate-reverse; transform: scaleX(-1); }
+.ambient[data-effect='fog'] i:nth-child(3) { display: none; }
+
+.ambient[data-effect='lantern'] i { background: radial-gradient(circle at 18% 22%, color-mix(in oklab, #ffcf7a 22%, transparent), transparent 18%), radial-gradient(circle at 82% 30%, color-mix(in oklab, #ffcf7a 18%, transparent), transparent 16%), radial-gradient(circle at 50% 90%, color-mix(in oklab, #ffb35c 14%, transparent), transparent 22%); animation: glow 5.5s ease-in-out infinite alternate; }
+.ambient[data-effect='lantern'] i:nth-child(2) { animation-duration: 7.3s; animation-direction: alternate-reverse; opacity: 0.6; }
+.ambient[data-effect='lantern'] i:nth-child(3) { display: none; }
+
+@keyframes fall { from { transform: translate3d(0, -10%, 0); } to { transform: translate3d(-4%, 10%, 0); } }
+@keyframes rise { from { transform: translate3d(0, 10%, 0); } to { transform: translate3d(3%, -10%, 0); } }
+@keyframes drift { from { transform: translate3d(-3%, 2%, 0); } to { transform: translate3d(3%, -2%, 0); } }
+@keyframes sway { from { transform: translate3d(-6%, 0, 0); } to { transform: translate3d(6%, -2%, 0); } }
+@keyframes flicker { from { opacity: 0.35; } to { opacity: 1; } }
+@keyframes glow { from { opacity: 0.6; transform: scale(1); } to { opacity: 1; transform: scale(1.04); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient, .world[data-texture='film-grain']::before { display: none; animation: none; }
+}

@@ -11,7 +11,7 @@
     "rework": "node scripts/check-node.cjs && node scripts/rework-cast.ts",
     "fix-cards": "node scripts/check-node.cjs && node scripts/fix-cards.ts",
     "dataset": "node scripts/check-node.cjs && node scripts/export-dataset.ts",
-    "test": "node scripts/check-node.cjs && node --test test/*.test.js test/*.test.ts",
+    "test": "node scripts/check-node.cjs && TSX_TSCONFIG_PATH=tsconfig.test.json node --import tsx --test \"test/*.test.{js,ts,tsx}\"",
     "playtest": "node scripts/check-node.cjs && node scripts/playtest.ts",
     "seed-bots": "node scripts/check-node.cjs && node scripts/playtest/seed.ts",
     "attacks": "node scripts/check-node.cjs && node scripts/attacks.ts",
@@ -46,6 +46,7 @@
     "@types/react-dom": "^19.3.0",
     "drizzle-kit": "^0.31.11",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   }
 }
