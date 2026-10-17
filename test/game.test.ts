@@ -1475,3 +1475,13 @@ describe('the plan the GM writes', () => {
     assert.equal(G.cleanPlan('nope'), null);
   });
 });
+
+describe('the room on the screens', () => {
+  test("should show the world's room, and guess one for an old world", () => {
+    const game = gameInReading(3);
+    assert.equal(G.tableView(game).room.ambient, 'fog');
+    game.scenario.room = { seed_color: '#2a6f97', font_pair: 'storybook', texture: 'paper', ambient: 'snow', intensity: 'medium', sound_set: 'soft' };
+    const room = G.playerView(game, 'p1').room;
+    assert.deepEqual([room.fontPair, room.ambient, room.intensity], ['storybook', 'snow', 'medium']);
+  });
+});

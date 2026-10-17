@@ -2,6 +2,7 @@
 import { ROOTS, MODES, PALETTES, PERCUSSION } from '../public/music-theory.js';
 import { formForGM, quoteRaw } from './reader.ts';
 import { SKILLS, PENALTIES } from './skills.ts';
+import { ROOM_SCHEMA } from './room.ts';
 
 export const LENGTHS = {
   short: { phases: 3, minutes: 10, questions: 3 },
@@ -119,6 +120,7 @@ const WORLD_SCHEMA = obj({
   },
   hint_ladder: { type: 'array', items: obj({ text: str, is_false: { type: 'boolean' } }) },
   twists: { type: 'array', items: obj({ name: str, description: str }) },
+  room: ROOM_SCHEMA,
   music: obj({
     root: { type: 'string', enum: ROOTS },
     mode: { type: 'string', enum: Object.keys(MODES) },
@@ -261,6 +263,8 @@ export const GENERATION_SYSTEM = `You design one-session hidden-role mystery gam
 Each player is a character inside the mystery. Some are investigators with their own secrets, one or more are the culprits, and there may be a wildcard whose goal fits neither side.
 
 Write progress first: 3 to 7 short steps for how you will build this world, in its own flavour and in plain words, each under 8 words ("Booking a monsoon wedding in Goa", "Giving each of you a secret"). The whole room sees these while you work, so never name the culprit, a secret, a hidden fact or a clue. covers lists the sections each step writes; together the steps cover every section once.
+
+Pick the room: how this world looks and sounds on every screen. seed_color is one hex colour that feels like this place (deep monsoon blue, palace gold, forest green); the screens build a readable palette from it. Choose the font pair, texture, ambient effect (keep it gentle: low unless the setting is wild) and sound set that fit the setting and tone.
 
 Design rules:
 - Write the truth first: what happened, in order, who did what, when, where, how and why. Everything else must be consistent with it.

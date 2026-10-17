@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { formForGM, quoteRaw } from './reader.ts';
 import { scoreMoves, playTotal, skillSplit, PLAY_MAX } from './skills.ts';
 import { LENGTHS, PLAN_SECTIONS } from './prompts.ts';
+import { roomTheme, guessRoom } from './room.ts';
 import { GENERATION_STEPS } from './progress.ts';
 import { sanitizeMusic } from '../public/music-theory.js';
 
@@ -1221,6 +1222,14 @@ function roundView(game, now) {
   };
 }
 
+const rooms = new Map();
+function roomFor(game) {
+  const room = game.scenario.room ?? guessRoom(game.setup?.setting || game.scenario.setting_summary, game.setup?.tone);
+  const key = JSON.stringify(room);
+  if (!rooms.has(key)) rooms.set(key, roomTheme(room));
+  return rooms.get(key);
+}
+
 function publicCore(game, now) {
   const st = game.state;
   const sc = game.scenario;
@@ -1228,6 +1237,7 @@ function publicCore(game, now) {
   return {
     gameId: game.id,
     status: game.status,
+    room: sc ? roomFor(game) : null,
     error: game.error,
     players: game.players.map((p) => ({ id: p.id, name: p.name })),
     setup: game.setup,
