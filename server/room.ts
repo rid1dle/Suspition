@@ -137,14 +137,14 @@ export function roomTheme(room: Partial<Room> | null | undefined) {
 }
 
 const GUESSES: [RegExp, Partial<Room>][] = [
-  [/monsoon|rain|storm|flood|harbou?r|boat|ship|sea|beach|island/i, { ambient: 'rain', texture: 'rain-glass', seed_color: '#2a6f97', font_pair: 'tropical-script' }],
-  [/fire|forge|ember|volcan|kitchen|bakery|smith/i, { ambient: 'embers', texture: 'stone', seed_color: '#c2562b', font_pair: 'vintage-press' }],
-  [/snow|winter|ice|mountain lodge|ski|frost|himalaya/i, { ambient: 'snow', texture: 'paper', seed_color: '#7fa7c9', font_pair: 'storybook' }],
-  [/palace|gala|royal|ball|opera|mansion|wedding|haveli/i, { ambient: 'lantern', texture: 'velvet', seed_color: '#b5893b', font_pair: 'royal-deco' }],
-  [/college|school|reunion|hostel|campus|library/i, { ambient: 'dust', texture: 'paper', seed_color: '#8a6d4b', font_pair: 'cozy-rounded' }],
-  [/forest|jungle|garden|village|farm|camp/i, { ambient: 'fireflies', texture: 'paper', seed_color: '#4f7a3a', font_pair: 'storybook' }],
-  [/city|club|neon|casino|train|metro|bar/i, { ambient: 'fog', texture: 'film-grain', seed_color: '#8e44ad', font_pair: 'neon-grotesk' }],
-  [/castle|church|crypt|haunted|ghost|cemetery|manor/i, { ambient: 'fog', texture: 'stone', seed_color: '#5b4a6e', font_pair: 'gothic-ink' }],
+  [/\b(monsoon|rain\w*|storm\w*|flood\w*|harbou?rs?|boats?|ships?|seas?|beach\w*|island\w*)\b/i, { ambient: 'rain', texture: 'rain-glass', seed_color: '#2a6f97', font_pair: 'tropical-script' }],
+  [/\b(fires?|forge\w*|embers?|volcan\w*|kitchens?|bakery|bakeries|smith\w*)\b/i, { ambient: 'embers', texture: 'stone', seed_color: '#c2562b', font_pair: 'vintage-press' }],
+  [/\b(snow\w*|winter\w*|ice|icy|ski\w*|frost\w*|himalaya\w*|mountain lodge)\b/i, { ambient: 'snow', texture: 'paper', seed_color: '#7fa7c9', font_pair: 'storybook' }],
+  [/\b(palaces?|gala|royal\w*|ball|opera|mansions?|weddings?|havelis?)\b/i, { ambient: 'lantern', texture: 'velvet', seed_color: '#b5893b', font_pair: 'royal-deco' }],
+  [/\b(colleges?|schools?|reunions?|hostels?|campus|librar\w*)\b/i, { ambient: 'dust', texture: 'paper', seed_color: '#8a6d4b', font_pair: 'cozy-rounded' }],
+  [/\b(forests?|jungles?|gardens?|villages?|farms?|camps?)\b/i, { ambient: 'fireflies', texture: 'paper', seed_color: '#4f7a3a', font_pair: 'storybook' }],
+  [/\b(city|cities|clubs?|neon|casinos?|trains?|metro|bars?)\b/i, { ambient: 'fog', texture: 'film-grain', seed_color: '#8e44ad', font_pair: 'neon-grotesk' }],
+  [/\b(castles?|church\w*|crypts?|haunted|ghosts?|cemeter\w*|manors?)\b/i, { ambient: 'fog', texture: 'stone', seed_color: '#5b4a6e', font_pair: 'gothic-ink' }],
 ];
 const SOUND_BY_TONE: Record<string, Room['sound_set']> = { tense: 'tense', dark: 'tense', funny: 'playful', cozy: 'soft' };
 

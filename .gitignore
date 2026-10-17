@@ -5,3 +5,4 @@ game-data/
 .gstack/
 .next/
 next-env.d.ts
+*.tsbuildinfo

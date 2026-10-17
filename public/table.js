@@ -21,6 +21,7 @@ let dragging = null;
 let sideTab = 'map';
 const openRounds = new Set();
 const seenCounts = {};
+let questionsPicked = false;
 const form = { setting: '', tone: 'tense', length: 'standard', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 3, testGame: 'no', notes: '' };
 
 const SETTINGS = ['A 1950s Bombay hotel party', 'A snowed-in ski lodge', 'A 1920s ocean liner', 'A space station', 'A college reunion', 'A village fair'];
@@ -240,6 +241,11 @@ function wire() {
     for (const key of ['tone', 'length', 'hints', 'overrides', 'npcs', 'npcRole', 'replays', 'questions', 'testGame']) {
       $(key).querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
         form[key] = ['hints', 'overrides', 'npcs', 'replays', 'questions'].includes(key) ? Number(b.dataset.v) : b.dataset.v;
+        if (key === 'questions') questionsPicked = true;
+        if (key === 'length' && !questionsPicked) {
+          form.questions = form.length === 'long' ? 4 : 3;
+          chipGroup('questions', form.questions);
+        }
         chipGroup(key, form[key]);
       }));
       chipGroup(key, form[key]);

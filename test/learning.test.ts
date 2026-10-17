@@ -237,3 +237,19 @@ describe('import file safety', () => {
     assert.ok(!datasetName({ id: '../../x', createdAt: 1 }).includes('/'));
   });
 });
+
+describe('dataset export', () => {
+  test('should skip empty lobbies and games that never got a world', async () => {
+    const dir = await tmp();
+    const db = await dbIn(dir);
+    const empty = gameInReading(3);
+    empty.players = [];
+    const noWorld = { ...played('asha'), scenario: null, status: 'failed' };
+    noWorld.id = 'noworld1';
+    db.saveGame(empty);
+    db.saveGame(noWorld);
+    db.saveGame(played('asha'));
+    const out = await exportFromDb(db, join(dir, 'dataset'));
+    assert.equal(out.games, 1);
+  });
+});

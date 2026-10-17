@@ -50,3 +50,11 @@ describe('a room for each world', () => {
     assert.equal(ROOM_SCHEMA.$schema, undefined);
   });
 });
+
+describe('room guesses read whole words', () => {
+  test('should not read police as ice or friendship as ship', () => {
+    assert.notEqual(guessRoom('A police station', 'tense').ambient, 'snow');
+    assert.notEqual(guessRoom('A friendship dinner', 'tense').ambient, 'rain');
+    assert.equal(guessRoom('An ice palace', 'tense').ambient, 'snow');
+  });
+});

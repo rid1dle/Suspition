@@ -12,7 +12,7 @@ export async function exportFromDb(db: Db, datasetDir: string) {
   for (const summary of db.listGames()) {
     if (summary.learning === 'playtest') continue;
     const game = db.loadGame(summary.id);
-    if (!game) continue;
+    if (!game?.scenario || !game.players?.length) continue;
     await writeFile(join(datasetDir, 'games', datasetName(game)), `${JSON.stringify(forDataset(game), null, 1)}\n`);
     games += 1;
   }
