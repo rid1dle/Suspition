@@ -6,6 +6,7 @@
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",
+    "fresh": "node server/index.js --new",
     "test": "node --test test/*.test.js"
   },
   "engines": {

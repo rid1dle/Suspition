@@ -29,10 +29,16 @@ function hostNote() {
   return isHost() ? '' : '<p class="banner small">This screen is view-only. Open the table link printed in the terminal to control the game.</p>';
 }
 
+function endButton() {
+  if (!isHost()) return '';
+  const fresh = ['lobby', 'reveal'].includes(view?.status);
+  return `<button id="new-game" class="danger" style="flex:none" data-confirm="${fresh ? 'Tap again for a new game' : 'Tap again to end it for everyone'}">${fresh ? 'New game' : 'End game'}</button>`;
+}
+
 function header(title, sub = '') {
   return `<div class="row between" style="margin-bottom:16px;flex-wrap:nowrap;align-items:flex-start">
     <div style="flex:1;min-width:0"><h1>${esc(title)}</h1>${sub ? `<div class="muted">${esc(sub)}</div>` : ''}</div>
-    ${isHost() ? '<button id="new-game" class="danger" style="flex:none">New game</button>' : ''}
+    ${endButton()}
   </div>`;
 }
 
@@ -88,7 +94,7 @@ const skeletons = {
   playing: () => `<div class="row between" style="margin-bottom:14px">
       <div><h1>${esc(view.title)}</h1><div class="serif" style="color:var(--accent);font-size:1.2rem" id="phase-name"></div></div>
       <div class="row"><div class="big-timer" id="timer">--:--</div>
-        ${isHost() ? '<div class="stack" style="display:flex;flex-direction:column;gap:6px"><button id="extend">+5 min</button><button class="primary" id="next">Next phase</button></div>' : ''}</div>
+        ${isHost() ? '<div class="stack" style="display:flex;flex-direction:column;gap:6px"><button id="extend">+5 min</button><button class="primary" id="next">Next phase</button></div>' : ''}${endButton()}</div>
     </div>${hostNote()}
     <div id="banner"></div>
     <div class="grid" style="grid-template-columns:minmax(320px,1.5fr) minmax(260px,1fr)">
@@ -190,7 +196,7 @@ function confirmTwice(btn) {
   if (btn.dataset.armed) return true;
   const label = btn.textContent;
   btn.dataset.armed = '1';
-  btn.textContent = 'Tap again to confirm';
+  btn.textContent = btn.dataset.confirm || 'Tap again to confirm';
   setTimeout(() => {
     delete btn.dataset.armed;
     btn.textContent = label;

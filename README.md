@@ -44,9 +44,13 @@ If macOS asks whether `node` may accept incoming connections, allow it, or phone
 | `DETECTIVE_SETUP_EFFORT` | `medium` | Effort for writing the world (`high` is richer and slower) |
 | `DETECTIVE_PLAY_MODEL` | Claude Code default | Model that answers questions during play |
 | `NO_OPEN` | | Set to `1` to stop the table screen opening on start |
+| `DETECTIVE_DATA_DIR` | `game-data/` | Where the current game is saved |
 
 The current game is saved in `game-data/current-game.json`; restarting the server resumes it.
 Do not open that file mid-game: it holds the truth.
+
+To end a game early, press **End game** on the table screen (tap twice). If the table link is lost,
+`npm run fresh` starts the server with a new, empty lobby.
 
 ## Development
 

@@ -206,6 +206,21 @@ describe('App under failure', () => {
     assert.equal(ctx.app.game.hostToken, host);
   });
 
+  test('should end a game mid-phase and ignore the GM answer that arrives afterwards', async () => {
+    const ctx = await setupApp();
+    await toPlaying(ctx);
+    let release;
+    ctx.gm.gate = new Promise((r) => (release = r));
+    await ctx.app.ask(ctx.tokens[0], { kind: 'question', text: 'q' });
+    const host = await ctx.app.newGame(ctx.host);
+    release();
+    await ctx.app.idle();
+    assert.equal(ctx.app.game.status, 'lobby');
+    assert.deepEqual(ctx.app.game.players, []);
+    assert.equal(ctx.app.game.hostToken, host);
+    assert.throws(() => ctx.app.playerView(ctx.tokens[0]), /Unknown player/);
+  });
+
   test('should keep raw GM error text off the shared screens', async () => {
     const ctx = await setupApp();
     await toPlaying(ctx);

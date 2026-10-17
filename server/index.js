@@ -110,7 +110,7 @@ export function createHandler(app, { joinUrl }) {
 
 async function main() {
   const port = Number(process.env.PORT) || 4321;
-  const dataDir = join(ROOT, 'game-data');
+  const dataDir = process.env.DETECTIVE_DATA_DIR ? resolve(process.env.DETECTIVE_DATA_DIR) : join(ROOT, 'game-data');
   const log = (m) => console.log(`[${new Date().toLocaleTimeString()}] ${m}`);
   const gm = new GM({
     workDir: join(tmpdir(), 'detective-gm'),
@@ -120,6 +120,7 @@ async function main() {
     log,
   });
   const app = await new App({ gm, store: new Store(dataDir), log }).init();
+  if (process.argv.includes('--new')) await app.newGame(app.game.hostToken);
   const joinUrl = `http://${process.env.DETECTIVE_HOST || lanAddress()}:${port}/play`;
   const server = createServer(createHandler(app, { joinUrl }));
   setInterval(() => app.tick().catch((err) => log(`tick failed: ${err.message}`)), 1000).unref();
