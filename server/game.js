@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { formForGM, quoteRaw } from './reader.js';
+import { scoreMove, playTotal, skillSplit, PLAY_MAX } from './skills.js';
 import { LENGTHS } from './prompts.js';
 import { GENERATION_STEPS } from './progress.js';
 import { sanitizeMusic } from '../public/music-theory.js';
@@ -475,6 +476,13 @@ function destroy(game, clueIds) {
 
 const PUPPET_VERBS = new Set(['said', 'says', 'argued', 'argues', 'agreed', 'agrees', 'asked', 'asks', 'told', 'tells', 'nodded', 'nods', 'nod', 'admitted', 'admits', 'pushed', 'pushes', 'believes', 'believed', 'backed', 'backs', 'accused', 'accuses', 'thinks', 'thought', 'swore', 'insisted', 'insists', 'claimed', 'claims', 'suggested', 'suggests', 'supported', 'supports', 'smiles', 'smiled', 'shrugs', 'shrugged', 'laughs', 'laughed', 'frowns', 'frowned', 'agree', 'trusts', 'trusted']);
 
+function recordPlay(game, playerId, play, read, from) {
+  const scored = { ...scoreMove(play, read, { from }), round: game.state.roundNumber ?? game.state.phaseIndex + 1 };
+  game.state.play ??= {};
+  (game.state.play[playerId] ??= []).push(scored);
+  return scored;
+}
+
 // In a reply to one player's move, a sentence led by another player's name that has them speak or react was invented.
 export function dropPuppeting(game, actorId, text) {
   const others = (game.scenario?.players ?? []).filter((c) => c.id !== actorId)
@@ -523,7 +531,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const text = lines.length ? lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n') : String(result.answer ?? '').trim();
   const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
   readPlayer(game, playerId, result.player_read, 'private', now);
-  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), at: now });
+  const scored = recordPlay(game, playerId, result.play, ask.read, 'private');
+  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: { points: scored.points, skill: scored.skill, why: scored.why }, at: now });
 
   const clueIds = new Set(game.scenario.clues.map((c) => c.id));
   for (const id of result.clues_found ?? []) {
@@ -724,6 +733,9 @@ export function applyScore(game, verdict, score) {
         goal_achieved: Boolean(s.goal_achieved),
         goal_outcome: String(s.goal_outcome ?? ''),
         comment: String(s.comment ?? ''),
+        coaching: String(s.coaching ?? '').slice(0, 200),
+        play: playTotal(game.state.play?.[p.id]),
+        skills: skillSplit(game.state.play?.[p.id]),
       };
     }),
   };
@@ -925,6 +937,7 @@ export function briefingSteps(game) {
     'At the end, everyone names who did it, how and why. Culprits vote too.',
     'Detectives win if most players name the right culprit. Culprits win if they do not.',
     `Points: 1 for the right culprit, up to 2 for how, up to 2 for why, and 1 for your own goal. ${MAX_POINTS} in all.`,
+    `Plus up to ${PLAY_MAX} play points for good moves.`,
   ] });
   return steps.filter((st) => st.lines.length);
 }
@@ -994,6 +1007,7 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   if (!q) return;
   delete st.publicPending[playerId];
   readPlayer(game, playerId, read, 'out loud', now);
+  if (read?.play || words) recordPlay(game, playerId, read?.play, words, 'out loud');
   addFacts(game, read?.facts, 'asked out loud', now);
   const name = game.players.find((p) => p.id === playerId)?.name;
   st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text: String(answer ?? '').trim() || 'Nobody knows that yet.', ...(words ? { read: words } : {}) });
@@ -1239,11 +1253,17 @@ function publicCore(game, now) {
   };
 }
 
+function bestPlay(result) {
+  const top = Math.max(0, ...(result?.players ?? []).map((p) => p.play ?? 0));
+  return top > 0 ? result.players.filter((p) => p.play === top).map((p) => p.player_id) : [];
+}
+
 function revealView(game) {
   const sc = game.scenario;
   const st = game.state;
   return {
     ...st.result,
+    bestPlay: bestPlay(st.result),
     truth: sc.truth,
     twists: sc.twists,
     false_hint: sc.hint_ladder.find((h) => h.is_false)?.text ?? null,
@@ -1304,6 +1324,7 @@ export function playerView(game, playerId, now = Date.now()) {
   view.myRoundVote = st.roundVote ? st.roundVote.votes[playerId] ?? null : null;
   view.publicPending = st.publicPending?.[playerId] ?? null;
   view.persona = st.persona?.[playerId] ?? null;
+  view.playTotal = playTotal(st.play?.[playerId]);
   view.moments = (st.moments ?? []).filter((m) => m.player_id === playerId && OPEN.includes(m.status))
     .map((m) => ({ id: m.id, line: m.line, why: m.why, status: m.status, readyAt: m.readyAt }));
   view.overridesLeft = st.overridesLeft?.[playerId] ?? 0;

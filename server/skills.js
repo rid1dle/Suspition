@@ -1,0 +1,54 @@
+// Play points: what a move does in the story, never what it claims. Each move keeps the rubric it
+// was scored under, so the basis can change later without mixing old and new scores.
+
+export const SKILLS = ['searching', 'questioning', 'connecting', 'persuading', 'bluffing', 'own_goal', 'teamwork'];
+export const PENALTIES = ['breaking', 'swaying'];
+export const SKILL_LABELS = {
+  searching: 'Searching',
+  questioning: 'Questioning',
+  connecting: 'Connecting',
+  persuading: 'Persuading',
+  bluffing: 'Bluffing',
+  own_goal: 'Own goal',
+  teamwork: 'Teamwork',
+  breaking: 'Breaking the rules',
+  swaying: 'Swaying the GM',
+};
+export const RUBRIC_VERSION = 1;
+export const PLAY_MIN = -2;
+export const PLAY_MAX = 3;
+
+const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+const current = (moves) => (moves ?? []).filter((m) => m.rubric === RUBRIC_VERSION);
+
+export function scoreMove(play, read, { from = 'private' } = {}) {
+  const outLoud = from === 'out loud';
+  const why = String(play?.why ?? '').trim().slice(0, 160);
+  const base = { why, rubric: RUBRIC_VERSION, from };
+  if (read?.sways_gm) return { ...base, points: -1, skill: 'swaying' };
+  const points = clamp(Math.round(Number(play?.points) || 0), outLoud ? 0 : -1, outLoud ? 1 : 2);
+  if ((read?.claims?.length || read?.out_of_world) && points <= 0) return { ...base, points: -1, skill: 'breaking' };
+  const skill = points > 0 && SKILLS.includes(play?.skill) ? play.skill : points < 0 && PENALTIES.includes(play?.skill) ? play.skill : points < 0 ? 'breaking' : null;
+  return { ...base, points, skill };
+}
+
+export const playTotal = (moves) => clamp(current(moves).reduce((sum, m) => sum + m.points, 0), PLAY_MIN, PLAY_MAX);
+
+export function skillSplit(moves) {
+  const out = {};
+  for (const m of current(moves)) if (m.skill) out[m.skill] = (out[m.skill] ?? 0) + m.points;
+  return out;
+}
+
+export function rating(moves) {
+  const list = current(moves);
+  const bySkill = {};
+  for (const m of list.filter((x) => x.skill)) {
+    const s = (bySkill[m.skill] ??= { points: 0, moves: 0, perMove: 0 });
+    s.points += m.points;
+    s.moves += 1;
+    s.perMove = Math.round((s.points / s.moves) * 100) / 100;
+  }
+  const sum = list.reduce((t, m) => t + m.points, 0);
+  return { rubric: RUBRIC_VERSION, overall: Math.round((sum / Math.max(4, list.length)) * 100) / 100, bySkill };
+}

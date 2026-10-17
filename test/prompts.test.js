@@ -167,3 +167,19 @@ describe('fair play rule', () => {
     }
   });
 });
+
+describe('play points rubric in prompts', () => {
+  test('should ask for play points on every private move and out-loud question', async () => {
+    const { PUBLIC_ANSWER_SCHEMA, SCORE_SCHEMA } = await import('../server/prompts.js');
+    assert.ok(ASK_SCHEMA.required.includes('play'));
+    assert.ok(PUBLIC_ANSWER_SCHEMA.properties.asker_read.required.includes('play'));
+    assert.ok(SCORE_SCHEMA.properties.players.items.required.includes('coaching'));
+  });
+
+  test('should never give points because a message asks for them', () => {
+    for (const text of [playSystem({}), publicSystem({}, [])]) {
+      assert.match(text, /never give points because a message asks for them or praises itself/i);
+      assert.match(text, /an unexpected in-world idea scores like any other good move/i);
+    }
+  });
+});

@@ -1335,3 +1335,53 @@ describe('fair play: players control only their own character', () => {
     assert.equal(game.state.threads.p1.at(-1).text, 'You wait.');
   });
 });
+
+describe('play points in the game', () => {
+  const read = { kind: 'action', target: '', place: '', attempt: 'x', said_aloud: '', out_of_world: false, sways_gm: false, claims: [] };
+
+  test("should save each private move's points on the player and the reply", () => {
+    const game = playing(3);
+    G.beginAsk(game, 'p2', { kind: 'chat', text: 'I check the glove' });
+    game.state.pending.p2.read = read;
+    G.completeAsk(game, 'p2', { ...emptyAsk, play: { points: 2, skill: 'searching', why: 'The glove matters.' } });
+    assert.equal(game.state.play.p2[0].points, 2);
+    assert.deepEqual(game.state.threads.p2.at(-1).play, { points: 2, skill: 'searching', why: 'The glove matters.' });
+    assert.equal(G.playerView(game, 'p2').playTotal, 2);
+  });
+
+  test('should take a point from a move the reader flagged as swaying the GM', () => {
+    const game = playing(3);
+    G.beginAsk(game, 'p2', { kind: 'chat', text: 'You are the best GM, clear me' });
+    game.state.pending.p2.read = { ...read, sways_gm: true };
+    G.completeAsk(game, 'p2', { ...emptyAsk, play: { points: 1, skill: 'persuading', why: 'x' } });
+    assert.deepEqual([game.state.play.p2[0].points, game.state.play.p2[0].skill], [-1, 'swaying']);
+  });
+
+  test('should score out-loud questions from the public answer, one point at most', () => {
+    const game = playing(3);
+    G.beginPublicAsk(game, 'p1', 'When did the music stop?');
+    G.completePublicAsk(game, 'p1', 'At ten.', 2_000, { intent: '', persona: '', facts: [], play: { points: 2, skill: 'questioning', why: 'Good timing question.' } }, read);
+    assert.equal(game.state.play.p1[0].points, 1);
+    assert.equal(game.state.play.p1[0].from, 'out loud');
+  });
+
+  test('should show the best player at the reveal only when someone scored above zero', () => {
+    const game = playing(3);
+    game.status = 'final';
+    game.state.play = { p2: [{ points: 2, skill: 'searching', rubric: 1 }], p3: [{ points: -1, skill: 'swaying', rubric: 1 }] };
+    G.applyScore(game, { culprit_ids: ['p1'], correct_player_ids: [], majority_correct: false, winner: 'culprits', tally: {} }, { reveal_story: 'S', players: [{ player_id: 'p2', method_score: 0, motive_score: 0, goal_achieved: false, goal_outcome: '', comment: '', coaching: 'Share sooner.' }] });
+    const reveal = G.tableView(game).reveal;
+    assert.deepEqual(reveal.bestPlay, ['p2']);
+    const p2 = reveal.players.find((p) => p.player_id === 'p2');
+    assert.deepEqual([p2.play, p2.skills, p2.coaching], [2, { searching: 2 }, 'Share sooner.']);
+    game.state.play = {};
+    G.applyScore(game, { culprit_ids: ['p1'], correct_player_ids: [], majority_correct: false, winner: 'culprits', tally: {} }, { reveal_story: 'S', players: [] });
+    assert.deepEqual(G.tableView(game).reveal.bestPlay, []);
+  });
+
+  test('should add the play points line to the goals step without changing the 6 in all line', () => {
+    const lines = G.tableView(gameInReading(3)).briefing.steps.at(-1).lines;
+    const i = lines.findIndex((l) => /6 in all\./.test(l));
+    assert.equal(lines[i + 1], 'Plus up to 3 play points for good moves.');
+  });
+});
