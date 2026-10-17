@@ -1,4 +1,4 @@
-# Detective
+# Suspition
 
 A hidden-role mystery game for friends in one room. Every phone is a private character card,
 a shared screen shows what everyone knows, and Claude (running headless on the host's laptop)
@@ -17,7 +17,8 @@ npm install
 npm start
 ```
 
-The table screen opens in the browser. Put it on a TV or leave it on the laptop. Players scan
+The first `npm start` builds the screens (about a minute). The table screen opens in the browser.
+Put it on a TV or leave it on the laptop. Players scan
 the QR code (same Wi-Fi) and join from their phones. The host can play too: no screen shows
 spoilers, and the terminal only prints the two links.
 
@@ -34,6 +35,17 @@ If macOS asks whether `node` may accept incoming connections, allow it, or phone
 5. **Final reconstruction**: everyone names the culprit(s), how and why. Culprits too.
 6. **Reveal**: the majority verdict decides who wins; the table shows the story, every card and
    everyone's score.
+
+### Every world has its own room
+
+The GM picks how each world looks and sounds: a colour, a pair of fonts, a texture, a gentle moving
+background (rain, fog, embers, fireflies, dust, snow, lantern glow) and a set of sound effects. Text
+always stays readable. Phones get light effects only; the table also gets a moving colour field and
+particles, and drops to the light effects by itself if the screen stutters. **Calm screen** in the bar at
+the bottom of the table turns all effects off. Preview a room at `/rooms?setting=a monsoon wedding`.
+
+While a world is being written, the table and phones show the GM's own steps for this world, the way
+Claude shows its work.
 
 ### On the table screen
 

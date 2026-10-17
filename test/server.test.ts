@@ -9,7 +9,7 @@ import { FakeGM } from './fixtures.ts';
 const nextPaths = [];
 const fakeNext = (req, res) => {
   nextPaths.push(req.url);
-  if (req.url.startsWith('/games')) return res.end('NEXT PAGE');
+  if (/^\/(games|table|play)(\/|\?|#|$)/.test(req.url)) return res.end('NEXT PAGE');
   res.writeHead(404);
   res.end();
 };
@@ -62,9 +62,12 @@ describe('lanAddress', () => {
 
 describe('HTTP API', () => {
   test('should serve the table and phone pages', async () => {
-    for (const path of ['/table', '/play', '/style.css', '/play.js']) {
-      assert.equal((await fetch(base + path)).status, 200, path);
+    for (const path of ['/table', '/play']) {
+      const res = await fetch(base + path);
+      assert.equal(res.status, 200, path);
+      assert.equal(await res.text(), 'NEXT PAGE', path);
     }
+    assert.equal((await fetch(`${base}/play.js`)).status, 404);
   });
 
   test('should refuse path traversal and unknown files', async () => {
@@ -164,10 +167,10 @@ describe('the new server shape', () => {
     assert.ok(nextPaths.includes('/games'));
   });
 
-  test('should still serve the old table and play pages without asking Next', async () => {
+  test('should hand the table and phone pages to Next', async () => {
     const before = nextPaths.length;
-    for (const path of ['/table', '/play', '/play.js']) assert.equal((await fetch(base + path)).status, 200, path);
-    assert.equal(nextPaths.length, before);
+    for (const path of ['/table', '/play']) assert.equal((await fetch(base + path)).status, 200, path);
+    assert.equal(nextPaths.length, before + 2);
   });
 });
 

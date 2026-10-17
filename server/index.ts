@@ -1,8 +1,7 @@
 // @ts-nocheck -- legacy JS, typed file by file later
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { networkInterfaces, tmpdir } from 'node:os';
-import { extname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'node:child_process';
 import QRCode from 'qrcode';
@@ -16,8 +15,7 @@ import { importOnce } from '../src/db/importer.ts';
 import { GameError } from './game.ts';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
-const PUBLIC = join(ROOT, 'public');
-const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css', '.js': 'text/javascript', '.svg': 'image/svg+xml' };
+const SVG = 'image/svg+xml';
 
 const VIRTUAL = /^(utun|feth|bridge|docker|veth|vboxnet|vmnet|tun|tap|awdl|llw|ipsec|ppp|zt|tailscale|wg)/i;
 const PHYSICAL = /^(en|eth|wlan|wl|wifi)/i;
@@ -95,8 +93,6 @@ export function createHandler(app, { joinUrl, next = null }) {
     'POST /api/games/import': (b) => app.importGame(b.host, b.game, b.people ?? {}),
   };
 
-  // The new screens take over these paths when DETECTIVE_NEW_SCREENS=1 (until the old ones are removed).
-  const pages = process.env.DETECTIVE_NEW_SCREENS === '1' ? {} : { '/': 'table.html', '/table': 'table.html', '/play': 'play.html' };
 
   return async (req, res) => {
     const url = new URL(req.url, 'http://x');
@@ -116,14 +112,9 @@ export function createHandler(app, { joinUrl, next = null }) {
       if (url.pathname === '/api/games') return send(res, 200, { games: await app.listGames(url.searchParams.get('host')) });
       if (url.pathname === '/api/game') return send(res, 200, await app.gameDetail(url.searchParams.get('host'), url.searchParams.get('id')));
       if (url.pathname === '/api/qr.svg') {
-        return send(res, 200, await QRCode.toString(joinUrl, { type: 'svg', margin: 1 }), TYPES['.svg']);
+        return send(res, 200, await QRCode.toString(joinUrl, { type: 'svg', margin: 1 }), SVG);
       }
 
-      const file = pages[url.pathname] ?? url.pathname.slice(1);
-      if (req.method === 'GET' && /^[\w-]+\.(html|css|js|svg)$/.test(file)) {
-        const body = await readFile(join(PUBLIC, file)).catch((err) => (err.code === 'ENOENT' ? null : Promise.reject(err)));
-        if (body) return send(res, 200, body, TYPES[extname(file)]);
-      }
       if (next && !url.pathname.startsWith('/api/')) return next(req, res);
       send(res, 404, { error: 'Not found' });
     } catch (err) {
