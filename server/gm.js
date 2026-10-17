@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto';
 import { PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt } from './prompts.js';
 import { validateScenario, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked } from './game.js';
 import { TopLevelTracker } from './progress.js';
+import { READER_SCHEMA, FINAL_READER_SCHEMA, readerSystem, readerPrompt, readerContext, cleanRead } from './reader.js';
 
 const ISOLATION = [
   '--strict-mcp-config',
@@ -143,8 +144,9 @@ class Limiter {
 }
 
 export class GM {
-  constructor({ workDir, run = runClaude, setupModel, playModel, setupEffort, maxParallel = 4, log = () => {}, random = Math.random }) {
+  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'haiku', setupEffort, maxParallel = 4, log = () => {}, random = Math.random }) {
     this.workDir = workDir;
+    this.readerModel = readerModel;
     this.random = random;
     this.run = run;
     this.setupModel = setupModel;
@@ -212,6 +214,18 @@ export class GM {
     } catch (err) {
       this.log(`gm audit skipped: ${err.message}`);
     }
+  }
+
+  async read(game, playerId, text, mode) {
+    const raw = await this.call(`read ${playerId}`, {
+      system: readerSystem(readerContext(game, playerId)),
+      prompt: readerPrompt(text, mode),
+      schema: mode === 'final' ? FINAL_READER_SCHEMA : READER_SCHEMA,
+      model: this.readerModel,
+      effort: 'low',
+      timeoutMs: 60_000,
+    });
+    return cleanRead(raw, mode);
   }
 
   answer(game, playerId, ask) {

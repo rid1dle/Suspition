@@ -205,3 +205,17 @@ describe('GM.generate culprits', () => {
     assert.match(prompts[0], /exactly p2\./);
   });
 });
+
+describe('GM.read', () => {
+  test('should send reads to the reader model at low effort without any secrets', async () => {
+    const { gameInReading } = await import('./fixtures.js');
+    const calls = [];
+    const gm = new GM({ workDir, run: async (opts) => (calls.push(opts), { kind: 'action', attempt: 'Character 1 hides the glove', target: '', place: 'Ballroom', said_aloud: '', out_of_world: false, sways_gm: false, claims: [] }) });
+    const read = await gm.read(gameInReading(3), 'p1', 'I hide the glove', 'move');
+    assert.equal(read.attempt, 'Character 1 hides the glove');
+    assert.equal(calls[0].model, 'haiku');
+    assert.equal(calls[0].effort, 'low');
+    assert.ok(!calls[0].system.includes('PRIVATE-1'));
+    assert.ok(calls[0].prompt.includes('I hide the glove'));
+  });
+});
