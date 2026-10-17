@@ -31,6 +31,7 @@ export class App {
       st.timelineExtra ??= [];
       st.shared ??= [];
       st.publicPending = {};
+      st.knowledge ??= [];
       for (const pid of Object.keys(this.game.state.pending ?? {})) {
         G.failAsk(this.game, pid);
         this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. You did not lose a question. Ask again.', at: this.clock() });

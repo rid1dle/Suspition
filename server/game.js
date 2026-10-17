@@ -212,6 +212,7 @@ export function attachScenario(game, scenario, now = Date.now()) {
     shared: [],
     publicPending: {},
     illustration: null,
+    knowledge: [],
     submissions: {},
     transitioning: false,
     result: null,
@@ -290,6 +291,15 @@ function whisper(game, messages, now) {
   }
 }
 
+function learn(game, entries, source, now) {
+  const npcIds = new Set(game.scenario.npcs.map((n) => n.id));
+  for (const e of (entries ?? []).slice(0, 6)) {
+    const fact = String(e?.fact ?? '').trim().slice(0, 300);
+    if (!npcIds.has(e?.character_id) || !fact) continue;
+    game.state.knowledge.push({ character_id: e.character_id, fact, how: String(e?.how ?? '').trim().slice(0, 200), round: game.state.phaseIndex + 1, source, at: now });
+  }
+}
+
 function destroy(game, clueIds) {
   const destroyable = new Set(game.scenario.clues.filter((c) => c.can_be_destroyed).map((c) => c.id));
   for (const id of clueIds ?? []) {
@@ -322,6 +332,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     st.revealed[playerId].push(fact);
   }
   destroy(game, result.clues_destroyed);
+  learn(game, result.learned, playerId, now);
   if (result.player_location && (ask.kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
   addEvent(game, result.public_event, 'event', now);
@@ -361,6 +372,7 @@ export function completePhase(game, result, now = Date.now()) {
   const next = st.phaseIndex + 1;
   destroy(game, result.clues_destroyed);
   for (const p of result.positions ?? []) move(game, p?.character_id, p?.location_id);
+  learn(game, result.learned, 'round change', now);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -20, 20), 0, 100);
   enterPhase(game, next, now);
   addEvent(game, phaseLine(game, next), 'phase', now);
@@ -647,6 +659,7 @@ export function snapshotForGM(game) {
     destroyed_clues: st.destroyed,
     where_everyone_is: st.positions,
     round_results: st.roundResults,
+    what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     shared_clues: st.shared.map((x) => x.clueId),
     clues_found_by_player: st.found,
     revealed_hidden_facts: st.revealed,
@@ -749,6 +762,7 @@ function revealView(game) {
     truth: sc.truth,
     twists: sc.twists,
     false_hint: sc.hint_ladder.find((h) => h.is_false)?.text ?? null,
+    learned: (st.knowledge ?? []).map((k) => ({ who: sc.npcs.find((n) => n.id === k.character_id)?.name, fact: k.fact, how: k.how, round: k.round })),
     cards: sc.players.map((c) => ({
       id: c.id,
       player: game.players.find((p) => p.id === c.id)?.name,

@@ -74,4 +74,5 @@ To end a game early, press **End game** on the table screen (tap twice). If the 
 npm test                                   # unit and HTTP tests, with a fake GM
 node scripts/try-generate.js out.json      # write one real world with Claude
 node scripts/try-ask.js out.json           # ask the real GM one question about it
+node scripts/try-knowledge.js out.json     # check GM characters only know what reached them
 ```

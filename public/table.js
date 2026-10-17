@@ -157,6 +157,7 @@ function revealHtml() {
         <div class="label" style="margin-top:12px">Timeline</div>${r.truth.timeline.map((t) => `<div class="small"><b>${esc(t.time)}</b> ${esc(t.event)}</div>`).join('')}</div>
       <div class="stack">
         <div class="panel"><div class="label">Rounds</div>${resultsHtml(view.roundResults) || '<p class="small muted">No round votes.</p>'}</div>
+        <div class="panel"><div class="label">How people found out</div>${r.learned?.length ? r.learned.map((k) => `<div class="small" style="margin-bottom:6px"><b>${esc(k.who)}</b> learned: ${esc(k.fact)} <span class="muted">(round ${k.round}, ${esc(k.how)})</span></div>`).join('') : '<p class="small muted">The GM people learned nothing new.</p>'}</div>
         <div class="panel"><div class="label">Twists</div>${r.twists.map((t) => `<div class="small" style="margin-bottom:6px"><b>${esc(t.name)}</b>: ${esc(t.description)}</div>`).join('')}
           ${r.false_hint ? `<div class="small"><b>The fake hint:</b> ${esc(r.false_hint)}</div>` : ''}</div>
       </div>

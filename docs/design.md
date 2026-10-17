@@ -139,6 +139,14 @@ Visual style, exact prompt wording, timer defaults, retry and concurrency limits
   "Invalid API key". Tests run inside a Claude Code session never saw it, because the session's
   own variables override the key. `DETECTIVE_USE_API_KEY=1` opts back in.
 
+## Who knows what
+
+Every GM character knows only their sheet, what they have been told or shown, and what happens in
+front of them. When one learns something, the GM shows it happening in the story and reports it;
+the server keeps the record (fact, how, round, source) and feeds it back on every call. The record
+is secret during play and shown at the reveal as "How people found out". It is never printed to the
+terminal, because the host plays too.
+
 ## Calls I made (not discussed)
 
 - Setup uses a fixed form, not a GM-led conversation.

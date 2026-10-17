@@ -650,3 +650,43 @@ describe('cleanSvg', () => {
     }
   });
 });
+
+describe('who knows what', () => {
+  const playing = () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    return game;
+  };
+
+  test('should record what a GM character learns in a scene, and from whom', () => {
+    const game = playing();
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'I show the butler the glove' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, learned: [{ character_id: 'n1', fact: 'The glove was torn.', how: 'Player2 showed him' }, { character_id: 'p1', fact: 'nope', how: 'x' }, { character_id: 'n2', fact: '  ', how: 'x' }] }, 5_000);
+    assert.deepEqual(game.state.knowledge, [{ character_id: 'n1', fact: 'The glove was torn.', how: 'Player2 showed him', round: 1, source: 'p2', at: 5_000 }]);
+  });
+
+  test('should record learning during a round change', () => {
+    const game = playing();
+    G.beginPhaseChange(game);
+    G.completePhase(game, { ...emptyPhase, learned: [{ character_id: 'n2', fact: 'The radio is cut.', how: 'She tried to call out' }] });
+    assert.equal(game.state.knowledge[0].source, 'round change');
+  });
+
+  test('should tell the GM what each of its characters has learned', () => {
+    const game = playing();
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'x' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, learned: [{ character_id: 'n1', fact: 'KNOWLEDGE-FACT', how: 'told' }] });
+    assert.deepEqual(G.snapshotForGM(game).what_gm_characters_have_learned, { n1: ['Round 1: KNOWLEDGE-FACT (told)'], n2: [] });
+  });
+
+  test('should keep the record hidden until the reveal, then show it', () => {
+    const game = playing();
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'x' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, learned: [{ character_id: 'n1', fact: 'KNOWLEDGE-FACT', how: 'told' }] });
+    assert.ok(!JSON.stringify([G.tableView(game), G.playerView(game, 'p2'), G.playerView(game, 'p3')]).includes('KNOWLEDGE-FACT'));
+    game.status = 'final';
+    G.submitFinal(game, 'p2', { culprit_ids: ['p1'] });
+    G.applyScore(game, G.computeVerdict(game), { reveal_story: 'S', players: [] });
+    assert.deepEqual(G.tableView(game).reveal.learned, [{ who: 'The Butler', fact: 'KNOWLEDGE-FACT', how: 'told', round: 1 }]);
+  });
+});

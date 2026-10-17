@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { pickTwists, generationPrompt, TWISTS, SCENARIO_SCHEMA, GENERATION_SYSTEM } from '../server/prompts.js';
+import { pickTwists, generationPrompt, TWISTS, SCENARIO_SCHEMA, GENERATION_SYSTEM, ASK_SCHEMA, PHASE_SCHEMA, playSystem } from '../server/prompts.js';
 import { createGame, addPlayer, applySetup } from '../server/game.js';
 
 const seq = (...values) => {
@@ -66,5 +66,14 @@ describe('scenario schema', () => {
     assert.match(GENERATION_SYSTEM, /12-year-old/);
     assert.match(GENERATION_SYSTEM, /never "phase"/);
     assert.match(GENERATION_SYSTEM, /start_location/);
+  });
+});
+
+describe('knowledge rules', () => {
+  test('should ask the GM to report what its characters learn, in answers and round changes', () => {
+    assert.ok(ASK_SCHEMA.required.includes('learned') && PHASE_SCHEMA.required.includes('learned'));
+    const rules = playSystem({});
+    assert.match(rules, /knows only/);
+    assert.match(rules, /first shows them learning it/);
   });
 });
