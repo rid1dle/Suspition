@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, like } from 'drizzle-orm';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -67,13 +67,14 @@ export class Db {
       id: game.id,
       status: game.status,
       title: String(game.scenario?.title ?? ''),
+      usernames: `|${(game.players ?? []).map((p) => p.username).filter(Boolean).join('|')}|`,
       createdAt: game.createdAt ?? now,
       updatedAt: now,
       state: JSON.stringify(game),
     };
     this.sqlite.transaction(() => {
       this.orm.insert(schema.games).values({ ...row, learning: game.learning ?? 'real', note: game.note ?? '' })
-        .onConflictDoUpdate({ target: schema.games.id, set: { status: row.status, title: row.title, updatedAt: row.updatedAt, state: row.state } }).run();
+        .onConflictDoUpdate({ target: schema.games.id, set: { status: row.status, title: row.title, usernames: row.usernames, updatedAt: row.updatedAt, state: row.state } }).run();
       this.orm.delete(schema.events).where(eq(schema.events.gameId, game.id)).run();
       this.orm.delete(schema.moves).where(eq(schema.moves.gameId, game.id)).run();
       (st.events ?? []).forEach((e: { kind?: string }, seq: number) => {
@@ -155,9 +156,17 @@ export class Db {
   }
 
   realGamesFor(username: string): Game[] {
-    return this.orm.select({ id: schema.games.id }).from(schema.games).where(eq(schema.games.learning, 'real')).orderBy(asc(schema.games.createdAt)).all()
+    return this.orm.select({ id: schema.games.id }).from(schema.games)
+      .where(and(eq(schema.games.learning, 'real'), like(schema.games.usernames, `%|${username}|%`)))
+      .orderBy(asc(schema.games.createdAt)).all()
       .map((r) => this.loadGame(r.id))
-      .filter((g): g is Game => Boolean(g?.players?.some((p) => p.username === username)));
+      .filter((g): g is Game => Boolean(g));
+  }
+
+  // Usernames that played at least one real game.
+  realPlayers(): Set<string> {
+    const rows = this.orm.select({ u: schema.games.usernames }).from(schema.games).where(eq(schema.games.learning, 'real')).all();
+    return new Set(rows.flatMap((r) => r.u.split('|').filter(Boolean)));
   }
 
   savePerson(p: Person) {

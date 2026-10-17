@@ -9,7 +9,9 @@ import QRCode from 'qrcode';
 import next from 'next';
 import { App } from './app.ts';
 import { GM } from './gm.ts';
-import { Store, Archive, People } from './store.ts';
+import { openDb, DbError } from '../src/db/index.ts';
+import { DbStore, DbArchive, DbPeople } from '../src/db/stores.ts';
+import { importOnce } from '../src/db/importer.ts';
 import { GameError } from './game.ts';
 
 const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
@@ -136,7 +138,16 @@ async function main() {
     log,
   });
   const datasetDir = process.env.DETECTIVE_DATASET_DIR ? resolve(process.env.DETECTIVE_DATASET_DIR) : join(ROOT, 'dataset');
-  const app = await new App({ gm, store: new Store(dataDir), archive: new Archive(datasetDir), people: new People(join(datasetDir, 'people')), log }).init();
+  let db;
+  try {
+    db = openDb(join(dataDir, 'suspition.db'));
+  } catch (err) {
+    console.error(err instanceof DbError ? err.message : err);
+    process.exit(1);
+  }
+  const imported = await importOnce(db, { gameData: dataDir, dataset: datasetDir });
+  if (!imported.skipped) log(`First start on the database: brought in ${imported.games} games, ${imported.people} people and ${imported.playtests} playtests. The JSON files are untouched.`);
+  const app = await new App({ gm, store: new DbStore(db), archive: new DbArchive(db, datasetDir), people: new DbPeople(db), log }).init();
   if (process.argv.includes('--new')) await app.newGame(app.game.hostToken);
   const joinUrl = `http://${process.env.DETECTIVE_HOST || lanAddress()}:${port}/play`;
   const dev = process.argv.includes('--dev');

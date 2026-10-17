@@ -1,0 +1,1 @@
+ALTER TABLE `games` ADD `usernames` text DEFAULT '' NOT NULL;

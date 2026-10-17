@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { QUESTIONS, QUESTION_KINDS, pickQuestions } from '../server/questions.ts';
 import { usernameFor, newProfile, addAnswer, aboutForGM, recordGame, profileView } from '../server/profiles.ts';
-import { People } from '../server/store.ts';
+import { openDb } from '../src/db/index.ts';
+import { DbPeople } from '../src/db/stores.ts';
 import * as G from '../server/game.ts';
 import { gameInReading } from './fixtures.ts';
 
@@ -95,13 +96,18 @@ describe('profiles', () => {
     assert.equal(v.skills[2].label, 'Swaying the GM');
   });
 
-  test('should save and list profiles on disk', async () => {
-    const people = new People(await mkdtemp(join(tmpdir(), 'people-')));
+  test('should save and list profiles in the database', async () => {
+    const db = openDb(join(await mkdtemp(join(tmpdir(), 'people-')), 'suspition.db'));
+    const people = new DbPeople(db);
     assert.deepEqual(await people.list(), []);
     await people.save(newProfile('asha', 'Asha', 1));
+    const game = finished();
+    game.players[1].username = 'asha';
+    db.saveGame(game);
     assert.deepEqual(await people.list(), [{ username: 'asha', name: 'Asha' }]);
     assert.equal((await people.load('asha')).name, 'Asha');
     assert.equal(await people.load('nobody'), null);
     assert.equal(await people.load('../etc'), null);
+    db.close();
   });
 });

@@ -1,4 +1,6 @@
 // @ts-nocheck -- legacy JS, typed file by file later
+import { openDb } from '../src/db/index.ts';
+import { exportFromDb } from '../src/db/export.ts';
 import { readdir, writeFile, mkdir } from 'node:fs/promises';
 import { join, resolve, basename, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,11 +32,16 @@ export async function exportDataset(files, datasetDir) {
 
 async function main() {
   const dataDir = dirname(gameFile());
-  const saved = (await readdir(dataDir).catch(() => [])).filter((f) => f.endsWith('.json')).map((f) => join(dataDir, f));
   const datasetDir = process.env.DETECTIVE_DATASET_DIR ? resolve(process.env.DETECTIVE_DATASET_DIR) : join(ROOT, 'dataset');
-  const written = await exportDataset([...saved, ...process.argv.slice(2).map((f) => resolve(f))], datasetDir);
-  for (const f of written) console.log(`  ${f.replace(`${ROOT}/`, '')}`);
-  console.log(`${written.length} file${written.length === 1 ? '' : 's'} in the dataset. Commit and push them to keep them.`);
+  const extra = process.argv.slice(2).map((f) => resolve(f));
+  if (extra.length) {
+    const written = await exportDataset(extra, datasetDir);
+    for (const f of written) console.log(`  ${f.replace(`${ROOT}/`, '')}`);
+  }
+  const db = openDb(join(dataDir, 'suspition.db'));
+  const out = await exportFromDb(db, datasetDir);
+  db.close();
+  console.log(`${out.games} games and ${out.people} people in the dataset. Commit and push them to keep them.`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
