@@ -1401,3 +1401,28 @@ describe('quiet players', () => {
     assert.deepEqual(G.snapshotForGM(game).play_by_player.p2, { questioning: 2 });
   });
 });
+
+describe('fair play filter with shared titles', () => {
+  const cast = (players, npcs) => {
+    const game = playing(players.length);
+    players.forEach(([name, character], i) => {
+      game.players[i].name = name;
+      game.scenario.players[i].character_name = character;
+    });
+    npcs.forEach((n, i) => (game.scenario.npcs[i].name = n));
+    return game;
+  };
+
+  test('should keep a GM character line when a player shares their title', () => {
+    const game = cast([['Asha', 'Lady Ashford'], ['Ben', 'Captain Rishabh Mehta'], ['Cy', 'Cy Rao']], ['Lady Grey', 'Captain Singh']);
+    assert.equal(G.dropPuppeting(game, 'p3', 'Lady Grey said the door was locked.').dropped, 0);
+    assert.equal(G.dropPuppeting(game, 'p3', 'Captain Singh says the gate was shut.').dropped, 0);
+    assert.equal(G.dropPuppeting(game, 'p3', 'Lady Ashford agreed with you.').dropped, 1);
+  });
+
+  test('should keep a whisper that starts by naming the player it is sent to', () => {
+    const game = cast([['Nikhil', 'Nikhil Rao'], ['Rishabh', 'Rishabh Sen'], ['Cy', 'Cy Rao']], []);
+    assert.equal(G.dropPuppeting(game, 'p1', 'Rishabh, the cook says Nikhil was in the library.', { to: 'p2' }).dropped, 0);
+    assert.equal(G.dropPuppeting(game, 'p1', 'Rishabh agrees with Nikhil.', { to: 'p3' }).dropped, 1);
+  });
+});

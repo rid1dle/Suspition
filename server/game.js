@@ -485,15 +485,26 @@ function recordPlay(game, playerId, play, read, from) {
   return scored;
 }
 
+const TITLES = new Set(['lady', 'lord', 'captain', 'capt', 'inspector', 'professor', 'prof', 'doctor', 'colonel', 'major', 'sergeant', 'officer', 'uncle', 'aunt', 'aunty', 'auntie', 'father', 'mother', 'sister', 'brother', 'madam', 'master', 'young', 'old', 'chef', 'nurse', 'judge', 'detective', 'mister', 'ms']);
+
 // In a reply to one player's move, a sentence led by another player's name that has them speak or react was invented.
-export function dropPuppeting(game, actorId, text) {
-  const others = (game.scenario?.players ?? []).filter((c) => c.id !== actorId)
-    .map((c) => new Set([...nameWords(c.character_name), ...nameWords(game.players.find((p) => p.id === c.id)?.name)]));
+// Only words that name exactly one person count, so a shared title ("Lady", "Captain") never matches.
+export function dropPuppeting(game, actorId, text, { to = null } = {}) {
+  const sc = game.scenario;
+  const people = [
+    ...(sc?.players ?? []).map((c) => ({ id: c.id, player: true, full: wordsOf(c.character_name), names: new Set([...nameWords(c.character_name), ...nameWords(game.players.find((p) => p.id === c.id)?.name)].filter((w) => !TITLES.has(w))) })),
+    ...(sc?.npcs ?? []).map((n) => ({ id: n.id, player: false, full: wordsOf(n.name), names: new Set(nameWords(n.name).filter((w) => !TITLES.has(w))) })),
+  ];
+  const owners = {};
+  for (const p of people) for (const w of p.names) owners[w] = (owners[w] ?? 0) + 1;
+  const leadOf = (words) => people.find((p) => (p.full.length && p.full.every((w, k) => words[k] === w)) || (p.names.has(words[0]) && owners[words[0]] === 1)) ?? null;
   const sentences = String(text ?? '').split(/(?<=[.!?])\s+/).filter(Boolean);
   const kept = sentences.filter((sentence) => {
     const words = wordsOf(sentence);
-    const lead = others.some((names) => names.has(words[0]));
-    return !(lead && words.some((w) => PUPPET_VERBS.has(w)));
+    const lead = leadOf(words);
+    if (!lead || !lead.player || lead.id === actorId) return true;
+    if (lead.id === to && /^[^,.!?]{1,40},/.test(sentence.trim())) return true;
+    return !words.some((w) => PUPPET_VERBS.has(w));
   });
   return { text: kept.join(' '), dropped: sentences.length - kept.length };
 }
@@ -506,8 +517,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const kind = ask.kind === 'chat' ? (ANSWER_KINDS.includes(result.kind) ? result.kind : 'question') : ask.kind;
   const thread = st.threads[playerId];
   thread.push({ from: 'you', kind, text: ask.text, ...(ask.read ? { read: ask.read } : {}), at: now });
-  const unpuppet = (text) => {
-    const out = dropPuppeting(game, playerId, text);
+  const unpuppet = (text, to = null) => {
+    const out = dropPuppeting(game, playerId, text, { to });
     st.puppetDrops = (st.puppetDrops ?? 0) + out.dropped;
     return out.text;
   };
@@ -552,7 +563,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   if (result.player_location && (kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
   addEvent(game, unpuppet(result.public_event), 'event', now);
-  whisper(game, (result.messages_to_players ?? []).map((m) => ({ ...m, text: unpuppet(m?.text) })), now);
+  whisper(game, (result.messages_to_players ?? []).map((m) => ({ ...m, text: unpuppet(m?.text, m?.player_id) })), now);
 }
 
 export function isLastPhase(game) {

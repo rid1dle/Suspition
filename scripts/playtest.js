@@ -122,7 +122,7 @@ async function main() {
   const botsDir = join(ROOT, 'dataset', 'bots');
   if (!(await readdir(botsDir).catch(() => [])).length) await seedBots(join(ROOT, 'dataset', 'games'), botsDir);
   const all = await Promise.all((await readdir(botsDir)).filter((f) => f.endsWith('.json')).map(async (f) => JSON.parse(await readFile(join(botsDir, f), 'utf8'))));
-  const real = all.filter((b) => b.username !== 'guest');
+  const real = all.filter((b) => b.username !== 'guest').sort((a, b) => b.samples.length - a.samples.length);
   const guest = all.find((b) => b.username === 'guest') ?? { username: 'guest', name: 'Guest', samples: [] };
   const chosen = [...real.slice(0, Math.max(0, opts.roles.length - 1)), guest].slice(0, opts.roles.length);
   const shuffled = [...opts.roles].sort(() => Math.random() - 0.5);
