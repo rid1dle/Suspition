@@ -43,6 +43,18 @@ function Suspicion({ value }: { value: number }) {
 }
 
 // A full-screen title when a new round starts, then it settles into the page.
+// The round's loud moment: its name, its job and the event everyone hears.
+export function RoundTitleCard({ title, objective, event }: { title: string; objective?: string; event?: string }) {
+  return (
+    <motion.div initial={{ scale: 0.85, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 90 }} className="flex flex-col items-center gap-4 px-8 text-center">
+      <Label>A new round</Label>
+      <div className="font-display text-6xl leading-tight">{title}</div>
+      {event && <p className="max-w-3xl text-3xl leading-snug">{event}</p>}
+      {objective && <div className="max-w-3xl font-heading text-2xl text-muted-foreground">{objective}</div>}
+    </motion.div>
+  );
+}
+
 function RoundTitle({ view }: { view: TableProps['view'] }) {
   const [show, setShow] = useState<string | null>(null);
   const last = useRef<number | null>(null);
@@ -50,7 +62,7 @@ function RoundTitle({ view }: { view: TableProps['view'] }) {
     const n = view.phase?.number ?? null;
     if (last.current !== null && n !== null && n !== last.current) {
       setShow(`Round ${n} of ${view.phase!.count}: ${view.phase!.name}`);
-      const t = setTimeout(() => setShow(null), 3200);
+      const t = setTimeout(() => setShow(null), 6000);
       last.current = n;
       return () => clearTimeout(t);
     }
@@ -60,11 +72,7 @@ function RoundTitle({ view }: { view: TableProps['view'] }) {
     <AnimatePresence>
       {show && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur">
-          <motion.div initial={{ scale: 0.85, y: 20 }} animate={{ scale: 1, y: 0 }} transition={{ type: 'spring', stiffness: 90 }} className="flex flex-col items-center gap-4 px-8 text-center">
-            <Label>A new round</Label>
-            <div className="font-display text-6xl leading-tight">{show}</div>
-            {view.round?.objective && <div className="max-w-3xl font-heading text-2xl text-muted-foreground">{view.round.objective}</div>}
-          </motion.div>
+          <RoundTitleCard title={show} objective={view.round?.objective} event={view.events.filter((e) => e.kind === 'event' && e.phase === view.phase?.index).at(-1)?.text} />
         </motion.div>
       )}
     </AnimatePresence>

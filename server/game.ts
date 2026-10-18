@@ -656,7 +656,10 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     st.puppetDrops = (st.puppetDrops ?? 0) + out.dropped;
     return out.text;
   };
-  const lines = novelLines(game, result.lines, { you: playerId, unpuppet, unpuppetSpeech: (t) => unpuppet(t, null, { reportOnly: true }) });
+  const short = game.setup?.roundStyle === 'hotseats';
+  const lines = novelLines(game, result.lines, { you: playerId, unpuppet, unpuppetSpeech: (t) => unpuppet(t, null, { reportOnly: true }) })
+    .slice(0, short ? 2 : undefined)
+    .map((l) => (short ? { ...l, text: capWords(l.text, 30) } : l));
   const text = lines.length ? linesText(lines) : String(result.answer ?? '').trim();
   const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
   readPlayer(game, playerId, result.player_read, 'private', now);

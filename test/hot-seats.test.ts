@@ -344,3 +344,25 @@ describe('round end in hot seats style', () => {
     assert.ok(game.state.events.some((e) => e.kind === 'event' && e.text === 'REWARD-1'), 'the reward closes the round');
   });
 });
+
+import { askPrompt } from '../server/prompts.ts';
+import { emptyAsk } from './fixtures.ts';
+
+describe('short private answers', () => {
+  test('should keep a private reply to two short lines in hot seats style', () => {
+    const game = hotGame(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p1', { kind: 'chat', text: 'x' });
+    const long = Array(40).fill('word').join(' ');
+    G.completeAsk(game, 'p1', { ...emptyAsk, lines: [{ speaker: '', text: long }, { speaker: '', text: 'Two.' }, { speaker: '', text: 'Three.' }] });
+    const lines = game.state.threads.p1.at(-1).lines;
+    assert.equal(lines.length, 2);
+    assert.equal(lines[0].text.split(' ').length, 30);
+  });
+
+  test('should tell the GM to end each private reply with something to do in the room', () => {
+    const base = { snapshot: {}, player: { id: 'p1', character_name: 'A' }, kind: 'chat', text: 'x', read: null };
+    assert.match(askPrompt({ ...base, short: true }), /at most 2 short lines[\s\S]*do or say in the room/);
+    assert.doesNotMatch(askPrompt(base), /at most 2 short lines/);
+  });
+});

@@ -107,3 +107,13 @@ describe('round style on the setup screen', () => {
     assert.match(html, /Classic quiz/);
   });
 });
+
+import { RoundTitleCard } from '../src/app/table/playing';
+
+describe('loud round events', () => {
+  test("should show the round's event on the table's round title", () => {
+    const html = renderToStaticMarkup(h(RoundTitleCard, { title: 'Round 2 of 3: The Shed', objective: 'Find the key.', event: 'The lights go out across the lodge.' }));
+    assert.match(html, /The lights go out across the lodge\./);
+    assert.match(html, /Round 2 of 3: The Shed/);
+  });
+});

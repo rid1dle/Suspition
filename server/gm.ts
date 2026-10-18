@@ -235,7 +235,7 @@ export class GM {
     const player = game.scenario.players.find((p) => p.id === playerId);
     return this.call(`ask ${playerId}`, {
       system: playSystem(game.scenario),
-      prompt: askPrompt({ snapshot: snapshotForGM(game), player, ...ask }),
+      prompt: askPrompt({ snapshot: snapshotForGM(game), player, ...ask, short: game.setup?.roundStyle === 'hotseats' }),
       schema: ASK_SCHEMA,
       model: this.playModel,
     });
