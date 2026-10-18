@@ -2530,6 +2530,7 @@ export function playerView(game, playerId, now = Date.now()) {
     side_explanation: card.side_explanation,
     starting_knowledge: card.starting_knowledge,
     hook: card.hook ?? '',
+    intro_line: card.intro_line ?? '',
     distrusts: game.scenario.players.find((p) => p.id === card.distrusts)?.character_name ?? '',
     distrust_why: card.distrusts ? card.distrust_why ?? '' : '',
     locked,

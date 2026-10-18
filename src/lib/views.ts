@@ -60,6 +60,7 @@ export interface CardView {
   backstory?: string;
   goal_steps?: { text: string; done: boolean }[];
   hook?: string;
+  intro_line?: string;
   distrusts?: string;
   distrust_why?: string;
   locked?: string[];
