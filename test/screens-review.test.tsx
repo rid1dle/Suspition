@@ -72,4 +72,12 @@ describe('the screens after the review', () => {
       .map(([at]) => at);
     assert.deepEqual(squeezed, []);
   });
+
+  test('should keep the film grain still so no edge moves on screen', () => {
+    const css = readFileSync('src/app/world.css', 'utf8');
+    const grain = css.split('\n').filter((line) => line.includes("data-texture='film-grain']::before {"));
+    assert.ok(grain.length);
+    for (const line of grain) assert.doesNotMatch(line, /animation:\s*grain/);
+    assert.doesNotMatch(css, /@keyframes grain/);
+  });
 });
