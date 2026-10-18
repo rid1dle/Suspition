@@ -5,9 +5,10 @@ import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label, Muted } from '@/components/game/label';
 import { PlanSteps } from '@/components/game/plan';
-import { cn } from '@/lib/utils';
 import type { TableProps } from './table-app';
 
 // A button that needs a second tap within 3 seconds, for things that cannot be undone.
@@ -50,12 +51,13 @@ const LENGTHS: [string, string, string][] = [['short', 'Short', '3 rounds, ~30 m
 
 function Chips<T extends string | number>({ options, value, onPick }: { options: [T, ReactNode][]; value: T; onPick: (v: T) => void }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <ToggleGroup type="single" spacing={2} value={String(value)} className="flex-wrap"
+      onValueChange={(picked) => { const hit = options.find(([v]) => String(v) === picked); if (hit) onPick(hit[0]); }}>
       {options.map(([v, l]) => (
-        <motion.button key={String(v)} whileTap={{ scale: 0.95 }} onClick={() => onPick(v)}
-          className={cn('rounded-full border px-3.5 py-1.5 text-sm transition', value === v ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted/40 hover:border-primary')}>{l}</motion.button>
+        <ToggleGroupItem key={String(v)} value={String(v)}
+          className="h-auto rounded-full border border-border bg-muted/40 px-3.5 py-1.5 hover:border-primary active:scale-95 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{l}</ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }
 
@@ -137,7 +139,7 @@ export function Setup(props: TableProps) {
               <Chips options={[['no', 'No, a real game'], ['yes', 'Yes, just testing']]} value={form.testGame ? 'yes' : 'no'} onPick={(v) => set('testGame', v === 'yes')} />
             </Field>
             <Field label="Anything the GM should know?">
-              <textarea value={form.notes} maxLength={500} placeholder="Jokes, things you like, things to avoid" onChange={(e) => set('notes', e.target.value)} className="min-h-20 rounded-xl border border-input bg-transparent p-3" />
+              <Textarea value={form.notes} maxLength={500} placeholder="Jokes, things you like, things to avoid" onChange={(e) => set('notes', e.target.value)} className="min-h-20" />
             </Field>
             <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', form)}>Make our mystery</Button>
             <Muted className="text-xs">{enough ? `${view.players.length} players. Each one gets a character.` : `Need 3 players or more (${view.players.length} now).`}</Muted>

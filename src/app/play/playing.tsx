@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label, Muted } from '@/components/game/label';
 import { RoundCard } from '@/components/game/round';
 import { Feed } from '@/components/game/feed';
@@ -41,7 +43,7 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
     window.scrollTo({ top: 0 });
   };
   return (
-    <div className="mx-auto max-w-md pb-28">
+    <Tabs value={tab} onValueChange={(t) => go(t as Tab)} className="mx-auto max-w-md gap-0 pb-28">
       <TopBar view={view} onOpenCard={() => go('card')} />
       <main className="flex flex-col gap-5 px-4 pt-4">
         <Moment view={view} now={Date.now()} />
@@ -55,18 +57,18 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
           </motion.div>
         </AnimatePresence>
       </main>
-      <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto grid max-w-md grid-cols-5">
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+        <TabsList variant="line" className="mx-auto grid h-auto w-full max-w-md grid-cols-5 gap-0 p-0">
           {TABS.map(([t, l]) => (
-            <button key={t} onClick={() => go(t)} className={`relative py-4 text-sm transition ${tab === t ? 'text-primary' : 'text-muted-foreground'}`}>
+            <TabsTrigger key={t} value={t} className="relative h-auto flex-none py-4 text-sm text-muted-foreground after:hidden data-active:text-primary">
               {l}
               {tab === t && <motion.span layoutId="tab-line" className="absolute inset-x-4 top-0 h-0.5 rounded-full bg-primary" />}
               {dots.has(t) && tab !== t && <span className="absolute top-3 right-[22%] size-2 rounded-full bg-primary" />}
-            </button>
+            </TabsTrigger>
           ))}
-        </div>
-      </nav>
-    </div>
+        </TabsList>
+      </div>
+    </Tabs>
   );
 }
 
@@ -111,7 +113,13 @@ function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void
 
 function Moment({ view, now }: { view: PlayerView; now: number }) {
   const m = view.moments?.[0];
-  const [own, setOwn] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [ownText, setOwnText] = useDraft(`moment-${view.gameId}`);
+  const own = editing || ownText ? ownText : null;
+  const setOwn = (text: string | null) => {
+    setEditing(text !== null);
+    setOwnText(text ?? '');
+  };
   if (!m) return null;
   const left = view.overridesLeft ?? 0;
   const ready = m.status === 'getready';
@@ -125,7 +133,7 @@ function Moment({ view, now }: { view: PlayerView; now: number }) {
       <p className="font-heading text-xl">&ldquo;{m.line}&rdquo;</p>
       {own !== null ? (
         <div className="flex flex-col gap-2">
-          <textarea autoFocus value={own} maxLength={200} rows={2} onChange={(e) => setOwn(e.target.value)} placeholder="Type what you said, or use the mic on your keyboard" className="rounded-lg border border-input bg-transparent p-2" />
+          <Textarea autoFocus value={own} maxLength={200} rows={2} onChange={(e) => setOwn(e.target.value)} placeholder="Type what you said, or use the mic on your keyboard" />
           <div className="flex gap-2"><Button disabled={!own.trim()} onClick={() => send('own', own)}>Post it for everyone</Button><Button variant="ghost" onClick={() => setOwn(null)}>Back</Button></div>
         </div>
       ) : (
@@ -154,8 +162,8 @@ function StoryTab({ view, onAskTab, onGo }: { view: PlayerView; onAskTab: () => 
           onIdea={(t) => { setText(t); box.current?.focus(); }} />
       </section>
       <section className="flex flex-col gap-2">
-        <textarea ref={box} value={text} maxLength={200} rows={2} onChange={(e) => setText(e.target.value)} placeholder='Ask anyone anything. "Lata, when did the music stop?"'
-          className="rounded-xl border border-input bg-card/60 p-3 text-base" />
+        <Textarea ref={box} value={text} maxLength={200} rows={2} onChange={(e) => setText(e.target.value)} placeholder='Ask anyone anything. "Lata, when did the music stop?"'
+          className="bg-card/60 text-base" />
         <div className="grid grid-cols-2 gap-2">
           <Button disabled={!text.trim() || Boolean(view.publicPending)} onClick={async () => { if (await act('public', { token: tokenOf(), text })) setText(''); }}>{view.publicPending ? 'Asking…' : 'Ask out loud'}</Button>
           <Button variant="secondary" disabled={!text.trim() || left < 1 || Boolean(view.pending) || Boolean(vote) || view.transitioning}
@@ -226,7 +234,7 @@ function AskTab({ view }: { view: PlayerView }) {
           {targets.map((n) => <button key={n} onClick={() => insert(n)} className="shrink-0 rounded-full bg-muted/60 px-3 py-1 text-xs">{n}</button>)}
         </div>
         <div className="flex gap-2">
-          <textarea ref={box} value={text} maxLength={500} rows={2} onChange={(e) => setText(e.target.value)} placeholder="I ask the cook where he was at nine." className="min-w-0 flex-1 rounded-xl border border-input bg-transparent p-2" />
+          <Textarea ref={box} value={text} maxLength={500} rows={2} onChange={(e) => setText(e.target.value)} placeholder="I ask the cook where he was at nine." className="min-w-0 flex-1" />
           <Button className="self-end" disabled={!text.trim() || Boolean(view.pending) || (view.questionsLeft ?? 0) < 1}
             onClick={async () => { if (await act('ask', { token: tokenOf(), kind: 'chat', text })) setText(''); }}>Send</Button>
         </div>
@@ -267,7 +275,7 @@ function CluesTab({ view }: { view: PlayerView }) {
       )) : <Muted>Nothing yet. Use Ask to look around and talk to people.</Muted>}
       <h2 className="mt-2 font-heading text-2xl">Notes</h2>
       <Muted className="text-xs">Only on this phone.</Muted>
-      <textarea value={notes} onChange={(e) => { setNotes(e.target.value); storage.set(key, e.target.value); }} className="min-h-[30vh] rounded-xl border border-input bg-card/60 p-3" />
+      <Textarea value={notes} onChange={(e) => { setNotes(e.target.value); storage.set(key, e.target.value); }} className="min-h-[30vh] bg-card/60" />
     </div>
   );
 }

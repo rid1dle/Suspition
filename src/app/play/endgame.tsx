@@ -4,17 +4,21 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import confetti from 'canvas-confetti';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Label, Muted } from '@/components/game/label';
 import { SkillBars, TotalLine } from '@/components/game/score';
 import { emptyAnswers } from '@/lib/phone';
+import { useDraft } from '@/lib/live';
 import type { PlayerView } from '@/lib/views';
 import { act, tokenOf } from './play-app';
 
 export function Final({ view }: { view: PlayerView }) {
-  const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [how, setHow] = useState('');
-  const [why, setWhy] = useState('');
-  const [goal, setGoal] = useState('');
+  const [pickedText, setPickedText] = useDraft(`final-picks-${view.gameId}`);
+  const [how, setHow] = useDraft(`final-how-${view.gameId}`);
+  const [why, setWhy] = useDraft(`final-why-${view.gameId}`);
+  const [goal, setGoal] = useDraft(`final-goal-${view.gameId}`);
+  const picked = new Set(pickedText ? pickedText.split(',') : []);
+  const setPicked = (next: (s: Set<string>) => Set<string>) => setPickedText([...next(picked)].join(','));
   const [warn, setWarn] = useState<string | null>(null);
   if (view.submission) {
     return (
@@ -27,7 +31,10 @@ export function Final({ view }: { view: PlayerView }) {
   const cast = view.cast!;
   const suspects = view.setup?.npcRole === 'background' ? [] : cast.npcs.filter((n) => !n.minor);
   const people = [...cast.players.filter((c) => c.id !== view.me.id), ...suspects, ...cast.players.filter((c) => c.id === view.me.id)];
-  const send = () => act('submit', { token: tokenOf(), culprit_ids: [...picked], how, why, goal });
+  const send = async () => {
+    if (!await act('submit', { token: tokenOf(), culprit_ids: [...picked], how, why, goal })) return;
+    for (const clear of [setPickedText, setHow, setWhy, setGoal]) clear('');
+  };
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 px-5 pt-8 pb-16">
       <div>
@@ -49,10 +56,10 @@ export function Final({ view }: { view: PlayerView }) {
         })}
       </div>
       <Muted className="text-xs">Type, or tap the 🎤 mic on your keyboard to speak.</Muted>
-      {([['How?', how, setHow, true], ['Why?', why, setWhy, true], ['Did you get your goal?', goal, setGoal, false]] as const).map(([label, value, set, points]) => (
+      {([['How?', how, setHow, true, 600], ['Why?', why, setWhy, true, 600], ['Did you get your goal?', goal, setGoal, false, 400]] as const).map(([label, value, set, points, max]) => (
         <label key={label} className="flex flex-col gap-1">
           <Label>{label} {points && <span className="normal-case tracking-normal">(up to 2 points, one line is enough)</span>}</Label>
-          <textarea value={value} onChange={(e) => set(e.target.value)} className="min-h-20 rounded-xl border border-input bg-card/60 p-3" />
+          <Textarea value={value} maxLength={max} onChange={(e) => set(e.target.value)} className="min-h-20 bg-card/60" />
         </label>
       ))}
       {warn && (

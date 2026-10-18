@@ -2,11 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useReducedMotion } from 'motion/react';
 import { useLowFrameRate } from '@/components/world/table-effects';
-import { PARTICLE_AMBIENTS } from '@/lib/effects';
+import { PARTICLE_AMBIENTS, richEffects } from '@/lib/effects';
 import { toast } from 'sonner';
 import { Music2Icon, Volume2Icon, VolumeXIcon, MicIcon, SparklesIcon, LibraryIcon } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import { WorldRoom } from '@/components/world/room';
 import { useLive } from '@/lib/live';
 import { api, storage } from '@/lib/api';
@@ -92,8 +95,8 @@ function MediaBar({ media, view, host, calm, setCalm }: { media: Media | null; v
       }}>
         <Music2Icon className="size-3.5" style={{ transform: `scale(${1 + level * 0.4})` }} /> {score.playing ? 'Music on' : 'Music off'}
       </button>
-      <input type="range" min={0} max={1} step={0.05} defaultValue={score.volume} aria-label="Music volume" className="w-24 accent-[var(--primary)]"
-        onChange={(e) => { score.setVolume(Number(e.target.value)); storage.set('detective-music-volume', e.target.value); }} />
+      <Slider min={0} max={1} step={0.05} defaultValue={[score.volume]} aria-label="Music volume" className="w-24"
+        onValueChange={([v]) => { score.setVolume(v); storage.set('detective-music-volume', String(v)); }} />
       {narrator.available && (
         <button className={chip(narrator.enabled)} aria-pressed={narrator.enabled} onClick={() => {
           narrator.enabled = !narrator.enabled;
@@ -103,10 +106,13 @@ function MediaBar({ media, view, host, calm, setCalm }: { media: Media | null; v
         }}><MicIcon className="size-3.5" /> {narrator.enabled ? 'Voice on' : 'Voice off'}</button>
       )}
       {narrator.enabled && narrator.voices().length > 1 && (
-        <select aria-label="Narrator voice" className="rounded-md border border-border bg-background px-2 py-1 text-xs" defaultValue={narrator.voiceName ?? ''}
-          onChange={(e) => { narrator.voiceName = e.target.value; storage.set('detective-voice', e.target.value); narrator.stop(); narrator.say(['This is my voice.']); }}>
-          {narrator.voices().map((v: SpeechSynthesisVoice) => <option key={v.name} value={v.name}>{v.name}</option>)}
-        </select>
+        <Select defaultValue={narrator.voiceName ?? undefined}
+          onValueChange={(name) => { narrator.voiceName = name; storage.set('detective-voice', name); narrator.stop(); narrator.say(['This is my voice.']); }}>
+          <SelectTrigger size="sm" aria-label="Narrator voice" className="text-xs"><SelectValue placeholder="Voice" /></SelectTrigger>
+          <SelectContent>
+            {narrator.voices().map((v: SpeechSynthesisVoice) => <SelectItem key={v.name} value={v.name}>{v.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
       )}
       <button className={chip(sfx.enabled && !locked)} aria-pressed={sfx.enabled} onClick={() => {
         if (sfx.enabled && locked) { sfx.unlock(); setTimeout(() => sfx.play('news'), 60); return; }
@@ -143,8 +149,9 @@ export function TableApp() {
   };
   const props = { view: view!, host, act, readNow, onNewGame: (h: string) => setHost(h) };
   const low = useLowFrameRate();
+  const reduced = Boolean(useReducedMotion());
   const room = view?.room ?? null;
-  const rich = Boolean(room && !calm && !low && room.ambient !== 'none');
+  const rich = richEffects({ room, calm, low, reduced });
   return (
     <WorldRoom room={room} calm={calm || (rich && PARTICLE_AMBIENTS.has(room!.ambient))}>
       {rich && <TableEffects room={room!} />}

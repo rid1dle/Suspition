@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label, Muted } from '@/components/game/label';
 import { RoundCard } from '@/components/game/round';
 import { Feed } from '@/components/game/feed';
@@ -167,25 +168,25 @@ export function Playing(props: TableProps) {
           )}
           <Feed events={view.events} fresh={fresh} onGo={(t) => setSide(t === 'clues' ? 'clues' : 'timeline')} />
         </div>
-        <aside className="flex min-w-0 flex-col gap-4">
-          <nav className="flex gap-1 border-b border-border">
+        <Tabs value={side} onValueChange={(t) => setSide(t as Side)} className="min-w-0 gap-4">
+          <TabsList variant="line" className="h-auto w-full justify-start gap-1 rounded-none border-b border-border p-0">
             {SIDES.map(([t, l]) => {
               const n = counts[t] ?? 0;
               const isNew = n > (seen.current[t] ?? 0);
               return (
-                <button key={t} onClick={() => setSide(t)} className={cn('relative px-3 py-2 text-sm', side === t ? 'text-foreground' : 'text-muted-foreground')}>
+                <TabsTrigger key={t} value={t} className="relative h-auto flex-none px-3 py-2 text-sm text-muted-foreground after:hidden data-active:text-foreground">
                   {l}{n ? <span className={cn('ml-1', isNew && 'text-primary')}>{n}</span> : null}
                   {side === t && <motion.span layoutId="side-line" className="absolute inset-x-2 -bottom-px h-0.5 bg-primary" />}
-                </button>
+                </TabsTrigger>
               );
             })}
-          </nav>
+          </TabsList>
           {side === 'map' && <TableMap view={view} host={host} act={act} />}
           {side === 'timeline' && <Timeline timeline={view.timeline} />}
           {side === 'alibis' && <><Muted className="text-xs">Where each person says they were</Muted><Alibis alibis={view.alibis} /></>}
           {side === 'clues' && <SharedClues clues={view.sharedClues} />}
           {side === 'people' && <><ScenePicture svg={view.illustration} /><PeopleList people={view.people} openAll /></>}
-        </aside>
+        </Tabs>
       </div>
     </div>
   );

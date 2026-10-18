@@ -45,6 +45,7 @@ export function Reveal(props: TableProps) {
   const win = r.verdict.winner === 'investigators';
   useEffect(() => {
     let alive = true;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
     (async () => {
       const { gsap } = await import('gsap');
       if (!alive || !root.current) return;

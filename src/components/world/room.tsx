@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { MotionConfig } from 'motion/react';
 import type { Room } from '@/lib/views';
 import { HOUSE_ROOM } from '@/lib/house-room';
 
@@ -58,7 +59,7 @@ export function WorldRoom({ room: given, calm = false, className = '', children 
       data-texture={room?.texture ?? 'none'}
     >
       {effect && <AmbientLayer ambient={effect} intensity={room!.intensity} />}
-      <div className="relative z-10">{children}</div>
+      <MotionConfig reducedMotion="user"><div className="relative z-10">{children}</div></MotionConfig>
     </div>
   );
 }

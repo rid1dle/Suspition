@@ -6,6 +6,8 @@ import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { WorldRoom } from '@/components/world/room';
 import { Label, Muted } from '@/components/game/label';
 import { PlanSteps } from '@/components/game/plan';
@@ -13,7 +15,7 @@ import { QuestionCard, ProfilePanel } from '@/components/game/lobby';
 import { BriefStep } from '@/components/game/briefing';
 import { Timeline, Alibis } from '@/components/game/panels';
 import { News } from '@/components/game/panels';
-import { useLive } from '@/lib/live';
+import { useLive, useDraft } from '@/lib/live';
 import { api, storage } from '@/lib/api';
 import { joinBody } from '@/lib/phone';
 import { phoneAlerts } from '@/lib/alerts';
@@ -150,6 +152,7 @@ function JoinScreen({ onJoined }: { onJoined: (token: string) => void }) {
 }
 
 function Seat({ token, onGone }: { token: string; onGone: () => void }) {
+  setSeatToken(token);
   const full = storage.get('detective-full') === '1';
   const { view, status } = useLive<PlayerView>(`/events?token=${encodeURIComponent(token)}${full ? '&full=1' : ''}`);
   const prev = useRef<PlayerView | null>(null);
@@ -226,14 +229,20 @@ function Waiting({ view }: { view: PlayerView }) {
   );
 }
 
-export const tokenOf = () => storage.get('detective-token') ?? '';
+// Each tab keeps its own seat: localStorage is shared by every tab, so it only picks the seat on open.
+let seatToken = '';
+export function setSeatToken(token: string) {
+  seatToken = token;
+}
+export const tokenOf = () => seatToken;
 
 function Reading({ view }: { view: PlayerView }) {
   const [tab, setTab] = useState<'story' | 'card'>('story');
-  const [ask, setAsk] = useState('');
+  const [ask, setAsk] = useDraft(`world-${view.gameId}`);
   const done = view.ready.includes(view.me.id);
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-5 px-5 pt-6 pb-28">
+    <Tabs value={tab} onValueChange={(t) => setTab(t as 'story' | 'card')} className="mx-auto max-w-md gap-0 px-5 pt-6 pb-28">
+      <main className="flex flex-col gap-5">
       {tab === 'story' ? (
         <>
           <section className="rounded-2xl bg-card p-5"><BriefStep view={view as never} me={view.me.id} /></section>
@@ -241,7 +250,7 @@ function Reading({ view }: { view: PlayerView }) {
           <details className="rounded-xl bg-card/70 p-4"><summary className="cursor-pointer">Alibis <span className="text-sm text-muted-foreground">where people say they were</span></summary><div className="mt-3"><Alibis alibis={view.alibis} me={view.me.name} /></div></details>
           <section className="flex flex-col gap-2 rounded-xl bg-card/70 p-4">
             <Label>Ask about the world (free)</Label>
-            <textarea value={ask} maxLength={200} onChange={(e) => setAsk(e.target.value)} placeholder="How far is the town? Type, or use the mic on your keyboard." className="min-h-16 rounded-lg border border-input bg-transparent p-3" />
+            <Textarea value={ask} maxLength={200} onChange={(e) => setAsk(e.target.value)} placeholder="How far is the town? Type, or use the mic on your keyboard." className="min-h-16" />
             <Button variant="secondary" disabled={!ask.trim() || Boolean(view.publicPending)} onClick={async () => { if (await act('public', { token: tokenOf(), text: ask })) setAsk(''); }}>{view.publicPending ? 'Asking…' : 'Ask everyone'}</Button>
             <News events={view.events.filter((e) => e.kind === 'qa')} />
           </section>
@@ -253,11 +262,14 @@ function Reading({ view }: { view: PlayerView }) {
           <Muted>{view.ready.length} of {view.players.length} ready. Keep your card secret.</Muted>
         </>
       )}
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-2 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        {(['story', 'card'] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`py-4 text-sm ${tab === t ? 'text-primary' : 'text-muted-foreground'}`}>{t === 'story' ? 'Story' : 'My card'}</button>
-        ))}
-      </nav>
-    </main>
+      </main>
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
+        <TabsList variant="line" className="mx-auto grid h-auto w-full max-w-md grid-cols-2 gap-0 p-0">
+          {(['story', 'card'] as const).map((t) => (
+            <TabsTrigger key={t} value={t} className="relative h-auto flex-none py-4 text-sm text-muted-foreground after:hidden data-active:text-primary">{t === 'story' ? 'Story' : 'My card'}</TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
+    </Tabs>
   );
 }

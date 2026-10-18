@@ -37,6 +37,11 @@ function particleOptions(ambient: string, color: string): ISourceOptions {
   return { ...base, particles: { number: { value: 70 }, paint: { fill: { enable: true, color: { value: '#ffffff' } } }, opacity: { value: { min: 0.05, max: 0.3 } }, size: { value: { min: 0.5, max: 1.5 } }, move: { enable: true, speed: 0.15, random: true } } };
 }
 
+// One init for the whole app: ParticlesProvider throws if its init changes while the engine loads.
+const initEngine = async (engine: Parameters<typeof loadSlim>[0]) => {
+  await loadSlim(engine);
+};
+
 // The table's living background: a slow colour field from the room's palette, plus particles
 // for embers, fireflies, snow and dust. Only on the table; never on phones.
 export default function TableEffects({ room }: { room: Room }) {
@@ -47,7 +52,7 @@ export default function TableEffects({ room }: { room: Room }) {
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
       <MeshGradient className="absolute inset-0 opacity-40" colors={[c.bg, c.surface, c.surfaceAlt, c.accent]} distortion={0.6} swirl={0.3} speed={room.intensity === 'medium' ? 0.25 : 0.12} maxPixelCount={1280 * 720} minPixelRatio={1} />
       {particles && (
-        <ParticlesProvider init={async (engine) => { await loadSlim(engine); }}>
+        <ParticlesProvider init={initEngine}>
           <Particles id="table-particles" className="absolute inset-0" options={options} />
         </ParticlesProvider>
       )}
