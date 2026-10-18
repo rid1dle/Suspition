@@ -30,6 +30,18 @@ export function SeatBanner({ seat, now }: { seat: SeatView; now: number }) {
   );
 }
 
+// The table: who suspects whom, and the time to defend.
+export function PointBanner({ point, now }: { point: { current: { from: string; to: string; endsAt: number } | null } | null | undefined; now: number }) {
+  const c = point?.current;
+  if (!c) return null;
+  return (
+    <motion.div initial={{ x: -12, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex items-center justify-between gap-4 rounded-2xl border-2 border-destructive bg-card p-4">
+      <div className="font-heading text-2xl">{c.from} suspects {c.to}!</div>
+      <div className="text-right"><div className="font-mono text-3xl tabular-nums">{countdown(c.endsAt, now).text}</div><Muted className="text-xs">to defend</Muted></div>
+    </motion.div>
+  );
+}
+
 // A phone: the seated player reads their whisper; an asker reads their own question; everyone else listens.
 export function SeatCard({ seat, now }: { seat: SeatView | null | undefined; now: number }) {
   const mine = seat?.mine;

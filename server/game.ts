@@ -19,6 +19,9 @@ export const SEAT_FIRST_MS = 60_000;
 export const SEAT_READY_MS = 15_000;
 export const SEAT_LIVE_MS = 90_000;
 const SEAT_ASKERS = 3;
+export const POINT_DEFEND_MS = 20_000;
+export const POINT_COOLDOWN_MS = 60_000;
+const POINT_QUEUE = 2;
 
 export class GameError extends Error {
   constructor(message, status = 400) {
@@ -1039,6 +1042,40 @@ function closeSeats(game) {
   return st.seats.list.filter((s) => s.status === 'waiting').map((s) => s.pid);
 }
 
+// Point: free, loud and short. One banner at a time; never during a hot seat.
+export function point(game, from, to, now = Date.now()) {
+  if (game.status !== 'playing') fail('You can point at someone during a round.', 409);
+  const st = game.state;
+  if (from === to) fail('You cannot point at yourself.');
+  const target = [...game.scenario.players, ...game.scenario.npcs].find((c) => c.id === to);
+  if (!target) fail('Point at someone in the story.');
+  if (activeSeat(game)) fail('Wait for the hot seat to end.', 409);
+  st.points ??= { current: null, queue: [], last: {} };
+  if ((st.points.last[from] ?? -Infinity) + POINT_COOLDOWN_MS > now) fail('Wait a minute before you point again.', 409);
+  const entry = { from, to, endsAt: now + POINT_DEFEND_MS };
+  if (st.points.current) {
+    if (st.points.queue.length >= POINT_QUEUE) fail('Two points are already waiting. Try again in a moment.', 409);
+    st.points.queue.push(entry);
+  } else st.points.current = entry;
+  st.points.last[from] = now;
+  addEvent(game, `${nameOf(game, from)} suspects ${target.character_name ?? target.name}!`, 'point', now);
+}
+
+export function tickPoints(game, now = Date.now()) {
+  const p = game.state?.points;
+  if (!p?.current || p.current.endsAt > now) return false;
+  const next = p.queue.shift() ?? null;
+  p.current = next && { ...next, endsAt: now + POINT_DEFEND_MS };
+  return true;
+}
+
+function pointPublic(game) {
+  const p = game.state?.points;
+  if (!p) return null;
+  const name = (id) => { const c = [...game.scenario.players, ...game.scenario.npcs].find((x) => x.id === id); return c?.character_name ?? c?.name ?? ''; };
+  return { current: p.current && { from: nameOf(game, p.current.from), to: name(p.current.to), endsAt: p.current.endsAt }, waiting: p.queue.length };
+}
+
 const activeSeat = (game) => game.state?.seats?.list.find((s) => s.status === 'getready' || s.status === 'live') ?? null;
 
 // What every screen may see of the hot seat: who, and the timer. Never a question or a whisper.
@@ -1599,6 +1636,7 @@ function publicCore(game, now) {
       endsAt: vote.endsAt,
     },
     seat: seatPublic(game),
+    point: pointPublic(game),
     voteAsk: ask && {
       proposer: nameOf(game, ask.by),
       yes: Object.values(ask.votes).filter(Boolean).length,

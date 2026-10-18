@@ -9,7 +9,7 @@ import { Label, Muted } from '@/components/game/label';
 import { RoundCard } from '@/components/game/round';
 import { Feed } from '@/components/game/feed';
 import { Novel } from '@/components/game/novel';
-import { PeopleList } from '@/components/game/people';
+import { PeopleList, PointButtons } from '@/components/game/people';
 import { MapView } from '@/components/game/map';
 import { ReminderCard } from '@/components/game/reminder';
 import { SeatCard, type SeatView } from '@/components/game/hot-seat';
@@ -267,6 +267,9 @@ function PeopleTab({ view }: { view: PlayerView }) {
   const [seen, setSeen] = useState<Record<string, number>>({});
   return (
     <div className="flex flex-col gap-5">
+      {view.setup?.roundStyle === 'hotseats' && !(view.seat as { status?: string } | null)?.status && (
+        <PointButtons people={view.cast?.players} me={view.me.id} onPoint={(to) => act('point', { token: tokenOf(), to })} />
+      )}
       <PeopleList people={view.people} open={open} seen={seen} onToggle={(id, isOpen) => {
         setOpen((s) => { const n = new Set(s); if (isOpen) n.add(id); else n.delete(id); return n; });
         if (isOpen) setSeen((s) => ({ ...s, [id]: view.people?.find((p: { id: string }) => p.id === id)?.facts.length ?? 0 }));

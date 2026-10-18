@@ -211,3 +211,41 @@ describe('the GM writes the seats', () => {
     assert.ok(SEATS_SCHEMA.properties.seats);
   });
 });
+
+describe('point at someone', () => {
+  const playingHot = (n = 4) => {
+    const game = hotGame(n);
+    G.startPlay(game, 1_000);
+    return game;
+  };
+
+  test('should put a free point on the table with a 20 s defense', () => {
+    const game = playingHot();
+    G.point(game, 'p1', 'p2', 5_000);
+    const pt = G.tableView(game, 5_000).point;
+    assert.equal(pt.current.from, game.players[0].name);
+    assert.equal(pt.current.to, game.scenario.players[1].character_name);
+    assert.equal(pt.current.endsAt, 5_000 + G.POINT_DEFEND_MS);
+    assert.equal(game.state.play?.p1?.length ?? 0, 0);
+  });
+
+  test('should refuse a point during a hot seat, at yourself, or inside the cooldown', () => {
+    const game = playingHot();
+    assert.throws(() => G.point(game, 'p1', 'p1', 5_000), /yourself/);
+    G.point(game, 'p1', 'p2', 5_000);
+    G.tickPoints(game, 5_000 + G.POINT_DEFEND_MS);
+    assert.throws(() => G.point(game, 'p1', 'p3', 30_000), /wait/i);
+    G.seatNow(game, 70_000);
+    assert.throws(() => G.point(game, 'p2', 'p3', 70_500), /hot seat/);
+  });
+
+  test('should queue at most 2 points and drop extras', () => {
+    const game = playingHot(5);
+    G.point(game, 'p1', 'p2', 5_000);
+    G.point(game, 'p2', 'p3', 5_100);
+    G.point(game, 'p3', 'p4', 5_200);
+    assert.throws(() => G.point(game, 'p4', 'p5', 5_300), /waiting/);
+    G.tickPoints(game, 5_000 + G.POINT_DEFEND_MS);
+    assert.equal(G.tableView(game, 25_001).point.current.from, game.players[1].name);
+  });
+});

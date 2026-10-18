@@ -72,3 +72,25 @@ describe('hot seats on screen', () => {
     assert.match(table(game), /Hot seat now/);
   });
 });
+
+describe('point on screen', () => {
+  test('should show "A suspects B!" on the table', () => {
+    const game = gameInReading(4, 1_000);
+    game.setup.roundStyle = 'hotseats';
+    G.startPlay(game, 1_000);
+    G.point(game, 'p1', 'p2', 5_000);
+    const html = renderToStaticMarkup(h(TablePlaying, { view: G.tableView(game, 5_000), host: null, act: async () => null, readNow: () => {}, onNewGame: () => {} } as never));
+    assert.match(html, new RegExp(`${game.players[0].name} suspects ${game.scenario.players[1].character_name}!`));
+  });
+
+  test('should let a phone point at someone from the People tab', () => {
+    const game = gameInReading(4, 1_000);
+    game.setup.roundStyle = 'hotseats';
+    G.startPlay(game, 1_000);
+    const html = renderToStaticMarkup(h(PointButtons, { people: G.playerView(game, 'p1').cast.players, me: 'p1', onPoint: () => {} }));
+    assert.match(html, /Point at/);
+    assert.ok(!html.includes(`Point at ${game.scenario.players[0].character_name}`));
+  });
+});
+
+import { PointButtons } from '../src/components/game/people';

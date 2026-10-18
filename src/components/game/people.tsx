@@ -46,3 +46,19 @@ export function PeopleList({ people, openAll = false, open = new Set<string>(), 
     </div>
   );
 }
+
+// One tap to point at someone. Free; the table shows it and they get 20 seconds to defend.
+export function PointButtons({ people, me, onPoint }: { people: { id: string; name: string }[] | null | undefined; me: string; onPoint: (id: string) => void }) {
+  const others = (people ?? []).filter((p) => p.id !== me);
+  if (!others.length) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      <Label>Who do you suspect? Point, out loud</Label>
+      <div className="flex flex-wrap gap-2">
+        {others.map((p) => (
+          <button key={p.id} onClick={() => onPoint(p.id)} className="rounded-full border border-destructive/60 px-3 py-1.5 text-sm hover:bg-destructive/15">Point at {p.name}</button>
+        ))}
+      </div>
+    </div>
+  );
+}

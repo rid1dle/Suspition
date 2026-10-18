@@ -480,6 +480,12 @@ export class App {
     await this.changed();
   }
 
+  async point(tok, to) {
+    const p = G.playerByToken(this.game, tok);
+    G.point(this.game, p.id, to, this.clock());
+    await this.changed();
+  }
+
   async seatNow(hostToken) {
     this.requireHost(hostToken);
     G.seatNow(this.game, this.clock());
@@ -589,6 +595,7 @@ export class App {
     }
     if (G.tickMoments(game, now)) dirty = true;
     if (G.tickSeats(game, now)) dirty = true;
+    if (G.tickPoints(game, now)) dirty = true;
     if (dirty) await this.changed();
     if (st.roundVote && st.roundVote.endsAt <= now) return this.advance();
     if (!st.transitioning && !st.roundVote && st.phaseEndsAt && st.phaseEndsAt <= now) this.advance();

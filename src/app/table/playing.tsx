@@ -16,7 +16,7 @@ import { countdown, suspicionLabel } from '@/lib/phone';
 import { cn } from '@/lib/utils';
 import { ConfirmButton } from './setup';
 import { TableMap } from './table-map';
-import { SeatBanner, type SeatView } from '@/components/game/hot-seat';
+import { SeatBanner, PointBanner, type SeatView } from '@/components/game/hot-seat';
 import type { TableProps } from './table-app';
 
 type Side = 'map' | 'timeline' | 'alibis' | 'clues' | 'people';
@@ -147,7 +147,7 @@ export function Playing(props: TableProps) {
               </motion.div>
             )}
           </AnimatePresence>
-          {seat?.status && <SeatBanner seat={seat} now={now} />}
+          {seat?.status ? <SeatBanner seat={seat} now={now} /> : <PointBanner point={view.point as never} now={now} />}
           {va && <div className="rounded-xl bg-card p-4"><b>{va.proposer}</b> wants to vote now. {va.yes} of {va.need} ready. Everyone has to say yes on their phone.</div>}
           {hv && <div className="rounded-xl bg-card p-4"><b>{hv.proposer}</b> wants a hint. Vote on your phone: {hv.yes} yes, {hv.no} no. Needs {hv.need}.</div>}
           <section className={cn('flex flex-col gap-5 rounded-2xl bg-card p-6 transition', vote && 'ring-2 ring-primary')}>
