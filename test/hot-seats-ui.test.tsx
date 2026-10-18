@@ -117,3 +117,12 @@ describe('loud round events', () => {
     assert.match(html, /Round 2 of 3: The Shed/);
   });
 });
+
+import { Results } from '../src/components/game/panels';
+
+describe('spotlight results', () => {
+  test('should not mark spotlight rounds right or wrong', () => {
+    const html = renderToStaticMarkup(h(Results, { results: [{ kind: 'spotlight', phaseIndex: 0, question: 'Who should the room look at?', correct: null, pickedText: 'Dev' }] as never }));
+    assert.ok(!html.includes('✗') && !html.includes('✓'), 'no tick or cross');
+  });
+});

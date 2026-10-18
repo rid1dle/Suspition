@@ -135,7 +135,8 @@ export function applyAudit(scenario, audit) {
       p.distrusts = distrusts;
       p.distrust_why = String(entry.distrust_why ?? '').trim().slice(0, 200);
     }
-    const reveals = (entry.reveals ?? []).map((t) => String(t ?? '').trim().slice(0, 200)).filter((t) => t && !namesCulprit(scenario, [], t)).slice(0, 3);
+    const others = { ...scenario, truth: { ...scenario.truth, culprit_ids: (scenario.truth?.culprit_ids ?? []).filter((id) => id !== p.id) } };
+    const reveals = (entry.reveals ?? []).map((t) => String(t ?? '').trim().slice(0, 200)).filter((t) => t && !namesCulprit(others, [], t)).slice(0, 3);
     if (reveals.length && !p.reveals?.length) p.reveals = reveals;
     for (const key of ['wants', 'fears', 'goal_why']) {
       const text = String(entry[key] ?? '').trim();
@@ -751,6 +752,8 @@ export function completePhase(game, result, now = Date.now()) {
   if (isLastPhase(game) && !replay) {
     game.status = 'final';
     st.phaseEndsAt = null;
+    closeSeats(game);
+    st.seats = null;
     st.hintVote = null;
     addEvent(game, 'Time is up. Everyone, pick who did it on your phone.', 'phase', now);
     return;
@@ -1023,6 +1026,7 @@ export function tickSeats(game, now = Date.now()) {
       addEvent(game, `Hot seat: ${nameOf(game, active.pid)}. 90 seconds.`, 'seat', now);
     } else if (active?.status === 'live' && now >= active.endsAt) finishSeat(game, active);
     else if (!active) {
+      if (st.roundVote || (st.phaseEndsAt && now >= st.phaseEndsAt)) break;
       const next = st.seats.list.find((s) => s.status === 'waiting' && s.readyAt <= now);
       if (!next) break;
       startSeat(next, now);
@@ -1036,6 +1040,7 @@ export function seatNow(game, now = Date.now()) {
   const st = game.state;
   if (game.status !== 'playing' || !st.seats) fail('There are no hot seats this round.', 409);
   if (st.seats.list.some((s) => s.status === 'getready' || s.status === 'live')) fail('Someone is already in the hot seat.', 409);
+  if (st.roundVote) fail('Finish the vote first.', 409);
   const next = st.seats.list.find((s) => s.status === 'waiting');
   if (!next) fail('Everyone has had their seat this round.', 409);
   startSeat(next, now);
@@ -1070,7 +1075,12 @@ export function point(game, from, to, now = Date.now()) {
 
 export function tickPoints(game, now = Date.now()) {
   const p = game.state?.points;
-  if (!p?.current || p.current.endsAt > now) return false;
+  if (!p?.current) return false;
+  if (activeSeat(game)) {
+    p.current.endsAt = Math.max(p.current.endsAt, (activeSeat(game).endsAt ?? now) + POINT_DEFEND_MS);
+    return false;
+  }
+  if (p.current.endsAt > now) return false;
   const next = p.queue.shift() ?? null;
   p.current = next && { ...next, endsAt: now + POINT_DEFEND_MS };
   return true;
@@ -1824,7 +1834,7 @@ export function playerView(game, playerId, now = Date.now()) {
     fears: locked.includes('drives') ? '' : card.fears ?? '',
     goal_why: card.goal_why ?? '',
     reasons: locked.includes('reasons') ? [] : card.reasons ?? [],
-    pellets: pelletsFor(card),
+    pellets: pelletsFor({ ...card, wants: locked.includes('drives') ? '' : card.wants, fears: locked.includes('drives') ? '' : card.fears, reasons: locked.includes('reasons') ? [] : card.reasons }),
     reminders: remindersFor(card),
     night: card.night ?? [],
     alibi: card.alibi ?? [],

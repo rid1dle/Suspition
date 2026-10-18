@@ -366,3 +366,85 @@ describe('short private answers', () => {
     assert.doesNotMatch(askPrompt(base), /at most 2 short lines/);
   });
 });
+
+import { phasePrompt } from '../server/prompts.ts';
+import { phoneAlerts } from '../src/lib/alerts.ts';
+
+describe('hot seats review fixes', () => {
+  const playingHot = (n = 4, opts = {}) => {
+    const game = hotGame(n, opts);
+    G.startPlay(game, 0);
+    return game;
+  };
+
+  test('should not send locked card text to the phone in any field', () => {
+    const game = hotGame(3);
+    G.applyAudit(game.scenario, { players: [{ player_id: 'p2', wants: 'SECRET WANT', fears: 'SECRET FEAR', reasons: ['SECRET REASON'] }] });
+    G.startPlay(game, 1_000);
+    const json = JSON.stringify(G.playerView(game, 'p2'));
+    assert.ok(!json.includes('SECRET WANT') && !json.includes('SECRET FEAR') && !json.includes('SECRET REASON'), 'locked text is not in the phone view');
+  });
+
+  test('should not start a seat while the round vote is open, and should refuse Hot seat now then', () => {
+    const game = playingHot(4, { questions: true });
+    G.beginRoundVote(game, 1_000);
+    G.tickSeats(game, game.state.seats.list[0].readyAt + 1);
+    assert.equal(game.state.seats.list[0].status, 'waiting');
+    assert.throws(() => G.seatNow(game, 2_000), /vote/);
+  });
+
+  test('should not start a seat once the round time is up', () => {
+    const game = playingHot(4);
+    G.tickSeats(game, game.state.phaseEndsAt + 1);
+    assert.ok(game.state.seats.list.every((s) => s.status === 'waiting'), 'no seat starts after time is up');
+  });
+
+  test('should tell the GM how the spotlight vote went, not that the room got it wrong', () => {
+    const out = phasePrompt({ snapshot: {}, nextPhase: { name: 'x', again: false }, lastRound: { kind: 'spotlight', question: 'Who should the room look at?', pickedText: 'Dev Pillai', correct: null } });
+    assert.match(out, /looked at Dev Pillai/);
+    assert.doesNotMatch(out, /got it wrong/);
+    assert.match(phasePrompt({ snapshot: {}, nextPhase: { name: 'x', again: false }, lastRound: { kind: 'spotlight', question: 'q', pickedText: null, correct: null } }), /was split/);
+  });
+
+  test("should keep a culprit's own reveal lines but drop lines that name another culprit", () => {
+    const game = hotGame(3);
+    const culprit = game.scenario.players.find((p) => p.side === 'culprit');
+    const other = game.scenario.players.find((p) => p.side !== 'culprit');
+    G.applyAudit(game.scenario, { players: [
+      { player_id: culprit.id, reveals: [`${culprit.character_name} owes money.`] },
+      { player_id: other.id, reveals: [`Saw ${culprit.character_name} at the shed.`, 'Was in the kitchen.'] },
+    ] });
+    assert.deepEqual(culprit.reveals, [`${culprit.character_name} owes money.`]);
+    assert.deepEqual(other.reveals, ['Was in the kitchen.']);
+  });
+
+  test('should clear hot seats when the game reaches the final vote', () => {
+    const game = hotGame(3);
+    G.startPlay(game, 1_000);
+    for (let i = 0; i < 3; i += 1) {
+      G.beginPhaseChange(game);
+      G.completePhase(game, emptyPhase, 2_000 + i);
+    }
+    assert.equal(game.status, 'final');
+    assert.equal(game.state.seats, null);
+  });
+
+  test('should alert a phone when part of its card opens', () => {
+    const prev = { gameId: 'g', me: { id: 'p1' }, thread: [], clues: [], card: { goal: 'g', starting_knowledge: '', hidden_known: [], locked: ['drives', 'reasons'] } };
+    const next = { ...prev, card: { ...prev.card, locked: ['reasons'] } };
+    assert.ok(phoneAlerts(prev, next).some((a) => /card opened/.test(a.text)), 'an unlock alert fires');
+  });
+
+  test('should hold a point under a hot seat and give it its full time after', () => {
+    const game = playingHot(4);
+    G.point(game, 'p1', 'p2', 1_000);
+    G.seatNow(game, 2_000);
+    G.tickPoints(game, 100_000);
+    assert.ok(game.state.points.current, 'the point is still waiting');
+    const seat = game.state.seats.list[0];
+    G.tickSeats(game, seat.liveAt);
+    G.tickSeats(game, seat.endsAt);
+    G.tickPoints(game, seat.endsAt);
+    assert.equal(game.state.points.current.endsAt, seat.endsAt + G.POINT_DEFEND_MS);
+  });
+});

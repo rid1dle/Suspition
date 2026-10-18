@@ -144,11 +144,11 @@ export function Recap({ recap }: { recap: { lines?: string[]; open?: string[] } 
   );
 }
 
-export function Results({ results }: { results: { phaseIndex: number; question: string; correct: boolean; pickedText: string | null }[] | null | undefined }) {
+export function Results({ results }: { results: { kind?: string; phaseIndex: number; question: string; correct: boolean | null; pickedText: string | null }[] | null | undefined }) {
   if (!results?.length) return null;
   return (
     <div className="flex flex-col gap-1 text-sm">
-      {results.map((r, i) => <div key={i}><b>Round {r.phaseIndex + 1}:</b> {r.question} {r.correct ? '✓' : '✗'} {r.pickedText ?? 'no agreement'}</div>)}
+      {results.map((r, i) => <div key={i}><b>Round {r.phaseIndex + 1}:</b> {r.question} {r.kind === 'spotlight' ? '' : r.correct ? '✓' : '✗'} {r.pickedText ?? (r.kind === 'spotlight' ? 'the room was split' : 'no agreement')}</div>)}
     </div>
   );
 }

@@ -382,7 +382,7 @@ export function phasePrompt({ snapshot, nextPhase, lastRound }) {
 Game state:
 ${JSON.stringify(snapshot)}
 
-${lastRound ? `Last round's question was "${lastRound.question}". The group ${lastRound.correct ? 'got it right, so the reward is now public' : 'got it wrong, so the culprit gains a little cover'}. Build on that.\n\n` : ''}Move the world on. ${nextPhase.again ? `The group got this round wrong, so the same round is played again as a second try. Help them understand what they missed without giving the answer: the public_event and the job should point them at the right people, places and clues.
+${lastRound ? (lastRound.kind === 'spotlight' ? `In the spotlight vote the room ${lastRound.pickedText ? `looked at ${lastRound.pickedText}, and one line about them is now public` : 'was split'}. Build on that.\n\n` : `Last round's question was "${lastRound.question}". The group ${lastRound.correct ? 'got it right, so the reward is now public' : 'got it wrong, so the culprit gains a little cover'}. Build on that.\n\n`) : ''}Move the world on. ${nextPhase.again ? `The group got this round wrong, so the same round is played again as a second try. Help them understand what they missed without giving the answer: the public_event and the job should point them at the right people, places and clues.
 
 ` : ''}Story stage for this round: ${nextPhase.stage ? `${nextPhase.stage.name} (${nextPhase.stage.aim})` : 'middle'}. Pace the story to this stage. The truth and the culprits never change; if the group is far from where this stage needs them (see round_results, where_we_are and the room's notes in public_events), bring what they need into reach through a GM character or an event that fits.
 
@@ -503,7 +503,7 @@ Then make each player feel why, not just read what:
 - reasons: for each thing they did tonight that their card mentions or that you add, one sentence on why they did it, as they would remember it ("You went back to the stairs because you thought Arjun had your letter."). Take the reason from the truth and their story. If the story gives none, use the most natural reason that fits everything and contradicts nothing.
 - hook: one line in the second person that a player can play at once: who they are and what they want tonight ("You are the cook, and you need tonight to end before anyone finds your debt.").
 - distrusts: the id of ONE other player character this character distrusts, and distrust_why: one short reason they could say out loud. Never themselves. Spread the targets so not everyone distrusts the same person.
-- reveals: 3 short true lines about this character that the room could learn about them, ordered mild to sharp. Never name the culprit, the method or the motive, even for a culprit.
+- reveals: 3 short true lines about this character that the room could learn about them, ordered mild to sharp, written without their name ("Was seen near the shed at ten."). Never give away the method or the motive, and never name another culprit, even for a culprit.
 Never give away their hidden facts in any of these. Give an entry for every player; use empty lists when nothing is missing.
 
 Then lay out who was where, so the group can work it out:

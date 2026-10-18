@@ -34,6 +34,7 @@ export function phoneAlerts(prev, next) {
   if (newClues.length) out.push({ sound: 'clue', text: `You found a clue: ${newClues.map((c) => c.name).join(', ')}.`, tab: 'clues' });
   if (next.card && prev.card) {
     if ((next.card.hidden_known?.length ?? 0) > (prev.card.hidden_known?.length ?? 0)) out.push({ sound: 'secret', text: 'You found out something about yourself.', tab: 'card' });
+    if ((next.card.locked?.length ?? 0) < (prev.card.locked?.length ?? 0)) out.push({ sound: 'secret', text: 'A new part of your card opened.', tab: 'card' });
     if (next.card.goal !== prev.card.goal) out.push({ sound: 'secret', text: 'Your goal changed.', tab: 'card' });
     else if (next.card.starting_knowledge !== prev.card.starting_knowledge) out.push({ sound: 'secret', text: 'Your card has new things you remember.', tab: 'card' });
   }
