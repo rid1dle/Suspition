@@ -199,7 +199,7 @@ export function Playing(props: TableProps) {
           {side === 'timeline' && <Timeline timeline={view.timeline} />}
           {side === 'alibis' && <><Muted className="text-xs">Where each person says they were</Muted><Alibis alibis={view.alibis} /></>}
           {side === 'clues' && <SharedClues clues={view.sharedClues} />}
-          {side === 'people' && <><ScenePicture svg={view.illustration} /><PeopleList people={view.people} openAll /></>}
+          {side === 'people' && <><ScenePicture svg={view.picture ?? view.illustration} /><PeopleList people={view.people} openAll /></>}
         </Tabs>
       </div>
     </div>

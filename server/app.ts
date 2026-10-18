@@ -5,6 +5,7 @@ import { MemoryPeople } from './store.ts';
 import { QUESTIONS, pickQuestions } from './questions.ts';
 import { usernameFor, newProfile, addAnswer, aboutForGM, recordGame, profileView } from './profiles.ts';
 import { resolveStyle, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
+import { roundPicturePrompt } from './prompts.ts';
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
@@ -428,6 +429,21 @@ export class App {
     G.startPlay(this.game, this.clock());
     this.writeSeats(this.game);
     await this.changed();
+    this.drawRound(this.game);
+  }
+
+  // One picture per round, in the game's art style; the scene picture stands in until it lands or if it fails.
+  drawRound(game) {
+    if (game.status !== 'playing' || typeof this.gm.illustrate !== 'function') return null;
+    const round = G.roundNumber(game);
+    if (game.state.roundArt?.[round]) return null;
+    const style = resolveStyle(game.setup?.artStyle ?? DEFAULT_STYLE, game.id, round);
+    return this.background(`round picture ${round}`, async () => {
+      const { svg } = await this.gm.illustrate(game, { style, prompt: roundPicturePrompt(game, style) });
+      if (this.game !== game || G.roundNumber(game) !== round) return;
+      if (!G.setRoundPicture(game, round, svg)) throw new Error('the round picture was not a safe SVG');
+      await this.changed();
+    });
   }
 
   async extend(hostToken) {
@@ -538,6 +554,7 @@ export class App {
         if (this.game !== game) return;
         G.completePhase(game, result, this.clock());
         this.writeSeats(game);
+        this.drawRound(game);
         game.error = null;
       } catch (err) {
         if (this.game !== game) return;

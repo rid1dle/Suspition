@@ -493,6 +493,17 @@ Style: ${styleRules(styleId)}
 Rules: start with <svg and use viewBox="0 0 800 400". No text, no people's faces, no scripts, no links, no external images, no foreignObject. Under 9000 characters.`;
 }
 
+// A symbol of the current round, from public facts only: the round's name, its loud event, the job and the setting.
+export function roundPicturePrompt(game, styleId = DEFAULT_STYLE) {
+  const sc = game.scenario;
+  const st = game.state;
+  const name = sc.phases[st.phaseIndex]?.name ?? '';
+  const loud = [...(st.events ?? [])].reverse().find((e) => e.kind === 'event' && e.phase === st.phaseIndex)?.text ?? '';
+  const job = st.job?.objective ?? '';
+  const scene = [`The world: ${sc.setting_summary}`, `This round: ${name}.`, loud && `What just happened: ${loud}`, job && `The group's job now: ${job}`].filter(Boolean).join(' ');
+  return artPrompt(`${scene}\nDraw a symbol of this round: an object or a place that stands for it. No people, no faces, nothing that shows who did it or how.`, styleId);
+}
+
 export function illustrationPrompt(scenario, styleId = DEFAULT_STYLE) {
   return artPrompt(`${scenario.setting_summary} ${scenario.background?.slice(0, 3).join(' ') ?? ''}`.trim(), styleId);
 }

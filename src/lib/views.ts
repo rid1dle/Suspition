@@ -31,6 +31,7 @@ export interface PublicView {
   room: Room | null;
   error: string | null;
   surprise?: { id: string; text: string } | null;
+  picture?: string | null;
   players: { id: string; name: string }[];
   setup: Record<string, unknown> | null;
   title: string;

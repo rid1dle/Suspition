@@ -1833,7 +1833,21 @@ function revealView(game) {
 }
 
 export function tableView(game, now = Date.now()) {
-  return { ...publicCore(game, now), reveal: game.status === 'reveal' ? revealView(game) : null };
+  return { ...publicCore(game, now), picture: roundPicture(game), reveal: game.status === 'reveal' ? revealView(game) : null };
+}
+
+// This round's own picture, table only; null until it is drawn (the scene picture stands in).
+export function roundPicture(game) {
+  const st = game.state;
+  if (!st || game.status !== 'playing') return null;
+  return st.roundArt?.[roundNumber(game)] ?? null;
+}
+
+export function setRoundPicture(game, round, svg) {
+  const clean = cleanSvg(svg);
+  if (!clean) return false;
+  (game.state.roundArt ??= {})[round] = clean;
+  return true;
 }
 
 // Hot seats style opens each card on its hook; "drives" and "reasons" unlock during play. Classic and older games never lock.

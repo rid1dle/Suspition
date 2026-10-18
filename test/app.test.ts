@@ -146,7 +146,7 @@ describe('App', () => {
     release();
     ctx.gm.gate = null;
     await ctx.app.idle();
-    assert.deepEqual(ctx.gm.calls.slice(-2), ['answer', 'phase']);
+    assert.deepEqual(ctx.gm.calls.filter((c) => c !== 'illustrate').slice(-2), ['answer', 'phase']);
     assert.equal(ctx.app.game.state.phaseIndex, 1);
     assert.equal(ctx.app.game.state.transitioning, false);
   });
