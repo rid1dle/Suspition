@@ -106,13 +106,16 @@ describe('asking the GM', () => {
     assert.throws(() => G.beginAsk(game, 'p2', { kind: 'question', text: 'two' }), /still answering/);
   });
 
-  test('should refuse when the phase budget is used up', () => {
+  test('should answer as talk, finding nothing, when the round acts are used up', () => {
     const game = playing();
     for (let i = 0; i < 3; i += 1) {
       G.beginAsk(game, 'p2', { kind: 'question', text: `q${i}` });
       G.completeAsk(game, 'p2', emptyAsk);
     }
-    assert.throws(() => G.beginAsk(game, 'p2', { kind: 'question', text: 'q4' }), /No questions left this round/);
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'q4' });
+    assert.equal(game.state.questionsLeft.p2, 0);
+    G.completeAsk(game, 'p2', { ...emptyAsk, clues_found: ['c1'] });
+    assert.deepEqual(game.state.found.p2, []);
   });
 
   test('should let the GM decide what a plain chat message was, and keep a secret move off the map', () => {

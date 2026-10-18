@@ -62,7 +62,7 @@ export class App {
       st.overridesLeft ??= Object.fromEntries(this.game.players.map((p) => [p.id, this.game.setup?.overrides ?? 3]));
       for (const pid of Object.keys(this.game.state.pending ?? {})) {
         G.failAsk(this.game, pid);
-        this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. You did not lose a question. Ask again.', at: this.clock() });
+        this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. You did not lose an act. Ask again.', at: this.clock() });
       }
       this.game.state.pending = {};
       this.game.state.moveConfirm = {};
@@ -451,6 +451,19 @@ export class App {
     await this.changed();
   }
 
+  async callMeeting(tok, reason) {
+    const p = G.playerByToken(this.game, tok);
+    G.callMeeting(this.game, p.id, reason, this.clock());
+    await this.changed();
+  }
+
+  async endMeeting({ token, host } = {}) {
+    if (host) this.requireHost(host);
+    const pid = host ? null : G.playerByToken(this.game, token).id;
+    G.endMeeting(this.game, pid, this.clock());
+    await this.changed();
+  }
+
   async ready(tok) {
     const p = G.playerByToken(this.game, tok);
     G.markReady(this.game, p.id);
@@ -497,7 +510,7 @@ export class App {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
         this.log(`read ${p.id} failed: ${err.message}`);
-        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not read that. Try saying that again. You did not lose a question.', at: this.clock() });
+        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not read that. Try saying that again. You did not lose an act.', at: this.clock() });
         await this.changed();
         return;
       }
@@ -507,13 +520,14 @@ export class App {
       if (await this.goFirst(game, p.id, read, 'private') === 'stay') {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
-        game.state.threads[p.id].push({ from: 'system', text: 'You stayed where you are. Your question was not used.', at: this.clock() });
+        game.state.threads[p.id].push({ from: 'system', text: 'You stayed where you are. No act was used.', at: this.clock() });
         await this.changed();
         return;
       }
       if (this.game !== game || !game.state.pending[p.id]) return;
+      const settled = G.settleAct(game, p.id, read);
       try {
-        const result = await this.gm.answer(game, p.id, { ...ask, read });
+        const result = await this.gm.answer(game, p.id, { ...ask, read, talk: !settled.spent, noActs: settled.held === 'noActs' });
         if (this.game !== game) return;
         const drops = game.state.rippleDrops?.length ?? 0;
         G.completeAsk(game, p.id, result, this.clock());
@@ -523,7 +537,7 @@ export class App {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
         this.log(`ask ${p.id} failed: ${err.message}`);
-        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not answer. You did not lose a question. Try again.', at: this.clock() });
+        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not answer. You did not lose an act. Try again.', at: this.clock() });
       } finally {
         if (this.game === game) await this.changed();
       }
@@ -764,6 +778,7 @@ export class App {
     if (G.tickMoments(game, now)) dirty = true;
     if (G.tickSeats(game, now)) dirty = true;
     if (G.tickPoints(game, now)) dirty = true;
+    if (G.tickMeeting(game, now)) dirty = true;
     if (dirty) await this.changed();
     if (st.roundVote && st.roundVote.endsAt <= now) return this.advance();
     if (!st.transitioning && !st.roundVote && st.phaseEndsAt && st.phaseEndsAt <= now) this.advance();

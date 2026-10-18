@@ -13,6 +13,7 @@ export interface Read {
   sways_gm: boolean;
   fair_part?: string;
   claims: string[];
+  acts?: boolean;
 }
 
 export interface FinalRead {

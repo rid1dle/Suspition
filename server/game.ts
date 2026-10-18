@@ -680,18 +680,70 @@ export function beginAsk(game, playerId, { kind, text }) {
   const clean = String(text ?? '').trim().slice(0, 500);
   if (!clean) fail('Write what you want to do.');
   const st = game.state;
-  if (st.pending[playerId]) fail('The GM is still answering your last question.', 409);
-  if (st.questionsLeft[playerId] < 1) fail('No questions left this round.', 409);
-  st.questionsLeft[playerId] -= 1;
-  st.pending[playerId] = { kind, text: clean };
+  if (st.pending[playerId]) fail('The GM is still answering your last message.', 409);
+  // An act is held for the message until the reader says whether it is one; with none left it can still be talk.
+  const spent = st.questionsLeft[playerId] >= 1;
+  if (spent) st.questionsLeft[playerId] -= 1;
+  st.pending[playerId] = { kind, text: clean, spent };
   return { kind, text: clean };
+}
+
+// Talk is free: asking a person, asking about yourself, saying something. An act (searching, taking, hiding,
+// following, a secret action) uses one of the round's acts. With none left, or during a meeting, it is answered as talk.
+export function settleAct(game, playerId, read) {
+  const st = game.state;
+  const ask = st.pending[playerId];
+  if (!ask) return null;
+  const wants = !['self', 'say'].includes(read?.kind) && (read?.kind === 'action' || read?.acts !== false);
+  const held = wants && st.meeting ? 'meeting' : wants && !ask.spent ? 'noActs' : null;
+  if (ask.spent && (!wants || held)) {
+    st.questionsLeft[playerId] += 1;
+    ask.spent = false;
+  }
+  if (held) ask.held = held;
+  return ask;
 }
 
 export function failAsk(game, playerId) {
   const st = game.state;
-  if (!st.pending[playerId]) return;
+  const ask = st.pending[playerId];
+  if (!ask) return;
   delete st.pending[playerId];
-  st.questionsLeft[playerId] += 1;
+  if (ask.spent) st.questionsLeft[playerId] += 1;
+}
+
+export const MEETING_MS = 3 * 60_000;
+
+// Any player can call one meeting a game: everyone talks it out over the line, acts and moves wait, the round clock waits too.
+export function callMeeting(game, playerId, reason, now = Date.now()) {
+  if (game.status !== 'playing') fail('Meetings only happen during a round.', 409);
+  const st = game.state;
+  if (st.roundVote) fail('Not during a vote.', 409);
+  if (st.transitioning) fail('Things are changing. Try again in a moment.', 409);
+  if (st.meeting) fail('A meeting is already on.', 409);
+  if (st.meetingsUsed?.[playerId]) fail('You already called your meeting this game.', 409);
+  const text = String(reason ?? '').replace(/\s+/g, ' ').trim().slice(0, 100);
+  (st.meetingsUsed ??= {})[playerId] = true;
+  st.meeting = { by: playerId, reason: text, endsAt: now + MEETING_MS };
+  if (st.phaseEndsAt) st.phaseEndsAt += MEETING_MS;
+  addEvent(game, `Meeting! ${nameOf(game, playerId)} calls everyone together${text ? `: "${text}"` : '.'}`, 'meeting', now);
+  const r = st.recap;
+  if (r?.lines?.length) addEvent(game, `Where we are now. ${r.lines.join(' ')}${r.open?.length ? ` Still open: ${r.open.join(' ')}` : ''}`, 'sync', now);
+}
+
+// playerId null is the host.
+export function endMeeting(game, playerId, now = Date.now()) {
+  const st = game.state;
+  if (!st?.meeting) fail('There is no meeting on.', 409);
+  if (playerId && st.meeting.by !== playerId) fail('Only the one who called it or the host can end it.', 403);
+  st.meeting = null;
+  addEvent(game, 'The meeting is over.', 'meeting', now);
+}
+
+export function tickMeeting(game, now = Date.now()) {
+  if (!game.state?.meeting || game.state.meeting.endsAt > now) return false;
+  endMeeting(game, null, now);
+  return true;
 }
 
 function addEvent(game, text, kind, now, extra = {}) {
@@ -990,6 +1042,9 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     logRefused(game, playerId, why, false, now);
     return;
   }
+  if (ask.held) thread.push({ from: 'system', text: ask.held === 'meeting' ? 'A meeting is on: no acts until it ends. You only talked.' : 'No acts left this round, so nothing was found or moved. Talking is still free.', at: now });
+  // Talk changes nothing in the world: no find, no move, no stir, nothing destroyed.
+  if (ask.spent === false) result = { ...result, clues_found: [], clues_destroyed: [], player_location: '', public_event: '', move_is_public: false, messages_to_players: (result.messages_to_players ?? []).filter((m) => m?.player_id === playerId) };
   // What the player asserted as the narrator only happens if the GM grants it; every other claim is answered out loud to them.
   markGoalSteps(game, playerId, result.goal_steps_done);
   const answers = Array.isArray(result.claims_answer) ? result.claims_answer : [];
@@ -1074,6 +1129,7 @@ export function goTo(game, pid, locId, now = Date.now(), purpose = '') {
   if (!loc) fail('Unknown place.');
   const name = String(loc.name).replace(/^the\s+/i, '');
   if (currentPlace(game, pid) === locId) fail(`You are already in the ${name}.`, 409);
+  if (game.state.meeting) fail('A meeting is on. Stay with the room until it ends.', 409);
   // Timed from where the map shows them: the room never learns of a secret trip.
   const walk = walkBetween(game.scenario, game.state.positions?.[pid], locId);
   game.state.at ??= {};
@@ -2283,6 +2339,7 @@ function publicCore(game, now) {
     gameId: game.id,
     status: game.status,
     voteBrief: voteBrief(game),
+    meeting: st?.meeting ? { by: nameOf(game, st.meeting.by), reason: st.meeting.reason, endsAt: st.meeting.endsAt } : null,
     room: sc ? roomFor(game) : null,
     error: game.error,
     players: game.players.map((p) => ({ id: p.id, name: p.name })),
@@ -2490,6 +2547,7 @@ export function playerView(game, playerId, now = Date.now()) {
   view.rules = rulesLines({ rounds: game.scenario.phases.length, questions: st.questionsPerPhase, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0 });
   view.thread = st.threads[playerId].map(({ read, ...m }) => m);
   view.questionsLeft = st.questionsLeft[playerId];
+  view.canCallMeeting = game.status === 'playing' && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;
   view.clues = st.found[playerId].map((id) => {
     const c = game.scenario.clues.find((x) => x.id === id);
