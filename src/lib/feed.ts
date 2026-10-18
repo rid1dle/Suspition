@@ -14,7 +14,7 @@ export function feedItem(e) {
     return { kind: 'clue', text: by && name ? `${by} showed a clue: ${name}` : e.text, tab: 'clues' };
   }
   if (e.kind === 'timeline') return { kind: 'timeline', text: e.text, tab: 'timeline' };
-  if (e.kind === 'qa') return { kind: 'qa', text: e.text, ask: `${e.by} asked: ${e.q}` };
+  if (e.kind === 'qa') return { kind: 'qa', text: e.text, ask: `${e.by} asked: ${e.q}`, lines: e.lines };
   if (e.kind === 'round') return { kind: /That is right!/.test(e.text) ? 'right' : 'wrong', text: e.text };
   return { kind: e.kind, text: e.text };
 }

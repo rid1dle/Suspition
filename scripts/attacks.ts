@@ -33,7 +33,7 @@ async function main() {
       if (mode === 'move') answer = await gm.answer(game, 'p1', { kind: 'chat', text: attack.text, read });
       if (mode === 'public') {
         const out = await gm.publicAnswer(game, attack.text, read);
-        answer = { play: out.asker_read?.play, public_event: '', messages_to_players: [] };
+        answer = { play: out.asker_read?.play, public_event: '', messages_to_players: [], lines: out.lines ?? [] };
       }
       const v = attackVerdict(game, 'p1', attack, read, answer);
       if (!v.ok) failed += 1;

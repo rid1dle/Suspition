@@ -4,11 +4,12 @@ import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { roundGroups } from '@/lib/feed';
 import type { GameEvent } from '@/lib/views';
 import { Label, Muted } from './label';
+import { Novel, type Line } from './novel';
 
 const ICONS: Record<string, string> = { said: '🗣', forced: '🗣', clue: '🔎', timeline: '⏱', hint: '✦', qa: '?', note: '💬', right: '✓', wrong: '✗' };
 const TAB_NAMES: Record<string, string> = { clues: 'Clues', timeline: 'Timeline' };
 
-interface Item { kind: string; text: string; ask?: string; tab?: string }
+interface Item { kind: string; text: string; ask?: string; tab?: string; lines?: Line[] }
 interface Group { phase: number; title: string; items: Item[] }
 
 // News grouped by round: this round open, older rounds folded. Items that live elsewhere point there.
@@ -24,7 +25,7 @@ export function Feed({ events, fresh = 0, onGo }: { events: GameEvent[]; fresh?:
         <span className={`w-5 shrink-0 text-center ${it.kind === 'right' ? 'text-emerald-400' : it.kind === 'wrong' ? 'text-destructive' : 'text-muted-foreground'}`}>{ICONS[it.kind] ?? '·'}</span>
         <div className="min-w-0">
           {it.ask && <Muted className="text-xs">{it.ask}</Muted>}
-          {it.text}
+          {it.lines?.length ? <Novel lines={it.lines} /> : it.text}
           {it.tab && <button className="ml-1 text-sm text-primary" onClick={() => onGo?.(it.tab!)}>{TAB_NAMES[it.tab]} ›</button>}
         </div>
       </li>

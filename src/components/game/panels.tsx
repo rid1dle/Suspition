@@ -1,5 +1,6 @@
 import type { GameEvent } from '@/lib/views';
 import { Label, Muted } from './label';
+import { Novel } from './novel';
 
 export function ScenePicture({ svg, className = '' }: { svg: string | null | undefined; className?: string }) {
   if (!svg) return null;
@@ -34,7 +35,7 @@ export function News({ events }: { events: GameEvent[] }) {
       {items.map((e, i) => (
         <li key={`${e.at}-${i}`} data-kind={e.kind} className="leading-snug">
           {e.kind === 'qa' && <Muted className="text-xs">{e.by} asked: {e.q}</Muted>}
-          {e.text}
+          {e.lines?.length ? <Novel lines={e.lines} /> : e.text}
         </li>
       ))}
     </ul>

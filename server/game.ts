@@ -537,6 +537,32 @@ export function dropPuppeting(game, actorId, text, { to = null } = {}) {
   return { text: kept.join(' '), dropped: sentences.length - kept.length };
 }
 
+// A GM reply as a page of a novel: narration (no speaker) and GM characters' spoken words.
+// The GM never speaks for a human player: the asker's own lines become "You say", anyone else's are dropped.
+export function novelLines(game, raw, { you = null, unpuppet = (t) => t } = {}) {
+  const myName = game.scenario.players.find((p) => p.id === you)?.character_name?.toLowerCase();
+  const players = new Set(game.scenario.players.map((p) => p.character_name.toLowerCase()));
+  const names = Object.fromEntries([
+    ...game.scenario.players.map((p) => [p.id, p.character_name]),
+    ...game.scenario.npcs.map((n) => [n.id, n.name]),
+  ]);
+  return (Array.isArray(raw) ? raw : [])
+    .map((l) => {
+      const who = String(l?.speaker ?? '').trim();
+      return { speaker: (names[who] ?? who).slice(0, 40), text: String(l?.text ?? '').trim().replace(/^["“]|["”]$/g, '') };
+    })
+    .map((l) => (l.speaker ? l : { ...l, text: unpuppet(l.text) }))
+    .filter((l) => l.text)
+    .flatMap((l) => {
+      const who = l.speaker.toLowerCase();
+      if (who && who === myName) return [{ speaker: '', text: `You say: "${l.text}"` }];
+      if (who && players.has(who)) return [];
+      return [l];
+    });
+}
+
+const linesText = (lines) => lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n');
+
 export function completeAsk(game, playerId, result, now = Date.now()) {
   const st = game.state;
   const ask = st.pending[playerId];
@@ -550,26 +576,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     st.puppetDrops = (st.puppetDrops ?? 0) + out.dropped;
     return out.text;
   };
-  const myName = game.scenario.players.find((p) => p.id === playerId)?.character_name?.toLowerCase();
-  const players = new Set(game.scenario.players.map((p) => p.character_name.toLowerCase()));
-  const names = Object.fromEntries([
-    ...game.scenario.players.map((p) => [p.id, p.character_name]),
-    ...game.scenario.npcs.map((n) => [n.id, n.name]),
-  ]);
-  const lines = (Array.isArray(result.lines) ? result.lines : [])
-    .map((l) => {
-      const raw = String(l?.speaker ?? '').trim();
-      return { speaker: (names[raw] ?? raw).slice(0, 40), text: String(l?.text ?? '').trim().replace(/^["“]|["”]$/g, '') };
-    })
-    .map((l) => (l.speaker ? l : { ...l, text: unpuppet(l.text) }))
-    .filter((l) => l.text)
-    .flatMap((l) => {
-      const who = l.speaker.toLowerCase();
-      if (who && who === myName) return [{ speaker: '', text: `You say: "${l.text}"` }];
-      if (who && players.has(who)) return [];
-      return [l];
-    });
-  const text = lines.length ? lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n') : String(result.answer ?? '').trim();
+  const lines = novelLines(game, result.lines, { you: playerId, unpuppet });
+  const text = lines.length ? linesText(lines) : String(result.answer ?? '').trim();
   const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
   readPlayer(game, playerId, result.player_read, 'private', now);
   const [scored, penalty] = recordPlay(game, playerId, result.play, ask.read, 'private');
@@ -1053,7 +1061,9 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   if (read?.play || words) recordPlay(game, playerId, read?.play, words, 'out loud');
   addFacts(game, read?.facts, 'asked out loud', now);
   const name = game.players.find((p) => p.id === playerId)?.name;
-  st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text: String(answer ?? '').trim() || 'Nobody knows that yet.', ...(words ? { read: words } : {}) });
+  const lines = Array.isArray(answer) ? novelLines(game, answer, { unpuppet: (t) => dropPuppeting(game, playerId, t).text }) : null;
+  const text = (lines ? linesText(lines) : String(answer ?? '').trim()) || 'Nobody knows that yet.';
+  st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text, ...(lines?.length ? { lines } : {}), ...(words ? { read: words } : {}) });
 }
 
 export function failPublicAsk(game, playerId, message = '') {

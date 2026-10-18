@@ -1,4 +1,5 @@
 import { Label, Muted } from './label';
+import { Timeline } from './panels';
 
 interface Person { id: string; icon?: string; name: string; role: string; player?: string; info: string; kind: string; minor?: boolean; alibi: { time: string; where: string }[]; facts: { fact: string; round: number }[] }
 
@@ -34,7 +35,7 @@ export function PeopleList({ people, openAll = false, open = new Set<string>(), 
                         {p.facts.map((f, i) => <li key={i} className={i < unseen ? 'text-primary' : ''}>{f.fact} <span className="text-xs text-muted-foreground">round {f.round}</span></li>)}
                       </ul>
                     ) : <Muted>Nothing new about them yet.</Muted>}
-                    {!!p.alibi.length && <div><span className="text-muted-foreground">Says they were:</span> {p.alibi.map((a, i) => <span key={i}>{i > 0 && ' · '}<span className="font-mono text-primary">{a.time}</span> {a.where}</span>)}</div>}
+                    {!!p.alibi.length && <div className="flex flex-col gap-2"><span className="text-muted-foreground">Says they were:</span><Timeline timeline={p.alibi.map((a) => ({ time: a.time, event: a.where }))} /></div>}
                   </div>
                 </details>
               );
