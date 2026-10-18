@@ -14,6 +14,7 @@ import { MapView } from '@/components/game/map';
 import { ReminderCard } from '@/components/game/reminder';
 import { SeatCard, type SeatView } from '@/components/game/hot-seat';
 import { OfferCard } from '@/components/game/offer';
+import { GoConfirm } from '@/components/game/go-confirm';
 import { PlayChip, PlayLine } from '@/components/game/score';
 import { Timeline, Alibis, SharedClues, Recap, ScenePicture, Facts } from '@/components/game/panels';
 import { useDraft } from '@/lib/live';
@@ -50,6 +51,7 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
       <main className="flex flex-col gap-5 px-4 pt-4">
         <SeatNow seat={view.seat as SeatView | null} />
         <Moment view={view} now={Date.now()} />
+        {view.moveConfirm && <GoConfirm place={view.moveConfirm.place} onAnswer={(yes) => act('move', { token: tokenOf(), yes })} />}
         {view.offers?.[0] && <OfferCard offer={view.offers[0]} onAnswer={(take, text = '') => act('offer', { token: tokenOf(), id: view.offers![0].id, action: take ? 'take' : 'own', text })} />}
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
@@ -277,7 +279,34 @@ function PeopleTab({ view }: { view: PlayerView }) {
         if (isOpen) setSeen((s) => ({ ...s, [id]: view.people?.find((p: { id: string }) => p.id === id)?.facts.length ?? 0 }));
       }} />
       <h3 className="font-heading text-xl">Who is where now</h3>
-      <MapView view={view} me={view.me.id} />
+      <GoSomewhere view={view} />
+    </div>
+  );
+}
+
+// Tap a place on the map, or a button under it, then confirm. Going is free and everyone sees it.
+function GoSomewhere({ view }: { view: PlayerView }) {
+  const [pick, setPick] = useState<string | null>(null);
+  const places = ((view.map as { places?: { id: string; name: string }[] } | null)?.places ?? []);
+  const here = view.here ?? '';
+  const playing = view.status === 'playing';
+  const chosen = places.find((p) => p.id === pick);
+  return (
+    <div className="flex flex-col gap-3">
+      <MapView view={view} me={view.me.id} onPlace={playing ? setPick : undefined} />
+      {playing && (
+        <>
+          <Muted className="text-xs">{here ? `You are in: ${here}. ` : ''}Tap a place to go there.</Muted>
+          <div className="flex flex-wrap gap-2">
+            {places.filter((p) => p.name !== here).map((p) => (
+              <Button key={p.id} size="sm" variant="secondary" onClick={() => setPick(p.id)}>Go to {p.name}</Button>
+            ))}
+          </div>
+          {chosen && chosen.name !== here && (
+            <GoConfirm place={chosen.name.replace(/^the\s+/i, '')} onAnswer={async (yes) => { if (yes) await act('go', { token: tokenOf(), place: chosen.id }); setPick(null); }} />
+          )}
+        </>
+      )}
     </div>
   );
 }

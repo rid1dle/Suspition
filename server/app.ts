@@ -10,6 +10,8 @@ import { applyContinuity, continuityState, CHECK_AFTER_ANSWERS } from './continu
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
+// How long a move waits for the player to say Go before it counts as Not now.
+export const CONFIRM_MS = 90_000;
 
 export class App {
   constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null, people = new MemoryPeople(), library = null }) {
@@ -25,6 +27,7 @@ export class App {
     this.listeners = new Set();
     this.tasks = new Set();
     this.asks = new Map();
+    this.confirms = new Map();
   }
 
   async init() {
@@ -62,6 +65,7 @@ export class App {
         this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. You did not lose a question. Ask again.', at: this.clock() });
       }
       this.game.state.pending = {};
+      this.game.state.moveConfirm = {};
       this.game.state.transitioning = false;
       this.game.state.scoring = false;
     }
@@ -425,6 +429,11 @@ export class App {
       try {
         const words = await this.gm.read(game, p.id, q, 'public');
         if (this.game !== game) return;
+        if (await this.goFirst(game, p.id, words, 'out loud') === 'stay') {
+          if (this.game === game) G.failPublicAsk(game, p.id, 'You stayed where you are.');
+          return;
+        }
+        if (this.game !== game) return;
         const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, words);
         if (this.game !== game) return;
         const drops = game.state.rippleDrops?.length ?? 0;
@@ -494,6 +503,15 @@ export class App {
       }
       if (this.game !== game || !game.state.pending[p.id]) return;
       game.state.pending[p.id].read = read;
+      game.state.pending[p.id].from = G.currentPlace(game, p.id);
+      if (await this.goFirst(game, p.id, read, 'private') === 'stay') {
+        if (this.game !== game) return;
+        G.failAsk(game, p.id);
+        game.state.threads[p.id].push({ from: 'system', text: 'You stayed where you are. Your question was not used.', at: this.clock() });
+        await this.changed();
+        return;
+      }
+      if (this.game !== game || !game.state.pending[p.id]) return;
       try {
         const result = await this.gm.answer(game, p.id, { ...ask, read });
         if (this.game !== game) return;
@@ -512,6 +530,41 @@ export class App {
     });
     this.asks.set(p.id, task);
     task.finally(() => this.asks.get(p.id) === task && this.asks.delete(p.id));
+    await this.changed();
+  }
+
+  // A move that would take the character somewhere else is confirmed first; going is announced to everyone.
+  async goFirst(game, pid, read, from) {
+    const dest = G.placeIdFromText(game, read?.place);
+    if (!dest || dest === G.currentPlace(game, pid)) return 'none';
+    (game.state.moveConfirm ??= {})[pid] = { place: dest, from };
+    await this.changed();
+    const yes = await new Promise((resolve) => {
+      const timer = setTimeout(() => resolve(false), CONFIRM_MS);
+      timer.unref?.();
+      this.confirms.set(pid, (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      });
+    });
+    this.confirms.delete(pid);
+    delete game.state.moveConfirm[pid];
+    if (this.game !== game || !yes || game.status !== 'playing') return 'stay';
+    G.goTo(game, pid, dest, this.clock(), 'to check something');
+    await this.changed();
+    return 'go';
+  }
+
+  async confirmMove(tok, yes) {
+    const p = G.playerByToken(this.game, tok);
+    const answer = this.confirms.get(p.id);
+    if (!answer) throw new GameError('Nothing is waiting for you to confirm.', 409);
+    answer(yes === true);
+  }
+
+  async go(tok, place) {
+    const p = G.playerByToken(this.game, tok);
+    G.goTo(this.game, p.id, place, this.clock());
     await this.changed();
   }
 

@@ -105,6 +105,7 @@ export interface PlayerView extends PublicView {
   moments?: { id: string; line: string; why: string; status: string; readyAt?: number }[];
   offers?: { id: string; text: string; choice: string }[];
   here?: string;
+  moveConfirm?: { place: string; from: 'private' | 'out loud' } | null;
   overridesLeft?: number;
   submission?: Record<string, unknown> | null;
   question?: { id: string; question: string; choices: string[] } | null;

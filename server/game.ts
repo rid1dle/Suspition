@@ -967,7 +967,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
 
   // Where the character really is after this move: a secret trip moves them too, it just does not show on the map.
   st.at ??= {};
-  const from = st.at[playerId] ?? st.positions[playerId];
+  const from = ask.from ?? st.at[playerId] ?? st.positions[playerId];
   const dest = game.scenario.locations.some((l) => l.id === result.player_location) ? result.player_location : from;
   st.at[playerId] = dest;
   const clueIds = new Set(openClues(game));
@@ -1016,6 +1016,30 @@ const refusedWhy = (result) => (result?.refused?.refused === true ? String(resul
 function logRefused(game, playerId, why, outLoud, now) {
   const st = game.state;
   st.refused = [...(st.refused ?? []), { round: st.roundNumber ?? st.phaseIndex + 1, player_id: playerId, why, out_loud: outLoud, at: now }].slice(-100);
+}
+
+export const currentPlace = (game, pid) => game.state?.at?.[pid] ?? game.state?.positions?.[pid] ?? null;
+const placeKey = (t) => String(t ?? '').trim().toLowerCase().replace(/^the\s+/, '');
+
+// The place a reader's "place" names, by its name; null when it names no place on the map.
+export function placeIdFromText(game, text) {
+  const key = placeKey(text);
+  if (!key) return null;
+  const locs = game.scenario.locations;
+  return (locs.find((l) => placeKey(l.name) === key) ?? locs.find((l) => key.includes(placeKey(l.name)) || placeKey(l.name).includes(key)))?.id ?? null;
+}
+
+// A character walks somewhere in plain sight: the map shows it and everyone is told.
+export function goTo(game, pid, locId, now = Date.now(), purpose = '') {
+  if (game.status !== 'playing') fail('You can move during a round.', 409);
+  const loc = game.scenario.locations.find((l) => l.id === locId);
+  if (!loc) fail('Unknown place.');
+  const name = String(loc.name).replace(/^the\s+/i, '');
+  if (currentPlace(game, pid) === locId) fail(`You are already in the ${name}.`, 409);
+  game.state.at ??= {};
+  game.state.at[pid] = locId;
+  game.state.positions[pid] = locId;
+  addEvent(game, `${nameOf(game, pid)} goes to the ${name}${purpose ? ` ${purpose}` : ''}.`, 'move', now);
 }
 
 // The name of the place a player's character really is.
@@ -1746,6 +1770,7 @@ export function briefingSteps(game) {
     caseQuestion(sc),
     'Each of you also has a secret goal of your own. It is on your phone.',
     `There are ${sc.phases.length} rounds. Each round has one question to answer together. Talk, ask the GM on your phone, and share clues.`,
+    'To look somewhere, go there: tap a place on your map. Everyone sees where you go, not why.',
     'At the end, everyone names who did it, how and why. Culprits vote too.',
     'Detectives win if most players name the right culprit. Culprits win if they do not.',
     `Points: 1 for the right culprit, up to 2 for how, up to 2 for why, and 1 for your own goal. ${MAX_POINTS} in all.`,
@@ -2300,6 +2325,8 @@ export function playerView(game, playerId, now = Date.now()) {
   view.moments = (st.moments ?? []).filter((m) => m.player_id === playerId && OPEN.includes(m.status))
     .map((m) => ({ id: m.id, line: m.line, why: m.why, status: m.status, readyAt: m.readyAt }));
   view.here = placeOf(game, playerId);
+  const confirm = st.moveConfirm?.[playerId];
+  view.moveConfirm = confirm ? { place: String(game.scenario.locations.find((l) => l.id === confirm.place)?.name ?? '').replace(/^the\s+/i, ''), from: confirm.from } : null;
   view.offers = (st.offers ?? []).filter((o) => o.player_id === playerId && o.status === 'open').map((o) => ({ id: o.id, text: o.text, choice: o.choice }));
   view.overridesLeft = st.overridesLeft?.[playerId] ?? 0;
   view.submission = st.submissions[playerId] ?? null;
