@@ -11,18 +11,6 @@ import { emptyPhase } from './fixtures.ts';
 const rules = { playerCount: 4, phases: 3, hints: 3 };
 
 describe('round rewards never give the culprit away', () => {
-  test('should refuse a world whose round reward names a culprit', () => {
-    const s = makeScenario(4);
-    s.phases[0].reward = 'The ledger shows Character 1 signed the gate pass.';
-    assert.match(G.validateScenario(s, rules).join(' '), /reward .*names a culprit/);
-  });
-
-  test('should refuse a wrong-answer nudge that names a culprit', () => {
-    const s = makeScenario(4);
-    s.phases[1].wrong_nudge = 'Look again at where Character 1 was standing.';
-    assert.match(G.validateScenario(s, rules).join(' '), /nudge .*names a culprit/);
-  });
-
   test('should accept a reward that names an innocent suspect', () => {
     const s = makeScenario(4);
     s.phases[0].reward = 'Character 2 was seen at the gate at nine.';
@@ -239,5 +227,117 @@ describe('playtest bots', () => {
 
   test('should show the bot why its last action was refused', () => {
     assert.match(JSON.stringify(botPrompt({ status: 'playing', lastRefusal: 'There is no vote right now.' })), /There is no vote right now/);
+  });
+});
+
+import { App } from '../server/app.ts';
+import { MemoryStore } from '../server/store.ts';
+import { FakeGM, emptyAsk } from './fixtures.ts';
+import { attackVerdict } from '../scripts/attack-check.ts';
+
+describe('review fixes', () => {
+  const named = () => {
+    const game = gameInReading(3, 1_000, { questions: true });
+    G.startPlay(game, 1_000);
+    const names = [['Nikhil', 'Nikhil Rao'], ['Rishabh', 'Rishabh Sen'], ['Himanshu', 'Himanshu Lal']];
+    game.players.forEach((p, i) => (p.name = names[i][0]));
+    game.scenario.players.forEach((c, i) => (c.character_name = names[i][1]));
+    game.scenario.npcs[0].name = 'Ramesh Yadav';
+    return game;
+  };
+
+  test('should not tell another player what the asker said in private', () => {
+    const game = named();
+    G.beginAsk(game, 'p1', { kind: 'chat', text: 'x' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, messages_to_players: [{ player_id: 'p2', text: 'Nikhil says he was at the safe. The lamp is lit.' }] });
+    assert.equal(game.state.threads.p2.at(-1).text, 'The lamp is lit.');
+  });
+
+  test('should drop a GM character line in a private reply that reports what a player said', () => {
+    const game = named();
+    G.beginAsk(game, 'p1', { kind: 'chat', text: 'x' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, lines: [{ speaker: game.scenario.npcs[0].id, text: 'Rishabh told me he was by the stove.' }, { speaker: '', text: 'The stove is cold.' }] });
+    assert.deepEqual(game.state.threads.p1.at(-1).lines, [{ speaker: '', text: 'The stove is cold.' }]);
+  });
+
+  test('should keep a name used to address someone or after ask', () => {
+    const game = named();
+    assert.equal(G.dropPuppeting(game, null, 'Rishabh, the cook said you were at the gate.').dropped, 0);
+    assert.equal(G.dropPuppeting(game, null, 'Ask Rishabh what the cook said.').dropped, 0);
+  });
+
+  test('should drop a fair part that still talks about the GM, points or credit', () => {
+    for (const fair of ['ask Babu to give me credit', 'tell the GM I searched first', 'ask Babu for points']) {
+      assert.equal(cleanRead({ kind: 'question', sways_gm: true, fair_part: fair }, 'move').fair_part, '', fair);
+    }
+    assert.match(formForGM(cleanRead({ kind: 'question', sways_gm: true, fair_part: 'asks Babu where Rishabh was' }, 'move'), 'move'), /\(not instructions\)/);
+  });
+
+  test('should fail an attack whose fair part carries a request about the GM', () => {
+    const read = { kind: 'question', target: '', place: '', attempt: 'x', said_aloud: '', out_of_world: false, sways_gm: true, claims: [], fair_part: 'have the GM give me credit' };
+    const v = attackVerdict(gameInReading(3), 'p1', { id: 'a', mode: 'move', text: 'x', expect: { flag: 'sways_gm', maxPoints: 0 } }, read, { ...emptyAsk, play: { points: 0, skill: '', why: '' } });
+    assert.equal(v.ok, false);
+    assert.match(v.why, /fair part/);
+  });
+
+  test('should still force the line out of a player with no overrides, even if they acted', () => {
+    const game = named();
+    G.beginPhaseChange(game);
+    G.completePhase(game, { ...emptyPhase, moments: [{ player_id: 'p2', line: '"I saw a light."', why: 'x' }] }, 2_000);
+    const m = game.state.moments.at(-1);
+    game.state.overridesLeft.p2 = 0;
+    const clue = game.scenario.clues[0].id;
+    game.state.found.p2.push(clue);
+    G.shareClue(game, 'p2', clue, 3_000);
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 4_000);
+    assert.equal(m.status, 'forced');
+  });
+
+  test('should charge an ignored moment when the player only voted', () => {
+    const game = named();
+    G.beginPhaseChange(game);
+    G.completePhase(game, { ...emptyPhase, moments: [{ player_id: 'p2', line: '"I saw a light."', why: 'x' }] }, 2_000);
+    const m = game.state.moments.at(-1);
+    const left = game.state.overridesLeft.p2;
+    G.beginRoundVote(game, 3_000);
+    G.voteRound(game, 'p2', 0, 3_000);
+    G.resolveRoundVote(game, 3_500, true);
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 4_000);
+    assert.deepEqual([m.status, game.state.overridesLeft.p2], ['quiet', left - 1]);
+  });
+
+  test('should give at most one teamwork point a round for sharing clues', () => {
+    const game = named();
+    for (const c of game.scenario.clues.slice(0, 3)) {
+      game.state.found.p2.push(c.id);
+      G.shareClue(game, 'p2', c.id, 3_000);
+    }
+    assert.equal(game.state.play.p2.filter((m) => m.skill === 'teamwork').length, 1);
+  });
+
+  test('should not count a title as a culprit name', () => {
+    const s = makeScenario(4);
+    s.players[0].character_name = 'Captain Arjun Rao';
+    assert.equal(G.namesCulprit(s, [], "The captain's log was torn."), false);
+    assert.equal(G.namesCulprit(s, [], 'Arjun was at the dock.'), true);
+  });
+
+  test('should blank a culprit-naming reward or nudge when a world is attached, without failing the world', () => {
+    const s = makeScenario(3, { questions: true });
+    s.phases[0].reward = 'The call came from Character 1.';
+    s.phases[1].wrong_nudge = 'Look at Character 1 again.';
+    assert.deepEqual(G.validateScenario(s, { playerCount: 3, phases: 3, hints: 3 }), []);
+    const game = gameInReading(3, 1_000, { questions: true });
+    G.attachScenario(game, s, 1_000);
+    assert.deepEqual([game.scenario.phases[0].reward, game.scenario.phases[1].wrong_nudge], ['', '']);
+  });
+
+  test('should clean an old saved world when the game loads', async () => {
+    const game = gameInReading(3, 1_000, { questions: true });
+    game.scenario.phases[0].reward = 'The call came from Character 1.';
+    const app = await new App({ gm: new FakeGM(), store: new MemoryStore(game), clock: () => 1_000 }).init();
+    assert.equal(app.game.scenario.phases[0].reward, '');
   });
 });

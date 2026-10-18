@@ -305,11 +305,16 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
   const ladder = Array.isArray(s.hint_ladder) ? s.hint_ladder : [];
   if (ladder.filter((h) => !h.is_false).length < hints) errors.push(`Need at least ${hints} true hints.`);
   if (ladder.filter((h) => h.is_false).length > 1) errors.push('At most one false hint.');
-  (Array.isArray(s.phases) ? s.phases : []).forEach((ph, i) => {
-    if (namesCulprit(s, [], ph?.reward)) errors.push(`Round ${i + 1} reward names a culprit. Rewards and nudges must never say who did it.`);
-    if (namesCulprit(s, [], ph?.wrong_nudge)) errors.push(`Round ${i + 1} nudge names a culprit. Rewards and nudges must never say who did it.`);
-  });
   return errors;
+}
+
+// A round reward or nudge that names a culprit would give the case away: it is blanked, never a reason to fail the world.
+// Runs when a world is attached and when a saved game loads, so old worlds are cleaned too.
+export function cleanScenario(game) {
+  for (const ph of game.scenario?.phases ?? []) {
+    if (namesCulprit(game.scenario, game.players, ph?.reward)) ph.reward = '';
+    if (namesCulprit(game.scenario, game.players, ph?.wrong_nudge)) ph.wrong_nudge = '';
+  }
 }
 
 // True when a text names a culprit: by full character or player name, or by a name word only they have.
@@ -321,7 +326,7 @@ export function namesCulprit(scenario, players, text) {
   const joined = ` ${words.join(' ')} `;
   const people = [...scenario.players, ...(scenario.npcs ?? [])].map((c) => {
     const names = [c.character_name ?? c.name, (players ?? []).find((p) => p.id === c.id)?.name].filter(Boolean);
-    return { id: c.id, full: names.map((n) => wordsOf(n).join(' ')).filter(Boolean), words: names.flatMap(nameWords).filter((w) => !/^\d+$/.test(w)) };
+    return { id: c.id, full: names.map((n) => wordsOf(n).join(' ')).filter(Boolean), words: names.flatMap(nameWords).filter((w) => !/^\d+$/.test(w) && !TITLES.has(w)) };
   });
   const owners = {};
   for (const p of people) for (const w of new Set(p.words)) owners[w] = (owners[w] ?? 0) + 1;
@@ -380,6 +385,7 @@ export function editPlace(game, input = {}) {
 export function attachScenario(game, scenario, now = Date.now()) {
   const length = LENGTHS[game.setup.length];
   game.scenario = scenario;
+  cleanScenario(game);
   game.status = 'reading';
   game.state = {
     phaseIndex: -1,
@@ -537,6 +543,7 @@ function recordPlay(game, playerId, play, read, from) {
 
 const TITLES = new Set(['lady', 'lord', 'captain', 'capt', 'inspector', 'professor', 'prof', 'doctor', 'colonel', 'major', 'sergeant', 'officer', 'uncle', 'aunt', 'aunty', 'auntie', 'father', 'mother', 'sister', 'brother', 'madam', 'master', 'young', 'old', 'chef', 'nurse', 'judge', 'detective', 'mister', 'ms']);
 
+const ASKING = new Set(['ask', 'asks', 'asked', 'tell', 'tells', 'find', 'question']);
 const REPORT_VERBS = new Set(['say', 'says', 'said', 'claim', 'claims', 'claimed', 'told', 'tells', 'swears', 'swore', 'insists', 'insisted', 'admits', 'admitted', 'heard', 'mentions', 'mentioned', 'confirms', 'confirmed']);
 
 // What a player really said out loud: their spoken moment lines and their questions asked out loud.
@@ -552,7 +559,7 @@ export function saidOutLoud(game, playerId) {
 // Only words that name exactly one person count, so a shared title ("Lady", "Captain") never matches.
 // Anywhere in any GM text, reporting what a player said or heard ("Rishabh says...", "Himanshu, who heard...") was invented,
 // unless it quotes words that player really said out loud. A null actor (recaps, round events) skips the first rule.
-export function dropPuppeting(game, actorId, text, { to = null } = {}) {
+export function dropPuppeting(game, actorId, text, { to = null, others = false, reportOnly = false } = {}) {
   const sc = game.scenario;
   const people = [
     ...(sc?.players ?? []).map((c) => ({ id: c.id, player: true, full: wordsOf(c.character_name), names: new Set([...nameWords(c.character_name), ...nameWords(game.players.find((p) => p.id === c.id)?.name)].filter((w) => !TITLES.has(w))) })),
@@ -562,7 +569,8 @@ export function dropPuppeting(game, actorId, text, { to = null } = {}) {
   for (const p of people) for (const w of p.names) owners[w] = (owners[w] ?? 0) + 1;
   const leadOf = (words) => people.find((p) => (p.full.length && p.full.every((w, k) => words[k] === w)) || (p.names.has(words[0]) && owners[words[0]] === 1)) ?? null;
   const sentences = String(text ?? '').split(/(?<=[.!?])\s+/).filter(Boolean);
-  const vocative = (p, sentence) => p.id === to && /^[^,.!?]{1,40},/.test(sentence.trim()) && leadOf(wordsOf(sentence))?.id === p.id;
+  // A name opening the sentence and followed by a comma addresses that person ("Rishabh, the cook said...").
+  const vocative = (p, sentence) => /^[^,.!?]{1,40},/.test(sentence.trim()) && leadOf(wordsOf(sentence))?.id === p.id;
   const quotesOf = (sentence) => [...sentence.matchAll(/["“]([^"”]{3,})["”]/g)].map((m) => m[1].toLowerCase());
   const realQuote = (p, sentence) => {
     const said = saidOutLoud(game, p.id);
@@ -571,8 +579,8 @@ export function dropPuppeting(game, actorId, text, { to = null } = {}) {
   const reports = (sentence) => {
     if (sentence.trim().endsWith('?')) return false;
     const words = wordsOf(sentence);
-    return people.filter((p) => p.player && p.id !== actorId && !vocative(p, sentence)).some((p) => {
-      const at = words.flatMap((w, i) => ((p.full.length && p.full.every((f, k) => words[i + k] === f)) || (p.names.has(w) && owners[w] === 1) ? [i + (p.full.every((f, k) => words[i + k] === f) ? p.full.length - 1 : 0)] : []));
+    return people.filter((p) => p.player && (others || p.id !== actorId) && !vocative(p, sentence)).some((p) => {
+      const at = words.flatMap((w, i) => (((p.full.length && p.full.every((f, k) => words[i + k] === f)) || (p.names.has(w) && owners[w] === 1)) && !ASKING.has(words[i - 1]) ? [i + (p.full.every((f, k) => words[i + k] === f) ? p.full.length - 1 : 0)] : []));
       if (!at.some((i) => words.slice(i + 1, i + 5).some((w) => REPORT_VERBS.has(w)))) return false;
       return !realQuote(p, sentence);
     });
@@ -581,7 +589,7 @@ export function dropPuppeting(game, actorId, text, { to = null } = {}) {
     if (reports(sentence)) return false;
     const words = wordsOf(sentence);
     const lead = leadOf(words);
-    if (actorId === null || !lead || !lead.player || lead.id === actorId) return true;
+    if (reportOnly || actorId === null || !lead || !lead.player || lead.id === actorId) return true;
     if (lead.id === to && /^[^,.!?]{1,40},/.test(sentence.trim())) return true;
     if (realQuote(lead, sentence)) return true;
     return !words.some((w) => PUPPET_VERBS.has(w));
@@ -591,7 +599,7 @@ export function dropPuppeting(game, actorId, text, { to = null } = {}) {
 
 // A GM reply as a page of a novel: narration (no speaker) and GM characters' spoken words.
 // The GM never speaks for a human player: the asker's own lines become "You say", anyone else's are dropped.
-export function novelLines(game, raw, { you = null, unpuppet = (t) => t, speech = false } = {}) {
+export function novelLines(game, raw, { you = null, unpuppet = (t) => t, unpuppetSpeech = (t) => t } = {}) {
   const myName = game.scenario.players.find((p) => p.id === you)?.character_name?.toLowerCase();
   const players = new Set(game.scenario.players.map((p) => p.character_name.toLowerCase()));
   const names = Object.fromEntries([
@@ -603,7 +611,7 @@ export function novelLines(game, raw, { you = null, unpuppet = (t) => t, speech 
       const who = String(l?.speaker ?? '').trim();
       return { speaker: (names[who] ?? who).slice(0, 40), text: String(l?.text ?? '').trim().replace(/^["“]|["”]$/g, '') };
     })
-    .map((l) => (l.speaker && !speech ? l : { ...l, text: unpuppet(l.text) }))
+    .map((l) => ({ ...l, text: l.speaker ? unpuppetSpeech(l.text) : unpuppet(l.text) }))
     .filter((l) => l.text)
     .flatMap((l) => {
       const who = l.speaker.toLowerCase();
@@ -623,12 +631,12 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const kind = ask.kind === 'chat' ? (ANSWER_KINDS.includes(result.kind) ? result.kind : 'question') : ask.kind;
   const thread = st.threads[playerId];
   thread.push({ from: 'you', kind, text: ask.text, ...(ask.read ? { read: ask.read } : {}), at: now });
-  const unpuppet = (text, to = null) => {
-    const out = dropPuppeting(game, playerId, text, { to });
+  const unpuppet = (text, to = null, opts = {}) => {
+    const out = dropPuppeting(game, playerId, text, { to, ...opts });
     st.puppetDrops = (st.puppetDrops ?? 0) + out.dropped;
     return out.text;
   };
-  const lines = novelLines(game, result.lines, { you: playerId, unpuppet });
+  const lines = novelLines(game, result.lines, { you: playerId, unpuppet, unpuppetSpeech: (t) => unpuppet(t, null, { reportOnly: true }) });
   const text = lines.length ? linesText(lines) : String(result.answer ?? '').trim();
   const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
   readPlayer(game, playerId, result.player_read, 'private', now);
@@ -651,8 +659,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   learn(game, result.learned, playerId, now);
   if (result.player_location && (kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
-  addEvent(game, unpuppet(result.public_event), 'event', now);
-  whisper(game, (result.messages_to_players ?? []).map((m) => ({ ...m, text: unpuppet(m?.text, m?.player_id) })), now);
+  addEvent(game, unpuppet(result.public_event, null, { others: true }), 'event', now);
+  whisper(game, (result.messages_to_players ?? []).map((m) => ({ ...m, text: unpuppet(m?.text, m?.player_id, { others: m?.player_id !== playerId }) })), now);
 }
 
 export function isLastPhase(game) {
@@ -991,7 +999,7 @@ export function closeOpenMoments(game, now = Date.now()) {
   for (const m of st.moments ?? []) {
     if (!OPEN.includes(m.status)) continue;
     const name = nameOf(game, m.player_id);
-    if (actedThisRound(game, m.player_id)) {
+    if (actedThisRound(game, m.player_id) && (st.overridesLeft[m.player_id] ?? 0) > 0) {
       m.status = 'missed';
     } else if ((st.overridesLeft[m.player_id] ?? 0) > 0) {
       st.overridesLeft[m.player_id] -= 1;
@@ -1049,6 +1057,7 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   if (!everyone && !force && vote.endsAt > now) return null;
   const q = roundQuestion(game, vote.phaseIndex);
   if (namesCulprit(game.scenario, game.players, q.reward)) q.reward = '';
+  if (namesCulprit(game.scenario, game.players, q.nudge)) q.nudge = '';
   const counts = q.options.map((_, i) => Object.values(vote.votes).filter((v) => v === i).length);
   const top = Math.max(...counts);
   const winners = counts.flatMap((c, i) => (c === top && top > 0 ? [i] : []));
@@ -1142,7 +1151,11 @@ export function shareClue(game, playerId, clueId, now = Date.now()) {
   const clue = game.scenario.clues.find((c) => c.id === clueId);
   const name = game.players.find((p) => p.id === playerId)?.name;
   st.shared.push({ clueId, by: playerId, at: now });
-  recordPlay(game, playerId, { points: 1, skill: 'teamwork', why: `Showed everyone ${clue.name}.` }, null, 'out loud');
+  const round = st.roundNumber ?? st.phaseIndex + 1;
+  if ((st.shareRewarded ??= {})[playerId] !== round) {
+    st.shareRewarded[playerId] = round;
+    recordPlay(game, playerId, { points: 1, skill: 'teamwork', why: `Showed everyone ${clue.name}.` }, null, 'out loud');
+  }
   addEvent(game, `${name} shows a clue. ${clue.name}: ${clue.shows}`, 'clue', now, { by: name, name: clue.name });
   addFacts(game, mentions(game, `${clue.name} ${clue.shows}`).map((id) => ({ person: id, fact: `Clue, ${clue.name}: ${clue.shows}` })), 'clue', now);
 }
@@ -1184,8 +1197,9 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   if (read?.play || words) recordPlay(game, playerId, read?.play, words, 'out loud');
   addFacts(game, read?.facts, 'asked out loud', now);
   const name = game.players.find((p) => p.id === playerId)?.name;
-  const lines = Array.isArray(answer) ? novelLines(game, answer, { unpuppet: (t) => dropPuppeting(game, playerId, t).text, speech: true }) : null;
-  const text = (lines ? linesText(lines) : dropPuppeting(game, playerId, String(answer ?? '').trim()).text) || 'Nobody knows that yet.';
+  const clean = (t) => dropPuppeting(game, playerId, t, { others: true }).text;
+  const lines = Array.isArray(answer) ? novelLines(game, answer, { unpuppet: clean, unpuppetSpeech: clean }) : null;
+  const text = (lines ? linesText(lines) : clean(String(answer ?? '').trim())) || 'Nobody knows that yet.';
   st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text, ...(lines?.length ? { lines } : {}), ...(words ? { read: words } : {}) });
 }
 

@@ -26,6 +26,7 @@ export class App {
 
   async init() {
     this.game = (await this.store.load()) ?? G.createGame(this.clock());
+    if (this.game.scenario) G.cleanScenario(this.game);
     if (this.game.status === 'generating') {
       this.game.status = 'failed';
       this.game.error = 'The server restarted while the world was being written. Try again.';

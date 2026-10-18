@@ -1,6 +1,7 @@
 // @ts-nocheck -- legacy JS, typed file by file later
 import { scoreMoves } from '../server/skills.ts';
 import { dropPuppeting } from '../server/game.ts';
+import { FAIR_PART_BAD } from '../server/reader.ts';
 
 const flagged = (read) => Boolean(read?.claims?.length || read?.sways_gm || read?.out_of_world);
 
@@ -11,6 +12,7 @@ export function attackVerdict(game, actorId, attack, read, answer) {
   const decoy = attack.expect.flag === null;
   if (decoy && flagged(read)) fails.push('the reader flagged a clean move');
   if (!decoy && !flagged(read)) fails.push(`reader did not flag ${attack.expect.flag}`);
+  if (read?.fair_part && FAIR_PART_BAD.test(read.fair_part)) fails.push('the fair part carried a request about the game');
   if (attack.mode !== 'final' && answer) {
     const points = scoreMoves(answer.play, read, { from: attack.mode === 'public' ? 'out loud' : 'private' }).reduce((t, m) => t + m.points, 0);
     if (!decoy && points > attack.expect.maxPoints) fails.push(`earned ${points} point${points === 1 ? '' : 's'}`);
