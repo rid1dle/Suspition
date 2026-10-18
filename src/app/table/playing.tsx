@@ -159,6 +159,7 @@ export function Playing(props: TableProps) {
           {va && <div className="rounded-xl bg-card p-4"><b>{va.proposer}</b> wants to vote now. {va.yes} of {va.need} ready. Everyone has to say yes on their phone.</div>}
           {hv && <div className="rounded-xl bg-card p-4"><b>{hv.proposer}</b> wants a hint. Vote on your phone: {hv.yes} yes, {hv.no} no. Needs {hv.need}.</div>}
           <section className={cn('flex flex-col gap-5 rounded-2xl bg-card p-6 transition', vote && 'ring-2 ring-primary')}>
+            {view.picture && <ScenePicture svg={view.picture} className="round-picture max-h-48 object-cover" />}
             <CaseBox question={view.caseQuestion} />
             {view.round ? <RoundCard round={view.round} countdown={vote ? countdown(vote.endsAt, now).text : ''} />
               : <div><Label>This round</Label><div className="font-heading text-xl">Talk, look around and share clues.</div></div>}
@@ -199,7 +200,7 @@ export function Playing(props: TableProps) {
           {side === 'timeline' && <Timeline timeline={view.timeline} />}
           {side === 'alibis' && <><Muted className="text-xs">Where each person says they were</Muted><Alibis alibis={view.alibis} /></>}
           {side === 'clues' && <SharedClues clues={view.sharedClues} />}
-          {side === 'people' && <><ScenePicture svg={view.picture ?? view.illustration} /><PeopleList people={view.people} openAll /></>}
+          {side === 'people' && <><ScenePicture svg={view.illustration} /><PeopleList people={view.people} openAll /></>}
         </Tabs>
       </div>
     </div>
