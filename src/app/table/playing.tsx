@@ -169,7 +169,7 @@ export function Playing(props: TableProps) {
           <Feed events={view.events} fresh={fresh} onGo={(t) => setSide(t === 'clues' ? 'clues' : 'timeline')} />
         </div>
         <Tabs value={side} onValueChange={(t) => setSide(t as Side)} className="min-w-0 gap-4">
-          <TabsList variant="line" className="h-auto w-full justify-start gap-1 rounded-none border-b border-border p-0">
+          <TabsList variant="line" className="h-auto group-data-horizontal/tabs:h-auto w-full justify-start gap-1 rounded-none border-b border-border p-0">
             {SIDES.map(([t, l]) => {
               const n = counts[t] ?? 0;
               const isNew = n > (seen.current[t] ?? 0);

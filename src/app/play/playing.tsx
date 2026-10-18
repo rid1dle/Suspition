@@ -58,7 +58,7 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
         </AnimatePresence>
       </main>
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <TabsList variant="line" className="mx-auto grid h-auto w-full max-w-md grid-cols-5 gap-0 p-0">
+        <TabsList variant="line" className="mx-auto grid h-auto group-data-horizontal/tabs:h-auto w-full max-w-md grid-cols-5 gap-0 p-0">
           {TABS.map(([t, l]) => (
             <TabsTrigger key={t} value={t} className="relative h-auto flex-none py-4 text-sm text-muted-foreground after:hidden data-active:text-primary">
               {l}

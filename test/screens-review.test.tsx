@@ -63,4 +63,13 @@ describe('the screens after the review', () => {
       .map(([at]) => at);
     assert.deepEqual(raw, []);
   });
+
+  test('should let every tab bar grow to fit its labels', () => {
+    // The shadcn TabsList fixes its height with a group variant, so a plain h-auto does not win.
+    const squeezed = [...files('src/app'), ...files('src/components/game')].flatMap((f) => readFileSync(f, 'utf8').split('\n')
+      .map((line, i) => [`${f}:${i + 1}`, line])
+      .filter(([, line]) => line.includes('<TabsList') && !line.includes('group-data-horizontal/tabs:h-auto')))
+      .map(([at]) => at);
+    assert.deepEqual(squeezed, []);
+  });
 });
