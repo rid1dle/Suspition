@@ -181,7 +181,7 @@ function StoryTab({ view, onAskTab, onGo }: { view: PlayerView; onAskTab: () => 
           onVote={(i) => act('roundvote', { token: tokenOf(), choice: i })}
           onIdea={(t) => { setText(t); box.current?.focus(); }} />
       </section>
-      <GoalsPanel caseQuestion={view.caseQuestion} job={view.round?.objective} goal={view.card?.goal} open={view.recap?.open ?? []} />
+      <GoalsPanel caseQuestion={view.caseQuestion} job={view.round?.objective} goal={view.card?.goal} steps={view.card?.goal_steps ?? []} open={view.recap?.open ?? []} />
       <KeyObjects objects={view.keyObjects ?? []} />
       <section className="flex flex-col gap-2">
         <Textarea ref={box} value={text} maxLength={200} rows={2} onChange={(e) => setText(e.target.value)} placeholder='Ask anyone anything. "Lata, when did the music stop?"'

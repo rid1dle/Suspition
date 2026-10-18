@@ -35,6 +35,8 @@ export function phoneAlerts(prev, next) {
   if (next.card && prev.card) {
     if ((next.card.hidden_known?.length ?? 0) > (prev.card.hidden_known?.length ?? 0)) out.push({ sound: 'secret', text: 'You found out something about yourself.', tab: 'card' });
     if ((next.card.locked?.length ?? 0) < (prev.card.locked?.length ?? 0)) out.push({ sound: 'secret', text: 'A new part of your card opened.', tab: 'card' });
+    const stepsDone = (next.card.goal_steps ?? []).filter((s, i) => s.done && !prev.card.goal_steps?.[i]?.done);
+    for (const s of stepsDone) out.push({ sound: 'secret', text: `Goal step done: ${s.text}`, tab: 'card' });
     if (next.card.goal !== prev.card.goal) out.push({ sound: 'secret', text: 'Your goal changed.', tab: 'card' });
     else if (next.card.starting_knowledge !== prev.card.starting_knowledge) out.push({ sound: 'secret', text: 'Your card has new things you remember.', tab: 'card' });
   }

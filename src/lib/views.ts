@@ -56,6 +56,7 @@ export interface ThreadEntry { from: 'you' | 'gm' | 'whisper' | 'system'; text: 
 
 export interface CardView {
   backstory?: string;
+  goal_steps?: { text: string; done: boolean }[];
   hook?: string;
   distrusts?: string;
   distrust_why?: string;

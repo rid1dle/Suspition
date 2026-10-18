@@ -956,6 +956,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     return;
   }
   // What the player asserted as the narrator only happens if the GM grants it; every other claim is answered out loud to them.
+  markGoalSteps(game, playerId, result.goal_steps_done);
   const answers = Array.isArray(result.claims_answer) ? result.claims_answer : [];
   for (const [i, claim] of (ask.read?.claims ?? []).entries()) {
     const answer = answers.find((a) => String(a?.claim ?? '').trim().toLowerCase() === String(claim).trim().toLowerCase()) ?? answers[i];
@@ -1057,6 +1058,15 @@ function placeFor(game, clue) {
   if (sc.npcs.some((n) => n.id === where)) return game.state.positions[where] ?? null;
   if (sc.players.some((p) => p.id === where)) return game.state.at?.[where] ?? game.state.positions[where] ?? null;
   return null;
+}
+
+// Steps toward a player's own goal, ticked off when the GM says a move completed one.
+function markGoalSteps(game, pid, steps) {
+  const card = game.scenario.players.find((p) => p.id === pid);
+  const total = (card?.goal_steps ?? []).length;
+  if (!total) return;
+  const done = ((game.state.goalSteps ??= {})[pid] ??= []);
+  for (const i of steps ?? []) if (Number.isInteger(i) && i >= 0 && i < total && !done.includes(i)) done.push(i);
 }
 
 export function isLastPhase(game) {
@@ -1176,6 +1186,7 @@ export function completePhase(game, result, now = Date.now()) {
   addEvent(game, dropPuppeting(game, null, result.public_event).text, 'event', now);
   setRecap(game, result, now);
   addFacts(game, result.public_facts, 'round change', now);
+  for (const g of result.goal_steps_done ?? []) markGoalSteps(game, g?.player_id, [g?.step]);
   announceRound(game, next, now, replay);
   addMoments(game, result.moments, now);
   whisper(game, result.messages_to_players, now);
@@ -2052,6 +2063,7 @@ export function snapshotForGM(game) {
     overrides_left: st.overridesLeft,
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     canon: (st.canon ?? []).map((c) => ({ fact: c.fact, round: c.round })),
+    goal_steps_done_so_far: Object.fromEntries(game.players.map((p) => [p.id, st.goalSteps?.[p.id] ?? []])),
     offers_waiting: (st.offers ?? []).filter((o) => o.status === 'open').map((o) => ({ player_id: o.player_id, asked: o.text })),
     shared_clues: st.shared.map((x) => x.clueId),
     clues_open_now: open,
@@ -2301,6 +2313,7 @@ export function playerView(game, playerId, now = Date.now()) {
     backstory: card.backstory ?? '',
     private_info: card.private_info,
     goal: card.goal,
+    goal_steps: (card.goal_steps ?? []).map((t, i) => ({ text: String(t), done: (st.goalSteps?.[playerId] ?? []).includes(i) })),
     win: WIN[card.side] ?? '',
     side: card.side,
     side_explanation: card.side_explanation,

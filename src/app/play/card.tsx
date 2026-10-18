@@ -67,6 +67,11 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
         <CaseBox question={caseQuestion} label="The group's goal" />
         <Section title="Your secret goal">
           <p className="text-lg font-medium">{card.goal}</p>
+          {!!card.goal_steps?.length && (
+            <ul className="flex flex-col gap-0.5 text-sm">
+              {card.goal_steps.map((s) => <li key={s.text} className={s.done ? 'text-muted-foreground line-through' : ''}>{s.done ? '✓' : '○'} {s.text}</li>)}
+            </ul>
+          )}
           {card.goal_why && <p className="text-sm">{card.goal_why}</p>}
           <p className="text-sm"><b>You are a {side}.</b> {card.win}</p>
         </Section>

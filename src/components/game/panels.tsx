@@ -154,14 +154,20 @@ export function Results({ results }: { results: { kind?: string; phaseIndex: num
 }
 
 // What each player is working toward, always in view: the case, this round's job, their own goal, what is still open.
-export function GoalsPanel({ caseQuestion, job, goal, open = [] }: { caseQuestion?: string | null; job?: string | null; goal?: string | null; open?: string[] }) {
+export function GoalsPanel({ caseQuestion, job, goal, steps = [], open = [] }: { caseQuestion?: string | null; job?: string | null; goal?: string | null; steps?: { text: string; done: boolean }[]; open?: string[] }) {
   if (!caseQuestion && !job && !goal && !open.length) return null;
+  const done = steps.filter((s) => s.done).length;
   return (
     <section className="flex flex-col gap-1 rounded-2xl bg-card p-4">
       <Label>Your goals</Label>
       {caseQuestion && <p><b>The case:</b> {caseQuestion}</p>}
       {job && <p><b>This round:</b> {job}</p>}
-      {goal && <p><b>Your own goal:</b> {goal}</p>}
+      {goal && <p><b>Your own goal:</b> {goal}{steps.length ? ` (${done} of ${steps.length} done)` : ''}</p>}
+      {!!steps.length && (
+        <ul className="ml-1 flex flex-col gap-0.5 text-sm">
+          {steps.map((s) => <li key={s.text} className={s.done ? 'text-muted-foreground line-through' : ''}>{s.done ? '✓' : '○'} {s.text}</li>)}
+        </ul>
+      )}
       {!!open.length && (<><Muted className="mt-1 text-xs">Still open</Muted><Facts lines={open} /></>)}
     </section>
   );
