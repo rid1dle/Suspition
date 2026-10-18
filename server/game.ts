@@ -1118,7 +1118,7 @@ export function briefingSteps(game) {
     'At the end, everyone names who did it, how and why. Culprits vote too.',
     'Detectives win if most players name the right culprit. Culprits win if they do not.',
     `Points: 1 for the right culprit, up to 2 for how, up to 2 for why, and 1 for your own goal. ${MAX_POINTS} in all.`,
-    `Plus up to ${PLAY_MAX} play points for good moves.`,
+    `Plus up to ${PLAY_MAX} play points each round for good moves.`,
   ] });
   return steps.filter((st) => st.lines.length);
 }

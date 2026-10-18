@@ -1383,7 +1383,7 @@ describe('play points in the game', () => {
   test('should add the play points line to the goals step without changing the 6 in all line', () => {
     const lines = G.tableView(gameInReading(3)).briefing.steps.at(-1).lines;
     const i = lines.findIndex((l) => /6 in all\./.test(l));
-    assert.equal(lines[i + 1], 'Plus up to 3 play points for good moves.');
+    assert.equal(lines[i + 1], 'Plus up to 3 play points each round for good moves.');
   });
 });
 
