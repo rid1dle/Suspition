@@ -321,6 +321,7 @@ export class App {
     }
     else if (e.kind === 'item') p.counts[e.key] = e.count;
     else if (e.kind === 'checking') p.step = 'checking';
+    else if (e.kind === 'story') p.step = 'story';
     else if (e.kind === 'cards') p.step = 'cards';
     else if (e.kind !== 'thinking') return;
     if (!p.seen.includes(p.step)) p.seen.push(p.step);

@@ -1,5 +1,5 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { namesAnyOf, clueWhereErrors, isMinor } from './game.ts';
+import { namesAnyOf, clueWhereErrors, isMinor, validateScenario } from './game.ts';
 import { difficultyRules, difficultyOf } from '../src/lib/difficulty.ts';
 
 const ASLEEP = /\b(asleep|sleeping|slept|unconscious|knocked out|passed out|out of sight|hidden|hiding|behind a|blindfold)/i;
@@ -97,3 +97,74 @@ export const issueCounts = (issues) => {
   }
   return Object.entries(counts).map(([k, n]) => `${k} ${n}`).join(', ') || 'none';
 };
+
+const STORY_PATHS = [
+  /^clues\.\d+\.(shows|does_not_prove|where|reveal_round)$/,
+  /^players\.\d+\.(private_info|public_info|starting_knowledge)$/,
+  /^npcs\.\d+\.(knows|secrets|lies)$/,
+  /^hint_ladder\.\d+\.text$/,
+  /^public_timeline\.\d+\.event$/,
+  /^truth\.whereabouts$/,
+  /^suspects$/,
+  /^red_herrings$/,
+];
+const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings']);
+const INTEGER_KEYS = new Set(['reveal_round', 'answer_index']);
+
+function patchValue(path, key, value) {
+  if (LIST_PATHS.has(path)) {
+    const list = typeof value === 'string' ? JSON.parse(value) : value;
+    if (!Array.isArray(list)) throw new Error('needs a list');
+    return list;
+  }
+  if (INTEGER_KEYS.has(key)) {
+    const n = Number(value);
+    if (!Number.isInteger(n)) throw new Error('needs a whole number');
+    return n;
+  }
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === 'string' && value.trim().startsWith('[') && key === 'options') return JSON.parse(value).map(String);
+  return String(value ?? '');
+}
+
+// Sets each allowed dotted path ("clues.3.shows") that already exists in the target. Everything else is skipped, with why.
+export function applyPatches(target, patches, allowed) {
+  let applied = 0;
+  const skipped = [];
+  for (const patch of Array.isArray(patches) ? patches : []) {
+    const path = String(patch?.path ?? '').trim();
+    if (!allowed(path)) {
+      skipped.push(`${path || '(empty)'}: not a field that may change`);
+      continue;
+    }
+    const parts = path.split('.');
+    const key = parts.pop();
+    const parent = parts.reduce((o, k) => (o == null ? o : o[/^\d+$/.test(k) ? Number(k) : k]), target);
+    if (!parent || typeof parent !== 'object' || Array.isArray(parent)) {
+      skipped.push(`${path}: no such place`);
+      continue;
+    }
+    try {
+      parent[key] = patchValue(path, key, patch.value);
+      applied += 1;
+    } catch (err) {
+      skipped.push(`${path}: ${err.message}`);
+    }
+  }
+  return { applied, skipped };
+}
+
+const structuralCount = (s, rules) => validateScenario(s, rules).length + clueWhereErrors(s).length;
+
+// The consistency check's patches, to the allowed fields only. If they leave the world more broken than before, all are undone.
+export function applyStoryPatches(scenario, patches, rules) {
+  const before = structuralCount(scenario, rules);
+  const copy = structuredClone(scenario);
+  const out = applyPatches(scenario, patches, (path) => STORY_PATHS.some((re) => re.test(path)));
+  if (out.applied && structuralCount(scenario, rules) > before) {
+    for (const k of Object.keys(scenario)) delete scenario[k];
+    Object.assign(scenario, copy);
+    return { applied: 0, skipped: (patches ?? []).map((p) => `${p?.path}: undone, it broke the world`) };
+  }
+  return out;
+}

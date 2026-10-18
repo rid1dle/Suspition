@@ -520,6 +520,40 @@ export function illustrationPrompt(scenario, styleId = DEFAULT_STYLE) {
   return artPrompt(`${scenario.setting_summary} ${scenario.background?.slice(0, 3).join(' ') ?? ''}`.trim(), styleId);
 }
 
+export const STORY_CHECK_SCHEMA = obj({
+  verdict: { type: 'string', enum: ['ok', 'patch', 'rewrite'] },
+  problems: { type: 'array', items: obj({ what: str, fix: str }) },
+  patches: { type: 'array', items: obj({ path: str, value: str }) },
+});
+
+// The world is checked against a fixed list before anyone plays it; small holes are patched in the fields below only.
+export function storyCheckPrompt(scenario, issues = []) {
+  return `You check a mystery for holes before anyone plays it. The world below is final unless you find a problem. Check each item and report every problem you find:
+1. Whereabouts: anyone at the crime place at the crime time who would have seen it.
+2. Every clue and every hidden fact has an event in the truth that made it.
+3. Every key deduction follows from its own clues.
+4. The culprit, the method and the motive can each be worked out from clues.
+5. No single clue, hint, card line or public line points at the culprit alone.
+6. Head counts, objects and times agree everywhere.
+7. Every red herring is convincing and ruled out by a different, later clue.
+The code already found these problems: ${issues.length ? `\n- ${issues.join('\n- ')}` : 'none'}
+Fix small problems with patches to the allowed fields only. Choose rewrite only when the story cannot be fixed with patches.
+
+verdict: ok when nothing needs fixing, patch when your patches fix everything, rewrite when they cannot. problems: each problem you found, in a few plain words, and its fix.
+patches: path uses dots and list positions from 0 (clues.3.shows). value is always a string. Only these paths are used; any other is ignored:
+- clues.N.shows, clues.N.does_not_prove, clues.N.where (a place or character id), clues.N.reveal_round (a round number)
+- players.N.private_info, players.N.public_info, players.N.starting_knowledge
+- npcs.N.knows, npcs.N.secrets, npcs.N.lies
+- hint_ladder.N.text
+- public_timeline.N.event
+- truth.whereabouts, suspects, red_herrings (value is the whole new list, as JSON)
+
+${PLAIN_STYLE}
+
+THE MYSTERY:
+${JSON.stringify(scenario)}`;
+}
+
 export const AUDIT_SCHEMA = obj({
   players: {
     type: 'array',

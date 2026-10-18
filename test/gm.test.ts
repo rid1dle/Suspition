@@ -175,10 +175,12 @@ describe('GM card check after writing a world', () => {
     const calls = [];
     const gm = new GM({ workDir, random: () => 0, run: async ({ prompt }) => {
       calls.push(prompt);
-      return calls.length === 1 ? makeScenario(3, { phases: 3, hints: 2 }) : { players: [{ player_id: 'p3', add: ['You locked the gate.'], known_hidden_fact_ids: [] }] };
+      if (calls.length === 1) return makeScenario(3, { phases: 3, hints: 2 });
+      if (/^You check a mystery for holes/.test(prompt)) return { verdict: 'ok', problems: [], patches: [] };
+      return { players: [{ player_id: 'p3', add: ['You locked the gate.'], known_hidden_fact_ids: [] }] };
     } });
     const s = await gm.generate(game(), (e) => steps.push(e.kind));
-    assert.match(calls[1], /a player who does not know their own story/);
+    assert.ok(calls.slice(1).some((c) => /a player who does not know their own story/.test(c)));
     assert.match(s.players[2].starting_knowledge, /You locked the gate\.$/);
     assert.ok(steps.includes('cards'));
   });

@@ -1827,6 +1827,7 @@ function publicCore(game, now) {
 const SECTION_WORDS = { players: 'characters', npcs: 'people', locations: 'places', clues: 'clues', key_deductions: 'links', phases: 'rounds', hint_ladder: 'hints', twists: 'twists' };
 const PLAN_WORDS = 7;
 export const CARD_STEP = 'Making sure everyone knows their own story';
+export const STORY_STEP = 'Checking the story for holes';
 
 // The GM's own steps, cleaned: 3 to 7 short titles, each pointing at real sections. null if it is unusable.
 export function cleanPlan(steps, sections = PLAN_SECTIONS) {
@@ -1847,13 +1848,14 @@ function planView(p) {
   const retry = p.retry ? { reason: p.retry.reason, broke: p.retry.broke, tookMs: p.retry.tookMs, at: p.retry.at } : null;
   if (!p.plan) return { plan: null, thinking: true, redraft, retry };
   const keys = new Set(p.keys ?? []);
-  const finishing = ['checking', 'cards'].includes(p.step);
+  const finishing = ['checking', 'story', 'cards'].includes(p.step);
   const plan = p.plan.map((st) => {
     const active = !finishing && st.covers.includes(p.key);
     const done = finishing || (!active && st.covers.every((k) => keys.has(k)));
     const counted = active ? st.covers.find((k) => SECTION_WORDS[k] && p.counts?.[k]) : null;
     return { title: st.title, state: active ? 'active' : done ? 'done' : 'todo', ...(counted ? { count: `${p.counts[counted]} ${SECTION_WORDS[counted]} so far` } : {}) };
   });
+  if (p.step === 'story') plan.push({ title: STORY_STEP, state: 'active' });
   if (p.step === 'cards') plan.push({ title: CARD_STEP, state: 'active' });
   return { plan, thinking: false, redraft, retry };
 }

@@ -3,7 +3,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt } from './prompts.ts';
+import { SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt } from './prompts.ts';
+import { storyIssues, issueCounts, applyStoryPatches } from './story.ts';
 import { validateScenario, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore } from './game.ts';
 import { TopLevelTracker } from './progress.ts';
 import { READER_SCHEMA, FINAL_READER_SCHEMA, readerSystem, readerPrompt, readerContext, cleanRead, formForGM, quoteRaw } from './reader.ts';
@@ -177,6 +178,8 @@ export class GM {
     this.log(`gm twists: ${twists.map((t) => t.id).join(', ')}`);
     let prompt = generationPrompt(game, twists, culprits);
     let errors = [];
+    let fallback = null;
+    const retryWith = (problems) => `${generationPrompt(game, twists, culprits)}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       onProgress({ kind: 'attempt', attempt, broke: errors.length });
       const scenario = await this.call(`generate#${attempt}`, {
@@ -190,15 +193,57 @@ export class GM {
       });
       onProgress({ kind: 'checking' });
       errors = validateScenario(scenario, rules);
-      if (!errors.length) {
-        onProgress({ kind: 'cards' });
-        await this.completeCards(scenario);
-        return scenario;
+      if (errors.length) {
+        this.log(`gm generate#${attempt} invalid: ${errors.join(' | ')}`);
+        if (fallback) return this.finishWorld(fallback, onProgress);
+        prompt = retryWith(errors);
+        continue;
       }
-      this.log(`gm generate#${attempt} invalid: ${errors.join(' | ')}`);
-      prompt = `${generationPrompt(game, twists, culprits)}\n\nA previous draft broke these rules, avoid them:\n- ${errors.join('\n- ')}`;
+      onProgress({ kind: 'story' });
+      const issues = storyIssues(scenario, { players: game.players, difficulty: game.setup.difficulty, rounds: rules.phases });
+      this.log(`gm story issues: ${issueCounts(issues)}`);
+      const check = await this.checkStory(scenario, issues);
+      if (check?.verdict === 'rewrite' && attempt < 2) {
+        this.applyCheck(scenario, check, rules);
+        fallback = scenario;
+        prompt = retryWith(check.problems.map((p) => `${p.what} ${p.fix}`.trim()));
+        continue;
+      }
+      if (check) this.applyCheck(scenario, check, rules);
+      return this.finishWorld(scenario, onProgress);
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
+  }
+
+  async finishWorld(scenario, onProgress) {
+    onProgress({ kind: 'cards' });
+    await this.completeCards(scenario);
+    return scenario;
+  }
+
+  // One GM read of the whole world against a fixed checklist. A failed, slow or empty check changes nothing.
+  async checkStory(scenario, issues) {
+    try {
+      const result = await this.call('story check', {
+        system: GENERATION_SYSTEM,
+        prompt: storyCheckPrompt(scenario, issues),
+        schema: STORY_CHECK_SCHEMA,
+        model: this.setupModel,
+        effort: 'medium',
+        timeoutMs: 180_000,
+      });
+      if (!['ok', 'patch', 'rewrite'].includes(result?.verdict)) throw new Error('no verdict');
+      return { verdict: result.verdict, problems: Array.isArray(result.problems) ? result.problems : [], patches: Array.isArray(result.patches) ? result.patches : [] };
+    } catch (err) {
+      this.log(`gm story check skipped: ${err.message}`);
+      return null;
+    }
+  }
+
+  applyCheck(scenario, check, rules) {
+    const out = check.verdict === 'ok' ? { applied: 0, skipped: [] } : applyStoryPatches(scenario, check.patches, rules);
+    this.log(`gm story check: ${check.verdict}, ${out.applied} patches, ${out.skipped.length} skipped`);
+    return out;
   }
 
   async auditCards(scenario) {
