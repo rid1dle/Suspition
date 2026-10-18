@@ -37,6 +37,7 @@ export function PlayApp() {
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const fromHash = new URLSearchParams(window.location.hash.slice(1)).get('t');
+    if (fromHash) storage.set('detective-token', fromHash);
     setToken(fromHash || storage.get('detective-token'));
     setReady(true);
   }, []);

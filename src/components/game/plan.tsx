@@ -16,7 +16,12 @@ function Spinner() {
 }
 
 function Shimmer({ children }: { children: React.ReactNode }) {
-  return <span className="shimmer bg-[linear-gradient(90deg,var(--muted-foreground)_0%,var(--foreground)_50%,var(--muted-foreground)_100%)] bg-[length:200%_100%] bg-clip-text text-transparent">{children}</span>;
+  return (
+    <span className="shimmer bg-clip-text text-transparent"
+      style={{ backgroundImage: 'linear-gradient(90deg, var(--muted-foreground) 0%, var(--foreground) 50%, var(--muted-foreground) 100%)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text' }}>
+      {children}
+    </span>
+  );
 }
 
 // The GM's own steps, shown the way Claude shows its work: a live line while thinking,

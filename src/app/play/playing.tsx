@@ -198,7 +198,9 @@ function AskTab({ view }: { view: PlayerView }) {
   const end = useRef<HTMLDivElement>(null);
   const thread = view.thread ?? [];
   const items: ThreadEntry[] = view.pending ? [...thread, { from: 'you', text: view.pending.text, at: 0 }, { from: 'gm', text: 'Thinking…', at: 0 }] : thread;
-  useEffect(() => end.current?.scrollIntoView({ behavior: 'smooth' }), [items.length]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [items.length]);
   const ideas = [...thread].reverse().find((m) => m.from === 'gm')?.ideas ?? [];
   const insert = (words: string, fresh = false) => {
     const base = fresh ? '' : text;

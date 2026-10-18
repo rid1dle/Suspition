@@ -128,7 +128,9 @@ export function TableApp() {
   const { view } = useLive<TableView>('/events');
   const media = useMedia(view);
   const [calm, setCalm] = useState(false);
-  useEffect(() => setCalm(storage.get('detective-calm') === 'on'), []);
+  useEffect(() => {
+    setCalm(storage.get('detective-calm') === 'on');
+  }, []);
   const act = hostAct(host);
   const readNow = (lines: string[]) => {
     const n = media?.narrator;
