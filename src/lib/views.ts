@@ -54,6 +54,7 @@ export interface Play { points: number; skill: string | null; why: string }
 export interface ThreadEntry { from: 'you' | 'gm' | 'whisper' | 'system'; text: string; kind?: string; lines?: { speaker: string; text: string }[]; ideas?: string[]; play?: Play; penalty?: Play; at: number }
 
 export interface CardView {
+  backstory?: string;
   hook?: string;
   distrusts?: string;
   distrust_why?: string;

@@ -2284,6 +2284,7 @@ export function playerView(game, playerId, now = Date.now()) {
     name: card.character_name,
     role: card.role_title,
     public_info: card.public_info,
+    backstory: card.backstory ?? '',
     private_info: card.private_info,
     goal: card.goal,
     win: WIN[card.side] ?? '',

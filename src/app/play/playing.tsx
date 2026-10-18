@@ -16,7 +16,7 @@ import { SeatCard, type SeatView } from '@/components/game/hot-seat';
 import { OfferCard } from '@/components/game/offer';
 import { GoConfirm } from '@/components/game/go-confirm';
 import { PlayChip, PlayLine } from '@/components/game/score';
-import { Timeline, Alibis, SharedClues, Recap, ScenePicture, Facts } from '@/components/game/panels';
+import { Timeline, Alibis, SharedClues, Recap, ScenePicture, Facts, GoalsPanel } from '@/components/game/panels';
 import { useDraft } from '@/lib/live';
 import { storage } from '@/lib/api';
 import { countdown, reminderDue, suspicionLabel, type ReminderState } from '@/lib/phone';
@@ -179,6 +179,7 @@ function StoryTab({ view, onAskTab, onGo }: { view: PlayerView; onAskTab: () => 
           onVote={(i) => act('roundvote', { token: tokenOf(), choice: i })}
           onIdea={(t) => { setText(t); box.current?.focus(); }} />
       </section>
+      <GoalsPanel caseQuestion={view.caseQuestion} job={view.round?.objective} goal={view.card?.goal} open={view.recap?.open ?? []} />
       <section className="flex flex-col gap-2">
         <Textarea ref={box} value={text} maxLength={200} rows={2} onChange={(e) => setText(e.target.value)} placeholder='Ask anyone anything. "Lata, when did the music stop?"'
           className="bg-card text-base" />

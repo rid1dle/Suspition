@@ -15,7 +15,8 @@ export function feedItem(e) {
   }
   if (e.kind === 'timeline') return { kind: 'timeline', text: e.text, tab: 'timeline' };
   if (e.kind === 'qa') return { kind: 'qa', text: e.text, ask: `${e.by} asked: ${e.q}`, lines: e.lines };
-  if (e.kind === 'round') return { kind: /That is right!/.test(e.text) ? 'right' : 'wrong', text: e.text };
+  // Only a quiz round has a right answer; the room picking someone to look at is never marked right or wrong.
+  if (e.kind === 'round') return { kind: /That is right!/.test(e.text) ? 'right' : /Not quite\./.test(e.text) ? 'wrong' : 'round', text: e.text };
   return { kind: e.kind, text: e.text };
 }
 

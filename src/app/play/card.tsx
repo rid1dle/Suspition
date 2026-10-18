@@ -43,6 +43,12 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
         </motion.div>
       </button>
 
+      {card.backstory && (
+        <Section title="Your story so far">
+          <p>{card.backstory}</p>
+        </Section>
+      )}
+
       {card.hook && (
         <Section title="Who you are tonight">
           <p className="text-lg font-medium">{card.hook}</p>
