@@ -1,6 +1,6 @@
 # What comes next: finish, then a chat-first redesign
 
-Status: DRAFT, written 2026-10-18 from the creator's notes after the second real game. Every item here is waiting for a design pass and the creator's yes before it is built.
+Status: approved and built (the creator said on 2026-10-18 "design everything, I approve all already" and left the open questions to me). The decisions are at the end.
 
 ## Where we are
 
@@ -114,8 +114,26 @@ Make them feel like the room's events in the chat, with a small icon and the pla
 - Plain short English on every screen and in every GM line.
 - Readability over effects; the world's style at the edges.
 
-## Open questions for the creator
+## Decisions (made 2026-10-19, while the creator was away)
 
-1. **Talk and act:** is the split right, and how many acts per round (today's 2 or 3)?
-2. **Meetings:** should they replace the round vote, or sit beside it?
-3. **The order of the work:** UI audit and fixes first, then the chat-first phone, then the map and soundtrack, then the big playtest. Or the map and soundtrack first, as planned before?
+1. **Talk and act: yes, with today's number of acts.** The number of private questions per round (2 or 3, set at setup) is now the number of acts. Talking in private is free, one message in flight at a time.
+   - **Talk:** asking a person something, telling someone something, asking about your own character, saying something to the room. A talk answer finds no clue, moves nobody, destroys nothing and makes no stir; a GM character still says what their sheet lets them say.
+   - **Act:** searching, looking closely at a thing or a place, taking, hiding, planting, breaking, following, a secret action.
+   - **Who decides:** the reader marks `acts` on every message, and `goes_to` when the character goes somewhere. A read without the mark (older code, tests) counts as an act, as every private move did before.
+   - **No acts left:** the message is answered as talk and the player is told: "No acts left this round, so nothing was found or moved. Talking is still free."
+   - **No extra confirm for acts:** asking "This is an act, use one?" for every act was cut; moving still asks Go / Not now, and Not now now answers the player where they stand instead of dropping the message.
+2. **Meetings sit beside the round vote.** The round vote stays, because the story's pacing and the room's choices hang on it. A meeting is:
+   - one per player per game
+   - 3 minutes, and the round clock waits
+   - announced to everyone with who called it and why, followed at once by "Where we are now" (the last recap and the open questions), so the room gets back in sync
+   - acts and map moves wait until it ends; talk goes on
+   - ended by its time, the caller, or the host
+   - no vote of its own (the "Ask to vote now" button is right there)
+3. **Order of the work:** finish round 2 and its review first, then the story that moves with the room (from the third real game), then talk/act and meetings, then the chat-first phone, then the UI audit and sound, then the big playtest. The map and the soundtrack were built in parallel on their own branches.
+
+**What the phone is now:**
+- **One screen:** the chat. It holds the opening, round dividers, what was asked and answered out loud, moves, the "because" line, vote results, "Where we are now" cards, and your own private thread marked "only the GM sees" and "only you".
+- **One composer:** "To the room" or "Private, to the GM", with starter chips and name chips.
+- **Pinned above the chat:** whatever needs you now: a meeting, your hot seat, your moment, a move to confirm, a question for you, the vote and its brief.
+- **Drawers instead of tabs:** Me (the card), Goals, Clues (with things that matter, shared clues and notes), Map (with going), People, Case file (recap, timeline, alibis, the place).
+- **Start from your story:** the first time a phone opens a game it shows the backstory and hook, then "Introduce yourself to the room" with first lines to tap.
