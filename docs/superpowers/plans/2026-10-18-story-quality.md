@@ -274,6 +274,25 @@ A player character's actions, words and whereabouts come only from their own car
   - `should list unbacked player facts as continuity problems`
 - [ ] **Step 2 to 5:** RED, implement, GREEN, run the suite, commit `feat: players drive their own characters; nothing about them is told before they know it`.
 
+### Task 7c: Moves that would break the story
+
+**Files:**
+- Modify: `server/prompts.ts` (`ASK_SCHEMA.refused: { refused: boolean, why: str }`, `PUBLIC_ANSWER_SCHEMA.refused` the same, a rule in `playSystem` and `publicSystem`), `server/game.ts` (`completeAsk` and `completePublicAsk` honour `refused`)
+- Test: `test/refused-moves.test.ts`
+
+Rule copy (playSystem; publicSystem gets the same with "question" for "move"):
+
+```
+Players drive the story. Build on a move whenever it fits the truth, the canon, the clues found and what other players have done. If its outcome would contradict any of them ("I find proof that an innocent did it", "the door was never locked" after the room heard it was), the move does not happen: show in the story why (the drawer is empty, the guard remembers the lock) and set refused with why, one plain line for the player that names the fact it would break, never a secret.
+```
+
+- [ ] **Step 1: Write the failing tests:**
+  - `should honour a move that fits the story` (refused false: clues found, ripple sent as before)
+  - `should refuse a move that would contradict the story and tell the player why` (no clue found, no move, no ripple, no destroyed clue; the thread shows the GM answer and then a line "That can't happen: <why>")
+  - `should refuse an out-loud claim the same way, in the room`
+  - `should log refused moves for the playtest report` (`st.refused` keeps round, player and why)
+- [ ] **Step 2 to 5:** RED, implement, GREEN, run the suite, commit `feat: moves that would break the story are refused, and the player is told why`.
+
 ### Task 8: Polish from the living story review
 
 **Files:** `server/game.ts`, `src/db/library.ts`, `src/lib/settings-deck.ts`, `server/app.ts`, `src/components/world/room.tsx`, `src/components/world/table-effects.tsx`, `src/app/world.css`

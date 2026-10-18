@@ -116,6 +116,15 @@ Engaging is the strongest area, but all 5 worlds reuse the same surprise ("the v
   - The continuity check (during play) lists any text that has a player doing something they never did. It fixes it with a correction or a private offer, never by asserting it.
 - Built in the story quality plan as part of Task 7 (continuity) and a new player-agency task, ahead of the polish task.
 
+## Moves that would break the story (added by the creator, 2026-10-18)
+
+"The GM should be able to honour them but not create contradictions. Sometimes user requests will directly cause contradictions; that is the GM's responsibility to identify such requests, reject them and let the user know." There is no request box after the room is built, and there never will be: the story changes through what players do and say.
+
+- **Honour by default.** A move that fits the truth, the canon and what others have established changes the story (a player builds a cover story, plants doubt, finds a reason). The GM builds on it.
+- **Refuse what cannot be true.** A move whose outcome would contradict the truth, the canon, another player's own record or a found clue does not happen. Examples: "I find the letter that proves Ben did it" when Ben is innocent; "the door was never locked" after the room heard it was.
+- **Tell the player.** The answer shows it in the story (the drawer is empty, the guard remembers the lock) and the player gets one plain line under it saying why the story cannot go that way ("That can't happen: everyone already heard the door was locked at 11:10."). Never silent, never a rules lecture, never a secret.
+- **Code backs it.** The answer has a `refused` field. A refused move finds no clue, moves nobody and sends no ripple, and it is logged for the playtest report.
+
 ## Polish carried over from the living story review
 
 These are fixed in the story quality plan's Task 8 (polish):
@@ -137,6 +146,7 @@ Branch `feat/first-playable`. Pushed up to 08a3f00; everything after (briefing p
    - Tasks 1 to 6: difficulty, world fields, story issues, clue rounds, consistency check, nights from whereabouts.
    - Task 7: continuity during play.
    - Task 7b: player agency first (the source rule, the private offer, the action and gesture filter).
+   - Task 7c: moves that would break the story are refused and the player is told why.
    - Task 8: polish.
    - Task 9: live check against the audit.
    - Built here tests first, with one review at the end.
@@ -145,13 +155,14 @@ Branch `feat/first-playable`. Pushed up to 08a3f00; everything after (briefing p
    - Every path shows distance and time in m or km ("350 m, 4 min walk"; long trips also show the drive time).
    - It should share the whereabouts and distances work from story quality.
 3. **The soundtrack**: `docs/superpowers/plans/2026-10-18-soundtrack.md` (approved, build it as written). Phase 2 AI audio is researched in its spec: Stable Audio 3 Small-SFX through MLX locally, or ElevenLabs Sound Effects with loop.
-4. **Open questions for the creator:**
+4. **The big story playtest**, after the map and the soundtrack are built. 15 to 20 or more agent players, each with their own motive and human side (stubborn, chatty, a liar, a peacemaker), most of them actively driving the story their way through moves and things said out loud, some making moves that would contradict it. It measures: moves honoured, contradictions the GM let in, moves it rightly refused and told the player about, and whether the case is still complete and solvable like Lord of the Mysteries at the end. Results go to the creator before any change.
+5. **Open questions for the creator:**
    - Should ripples land after a random 10 to 40 s delay, so their timing does not hint whose move it was?
    - Should code also filter ripples that describe another player's gestures?
-5. **For the creator:**
+6. **For the creator:**
    - Restart the 4321 server (Ctrl+C, then `nvm use 24 && npm start`) to get everything since 08a3f00.
    - A game night test of hot seats, then of the living story.
-6. **Older open items:**
+7. **Older open items:**
    - Playtest c0a2b6ac1d67 problems:
      - clue text names another player's secret
      - a sway is charged twice
