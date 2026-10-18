@@ -40,3 +40,15 @@ export function suspicionLabel(n: number) {
   if (n >= 25) return 'Rising';
   return 'Low';
 }
+
+// What this player must do right now, if anything: their moment, their hot seat, or their question to ask.
+export function callFor(view: { moments?: { status?: string }[]; seat?: { status?: string; name?: string; mine?: { role?: string } | null } | null }): string | null {
+  const m = (view.moments ?? [])[0];
+  if (m?.status === 'called') return 'Your moment. Say your line out loud now.';
+  const seat = view.seat;
+  const role = seat?.status ? seat.mine?.role : null;
+  if (role === 'seated') return seat!.status === 'live' ? "You're in the hot seat. Answer out loud." : "Get ready: you're in the hot seat next.";
+  if (role === 'asker' && seat!.status === 'live') return `Ask ${seat!.name} your question out loud now.`;
+  if (m?.status === 'getready') return 'Get ready: your moment is coming.';
+  return null;
+}

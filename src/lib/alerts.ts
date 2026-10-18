@@ -40,6 +40,7 @@ export function phoneAlerts(prev, next) {
   }
   const momentIds = new Set((prev.moments ?? []).map((m) => m.id));
   if ((next.moments ?? []).some((m) => !momentIds.has(m.id))) out.push({ sound: 'call', text: 'Get ready. The story turns to you soon.', tab: null });
+  else if ((next.moments ?? []).some((m) => m.status === 'called' && (prev.moments ?? []).find((p) => p.id === m.id)?.status !== 'called')) out.push({ sound: 'call', text: 'Your moment. Everyone is listening. Say your line now.', tab: null });
   const role = next.seat?.mine?.role;
   if (role !== prev.seat?.mine?.role || next.seat?.name !== prev.seat?.name) {
     if (role === 'seated') out.push({ sound: 'call', text: "You're in the hot seat. Read your whisper.", tab: 'story' });

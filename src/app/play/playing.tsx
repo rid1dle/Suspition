@@ -15,11 +15,12 @@ import { ReminderCard } from '@/components/game/reminder';
 import { SeatCard, type SeatView } from '@/components/game/hot-seat';
 import { OfferCard } from '@/components/game/offer';
 import { GoConfirm } from '@/components/game/go-confirm';
+import { CallBanner } from '@/components/game/call-banner';
 import { PlayChip, PlayLine } from '@/components/game/score';
 import { Timeline, Alibis, SharedClues, Recap, ScenePicture, Facts, GoalsPanel } from '@/components/game/panels';
 import { useDraft } from '@/lib/live';
 import { storage } from '@/lib/api';
-import { countdown, reminderDue, suspicionLabel, type ReminderState } from '@/lib/phone';
+import { countdown, reminderDue, suspicionLabel, callFor, type ReminderState } from '@/lib/phone';
 import type { PlayerView, ThreadEntry } from '@/lib/views';
 import { CardFlip } from './card';
 import { act, tokenOf } from './play-app';
@@ -47,7 +48,7 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
   };
   return (
     <Tabs value={tab} onValueChange={(t) => go(t as Tab)} className="mx-auto max-w-md gap-0 pb-28">
-      <TopBar view={view} onOpenCard={() => go('card')} />
+      <TopBar view={view} onOpenCard={() => go('card')} onCall={() => go('story')} />
       <main className="flex flex-col gap-5 px-4 pt-4">
         <SeatNow seat={view.seat as SeatView | null} />
         <Moment view={view} now={Date.now()} />
@@ -78,7 +79,7 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
   );
 }
 
-function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void }) {
+function TopBar({ view, onOpenCard, onCall }: { view: PlayerView; onOpenCard: () => void; onCall: () => void }) {
   const now = useNow();
   const timer = view.phase?.endsAt ? countdown(view.phase.endsAt, now) : null;
   const [reminder, setReminder] = useState<string | null>(null);
@@ -95,6 +96,7 @@ function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void
   const va = view.voteAsk as { proposer: string; yes: number; need: number } | null;
   return (
     <header className="sticky top-0 z-30 flex flex-col gap-2 border-b border-border bg-background/85 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur">
+      <CallBanner text={callFor(view as Parameters<typeof callFor>[0])} onShow={onCall} />
       <div className="flex items-baseline justify-between gap-3">
         <span className="truncate font-heading text-primary">{view.phase ? `Round ${view.phase.number} of ${view.phase.count}: ${view.phase.name}` : ''}</span>
         {timer && <span className={`font-mono tabular-nums ${timer.low ? 'text-destructive' : ''}`}>{timer.text}</span>}
