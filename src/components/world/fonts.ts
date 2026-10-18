@@ -1,6 +1,7 @@
 import {
   Playfair_Display, Inter, Cinzel, Cormorant_Garamond, Fredoka, Nunito, Special_Elite, Courier_Prime, Unbounded,
   Space_Grotesk, Pirata_One, EB_Garamond, Fraunces, Pacifico, Karla, Abril_Fatface, Libre_Baskerville,
+  Caveat, Bebas_Neue, Oswald, JetBrains_Mono, Rozha_One, Marcellus,
 } from 'next/font/google';
 
 // Self-hosted at build time (no font requests while playing). Each world picks one pair in world.css.
@@ -23,6 +24,13 @@ const f14 = Karla({ subsets: ['latin'], display: 'swap', preload: false, variabl
 const f15 = Abril_Fatface({ subsets: ['latin'], display: 'swap', preload: false, weight: '400', variable: '--font-abril' });
 const f16 = Libre_Baskerville({ subsets: ['latin'], display: 'swap', preload: false, weight: ['400', '700'], variable: '--font-libre-baskerville' });
 
-const fonts = [f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16];
+const f17 = Caveat({ subsets: ['latin'], display: 'swap', preload: false, variable: '--font-caveat' });
+const f18 = Bebas_Neue({ subsets: ['latin'], display: 'swap', preload: false, weight: '400', variable: '--font-bebas' });
+const f19 = Oswald({ subsets: ['latin'], display: 'swap', preload: false, variable: '--font-oswald' });
+const f20 = JetBrains_Mono({ subsets: ['latin'], display: 'swap', preload: false, variable: '--font-jetbrains' });
+const f21 = Rozha_One({ subsets: ['latin'], display: 'swap', preload: false, weight: '400', variable: '--font-rozha' });
+const f22 = Marcellus({ subsets: ['latin'], display: 'swap', preload: false, weight: '400', variable: '--font-marcellus' });
+
+const fonts = [f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22];
 
 export const worldFontVariables = fonts.map((f) => f.variable).join(' ');

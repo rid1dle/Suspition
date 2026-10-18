@@ -267,7 +267,7 @@ Write progress first: 3 to 7 short steps for how you will build this world, in i
 
 Reminders: for each player character write 6 to 10 reminders, short lines the phone shows now and then so the player remembers who they are. Third person, plain words, under 18 words each, only things that character knows ("Nikhil Rao runs the bank on MG Road.", "At 10:30 pm Nikhil Rao was by the library window."). Never start with "You".
 
-Pick the room: how this world looks and sounds on every screen. seed_color is one hex colour that feels like this place (deep monsoon blue, palace gold, forest green); the screens build a readable palette from it. Choose the font pair, texture, ambient effect (keep it gentle: low unless the setting is wild) and sound set that fit the setting and tone.
+Pick the room: how this world looks and sounds on every screen. seed_color is one hex colour that feels like this place (deep monsoon blue, palace gold, forest green); the screens build a readable palette from it. Choose the font pair, texture, ambient effect (keep it gentle: low unless the setting is wild) and sound set that fit the setting and tone. Ambient: petals for weddings, gardens and spring; sparks for workshops, trains and fireworks; leaves for forests and autumn; sand for deserts and dunes; stars for open skies and space; bubbles for the sea and parties. Fonts: handwritten-note for letters and diaries, poster-bold for sport, cinema and loud crowds, terminal for labs, ships and the future, marquee for Indian palaces, cinema halls and festivals.
 
 Design rules:
 - Write the truth first: what happened, in order, who did what, when, where, how and why. Everything else must be consistent with it.

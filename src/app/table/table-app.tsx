@@ -154,7 +154,7 @@ export function TableApp() {
   const rich = richEffects({ room, calm, low, reduced });
   const look = useStoryLook(view);
   return (
-    <WorldRoom room={room} calm={calm || (rich && PARTICLE_AMBIENTS.has(room!.ambient))} tension={calm ? 0 : look.tension} beat={calm ? 0 : look.beat}>
+    <WorldRoom room={room} calm={calm} particles={rich && PARTICLE_AMBIENTS.has(room!.ambient)} tension={calm ? 0 : look.tension} beat={calm ? 0 : look.beat} backdrop={view?.illustration ?? null}>
       {rich && <TableEffects room={room!} />}
       <Toaster theme="dark" position="top-center" />
       <div className="min-h-dvh pb-16">

@@ -53,9 +53,10 @@ const BEAT_MS = 2500;
 
 // The story's tension slowly darkens and warms the screen edges and quickens the ambient a little;
 // each story turn (a beat counter that goes up) glows the edges once. The reading column never changes.
-export function WorldRoom({ room: given, calm = false, className = '', tension = 0, beat = 0, children }: { room: Room | null; calm?: boolean; className?: string; tension?: number; beat?: number; children?: ReactNode }) {
+export function WorldRoom({ room: given, calm = false, particles = false, className = '', tension = 0, beat = 0, backdrop = null, children }: { room: Room | null; calm?: boolean; particles?: boolean; className?: string; tension?: number; beat?: number; backdrop?: string | null; children?: ReactNode }) {
   const room = given ?? HOUSE_ROOM;
-  const effect = room && !calm && room.ambient !== 'none' ? room.ambient : null;
+  // particles: the table's particle layer already draws this ambient, so the CSS one stays off.
+  const effect = room && !calm && !particles && room.ambient !== 'none' ? room.ambient : null;
   const [glow, setGlow] = useState(false);
   useEffect(() => {
     if (!beat) return;
@@ -74,6 +75,7 @@ export function WorldRoom({ room: given, calm = false, className = '', tension =
       data-texture={room?.texture ?? 'none'}
       data-beat={glow ? 'on' : undefined}
     >
+      {backdrop && !calm && <div aria-hidden className="backdrop" style={{ backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(backdrop)}")` }} />}
       <div aria-hidden className="story-edge" />
       {effect && <AmbientLayer ambient={effect} intensity={room!.intensity} />}
       <MotionConfig reducedMotion="user"><div className="relative z-10">{children}</div></MotionConfig>

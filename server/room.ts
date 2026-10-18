@@ -5,9 +5,9 @@ import { DEFAULT_COLORS as HOUSE_COLORS } from '../src/lib/house-room.ts';
 // and checked for contrast, so a world can never be hard to read.
 
 export const ROOM_OPTIONS = {
-  font_pair: ['noir-serif', 'royal-deco', 'cozy-rounded', 'old-typewriter', 'neon-grotesk', 'gothic-ink', 'storybook', 'modern-clean', 'tropical-script', 'vintage-press'],
+  font_pair: ['noir-serif', 'royal-deco', 'cozy-rounded', 'old-typewriter', 'neon-grotesk', 'gothic-ink', 'storybook', 'modern-clean', 'tropical-script', 'vintage-press', 'handwritten-note', 'poster-bold', 'terminal', 'marquee'],
   texture: ['paper', 'velvet', 'rain-glass', 'film-grain', 'stone', 'none'],
-  ambient: ['rain', 'fog', 'embers', 'fireflies', 'dust', 'snow', 'lantern', 'none'],
+  ambient: ['rain', 'fog', 'embers', 'fireflies', 'dust', 'snow', 'lantern', 'petals', 'sparks', 'leaves', 'sand', 'stars', 'bubbles', 'none'],
   intensity: ['low', 'medium'],
   sound_set: ['soft', 'tense', 'playful'],
 } as const;
@@ -128,7 +128,7 @@ export function roomTheme(room: Partial<Room> | null | undefined) {
   return {
     fontPair: pick(ROOM_OPTIONS.font_pair, room?.font_pair),
     texture: room ? pick(ROOM_OPTIONS.texture, room.texture) : 'none',
-    ambient: room ? pick(ROOM_OPTIONS.ambient, room.ambient) : 'none',
+    ambient: room && ROOM_OPTIONS.ambient.includes(room.ambient as never) ? room.ambient! : 'none',
     intensity: pick(ROOM_OPTIONS.intensity, room?.intensity),
     soundSet: pick(ROOM_OPTIONS.sound_set, room?.sound_set),
     colors: paletteFrom(room?.seed_color),

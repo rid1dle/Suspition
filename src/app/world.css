@@ -15,6 +15,10 @@
 .world[data-font='modern-clean'] { --font-display: var(--font-sans); --font-heading: var(--font-sans); --font-body: var(--font-inter); }
 .world[data-font='tropical-script'] { --font-display: var(--font-pacifico); --font-heading: var(--font-karla); --font-body: var(--font-inter); }
 .world[data-font='vintage-press'] { --font-display: var(--font-abril); --font-heading: var(--font-libre-baskerville); --font-body: var(--font-inter); }
+.world[data-font='handwritten-note'] { --font-display: var(--font-caveat); --font-heading: var(--font-karla); --font-body: var(--font-inter); }
+.world[data-font='poster-bold'] { --font-display: var(--font-bebas); --font-heading: var(--font-oswald); --font-body: var(--font-inter); }
+.world[data-font='terminal'] { --font-display: var(--font-jetbrains); --font-heading: var(--font-jetbrains); --font-body: var(--font-inter); }
+.world[data-font='marquee'] { --font-display: var(--font-rozha); --font-heading: var(--font-marcellus); --font-body: var(--font-inter); }
 
 /* Textures sit behind everything, very faint. */
 .world::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.5; }
@@ -115,3 +119,34 @@
 @media (prefers-reduced-motion: reduce) {
   .world[data-beat='on'] .story-edge::after { animation: none; opacity: 0.6; }
 }
+
+/* More ambient effects, same three drifting layers as the others. */
+.ambient[data-effect='petals'] i { background-image: radial-gradient(ellipse 5px 3px at 18% 24%, color-mix(in oklab, #f6a6c1 85%, transparent) 0 100%, transparent 101%), radial-gradient(ellipse 4px 2.5px at 66% 58%, color-mix(in oklab, #ffd1dc 85%, transparent) 0 100%, transparent 101%); background-size: 240px 260px; animation: fall 18s linear infinite; }
+.ambient[data-effect='petals'] i:nth-child(2) { background-size: 320px 300px; animation-duration: 26s; opacity: 0.7; }
+.ambient[data-effect='petals'] i:nth-child(3) { background-size: 180px 220px; animation-duration: 13s; opacity: 0.45; }
+
+.ambient[data-effect='sparks'] i { background-image: radial-gradient(circle, color-mix(in oklab, #fff1b8 95%, transparent) 0 1px, transparent 1.8px), radial-gradient(circle at 40% 60%, color-mix(in oklab, #ffc857 90%, transparent) 0 1px, transparent 1.6px); background-size: 110px 150px; animation: rise 6s linear infinite, flicker 0.9s ease-in-out infinite alternate; }
+.ambient[data-effect='sparks'] i:nth-child(2) { background-size: 170px 210px; animation-duration: 9s, 1.3s; }
+.ambient[data-effect='sparks'] i:nth-child(3) { background-size: 70px 110px; animation-duration: 4.5s, 0.7s; opacity: 0.5; }
+
+.ambient[data-effect='leaves'] i { background-image: radial-gradient(ellipse 6px 3px at 22% 30%, color-mix(in oklab, #c8742c 80%, transparent) 0 100%, transparent 101%), radial-gradient(ellipse 5px 2.5px at 70% 64%, color-mix(in oklab, #9a6b2f 80%, transparent) 0 100%, transparent 101%); background-size: 260px 280px; animation: fall 24s linear infinite; }
+.ambient[data-effect='leaves'] i:nth-child(2) { background-size: 340px 320px; animation-duration: 32s; opacity: 0.7; }
+.ambient[data-effect='leaves'] i:nth-child(3) { display: none; }
+
+.ambient[data-effect='sand'] i { background-image: radial-gradient(circle at 12% 40%, color-mix(in oklab, #d9b77e 70%, transparent) 0 0.8px, transparent 1.3px), radial-gradient(circle at 58% 72%, color-mix(in oklab, #c9a36a 70%, transparent) 0 0.8px, transparent 1.3px), radial-gradient(circle at 81% 18%, color-mix(in oklab, #e3c793 70%, transparent) 0 0.8px, transparent 1.3px); background-size: 150px 120px; animation: drift 14s linear infinite; }
+.ambient[data-effect='sand'] i:nth-child(2) { background-size: 210px 170px; animation-duration: 20s; opacity: 0.6; }
+.ambient[data-effect='sand'] i:nth-child(3) { background-size: 90px 80px; animation-duration: 9s; opacity: 0.4; }
+
+.ambient[data-effect='stars'] i { background-image: radial-gradient(circle at 14% 22%, color-mix(in oklab, white 90%, transparent) 0 1px, transparent 1.6px), radial-gradient(circle at 63% 41%, color-mix(in oklab, white 80%, transparent) 0 0.8px, transparent 1.4px), radial-gradient(circle at 37% 79%, color-mix(in oklab, #cfe3ff 85%, transparent) 0 1.2px, transparent 1.8px); background-size: 260px 240px; animation: flicker 4.2s ease-in-out infinite alternate; }
+.ambient[data-effect='stars'] i:nth-child(2) { background-size: 340px 310px; animation-duration: 6.1s; opacity: 0.7; }
+.ambient[data-effect='stars'] i:nth-child(3) { background-size: 180px 200px; animation-duration: 3.3s; opacity: 0.5; }
+
+.ambient[data-effect='bubbles'] i { background-image: radial-gradient(circle, transparent 0 3px, color-mix(in oklab, var(--foreground) 30%, transparent) 3.5px 4.2px, transparent 4.8px); background-size: 200px 240px; animation: rise 16s linear infinite; }
+.ambient[data-effect='bubbles'] i:nth-child(2) { background-size: 280px 300px; animation-duration: 22s; opacity: 0.6; }
+.ambient[data-effect='bubbles'] i:nth-child(3) { background-size: 140px 180px; animation-duration: 11s; opacity: 0.4; }
+
+/* The world's own picture, blurred and faint, only at the table's edges (the reading column stays clear). */
+.backdrop { position: fixed; inset: 0; pointer-events: none; z-index: 0; background-size: cover; background-position: center;
+  filter: blur(28px) saturate(0.85); opacity: 0.22;
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(50% - 26rem), transparent calc(50% - 17rem), transparent calc(50% + 17rem), #000 calc(50% + 26rem), #000 100%);
+  transition: background-image 1.5s ease; }
