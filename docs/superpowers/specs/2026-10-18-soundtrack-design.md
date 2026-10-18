@@ -59,6 +59,22 @@ The creator wants the GM to also create sound itself, original every time, with 
 
 Which model to use, and what it costs, is decided when phase 2 starts.
 
+**Research (2026-10-18, read from docs and pricing pages, no model run yet):**
+- **Local candidate:** Stable Audio 3 Small-SFX through its official MLX build.
+  - Made for sound effects and ambience. The Community Licence is free under $1M revenue, and you own the outputs.
+  - The official figure is about 1 s per 10 s clip on an M1 with 8 GB.
+  - It installs its own Python 3.11 env with uv, which avoids the Python 3.14 problem.
+  - Risks: quality is untested, and the code is new (May 2026).
+- **API candidate:** ElevenLabs Sound Effects.
+  - The only option with a real `loop: true`.
+  - Clips are 30 s at most, and it needs an API key and internet.
+  - Cost is about $0.12 a minute of audio, so about $0.30 a game.
+- **Ruled out:**
+  - MusicGen, AudioLDM 2, TangoFlux and MMAudio: their weights are non-commercial.
+  - Suno: no public API.
+  - Google Lyria: music only.
+- **Looping:** without a loop option, make each clip 2 s long and crossfade its tail into its head once on the server. That works for steady sound (rain, wind, murmur, drone). Save loops as WAV, not MP3, to avoid a gap at the seam.
+
 ## Not in scope
 
 - Music on phones.
