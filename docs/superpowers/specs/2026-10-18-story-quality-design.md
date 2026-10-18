@@ -152,7 +152,16 @@ These are fixed in the story quality plan's Task 8 (polish):
 
 Branch `feat/first-playable`. Pushed up to 08a3f00; everything after (briefing pager, the living story plan, the plan docs) is committed but **not pushed**. Ask before pushing.
 
-1. **Story quality** (this design): `docs/superpowers/plans/2026-10-18-story-quality.md`. The creator has approved the design, the difficulty levels and the consistency check; the plan is waiting for their go-ahead.
+1. **Story quality** (this design): built on 2026-10-18 (Tasks 1 to 9, 7b, 7c, 7d, review fixes). Live check on 2 Normal worlds: every innocent now has a motive (0 of 10 without one, against 6 of 11 before), culprit, method and motive are each reachable, both worlds valid on the first draft. Still short of the baseline: 4 or 5 major plot holes per world (complete 2 of 5), a single late clue can still name the culprit, red herrings 2 to 3 of 5.
+   **Story quality round 2** (next, waiting for the creator), from the audit and the bot playthrough:
+   - Whereabouts at every step of the culprit's path, not only the crime time; flag anyone awake on that path.
+   - The giveaway check also catches roles, initials, surnames and a trait only the culprit has, in every round.
+   - GM character sheets never hand out a later round's clue (reveals_freely and knows gated by round); patches may fix reveals_freely.
+   - The card check (alibis, reveals, reminders) cannot refute a herring before its round or hand over a culprit clue; story issues run again after it.
+   - Herrings: the target has no public alibi at the crime time, pointers open before the clearing clue, and the refutation makes it impossible.
+   - The check catches clues that cannot exist (marks from later events, witnesses who were elsewhere) and motives or goals with no source in the world.
+   - Variety covers hidden facts and late clues ("the victim was secretly kind" came back there).
+   - Code-side refusals when the reader finds a claim the GM neither grants nor refuses; "he"/"she" in the action filter; the continuity check also runs after the round event is written.
    - Tasks 1 to 6: difficulty, world fields, story issues, clue rounds, consistency check, nights from whereabouts.
    - Task 7: continuity during play.
    - Task 7b: player agency first (the source rule, the private offer, the action and gesture filter).
