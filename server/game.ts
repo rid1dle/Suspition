@@ -189,6 +189,7 @@ export function applyAudit(scenario, audit) {
       changes += 1;
     }
   }
+  changes += nightsFromWhereabouts(scenario);
   for (const r of audit?.rounds ?? []) {
     const ph = scenario.phases?.[r?.index];
     if (!ph) continue;
@@ -198,6 +199,33 @@ export function applyAudit(scenario, audit) {
     }
     const tips = (r.try ?? []).map((t) => String(t ?? '').trim()).filter(Boolean).slice(0, 3);
     if (tips.length && !ph.try?.length) ph.try = tips;
+  }
+  return changes;
+}
+
+// Minutes after noon-ish so a night sorts in order across midnight ("11 pm" before "12:30 am"); null when unreadable.
+function nightMinutes(time) {
+  const m = /(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?/i.exec(String(time ?? ''));
+  if (!m) return null;
+  const pm = /^p/i.test(m[3] ?? '');
+  const h = m[3] ? (Number(m[1]) % 12) + (pm ? 12 : 0) : Number(m[1]);
+  const minutes = h * 60 + Number(m[2] ?? 0);
+  return minutes < 360 ? minutes + 1440 : minutes;
+}
+export const sameTime = (a, b) => String(a ?? '').replace(/\s+/g, '').toLowerCase() === String(b ?? '').replace(/\s+/g, '').toLowerCase();
+
+// A player's night is copied from the truth's whereabouts; the card check's own lines only fill the times between.
+function nightsFromWhereabouts(scenario) {
+  let changes = 0;
+  const placeName = (id) => (scenario.locations ?? []).find((l) => l.id === id)?.name ?? id;
+  for (const p of scenario.players ?? []) {
+    const own = (scenario.truth?.whereabouts ?? []).filter((w) => w?.character_id === p.id);
+    if (!own.length) continue;
+    const truth = cleanSlots(own.map((w) => ({ time: w.time, where: placeName(w.location_id), doing: w.doing })), ['time', 'where', 'doing']);
+    const extra = (p.night ?? []).filter((n) => !truth.some((t) => sameTime(t.time, n.time)));
+    const key = (n) => nightMinutes(n.time) ?? Infinity;
+    p.night = [...truth, ...extra].sort((a, b) => key(a) - key(b));
+    changes += 1;
   }
   return changes;
 }

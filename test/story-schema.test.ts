@@ -2,7 +2,13 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import * as G from '../server/game.ts';
 import { SCENARIO_SCHEMA, GENERATION_SYSTEM } from '../server/prompts.ts';
-import { makeScenario } from './fixtures.ts';
+import { makeScenario as baseScenario, whereaboutsFor } from './fixtures.ts';
+
+const makeScenario = (n, opts = {}) => {
+  const s = baseScenario(n, opts);
+  s.truth.whereabouts = whereaboutsFor(s);
+  return s;
+};
 
 const rules = { playerCount: 4, phases: 3, hints: 3 };
 const errorsOf = (s) => G.validateScenario(s, rules).join(' | ');

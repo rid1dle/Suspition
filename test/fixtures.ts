@@ -21,7 +21,6 @@ export function makeScenario(playerCount = 4, { phases = 3, hints = 3, questions
     truth: {
       summary: 'TRUTH-SUMMARY', timeline: [{ time: '9pm', event: 'It happened' }], culprit_ids: ['p1'], method: 'METHOD', motive: 'MOTIVE', ambiguities: '',
       crime: { time: '9pm', location_id: 'l1' },
-      whereabouts: players.map((p, i) => ({ time: '9pm', character_id: p.id, location_id: i === 0 ? 'l1' : 'l2', doing: i === 0 ? 'DOING-IT' : 'COOKING', seen_by: [] })),
     },
     suspects: players.map((p, i) => ({ character_id: p.id, motive_against_victim: `MOTIVE-OF-${i + 1}`, where_at_crime_time: i === 0 ? 'Ballroom' : 'Kitchen', alibi_witness: '', pointer_clue_ids: i === 0 ? ['c1'] : ['c3'], cleared_by_clue_ids: i === 0 ? [] : ['c2'] })),
     red_herrings: [{ points_at: 'p2', clue_ids: ['c3'], why_convincing: 'WHY-CONVINCING', refuted_by_clue_ids: ['c2'] }],
@@ -58,6 +57,9 @@ export function makeScenario(playerCount = 4, { phases = 3, hints = 3, questions
     twists: [{ name: 'Twist', description: 'TWIST-DESC' }],
   };
 }
+
+// Where everyone was at the crime time: the culprit at the crime place, the rest in the kitchen.
+export const whereaboutsFor = (s) => s.players.map((p, i) => ({ time: '9pm', character_id: p.id, location_id: i === 0 ? 'l1' : 'l2', doing: i === 0 ? 'DOING-IT' : 'COOKING', seen_by: [] }));
 
 export function gameInReading(playerCount = 4, now = 1_000, opts = {}) {
   const game = createGame(now);

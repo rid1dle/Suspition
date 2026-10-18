@@ -584,7 +584,7 @@ Never give away their hidden facts in any of these. Give an entry for every play
 
 Then lay out who was where, so the group can work it out:
 - key_times: the 3 to 5 moments of the night that matter most, in order, taken from the truth and public_timeline (time like "9:40 pm", what is one short public line like "Lights go out"). Never reveal a secret in what.
-- night (in each player entry): where that player really was and what they were doing at each key time, as they remember it. where is a place name from the map when possible. Keep to the truth, except things that are their hidden facts.
+- night (in each player entry): where that player really was and what they were doing at each key time, as they remember it. night: copy this character's entries from truth.whereabouts; add only what they did between them. where is a place name from the map when possible. Keep to the truth, except things that are their hidden facts.
 - alibis: for every player and GM character (by id), where they have told everyone they were at each key time. Innocent people mostly tell the truth, but may hide an embarrassing secret. Culprits lie where the truth would give them away. GM characters say what fits their sheet (knows and lies). Use the same time strings as key_times; where under 6 words.
 - rounds: for each round (index from 0) a clear job: objective starts with a verb, under 15 words, says what the group should find out this round; try is 2 or 3 pointers under 10 words, naming people or places to check, never the answer. The job must lead toward that round's question.
 

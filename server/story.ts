@@ -1,9 +1,8 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { namesAnyOf, clueWhereErrors, isMinor, validateScenario } from './game.ts';
+import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime } from './game.ts';
 import { difficultyRules, difficultyOf } from '../src/lib/difficulty.ts';
 
 const ASLEEP = /\b(asleep|sleeping|slept|unconscious|knocked out|passed out|out of sight|hidden|hiding|behind a|blindfold)/i;
-const sameTime = (a, b) => String(a ?? '').replace(/\s+/g, '').toLowerCase() === String(b ?? '').replace(/\s+/g, '').toLowerCase();
 
 // Story problems the code can see in a world, one plain line each, naming the field. They never fail a world;
 // they go to the GM's consistency check. A world written before these fields existed returns nothing.

@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { storyIssues } from '../server/story.ts';
-import { makeScenario } from './fixtures.ts';
+import { makeScenario, whereaboutsFor } from './fixtures.ts';
 
 const players = [1, 2, 3, 4].map((i) => ({ id: `p${i}`, name: `Player${i}` }));
 
@@ -9,6 +9,7 @@ const players = [1, 2, 3, 4].map((i) => ({ id: `p${i}`, name: `Player${i}` }));
 function goodWorld(phases = 3) {
   const s = makeScenario(4, { phases });
   s.npcs[1].importance = 'minor';
+  s.truth.whereabouts = whereaboutsFor(s);
   s.clues.push({ id: 'c4', name: 'Boot print', where: 'l2', shows: 'CLUE-4-SHOWS', does_not_prove: '', importance: 'essential', can_be_destroyed: false, reveal_round: 2 });
   s.key_deductions[0].clue_ids = ['c1', 'c2', 'c4'];
   s.suspects.push({ character_id: 'n1', motive_against_victim: 'MOTIVE-N1', where_at_crime_time: 'Kitchen', alibi_witness: '', pointer_clue_ids: ['c3'], cleared_by_clue_ids: ['c2'] });
