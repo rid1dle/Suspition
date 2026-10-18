@@ -13,7 +13,7 @@ import { Slider } from '@/components/ui/slider';
 import { WorldRoom, useStoryLook } from '@/components/world/room';
 import { useLive } from '@/lib/live';
 import { api, storage } from '@/lib/api';
-import { Score } from '@/lib/music';
+import { Music } from '@/lib/music';
 import { intensityFor, cuesBetween } from '@/lib/music-theory';
 import { Narrator, narrationFor } from '@/lib/narration';
 import { tableSound } from '@/lib/alerts';
@@ -52,7 +52,7 @@ function useMedia(view: TableView | null) {
   const media = useRef<Media | null>(null);
   const last = useRef<TableView | null>(null);
   if (!media.current && typeof window !== 'undefined') {
-    const score = new Score();
+    const score = new Music();
     media.current = { score, narrator: new Narrator({ onStart: () => score.duck(true), onEnd: () => score.duck(false) }), sfx: new Sfx() };
     media.current.score.volume = Number(storage.get('detective-music-volume') ?? 0.6);
     media.current.sfx.enabled = storage.get('detective-sfx') !== 'off';
@@ -62,12 +62,14 @@ function useMedia(view: TableView | null) {
     const m = media.current;
     if (!m || !view) return;
     m.score.setTheme(view.music, view.setup?.tone);
+    m.score.setSoundtrack(view.soundtrack ?? null);
+    m.score.setRound(view.phase?.index ?? 0);
     m.sfx.setSet(view.room?.soundSet);
     m.score.setIntensity(intensityFor(view));
     const cues = cuesBetween(last.current, view) as string[];
     for (const cue of cues) m.score.cue(cue);
     const sound = tableSound(last.current, view);
-    if (sound && !(m.score.playing && ((sound === 'phase' && cues.includes('phase')) || (sound === 'hint' && cues.includes('hint'))))) m.sfx.play(sound);
+    if (sound && !(m.score.playing && ['phase', 'hint', 'vote'].includes(sound) && cues.includes(sound))) m.sfx.play(sound);
     m.narrator.say(narrationFor(last.current, view));
     last.current = view;
   }, [view]);

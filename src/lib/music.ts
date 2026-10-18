@@ -1,5 +1,7 @@
 // @ts-nocheck -- ported from public/music.js; typed when the screens settle
 import { PROGRESSION, degreeToMidi, midiToFreq, triad, sanitizeMusic } from './music-theory.ts';
+import { SoundtrackPlayer } from './soundtrack/player.ts';
+import { instrumentsOf } from './soundtrack/instruments.ts';
 
 const LOOKAHEAD = 0.15;
 const BEATS_PER_CHORD = 8;
@@ -343,5 +345,198 @@ export class Score {
       });
       [0, 4, 7, 9].forEach((d, i) => this.voice('bells', degreeToMidi(warm, d, 5), t + 2.2 + i * 0.25, 2, 0.3));
     }
+  }
+}
+
+const PREVIEW_MS = 10_000;
+const PREVIEW_X = 0.55;
+const STINGER_FOR = { phase: 'round', seat: 'seat', vote: 'vote', final: 'vote', reveal: 'reveal', hint: 'hint' };
+
+const ready = (s) => (s?.status === 'ready' && s.directions?.length ? s : null);
+const gameKey = (s) => s.directions.map((d) => `${d.name}/${d.tempo}/${d.root}/${d.lead}`).join('|');
+const choiceKey = (s) => `${gameKey(s)}#${s.chosen ?? 0}`;
+const chosenOf = (s) => s.directions[s.chosen ?? 0] ?? s.directions[0];
+
+// What the table plays: the GM's composed soundtrack once its samples load, and the simple Score
+// until then, whenever there is no soundtrack, or for the rest of the game if the samples fail.
+// Same members as Score, so the table treats it the same way.
+export class Music {
+  constructor({ makeScore = () => new Score(), makePlayer = () => new SoundtrackPlayer(), sleep = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+    this.score = makeScore();
+    this.makePlayer = makePlayer;
+    this.sleep = sleep;
+    this.player = null;
+    this.soundtrack = null;
+    this.round = 0;
+    this.intensity = 0.1;
+    this.on = false;
+    this.composed = false;
+    this.failedKey = null;
+    this.token = 0;
+    this.previewing = null;
+    this.previewWasOn = false;
+    this.vol = this.score.volume ?? 0.6;
+  }
+
+  get volume() {
+    return this.vol;
+  }
+
+  set volume(v) {
+    this.vol = v;
+    this.score.setVolume(v);
+    this.player?.setVolume(v);
+  }
+
+  get playing() {
+    return Boolean((this.composed && this.player?.playing) || this.score.playing);
+  }
+
+  get source() {
+    const s = ready(this.soundtrack);
+    if (!s || this.failedKey === gameKey(s)) return 'simple';
+    return this.composed ? 'composed' : 'loading';
+  }
+
+  canCompose() {
+    return this.source !== 'simple';
+  }
+
+  ensurePlayer() {
+    if (!this.player) {
+      this.player = this.makePlayer();
+      this.player.setVolume(this.vol);
+    }
+    return this.player;
+  }
+
+  async start() {
+    this.on = true;
+    this.previewing = null;
+    if (!this.composed || !this.player?.playing) await this.score.start();
+    if (this.canCompose()) this.switchTo(chosenOf(this.soundtrack));
+  }
+
+  stop() {
+    this.on = false;
+    this.token += 1;
+    this.previewing = null;
+    this.score.stop();
+    this.player?.stop();
+    this.composed = false;
+  }
+
+  setVolume(v) {
+    this.volume = v;
+  }
+
+  duck(on) {
+    this.score.duck(on);
+    this.player?.duck(on);
+  }
+
+  setTheme(music, tone) {
+    this.score.setTheme(music, tone);
+  }
+
+  setIntensity(x) {
+    this.intensity = x;
+    this.score.setIntensity(x);
+    if (this.previewing == null) this.player?.setIntensity(x);
+  }
+
+  setRound(i) {
+    if (i === this.round) return;
+    this.round = i;
+    if (this.composed && this.previewing == null) this.player.setRound(i);
+  }
+
+  setSoundtrack(s) {
+    const before = ready(this.soundtrack);
+    this.soundtrack = s;
+    const now = ready(s);
+    if (!now) {
+      if (this.composed) this.fallBack();
+      return;
+    }
+    if (before && choiceKey(before) === choiceKey(now)) return;
+    if (!this.on || this.previewing != null || !this.canCompose()) return;
+    this.switchTo(chosenOf(now));
+  }
+
+  switchTo(d) {
+    const t = (this.token += 1);
+    const s = this.soundtrack;
+    this.ensurePlayer().load(instrumentsOf(d)).then(() => {
+      if (t === this.token) this.begin(d, this.round, this.intensity);
+    }, () => {
+      if (t !== this.token) return;
+      this.failedKey = gameKey(s);
+      this.fallBack();
+    });
+  }
+
+  begin(d, round, x) {
+    const p = this.player;
+    if (this.composed && p.playing) {
+      p.setDirection(d);
+      p.setRound(round);
+    } else {
+      p.play(d, round);
+      this.composed = true;
+      this.score.stop();
+    }
+    p.setIntensity(x);
+  }
+
+  fallBack() {
+    if (this.composed) this.player?.stop();
+    this.composed = false;
+    if (this.on && !this.score.playing) this.score.start();
+  }
+
+  async preview(index) {
+    const s = ready(this.soundtrack);
+    const d = s?.directions[index];
+    if (!d || this.failedKey === gameKey(s)) return;
+    if (this.previewing == null) this.previewWasOn = this.on;
+    this.previewing = index;
+    const t = (this.token += 1);
+    try {
+      await this.ensurePlayer().load(instrumentsOf(d));
+    } catch {
+      if (t !== this.token) return;
+      this.previewing = null;
+      this.failedKey = gameKey(s);
+      this.fallBack();
+      return;
+    }
+    if (t !== this.token) return;
+    this.begin(d, 0, PREVIEW_X);
+    await this.sleep(PREVIEW_MS);
+    if (t !== this.token) return;
+    this.previewing = null;
+    if (this.previewWasOn) {
+      this.switchTo(chosenOf(this.soundtrack));
+    } else {
+      this.token += 1;
+      this.player.stop();
+      this.composed = false;
+    }
+  }
+
+  nextPiece() {
+    if (this.composed) this.player.nextPiece();
+  }
+
+  cue(kind) {
+    if (this.composed && this.player?.playing) {
+      const stinger = STINGER_FOR[kind];
+      if (stinger) this.player.stinger(stinger);
+    } else this.score.cue(kind);
+  }
+
+  level() {
+    return this.composed && this.player?.playing ? this.player.level() : this.score.level();
   }
 }
