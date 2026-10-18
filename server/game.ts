@@ -876,13 +876,18 @@ export function novelLines(game, raw, { you = null, unpuppet = (t) => t, unpuppe
 // A line that retells most of a clue still closed for this round gives it away early, whatever the GM listed as found.
 export function leaksLaterClue(game, text) {
   const open = new Set(openClues(game));
-  const said = new Set(wordsOf(text).filter((w) => w.length >= 4).map(stem));
-  return game.scenario.clues.some((c) => {
-    if (open.has(c.id)) return false;
-    const key = [...new Set(wordsOf(c.shows).filter((w) => w.length >= 4 && !STOP.has(w)).map(stem))];
-    return key.length >= 3 && key.filter((w) => said.has(w)).length / key.length >= 0.6;
-  });
+  return game.scenario.clues.some((c) => !open.has(c.id) && retells(text, c.shows));
 }
+
+// True when a text says most of what a clue shows (most of its longer words).
+export function retells(text, shows) {
+  const said = new Set(wordsOf(text).filter((w) => w.length >= 4).map(stem));
+  const key = [...new Set(wordsOf(shows).filter((w) => w.length >= 4 && !STOP.has(w)).map(stem))];
+  return key.length >= 3 && key.filter((w) => said.has(w)).length / key.length >= 0.6;
+}
+
+// A GM character's sheet without the sentences that give away a clue still closed this round.
+const gatedSheet = (game, text) => sentences(text).filter((s) => !leaksLaterClue(game, s)).join(' ');
 
 const linesText = (lines) => lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n');
 
@@ -1850,10 +1855,10 @@ export function peopleAsked(game, text) {
     name: n.name,
     role: n.role_title,
     importance: n.importance ?? 'important',
-    knows: n.knows,
+    knows: gatedSheet(game, n.knows),
     lies: n.lies,
-    reveals_freely: n.reveals_freely,
-    reveals_under_pressure: n.reveals_under_pressure,
+    reveals_freely: gatedSheet(game, n.reveals_freely),
+    reveals_under_pressure: gatedSheet(game, n.reveals_under_pressure),
     says_they_were: n.alibi ?? [],
     has_learned: (game.state.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => k.fact),
   }));

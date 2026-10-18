@@ -1,5 +1,5 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime, resolveStoryIds } from './game.ts';
+import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime, resolveStoryIds, retells } from './game.ts';
 import { difficultyRules, difficultyOf } from '../src/lib/difficulty.ts';
 
 const wordsOf = (text) => String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
@@ -110,6 +110,13 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     });
   });
 
+  // A GM character who freely tells a later round's clue hands it out in round 1.
+  (s.npcs ?? []).forEach((n, i) => {
+    for (const c of s.clues ?? []) {
+      if (roundOf(c.id) > 1 && retells(n.reveals_freely, c.shows)) out.push(`leak: npcs[${i}].reveals_freely gives away clue ${c.id} (round ${roundOf(c.id)}) from the start; move it to reveals_under_pressure or hold it back.`);
+    }
+  });
+
   out.push(...clueWhereErrors(s).map((e) => `where: ${e}`));
   return out;
 }
@@ -127,7 +134,7 @@ export const issueCounts = (issues) => {
 const STORY_PATHS = [
   /^clues\.\d+\.(shows|does_not_prove|where|reveal_round)$/,
   /^players\.\d+\.(private_info|public_info|starting_knowledge)$/,
-  /^npcs\.\d+\.(knows|secrets|lies)$/,
+  /^npcs\.\d+\.(knows|secrets|lies|reveals_freely|reveals_under_pressure)$/,
   /^hint_ladder\.\d+\.text$/,
   /^public_timeline\.\d+\.event$/,
   /^truth\.whereabouts$/,

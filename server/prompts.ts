@@ -548,7 +548,7 @@ verdict: ok when nothing needs fixing, patch when your patches fix everything, r
 patches: path uses dots and list positions from 0 (clues.3.shows). value is always a string. Only these paths are used; any other is ignored:
 - clues.N.shows, clues.N.does_not_prove, clues.N.where (a place or character id), clues.N.reveal_round (a round number)
 - players.N.private_info, players.N.public_info, players.N.starting_knowledge
-- npcs.N.knows, npcs.N.secrets, npcs.N.lies
+- npcs.N.knows, npcs.N.secrets, npcs.N.lies, npcs.N.reveals_freely, npcs.N.reveals_under_pressure
 - hint_ladder.N.text
 - public_timeline.N.event
 - truth.whereabouts, suspects, red_herrings (value is the whole new list, as JSON)
