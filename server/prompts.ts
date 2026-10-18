@@ -4,6 +4,7 @@ import { formForGM, quoteRaw } from './reader.ts';
 import { SKILLS, PENALTIES } from './skills.ts';
 import { ROOM_SCHEMA } from './room.ts';
 import { DEFAULT_STYLE, styleRules } from '../src/lib/art-styles.ts';
+import { difficultyPrompt } from '../src/lib/difficulty.ts';
 
 export const LENGTHS = {
   short: { phases: 3, minutes: 10, questions: 3 },
@@ -323,6 +324,7 @@ ${JSON.stringify(roster, null, 2)}
 ${settingLines(setup)}
 Tone: ${setup.tone}
 Phases: exactly ${length.phases}
+${difficultyPrompt(setup.difficulty, roster.length - culprits.length, length.phases)}
 Global hints to write: at least ${setup.hints + 1}
 GM characters: ${setup.npcs === undefined ? '3 to 6' : `exactly ${setup.npcs}`}${setup.npcRole === 'background' ? '. Background only: every GM character is minor. The story centres on the player characters: give everything that matters (witnessing, knowledge, clues, secrets) to the players, the places and the clues, never to a GM character.' : ''}
 About the group: ${setup.notes || 'Nothing given'}

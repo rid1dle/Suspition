@@ -11,6 +11,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label, Muted } from '@/components/game/label';
 import { PlanSteps } from '@/components/game/plan';
 import { ArtStylePicker } from '@/components/game/art-style-picker';
+import { DIFFICULTY_NOTES } from '@/lib/difficulty';
 import type { TableProps } from './table-app';
 
 // With an empty setting box the game draws an idea; the host sees it and can draw another.
@@ -113,7 +114,7 @@ function JoinCard({ view }: { view: TableProps['view'] }) {
 
 export function Setup(props: TableProps) {
   const { view, host, act } = props;
-  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 2, testGame: false, notes: '' });
+  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 2, testGame: false, notes: '' });
   const [picked, setPicked] = useState(false);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const enough = view.players.length >= 3;
@@ -137,6 +138,9 @@ export function Setup(props: TableProps) {
             <Field label="Mood"><Chips options={TONES} value={form.tone} onPick={(v) => set('tone', v)} /></Field>
             <Field label="How long?"><Chips options={LENGTHS.map(([v, l, d]) => [v, <span key={v}>{l} <span className="opacity-70">{d}</span></span>] as [string, ReactNode])} value={form.length}
               onPick={(v) => { set('length', v); if (!picked) set('questions', form.roundStyle === 'hotseats' ? 2 : v === 'long' ? 4 : 3); }} /></Field>
+            <Field label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
+              <Chips options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
+            </Field>
             <Field label="Round style" note={form.roundStyle === 'hotseats' ? 'Players take turns in the hot seat, point at suspects, and vote who the room looks at.' : 'Each round ends with a group quiz; a wrong answer replays the round.'}>
               <Chips options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle}
                 onPick={(v) => { set('roundStyle', v); if (!picked) set('questions', v === 'hotseats' ? 2 : form.length === 'long' ? 4 : 3); }} />
