@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { WorldRoom } from '@/components/world/room';
+import { WorldRoom, useStoryLook } from '@/components/world/room';
 import { Label, Muted } from '@/components/game/label';
 import { PlanSteps } from '@/components/game/plan';
 import { QuestionCard, ProfilePanel } from '@/components/game/lobby';
@@ -179,11 +179,12 @@ function Seat({ token, onGone }: { token: string; onGone: () => void }) {
     toast(a.text);
   }, [view, shownError]);
 
+  const look = useStoryLook(view);
   if (!view) {
     return <WorldRoom room={null}><main className="flex min-h-dvh items-center justify-center"><Muted>{status === 'connecting' ? 'Connecting…' : ''}</Muted></main></WorldRoom>;
   }
   return (
-    <WorldRoom room={view.room}>
+    <WorldRoom room={view.room} tension={look.tension} beat={look.beat}>
       {status === 'connecting' && <div className="fixed inset-x-0 top-0 z-50 bg-primary/90 py-1 text-center text-xs text-primary-foreground">Reconnecting…</div>}
       {['lobby', 'generating', 'failed'].includes(view.status) && <Waiting view={view} />}
       {view.status === 'reading' && <Reading view={view} />}

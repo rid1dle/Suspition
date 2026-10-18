@@ -99,3 +99,19 @@
 .place.editing { cursor: grab; touch-action: none; user-select: none; }
 .place.dragging { cursor: grabbing; z-index: 3; box-shadow: 0 6px 20px rgb(0 0 0 / 0.5); }
 .room-input { width: 9rem; max-width: 100%; font-size: 0.75rem; padding: 3px 6px; margin-top: 4px; border-radius: 6px; background: var(--card); border: 1px solid var(--border); }
+
+/* The story's tension at the screen edges: a vignette that deepens and a warm tint that grows.
+   Both are clear in the centre, so the reading column never changes. A story turn glows the edges once. */
+.story-edge { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / calc(0.15 + var(--tension, 0) * 0.35)));
+  transition: background 3s ease; }
+.story-edge::before { content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 60%, color-mix(in oklab, #e0603a calc(var(--tension, 0) * 60%), var(--primary)));
+  opacity: calc(var(--tension, 0) * 0.25); transition: opacity 3s ease; }
+.story-edge::after { content: ''; position: absolute; inset: 0; opacity: 0;
+  box-shadow: inset 0 0 140px 24px color-mix(in oklab, var(--primary) 35%, transparent); }
+.world[data-beat='on'] .story-edge::after { animation: beat 2.5s ease-out; animation-iteration-count: 1; }
+@keyframes beat { 0% { opacity: 0; } 24% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .world[data-beat='on'] .story-edge::after { animation: none; opacity: 0.6; }
+}

@@ -10,7 +10,7 @@ import { Music2Icon, Volume2Icon, VolumeXIcon, MicIcon, SparklesIcon, LibraryIco
 import { Toaster } from '@/components/ui/sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { WorldRoom } from '@/components/world/room';
+import { WorldRoom, useStoryLook } from '@/components/world/room';
 import { useLive } from '@/lib/live';
 import { api, storage } from '@/lib/api';
 import { Score } from '@/lib/music';
@@ -152,8 +152,9 @@ export function TableApp() {
   const reduced = Boolean(useReducedMotion());
   const room = view?.room ?? null;
   const rich = richEffects({ room, calm, low, reduced });
+  const look = useStoryLook(view);
   return (
-    <WorldRoom room={room} calm={calm || (rich && PARTICLE_AMBIENTS.has(room!.ambient))}>
+    <WorldRoom room={room} calm={calm || (rich && PARTICLE_AMBIENTS.has(room!.ambient))} tension={calm ? 0 : look.tension} beat={calm ? 0 : look.beat}>
       {rich && <TableEffects room={room!} />}
       <Toaster theme="dark" position="top-center" />
       <div className="min-h-dvh pb-16">
