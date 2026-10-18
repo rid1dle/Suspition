@@ -548,7 +548,7 @@ export const STORY_CHECK_SCHEMA = obj({
 });
 
 // The world is checked against a fixed list before anyone plays it; small holes are patched in the fields below only.
-export function storyCheckPrompt(scenario, issues = []) {
+export function storyCheckPrompt(scenario, issues = [], unpatched = []) {
   return `You check a mystery for holes before anyone plays it. The world below is final unless you find a problem. Check each item and report every problem you find:
 1. Whereabouts: anyone at the crime place at the crime time who would have seen it.
 2. Every clue and every hidden fact has an event in the truth that made it.
@@ -562,7 +562,8 @@ export function storyCheckPrompt(scenario, issues = []) {
 10. Every suspect's motive can be learned in play: from a clue, a card or a GM character's sheet.
 11. Every player's goal can be reached: the thing or person it needs exists and can be found.
 The code already found these problems: ${issues.length ? `\n- ${issues.join('\n- ')}` : 'none'}
-Fix small problems with patches to the allowed fields only. Choose rewrite only when the story cannot be fixed with patches.
+Fix small problems with patches to the allowed fields only. Choose rewrite only when the story cannot be fixed with patches.${unpatched.length ? `
+A first check found these problems and said it could not patch them. The world cannot be written again now: fix each one with patches to the allowed fields, as well as you can, and choose patch.${unpatched.map((p) => `\n- ${String(p?.what ?? '').trim()} Fix: ${String(p?.fix ?? '').trim()}`).join('')}` : ''}
 
 verdict: ok when nothing needs fixing, patch when your patches fix everything, rewrite when they cannot. problems: each problem you found, in a few plain words, and its fix.
 patches: path uses dots and list positions from 0 (clues.3.shows). value is always a string. Only these paths are used; any other is ignored:

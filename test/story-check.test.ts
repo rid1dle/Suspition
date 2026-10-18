@@ -92,27 +92,30 @@ describe('the consistency check', () => {
     assert.equal(u.suspects.length, 3);
   });
 
-  test('should rewrite once when the check asks and an attempt is left, with the problems in the prompt', async () => {
-    const { run, calls } = fakeRun([{ verdict: 'rewrite', problems: [{ what: 'Hole in the timeline', fix: 'Move the cook' }], patches: [] }, ok]);
-    await new GM({ workDir, random: () => 0, run }).generate(lobby());
-    const drafts = calls.filter((c) => c.schema === SCENARIO_SCHEMA);
-    assert.equal(drafts.length, 2);
-    assert.match(drafts[1].prompt, /A previous draft broke these rules[\s\S]*Hole in the timeline/);
-    assert.equal(calls.filter((c) => c.schema === STORY_CHECK_SCHEMA).length, 2);
-  });
-
-  test('should apply the patches when a rewrite is asked and no attempt is left', async () => {
-    const rewrite = { verdict: 'rewrite', problems: [{ what: 'Hole', fix: 'Fix' }], patches: [{ path: 'clues.0.shows', value: 'PATCHED' }] };
-    const { run, calls } = fakeRun([rewrite, rewrite]);
+  test('should repair with a second patch-only check instead of writing the world again', async () => {
+    const { run, calls } = fakeRun([{ verdict: 'rewrite', problems: [{ what: 'Hole in the timeline', fix: 'Move the cook' }], patches: [] }, { verdict: 'patch', problems: [], patches: [{ path: 'clues.0.shows', value: 'REPAIRED' }] }]);
     const world = await new GM({ workDir, random: () => 0, run }).generate(lobby());
-    assert.equal(calls.filter((c) => c.schema === SCENARIO_SCHEMA).length, 2);
-    assert.equal(world.clues[0].shows, 'PATCHED');
+    assert.equal(calls.filter((c) => c.schema === SCENARIO_SCHEMA).length, 1);
+    const checks = calls.filter((c) => c.schema === STORY_CHECK_SCHEMA);
+    assert.equal(checks.length, 2);
+    assert.match(checks[1].prompt, /could not patch[\s\S]*Hole in the timeline[\s\S]*Move the cook/);
+    assert.equal(world.clues[0].shows, 'REPAIRED');
   });
 
-  test('should keep the first world when the rewrite comes back broken', async () => {
-    const { run } = fakeRun([{ verdict: 'rewrite', problems: [{ what: 'Hole', fix: 'Fix' }], patches: [] }], { worlds: [() => makeScenario(3, { phases: 3, hints: 2 }), () => makeScenario(2)] });
+  test('should apply the patches of both checks when both ask for a rewrite', async () => {
+    const rewrite = (v) => ({ verdict: 'rewrite', problems: [{ what: 'Hole', fix: 'Fix' }], patches: [{ path: `clues.${v}.shows`, value: `PATCHED${v}` }] });
+    const { run, calls } = fakeRun([rewrite(0), rewrite(1)]);
+    const world = await new GM({ workDir, random: () => 0, run }).generate(lobby());
+    assert.equal(calls.filter((c) => c.schema === SCENARIO_SCHEMA).length, 1);
+    assert.equal(world.clues[0].shows, 'PATCHED0');
+    assert.equal(world.clues[1].shows, 'PATCHED1');
+  });
+
+  test('should keep the first world when the repair check fails', async () => {
+    const { run } = fakeRun([{ verdict: 'rewrite', problems: [{ what: 'Hole', fix: 'Fix' }], patches: [] }, new Error('GM took longer than 180s.')]);
     const world = await new GM({ workDir, random: () => 0, run }).generate(lobby());
     assert.equal(world.players.length, 3);
+    assert.equal(world.clues[0].shows, 'CLUE-1-SHOWS');
   });
 
   test('should keep the world when the check fails or times out', async () => {

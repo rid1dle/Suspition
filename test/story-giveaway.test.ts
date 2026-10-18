@@ -22,6 +22,15 @@ describe('giveaways by role, in every round', () => {
     assert.equal(pointsAtCulprit(s, players, 'A gardener was seen.'), true);
   });
 
+  test('should not count small words in a role title, like from or with', () => {
+    const s = world();
+    s.players[0].role_title = 'Tea Broker from Calcutta';
+    s.clues[1].shows = 'A cup fell from the loft ladder.';
+    assert.equal(pointsAtCulprit(s, players, 'A fall from the loft ladder'), false);
+    assert.deepEqual(giveaways(s), []);
+    assert.equal(pointsAtCulprit(s, players, 'The broker was seen.'), true);
+  });
+
   test('should not flag a role word two characters share', () => {
     const s = world();
     s.players[0].role_title = 'Guard Captain';

@@ -181,14 +181,11 @@ export class GM {
     this.log(`gm twists: ${twists.map((t) => t.id).join(', ')}`);
     let prompt = generationPrompt(game, twists, culprits);
     let errors = [];
-    let fallback = null;
     const issueRules = { players: game.players, difficulty: game.setup.difficulty, rounds: rules.phases };
     const retryWith = (problems) => `${generationPrompt(game, twists, culprits)}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       onProgress({ kind: 'attempt', attempt, broke: errors.length });
-      let scenario;
-      try {
-        scenario = await this.call(`generate#${attempt}`, {
+      const scenario = await this.call(`generate#${attempt}`, {
         onProgress,
         system: GENERATION_SYSTEM,
         prompt,
@@ -196,20 +193,13 @@ export class GM {
         model: this.setupModel,
         effort: this.setupEffort,
         timeoutMs: 900_000,
-        });
-      } catch (err) {
-        // A rewrite that fails keeps the world that already passed the checks.
-        if (!fallback) throw err;
-        this.log(`gm generate#${attempt} failed (${err.message}); keeping the checked first world`);
-        return this.finishWorld(fallback, onProgress, issueRules);
-      }
+      });
       onProgress({ kind: 'checking' });
       resolveStoryIds(scenario);
       errors = validateScenario(scenario, rules);
       if (errors.length) {
         // The errors can name who is innocent; the terminal only hears how many. The GM gets them in full.
         this.log(`gm generate#${attempt} invalid: ${errors.length} problem${errors.length === 1 ? '' : 's'}`);
-        if (fallback) return this.finishWorld(fallback, onProgress, issueRules);
         prompt = retryWith(errors);
         continue;
       }
@@ -217,13 +207,12 @@ export class GM {
       const issues = storyIssues(scenario, issueRules);
       this.log(`gm story issues: ${issueCounts(issues)}`);
       const check = await this.checkStory(scenario, issues);
-      if (check?.verdict === 'rewrite' && attempt < 2) {
-        this.applyCheck(scenario, check, rules);
-        fallback = scenario;
-        prompt = retryWith(check.problems.map((p) => `${p.what} ${p.fix}`.trim()));
-        continue;
-      }
       if (check) this.applyCheck(scenario, check, rules);
+      // A rewrite would write the whole world again (8 minutes or more): a second check patches what the first could not.
+      if (check?.verdict === 'rewrite') {
+        const repair = await this.checkStory(scenario, storyIssues(scenario, issueRules), check.problems);
+        if (repair) this.applyCheck(scenario, { ...repair, verdict: repair.verdict === 'ok' ? 'ok' : 'patch' }, rules);
+      }
       return this.finishWorld(scenario, onProgress, issueRules);
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
@@ -238,11 +227,11 @@ export class GM {
   }
 
   // One GM read of the whole world against a fixed checklist. A failed, slow or empty check changes nothing.
-  async checkStory(scenario, issues) {
+  async checkStory(scenario, issues, unpatched = []) {
     try {
-      const result = await this.call('story check', {
+      const result = await this.call(unpatched.length ? 'story repair' : 'story check', {
         system: GENERATION_SYSTEM,
-        prompt: storyCheckPrompt(scenario, issues),
+        prompt: storyCheckPrompt(scenario, issues, unpatched),
         schema: STORY_CHECK_SCHEMA,
         model: this.setupModel,
         effort: 'medium',

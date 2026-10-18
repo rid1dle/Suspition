@@ -65,7 +65,7 @@ describe('fixes from the final review and the live check', () => {
     assert.deepEqual(out.skipped, ['clues.1.where: undone, it broke the world']);
   });
 
-  test('should keep the checked first world when the rewrite call fails', async () => {
+  test('should never write the world a second time for a story check', async () => {
     let drafts = 0;
     const run = async (opts) => {
       if (opts.schema === SCENARIO_SCHEMA) {
@@ -78,7 +78,7 @@ describe('fixes from the final review and the live check', () => {
     };
     const world = await new GM({ workDir: tmpdir(), random: () => 0, run }).generate(lobby());
     assert.equal(world.players.length, 3);
-    assert.equal(drafts, 2);
+    assert.equal(drafts, 1);
   });
 
   test('should log a rejected draft by field, never by the value the GM wrote', async () => {

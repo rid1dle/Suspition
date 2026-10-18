@@ -4,7 +4,7 @@ import { difficultyRules, difficultyOf } from '../src/lib/difficulty.ts';
 
 const wordsOf = (text) => String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
 const stem = (w) => w.replace(/(ing|ed|es|s)$/, '');
-const ROLE_SKIP = new Set(['head', 'chief', 'senior', 'junior', 'night', 'day', 'young', 'old', 'assistant', 'main', 'second', 'first', 'lead', 'deputy', 'former']);
+const ROLE_SKIP = new Set(['head', 'chief', 'senior', 'junior', 'night', 'day', 'young', 'old', 'assistant', 'main', 'second', 'first', 'lead', 'deputy', 'former', 'from', 'with', 'into', 'over', 'under', 'near', 'their', 'that', 'this', 'upon', 'after', 'before', 'about', 'house', 'home']);
 
 // True when a text singles out a culprit: by name, or by a role word only a culprit's role has ("the gardener").
 export function pointsAtCulprit(s, players, text, except = null) {
