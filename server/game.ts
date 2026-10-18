@@ -2,6 +2,7 @@
 import { randomBytes } from 'node:crypto';
 import { formForGM, quoteRaw } from './reader.ts';
 import { scoreMoves, playTotal, skillSplit, PLAY_MAX } from './skills.ts';
+import { rulesLines } from '../src/lib/rules.ts';
 import { LENGTHS, PLAN_SECTIONS } from './prompts.ts';
 import { roomTheme, guessRoom } from './room.ts';
 import { GENERATION_STEPS } from './progress.ts';
@@ -1420,6 +1421,7 @@ export function playerView(game, playerId, now = Date.now()) {
     hidden_known: card.hidden_facts.filter((h) => revealed.includes(h.id)).map((h) => h.fact),
     hidden_unknown: card.hidden_facts.filter((h) => !revealed.includes(h.id)).length,
   };
+  view.rules = rulesLines({ rounds: game.scenario.phases.length, questions: st.questionsPerPhase, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0 });
   view.thread = st.threads[playerId].map(({ read, ...m }) => m);
   view.questionsLeft = st.questionsLeft[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;

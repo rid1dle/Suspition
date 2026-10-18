@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import type { CardView } from '@/lib/views';
+import type { CardView, ProfileView } from '@/lib/views';
 import { CaseBox, Facts, Night } from '@/components/game/panels';
 import { Label, Muted } from '@/components/game/label';
+import { ProfilePanel } from '@/components/game/lobby';
 
 const SIDES: Record<string, string> = { investigator: 'Detective', culprit: 'Culprit', wildcard: 'Wildcard' };
 
@@ -19,7 +20,7 @@ function Section({ title, children, tone = 'private' }: { title: string; childre
 }
 
 // Front: who you are and what you want. Back: what you hide and what you do not know yet.
-export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, persona }: { card: CardView; caseQuestion: string; overridesLeft: number; overridesTotal: number; persona?: { intent: string; persona: string } | null }) {
+export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, persona, rules = [], profile = null, onForget }: { card: CardView; caseQuestion: string; overridesLeft: number; overridesTotal: number; persona?: { intent: string; persona: string } | null; rules?: string[]; profile?: ProfileView | null; onForget?: () => void }) {
   const [back, setBack] = useState(false);
   const side = SIDES[card.side] ?? card.side;
   return (
@@ -55,7 +56,6 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
           <p className="text-lg font-medium">{card.goal}</p>
           {card.goal_why && <p className="text-sm">{card.goal_why}</p>}
           <p className="text-sm"><b>You are a {side}.</b> {card.win}</p>
-          <Muted className="text-xs">Points: 1 for the right culprit, up to 2 for how, up to 2 for why, 1 for your own goal. Plus up to 3 play points for good moves.</Muted>
         </Section>
       </div>
 
@@ -78,6 +78,17 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
         {card.hidden_known.map((f, i) => <p key={i}>✦ {f}</p>)}
         <Muted className="text-xs">{card.hidden_unknown ? `${card.hidden_unknown} secret${card.hidden_unknown > 1 ? 's' : ''} about you. Ask the GM about your past to find out.` : 'You found out everything about yourself.'}</Muted>
       </Section>
+      {rules.length > 0 && (
+        <Section title="How to play" tone="public">
+          <ul className="flex list-disc flex-col gap-1.5 pl-5 text-sm">{rules.map((r, i) => <li key={i}>{r}</li>)}</ul>
+        </Section>
+      )}
+      {profile && (
+        <details className="rounded-xl bg-card p-4">
+          <summary className="cursor-pointer">What the game knows about you</summary>
+          <div className="mt-4"><ProfilePanel profile={profile} onForget={onForget} /></div>
+        </details>
+      )}
     </div>
   );
 }

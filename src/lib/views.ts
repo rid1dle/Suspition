@@ -101,6 +101,7 @@ export interface PlayerView extends PublicView {
   submission?: Record<string, unknown> | null;
   question?: { id: string; question: string; choices: string[] } | null;
   profile?: ProfileView;
+  rules?: string[];
 }
 
 export type TableView = PublicView;

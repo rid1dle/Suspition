@@ -50,7 +50,7 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
             {tab === 'story' && <StoryTab view={view} onAskTab={() => go('ask')} onGo={(t) => go(t === 'clues' ? 'clues' : 'story')} />}
-            {tab === 'card' && view.card && <CardFlip card={view.card} caseQuestion={view.caseQuestion} overridesLeft={view.overridesLeft ?? 0} overridesTotal={view.overridesTotal ?? 0} persona={view.persona} />}
+            {tab === 'card' && view.card && <CardFlip card={view.card} caseQuestion={view.caseQuestion} overridesLeft={view.overridesLeft ?? 0} overridesTotal={view.overridesTotal ?? 0} persona={view.persona} rules={view.rules} profile={view.profile} onForget={() => act('forget', { token: tokenOf() })} />}
             {tab === 'ask' && <AskTab view={view} />}
             {tab === 'people' && <PeopleTab view={view} />}
             {tab === 'clues' && <CluesTab view={view} />}

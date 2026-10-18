@@ -1,4 +1,5 @@
 import { SKILL_LABELS, PENALTY_SKILLS } from '../src/lib/skill-labels.ts';
+import { PLAY_MAX } from '../src/lib/rules.ts';
 import type { Move, Play, Rating, Read } from './types.ts';
 
 // Play points: what a move does in the story, never what it claims. Each move keeps the rubric it
@@ -9,11 +10,11 @@ export const PENALTIES = PENALTY_SKILLS;
 export { SKILL_LABELS };
 export const RUBRIC_VERSION = 1;
 export const PLAY_MIN = -2;
-export const PLAY_MAX = 3;
+export { PLAY_MAX };
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const current = (moves: Move[] | undefined | null) => (moves ?? []).filter((m) => m.rubric === RUBRIC_VERSION);
-type ReadFlags = Partial<Pick<Read, 'claims' | 'out_of_world' | 'sways_gm'>> | null | undefined;
+type ReadFlags = Partial<Pick<Read, 'claims' | 'out_of_world' | 'sways_gm' | 'kind'>> | null | undefined;
 interface ScoreOpts { from?: string }
 
 export function scoreMove(play: Play | null | undefined, read: ReadFlags, { from = 'private' }: ScoreOpts = {}): Move {
@@ -22,7 +23,9 @@ export function scoreMove(play: Play | null | undefined, read: ReadFlags, { from
   const base = { why, rubric: RUBRIC_VERSION, from };
   if (read?.sways_gm) return { ...base, points: -1, skill: 'swaying' };
   let points = clamp(Math.round(Number(play?.points) || 0), outLoud ? 0 : -1, outLoud ? 1 : 2);
-  if (read?.claims?.length || read?.out_of_world) {
+  // Asking about your own character is part of the game, even if the reader also marked it out of the game.
+  const outOfWorld = read?.out_of_world && read?.kind !== 'self';
+  if (read?.claims?.length || outOfWorld) {
     points = Math.max(-1, points - 1);
     if (points < 0) return { ...base, points, skill: 'breaking', why: why || 'Claims about others or the game do not count. Play your own character.' };
     base.why = `${why} A claim about others cost one point.`.trim();

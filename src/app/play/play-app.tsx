@@ -257,7 +257,7 @@ function Reading({ view }: { view: PlayerView }) {
         </>
       ) : (
         <>
-          {view.card && <CardFlip card={view.card} caseQuestion={view.caseQuestion} overridesLeft={view.overridesLeft ?? 0} overridesTotal={view.overridesTotal ?? 0} />}
+          {view.card && <CardFlip card={view.card} caseQuestion={view.caseQuestion} overridesLeft={view.overridesLeft ?? 0} overridesTotal={view.overridesTotal ?? 0} rules={view.rules} profile={view.profile} onForget={() => act('forget', { token: tokenOf() })} />}
           <Button size="lg" disabled={done} onClick={() => act('ready', { token: tokenOf() })}>{done ? 'Ready' : 'Done reading'}</Button>
           <Muted>{view.ready.length} of {view.players.length} ready. Keep your card secret.</Muted>
         </>

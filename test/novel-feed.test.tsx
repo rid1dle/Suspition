@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { PeopleList } from '../src/components/game/people';
 import { Feed } from '../src/components/game/feed';
-import { News } from '../src/components/game/panels';
+import { News, Alibis } from '../src/components/game/panels';
 import * as G from '../server/game.ts';
 import { PUBLIC_ANSWER_SCHEMA, publicSystem } from '../server/prompts.ts';
 import { gameInReading } from './fixtures.ts';
@@ -65,5 +65,16 @@ describe('easy to scan', () => {
       assert.match(html, /data-line="act"[^>]*>The cook wipes her hands/);
       assert.match(html, /data-speaker[^>]*>Lata<\/span>/);
     }
+  });
+
+  test('should show alibis on a phone as one block per time, each claim on its own row', () => {
+    const alibis = { times: [{ time: '9:05 pm', what: 'Madan argues behind the sweet stall.' }, { time: '9:15 pm', what: 'The group photo.' }],
+      rows: [{ name: 'Himanshu Lath', kind: 'player', minor: false, cells: ['Walking the stall row', 'In the group photo'] }, { name: 'Raju Pawar', kind: 'player', minor: false, cells: ['Near the sweet stall', ''] }] };
+    const html = renderToStaticMarkup(<Alibis alibis={alibis as never} me="Raju Pawar" />);
+    const blocks = html.match(/<section[^>]*data-time[^>]*>[\s\S]*?<\/section>/g) ?? [];
+    assert.equal(blocks.length, 2);
+    assert.match(blocks[0], /9:05 pm[\s\S]*Madan argues[\s\S]*Himanshu Lath[\s\S]*Walking the stall row[\s\S]*Raju Pawar[\s\S]*Near the sweet stall/);
+    assert.match(blocks[1], /data-me="true"[^>]*>[\s\S]*Raju Pawar[\s\S]*\?/);
+    assert.match(html, /whitespace-nowrap[^>]*>9:05 pm/);
   });
 });

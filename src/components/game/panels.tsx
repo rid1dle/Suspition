@@ -89,17 +89,39 @@ interface AlibiTable { times: { time: string; what: string }[]; rows: { name: st
 
 export function Alibis({ alibis, me = null }: { alibis: AlibiTable | null | undefined; me?: string | null }) {
   if (!alibis?.rows?.length) return <Muted>Nobody has said where they were yet.</Muted>;
+  const isMe = (name: string) => Boolean(me && name === me);
   return (
-    <div className="flex flex-col gap-2">
-      <div className="overflow-x-auto">
+    <div className="@container flex flex-col gap-2">
+      {/* Narrow (a phone): one block per time, each person's claim on its own row. */}
+      <div className="flex flex-col gap-4 @2xl:hidden">
+        {alibis.times.map((t, j) => (
+          <section key={j} data-time={t.time} className="flex flex-col gap-1.5 border-l border-border pl-3">
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-mono text-sm whitespace-nowrap text-primary tabular-nums">{t.time}</span>
+              {t.what && <span className="text-sm text-muted-foreground">{t.what}</span>}
+            </div>
+            <ul className="flex flex-col">
+              {alibis.rows.map((r, i) => (
+                <li key={i} data-kind={r.kind} data-me={isMe(r.name) ? 'true' : undefined}
+                  className={`grid grid-cols-[minmax(6rem,38%)_1fr] gap-3 rounded-md px-2 py-1 ${isMe(r.name) ? 'bg-primary/10' : ''} ${r.minor ? 'text-muted-foreground' : ''}`}>
+                  <span className="font-medium">{r.name}</span>
+                  <span>{r.cells[j] || <span className="text-muted-foreground">?</span>}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+      {/* Wide (the table screen): the full grid. */}
+      <div className="hidden overflow-x-auto @2xl:block">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr><th />{alibis.times.map((t, i) => <th key={i} className="px-2 pb-2 text-left align-bottom font-normal"><span className="block font-mono text-primary">{t.time}</span><span className="text-xs text-muted-foreground">{t.what}</span></th>)}</tr>
+            <tr><th />{alibis.times.map((t, i) => <th key={i} className="min-w-32 px-2 pb-2 text-left align-bottom font-normal"><span className="block font-mono whitespace-nowrap text-primary">{t.time}</span><span className="line-clamp-3 text-xs text-muted-foreground">{t.what}</span></th>)}</tr>
           </thead>
           <tbody>
             {alibis.rows.map((r, i) => (
               <tr key={i} data-kind={r.kind} data-me={me && r.name === me ? 'true' : undefined} className={`border-t border-border ${r.minor ? 'text-muted-foreground' : ''} ${me && r.name === me ? 'bg-primary/10' : ''}`}>
-                <th className="py-1.5 pr-2 text-left font-medium">{r.name}</th>
+                <th className="py-1.5 pr-2 text-left font-medium whitespace-nowrap">{r.name}</th>
                 {r.cells.map((c, j) => <td key={j} className="px-2 py-1.5">{c || <span className="text-muted-foreground">?</span>}</td>)}
               </tr>
             ))}
