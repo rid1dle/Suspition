@@ -125,6 +125,16 @@ Engaging is the strongest area, but all 5 worlds reuse the same surprise ("the v
 - **Tell the player.** The answer shows it in the story (the drawer is empty, the guard remembers the lock) and the player gets one plain line under it saying why the story cannot go that way ("That can't happen: everyone already heard the door was locked at 11:10."). Never silent, never a rules lecture, never a secret.
 - **Code backs it.** The answer has a `refused` field. A refused move finds no clue, moves nobody and sends no ripple, and it is logged for the playtest report.
 
+## Rounds grow with the story (added by the creator, 2026-10-18)
+
+"When the world changes as players say things and do actions, the number of rounds cannot be constant, or it would cause contradictions. But not over a limit, or the game would become endless."
+
+- **The continuity check may add a round** when what players did opened something the rounds left cannot close (a new suspect thread, a destroyed clue that needs a new way in, a big turn). At most one per check, with a reason.
+- **The limit:** at most 2 rounds more than the game started with, counting replays of a round voted wrong. Never more. Within the limit, adding is the GM's call; past it, the case must close in the rounds left.
+- **Where it goes:** before the last round, so the last round stays the closing one; never into the round being played. Clues and timeline entries for later rounds move back by one round with it.
+- **Everyone sees it:** the table says "The story needs one more round. There are now 5 rounds." The rules on the phones count the new total.
+- **Rounds only grow.** A round is never taken away: its clues and red herrings would be stranded. The host can always move on early with Next round.
+
 ## Polish carried over from the living story review
 
 These are fixed in the story quality plan's Task 8 (polish):
@@ -147,6 +157,7 @@ Branch `feat/first-playable`. Pushed up to 08a3f00; everything after (briefing p
    - Task 7: continuity during play.
    - Task 7b: player agency first (the source rule, the private offer, the action and gesture filter).
    - Task 7c: moves that would break the story are refused and the player is told why.
+   - Task 7d: rounds grow with the story, at most 2 more than chosen.
    - Task 8: polish.
    - Task 9: live check against the audit.
    - Built here tests first, with one review at the end.

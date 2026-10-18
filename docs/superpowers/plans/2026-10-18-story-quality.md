@@ -293,6 +293,24 @@ Players drive the story. Build on a move whenever it fits the truth, the canon, 
   - `should log refused moves for the playtest report` (`st.refused` keeps round, player and why)
 - [ ] **Step 2 to 5:** RED, implement, GREEN, run the suite, commit `feat: moves that would break the story are refused, and the player is told why`.
 
+### Task 7d: Rounds grow with the story
+
+**Files:**
+- Modify: `server/prompts.ts` (`CONTINUITY_SCHEMA.extra_rounds`, a rule in `CONTINUITY_RULES`), `server/game.ts` (`EXTRA_ROUNDS = 2`, `roundCap(game)`, `addRound(game, round, now)`, `willReplay` respects the cap), `server/continuity.ts` (applies at most one extra round per check)
+- Test: `test/extra-rounds.test.ts`
+
+**Interfaces:**
+- `roundCap(game)`: the rounds the game started with (`st.basePhases`) plus `EXTRA_ROUNDS`.
+- `addRound(game, round, now): boolean`: false when `totalRounds(game) >= roundCap(game)`. Inserts at `max(phaseIndex + 1, phases.length - 1)`; clue and timeline `reveal_round` at or after the new round move up by one; announces "The story needs one more round. There are now N rounds."
+
+- [ ] **Step 1: Write the failing tests:**
+  - `should add a round before the last one and move later clues back`
+  - `should never go past 2 extra rounds, counting replays`
+  - `should never put the new round into the round being played`
+  - `should take at most one extra round per check, and say so to everyone`
+  - `should stop a replay once the cap is reached`
+- [ ] **Step 2 to 5:** RED, implement, GREEN, run the suite, commit `feat: rounds grow with the story, at most 2 more than chosen`.
+
 ### Task 8: Polish from the living story review
 
 **Files:** `server/game.ts`, `src/db/library.ts`, `src/lib/settings-deck.ts`, `server/app.ts`, `src/components/world/room.tsx`, `src/components/world/table-effects.tsx`, `src/app/world.css`
