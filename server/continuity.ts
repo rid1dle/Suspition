@@ -1,6 +1,6 @@
 // @ts-nocheck -- legacy JS, typed file by file later
 import { roundNumber, totalRounds, roundCap, addRound, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts } from './game.ts';
-import { applyPatches } from './story.ts';
+import { applyPatches, guardedPatches } from './story.ts';
 import { CONTINUITY_RULES, FAIR_PLAY, PLAIN_STYLE } from './prompts.ts';
 
 export const CANON_MAX = 60;
@@ -20,7 +20,8 @@ const foundClues = (game) => new Set([...Object.values(game.state.found ?? {}).f
 function futurePath(game, path) {
   const st = game.state;
   let m = /^phases\.(\d+)\.(planned_beat|question|options|answer_index|reward|wrong_nudge)$/.exec(path);
-  if (m) return Number(m[1]) > st.phaseIndex;
+  // During a round change the next round's opening is already being written, so it is not "future" any more.
+  if (m) return Number(m[1]) > st.phaseIndex + (st.transitioning ? 1 : 0);
   m = /^clues\.(\d+)\.(where|reveal_round|shows)$/.exec(path);
   if (m) {
     const clue = game.scenario.clues[Number(m[1])];
@@ -53,26 +54,26 @@ const structural = (game) => {
 };
 
 function patchPlan(game, patches, now) {
-  const before = structural(game);
-  const copy = structuredClone(game.scenario);
-  const backupsBefore = { ...(game.state.continuity.backups ?? {}) };
-  const backups = (patches ?? []).filter((p) => String(p?.path ?? '').trim() === 'clues.+');
-  const rest = (patches ?? []).filter((p) => !backups.includes(p));
-  const out = applyPatches(game.scenario, rest, (path) => futurePath(game, path));
-  for (const p of backups) {
+  const c = game.state.continuity;
+  // The world and the backup record are undone together.
+  const target = {
+    scenario: () => game.scenario,
+    snapshot: () => structuredClone({ scenario: game.scenario, backups: c.backups ?? {} }),
+    restore: (copy) => {
+      game.scenario = copy.scenario;
+      c.backups = copy.backups;
+    },
+  };
+  const apply = (p) => {
+    if (String(p?.path ?? '').trim() !== 'clues.+') return applyPatches(game.scenario, [p], (path) => futurePath(game, path));
     try {
       addBackupClue(game, p.value, now);
-      out.applied += 1;
+      return { applied: 1, skipped: [] };
     } catch (err) {
-      out.skipped.push(`clues.+: ${err.message}`);
+      return { applied: 0, skipped: [`clues.+: ${err.message}`] };
     }
-  }
-  if (out.applied && structural(game) > before) {
-    game.scenario = copy;
-    game.state.continuity.backups = backupsBefore;
-    return { applied: 0, skipped: (patches ?? []).map((p) => `${p?.path}: undone, it broke the world`) };
-  }
-  return out;
+  };
+  return guardedPatches(target, patches, apply, () => structural(game));
 }
 
 function addCanon(game, items, now) {
@@ -130,7 +131,7 @@ export function continuityPrompt(game) {
   const plan = {
     round_now: roundNumber(game),
     rounds_in_all: totalRounds(game),
-    rounds_you_may_add: Math.max(0, roundCap(game) - totalRounds(game)),
+    rounds_you_may_add: game.status === 'playing' ? Math.max(0, roundCap(game) - totalRounds(game)) : 0,
     rounds_to_come: sc.phases.map((ph, index) => ({ index, ...ph })).filter((ph) => ph.index > st.phaseIndex),
     clues_not_found: sc.clues.map((c, index) => ({ index, ...c })).filter((c) => !found.has(c.id) && !st.destroyed.includes(c.id)),
     clues_destroyed: st.destroyed,
@@ -162,7 +163,7 @@ SAID AND DONE SINCE THE LAST CHECK:
 ${JSON.stringify(said)}
 
 PLAYER FACTS (each player's own card and what they did or said; the only sources for what their character did):
-${JSON.stringify(Object.fromEntries(game.players.map((p) => [p.id, playerFacts(game, p.id)])))}
+${JSON.stringify(Object.fromEntries(game.players.map((p) => [p.id, playerFacts(game, p.id, { forGM: true })])))}
 
 QUESTIONS WAITING FOR A PLAYER (nobody may mention these yet):
 ${JSON.stringify((st.offers ?? []).filter((o) => o.status === 'open').map((o) => ({ player_id: o.player_id, text: o.text })))}`;

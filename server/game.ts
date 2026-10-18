@@ -148,11 +148,12 @@ export function applyAudit(scenario, audit) {
     const hook = String(entry.hook ?? '').trim().slice(0, 200);
     if (hook && !p.hook) p.hook = hook;
     const distrusts = String(entry.distrusts ?? '').trim();
+    const others = { ...scenario, truth: { ...scenario.truth, culprit_ids: (scenario.truth?.culprit_ids ?? []).filter((id) => id !== p.id) } };
     if (!p.distrusts && distrusts !== p.id && scenario.players.some((x) => x.id === distrusts)) {
       p.distrusts = distrusts;
-      p.distrust_why = String(entry.distrust_why ?? '').trim().slice(0, 200);
+      const why = String(entry.distrust_why ?? '').trim().slice(0, 200);
+      p.distrust_why = namesCulprit(others, [], why) ? '' : why;
     }
-    const others = { ...scenario, truth: { ...scenario.truth, culprit_ids: (scenario.truth?.culprit_ids ?? []).filter((id) => id !== p.id) } };
     const reveals = (entry.reveals ?? []).map((t) => String(t ?? '').trim().slice(0, 200)).filter((t) => t && !namesCulprit(others, [], t)).slice(0, 3);
     if (reveals.length && !p.reveals?.length) p.reveals = reveals;
     for (const key of ['wants', 'fears', 'goal_why']) {
@@ -721,16 +722,28 @@ export function saidOutLoud(game, playerId) {
 const ACT_VERBS = new Set(['went', 'goes', 'go', 'walked', 'walks', 'ran', 'runs', 'rushed', 'rushes', 'entered', 'enters', 'left', 'leaves', 'took', 'takes', 'hid', 'hides', 'grabbed', 'grabs', 'opened', 'opens', 'locked', 'locks', 'unlocked', 'followed', 'follows', 'slipped', 'slips', 'sneaked', 'sneaks', 'snuck', 'picked', 'picks', 'came', 'comes', 'returned', 'returns', 'climbed', 'climbs', 'carried', 'carries', 'dropped', 'drops', 'stole', 'steals', 'burned', 'burns', 'broke', 'breaks', 'pushed', 'pushes', 'jumped', 'jumps', 'moved', 'moves', 'stood', 'stands', 'sat', 'sits', 'waited', 'waits', 'stayed', 'stays', 'touched', 'touches', 'searched', 'searches', 'hurried', 'hurries']);
 const GESTURES = new Set(['flinches', 'flinched', 'flinch', 'smiles', 'smiled', 'frowns', 'frowned', 'shrugs', 'shrugged', 'nods', 'nodded', 'blushes', 'blushed', 'sighs', 'sighed', 'pales', 'paled', 'trembles', 'trembled', 'freezes', 'froze', 'stiffens', 'stiffened', 'glares', 'glared', 'winces', 'winced', 'gasps', 'gasped', 'laughs', 'laughed', 'cries', 'cried', 'stares', 'stared', 'looks', 'looked', 'turns', 'turned', 'shakes', 'shook', 'grins', 'grinned', 'swallows', 'swallowed']);
 const SAW = new Set(['saw', 'seen', 'watched', 'spotted', 'noticed']);
+const CLAUSE = new Set(['and', 'then', 'but', 'while', 'when', 'as', 'so', 'until', 'because', 'before', 'after', 'once', 'now']);
 const PLACE_PREPS = new Set(['in', 'at', 'by', 'near', 'inside', 'outside', 'behind', 'on', 'under', 'beside']);
 const STOP = new Set(['the', 'and', 'that', 'this', 'there', 'then', 'with', 'from', 'into', 'onto', 'for', 'was', 'were', 'his', 'her', 'their', 'them', 'they', 'him', 'she', 'just', 'back', 'again', 'out', 'down', 'toward', 'towards', 'over', 'after', 'before', 'around', 'about', 'very', 'still', 'too', 'also', 'what', 'when', 'who', 'saw', 'you', 'your', 'had', 'has', 'have', 'not', 'all', 'one', 'some', ...PLACE_PREPS]);
 const stem = (w) => w.replace(/(ing|ed|es|s)$/, '');
 
 // What a player's own card says and what they did or said in play: the only sources for their character's actions.
-export function playerFacts(game, pid) {
+// forGM: the same facts, but player-written words only as the reader's form or quoted as data.
+export function playerFacts(game, pid, { forGM = false } = {}) {
   const c = game.scenario.players.find((p) => p.id === pid);
   if (!c) return [];
   const st = game.state ?? {};
   const revealed = st.revealed?.[pid] ?? [];
+  if (forGM) {
+    return [
+      c.role_title, c.public_info, c.private_info, c.starting_knowledge, c.goal,
+      ...(c.night ?? []).map((n) => `${n.time} ${n.where} ${n.doing}`),
+      ...(c.hidden_facts ?? []).filter((h) => revealed.includes(h.id)).map((h) => h.fact),
+      ...(st.threads?.[pid] ?? []).filter((m) => m.from === 'you').map((m) => playerWords(m.read, m.text, 'move')),
+      ...(st.moments ?? []).filter((m) => m.player_id === pid && ['said', 'own'].includes(m.status)).map((m) => (m.status === 'said' ? m.line : playerWords(m.readInstead, m.saidInstead, 'said'))),
+      ...(st.events ?? []).filter((e) => e.kind === 'qa' && e.by === game.players.find((p) => p.id === pid)?.name).map((e) => playerWords(e.read, e.q, 'public')),
+    ].map((t) => String(t ?? '').trim()).filter(Boolean);
+  }
   return [
     c.role_title, c.public_info, c.private_info, c.starting_knowledge, c.goal,
     ...(c.night ?? []).map((n) => `${n.time} ${n.where} ${n.doing}`),
@@ -743,10 +756,10 @@ export function playerFacts(game, pid) {
 }
 
 // A sentence about a player character's action is backed when its place, or most of its words, are in that player's facts.
-export function backed(game, pid, sentence) {
+export function backed(game, pid, sentence, extra = []) {
   const sc = game.scenario;
   const names = new Set([...sc.players.flatMap((c) => [...nameWords(c.character_name), ...nameWords(game.players.find((p) => p.id === c.id)?.name)]), ...sc.npcs.flatMap((n) => nameWords(n.name))]);
-  const known = new Set(wordsOf(playerFacts(game, pid).join(' ')).map(stem));
+  const known = new Set(wordsOf([...playerFacts(game, pid), ...extra].join(' ')).map(stem));
   const places = new Set((sc.locations ?? []).flatMap((l) => wordsOf(l.name)).map(stem));
   const content = wordsOf(sentence).filter((w) => w.length >= 3 && !STOP.has(w) && !names.has(w) && !ACT_VERBS.has(w) && !GESTURES.has(w) && !SAW.has(w)).map(stem);
   if (!content.length) return false;
@@ -758,7 +771,7 @@ export function backed(game, pid, sentence) {
 // Only words that name exactly one person count, so a shared title ("Lady", "Captain") never matches.
 // Anywhere in any GM text, reporting what a player said or heard ("Rishabh says...", "Himanshu, who heard...") was invented,
 // unless it quotes words that player really said out loud. A null actor (recaps, round events) skips the first rule.
-export function dropPuppeting(game, actorId, text, { to = null, others = false, reportOnly = false } = {}) {
+export function dropPuppeting(game, actorId, text, { to = null, others = false, reportOnly = false, backing = {} } = {}) {
   const sc = game.scenario;
   const people = [
     ...(sc?.players ?? []).map((c) => ({ id: c.id, player: true, full: wordsOf(c.character_name), names: new Set([...nameWords(c.character_name), ...nameWords(game.players.find((p) => p.id === c.id)?.name)].filter((w) => !TITLES.has(w))) })),
@@ -785,21 +798,34 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
     });
   };
   // A player character moving, acting or reacting ("Nikhil went", "Ben flinches", "I saw Asha by the shed") came from them, or it was invented.
+  // Only a name that starts a clause is the one doing it ("Rose went", "and Rose went"), never "a letter for Rose came".
   const acts = (sentence) => {
     if (sentence.trim().endsWith('?')) return false;
-    const words = wordsOf(sentence);
+    const tokens = sentence.toLowerCase().match(/[a-z0-9]+|[,;:]/g) ?? [];
+    const words = [];
+    const clauseStart = [];
+    for (const t of tokens) {
+      if (/^[,;:]$/.test(t)) {
+        clauseStart[words.length] = true;
+        continue;
+      }
+      words.push(t);
+    }
+    clauseStart[0] = true;
     return people.filter((p) => p.player && (others || p.id !== actorId) && !vocative(p, sentence)).some((p) => {
       const at = words.flatMap((w, i) => {
         const full = p.full.length && p.full.every((f, k) => words[i + k] === f);
         return full || (p.names.has(w) && owners[w] === 1) ? [[i, i + (full ? p.full.length - 1 : 0)]] : [];
       });
       const claims = at.some(([start, end]) => {
-        const next = words.slice(end + 1, end + 4);
-        return next.some((w) => ACT_VERBS.has(w) || GESTURES.has(w))
-          || (['was', 'were'].includes(next[0]) && PLACE_PREPS.has(next[1]))
-          || words.slice(Math.max(0, start - 2), start).some((w) => SAW.has(w));
+        if (words.slice(Math.max(0, start - 2), start).some((w) => SAW.has(w))) return true;
+        if (!(clauseStart[start] || CLAUSE.has(words[start - 1]))) return false;
+        let next = words.slice(end + 1, end + 4);
+        if (next[0] === 's') return false;
+        if (/ly$/.test(next[0] ?? '')) next = next.slice(1);
+        return ACT_VERBS.has(next[0]) || GESTURES.has(next[0]) || (['was', 'were'].includes(next[0]) && PLACE_PREPS.has(next[1]));
       });
-      return claims && !backed(game, p.id, sentence);
+      return claims && !backed(game, p.id, sentence, backing[p.id] ?? []);
     });
   };
   const kept = sentences.filter((sentence) => {
@@ -838,6 +864,17 @@ export function novelLines(game, raw, { you = null, unpuppet = (t) => t, unpuppe
     });
 }
 
+// A line that retells most of a clue still closed for this round gives it away early, whatever the GM listed as found.
+export function leaksLaterClue(game, text) {
+  const open = new Set(openClues(game));
+  const said = new Set(wordsOf(text).filter((w) => w.length >= 4).map(stem));
+  return game.scenario.clues.some((c) => {
+    if (open.has(c.id)) return false;
+    const key = [...new Set(wordsOf(c.shows).filter((w) => w.length >= 4 && !STOP.has(w)).map(stem))];
+    return key.length >= 3 && key.filter((w) => said.has(w)).length / key.length >= 0.6;
+  });
+}
+
 const linesText = (lines) => lines.map((l) => (l.speaker ? `${l.speaker}: "${l.text}"` : l.text)).join('\n');
 
 export function completeAsk(game, playerId, result, now = Date.now()) {
@@ -855,6 +892,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   };
   const short = game.setup?.roundStyle === 'hotseats';
   const lines = novelLines(game, result.lines, { you: playerId, unpuppet, unpuppetSpeech: (t) => unpuppet(t, null, { reportOnly: true }) })
+    .filter((l) => !leaksLaterClue(game, l.text))
     .slice(0, short ? 2 : undefined)
     .map((l) => (short ? { ...l, text: capWords(l.text, 30) } : l));
   const text = lines.length ? linesText(lines) : String(result.answer ?? '').trim();
@@ -931,7 +969,7 @@ export function addRound(game, round, now = Date.now()) {
   const st = game.state;
   const sc = game.scenario;
   const name = String(round?.name ?? '').trim().slice(0, 60);
-  if (!name || totalRounds(game) >= roundCap(game)) return false;
+  if (game.status !== 'playing' || !name || totalRounds(game) >= roundCap(game)) return false;
   const text = (k) => String(round?.[k] ?? '').trim();
   const options = Array.isArray(round?.options) ? round.options.map((o) => String(o ?? '').trim()).filter(Boolean).slice(0, 4) : [];
   const ph = { name, objective: text('objective'), try: [], planned_beat: text('planned_beat') };
@@ -1724,7 +1762,8 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   const why = refusedWhy({ refused });
   if (!why) addFacts(game, read?.facts, 'asked out loud', now);
   const name = game.players.find((p) => p.id === playerId)?.name;
-  const clean = (t) => dropPuppeting(game, playerId, t, { others: true }).text;
+  // The asker's own question backs what their character does in the answer.
+  const clean = (t) => (leaksLaterClue(game, t) ? '' : dropPuppeting(game, playerId, t, { others: true, backing: { [playerId]: [q] } }).text);
   const lines = Array.isArray(answer) ? novelLines(game, answer, { unpuppet: clean, unpuppetSpeech: clean }) : null;
   const text = (lines ? linesText(lines) : clean(String(answer ?? '').trim())) || 'Nobody knows that yet.';
   st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text, ...(lines?.length ? { lines } : {}), ...(words ? { read: words } : {}) });

@@ -185,7 +185,9 @@ export class GM {
     const retryWith = (problems) => `${generationPrompt(game, twists, culprits)}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       onProgress({ kind: 'attempt', attempt, broke: errors.length });
-      const scenario = await this.call(`generate#${attempt}`, {
+      let scenario;
+      try {
+        scenario = await this.call(`generate#${attempt}`, {
         onProgress,
         system: GENERATION_SYSTEM,
         prompt,
@@ -193,12 +195,19 @@ export class GM {
         model: this.setupModel,
         effort: this.setupEffort,
         timeoutMs: 900_000,
-      });
+        });
+      } catch (err) {
+        // A rewrite that fails keeps the world that already passed the checks.
+        if (!fallback) throw err;
+        this.log(`gm generate#${attempt} failed (${err.message}); keeping the checked first world`);
+        return this.finishWorld(fallback, onProgress);
+      }
       onProgress({ kind: 'checking' });
       resolveStoryIds(scenario);
       errors = validateScenario(scenario, rules);
       if (errors.length) {
-        this.log(`gm generate#${attempt} invalid: ${errors.join(' | ')}`);
+        // The errors can name who is innocent; the terminal only hears how many. The GM gets them in full.
+        this.log(`gm generate#${attempt} invalid: ${errors.length} problem${errors.length === 1 ? '' : 's'}`);
         if (fallback) return this.finishWorld(fallback, onProgress);
         prompt = retryWith(errors);
         continue;

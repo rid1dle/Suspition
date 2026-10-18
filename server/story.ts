@@ -1,5 +1,5 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime } from './game.ts';
+import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime, resolveStoryIds } from './game.ts';
 import { difficultyRules, difficultyOf } from '../src/lib/difficulty.ts';
 
 const ASLEEP = /\b(asleep|sleeping|slept|unconscious|knocked out|passed out|out of sight|hidden|hiding|behind a|blindfold)/i;
@@ -155,15 +155,40 @@ export function applyPatches(target, patches, allowed) {
 
 const structuralCount = (s, rules) => validateScenario(s, rules).length + clueWhereErrors(s).length;
 
-// The consistency check's patches, to the allowed fields only. If they leave the world more broken than before, all are undone.
-export function applyStoryPatches(scenario, patches, rules) {
-  const before = structuralCount(scenario, rules);
-  const copy = structuredClone(scenario);
-  const out = applyPatches(scenario, patches, (path) => STORY_PATHS.some((re) => re.test(path)));
-  if (out.applied && structuralCount(scenario, rules) > before) {
-    for (const k of Object.keys(scenario)) delete scenario[k];
-    Object.assign(scenario, copy);
-    return { applied: 0, skipped: (patches ?? []).map((p) => `${p?.path}: undone, it broke the world`) };
+// Applies patches one at a time with names turned into ids; a patch that leaves the world more broken is undone alone.
+// target: { scenario() the world to fix ids in, snapshot() a copy of everything a patch may touch, restore(copy) }.
+export function guardedPatches(target, patches, apply, count) {
+  const out = { applied: 0, skipped: [] };
+  let base = count();
+  for (const patch of Array.isArray(patches) ? patches : []) {
+    const copy = target.snapshot();
+    const one = apply(patch);
+    out.skipped.push(...one.skipped);
+    if (!one.applied) continue;
+    resolveStoryIds(target.scenario());
+    const now = count();
+    if (now > base) {
+      target.restore(copy);
+      out.skipped.push(`${patch?.path}: undone, it broke the world`);
+      continue;
+    }
+    base = now;
+    out.applied += one.applied;
   }
   return out;
+}
+
+const inPlace = (scenario) => ({
+  scenario: () => scenario,
+  snapshot: () => structuredClone(scenario),
+  restore: (copy) => {
+    for (const k of Object.keys(scenario)) delete scenario[k];
+    Object.assign(scenario, copy);
+  },
+});
+
+// The consistency check's patches, to the allowed fields only.
+export function applyStoryPatches(scenario, patches, rules) {
+  const allowed = (path) => STORY_PATHS.some((re) => re.test(path));
+  return guardedPatches(inPlace(scenario), patches, (p) => applyPatches(scenario, [p], allowed), () => structuralCount(scenario, rules));
 }

@@ -80,10 +80,10 @@ describe('the consistency check', () => {
   test('should undo patches that break the world', () => {
     const s = makeScenario(3, { phases: 3, hints: 2 });
     const out = applyStoryPatches(s, [{ path: 'clues.0.shows', value: 'CHANGED' }, { path: 'clues.1.where', value: 'n9' }], rules);
-    assert.equal(out.applied, 0);
-    assert.equal(s.clues[0].shows, 'CLUE-1-SHOWS');
+    assert.equal(out.applied, 1);
+    assert.equal(s.clues[0].shows, 'CHANGED');
     assert.equal(s.clues[1].where, 'l2');
-    assert.equal(out.skipped.length, 2);
+    assert.deepEqual(out.skipped, ['clues.1.where: undone, it broke the world']);
     const t = makeScenario(3, { phases: 3, hints: 2 });
     assert.equal(applyStoryPatches(t, [{ path: 'clues.0.reveal_round', value: '7' }], rules).applied, 0);
     assert.equal(t.clues[0].reveal_round, 1);
