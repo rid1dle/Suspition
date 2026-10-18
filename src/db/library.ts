@@ -24,13 +24,7 @@ export class GameLibrary {
 
   // "Title: setting line" for the newest games that have a world, newest first.
   recentWorlds(n = 10): string[] {
-    const out: string[] = [];
-    for (const summary of this.db.listGames()) {
-      if (out.length >= n) break;
-      const sc = this.db.loadGame(summary.id)?.scenario;
-      if (sc?.title) out.push(`${sc.title}: ${sc.setting_summary ?? ''}`.trim());
-    }
-    return out;
+    return this.db.recentWorlds(n);
   }
 
   setLearning(id: string, learning: Learning, note?: string) {

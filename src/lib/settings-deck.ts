@@ -53,8 +53,14 @@ const mentions = (text: string, keyword: string) => new RegExp(`\\b${keyword.rep
 export function drawIdea(recent: string[], random: () => number = Math.random, avoid: string[] = []) {
   let fresh = DECK.filter((d) => !avoid.includes(d.id));
   if (!fresh.length) fresh = DECK;
-  const different = fresh.filter((d) => !d.keywords.some((k) => recent.some((r) => mentions(r, k))));
-  const pool = different.length ? different : fresh;
+  // recent is newest first. An idea is as stale as the newest world it matches; when every idea matches one, take the stalest-free.
+  const newestMatch = (d: (typeof DECK)[number]) => {
+    const i = recent.findIndex((r) => d.keywords.some((k) => mentions(r, k)));
+    return i < 0 ? Infinity : i;
+  };
+  const scored = fresh.map((d) => [d, newestMatch(d)] as const);
+  const best = Math.max(...scored.map(([, s]) => s));
+  const pool = scored.filter(([, s]) => s === best).map(([d]) => d);
   const pick = pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))];
   return { id: pick.id, text: pick.text };
 }

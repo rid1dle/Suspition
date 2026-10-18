@@ -68,6 +68,7 @@ export class App {
     }
     for (const p of this.game.players) if (p.username) this.profiles.set(p.username, (await this.people.load(p.username)) ?? newProfile(p.username, p.name, this.clock()));
     await this.changed();
+    this.drawRound(this.game);
     return this;
   }
 

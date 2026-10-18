@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { tensionLevel, beatBetween } from '@/lib/story-look';
+import { tensionTick, beatBetween } from '@/lib/story-look';
 import { MotionConfig } from 'motion/react';
 import type { Room } from '@/lib/views';
 import { HOUSE_ROOM } from '@/lib/house-room';
@@ -76,7 +76,7 @@ export function WorldRoom({ room: given, calm = false, particles = false, classN
       data-beat={glow ? 'on' : undefined}
     >
       {backdrop && !calm && <div aria-hidden className="backdrop" style={{ backgroundImage: `url("data:image/svg+xml;utf8,${encodeURIComponent(backdrop)}")` }} />}
-      <div aria-hidden className="story-edge" />
+      <div aria-hidden className="story-edge"><i className="story-vignette" /></div>
       {effect && <AmbientLayer ambient={effect} intensity={room!.intensity} />}
       <MotionConfig reducedMotion="user"><div className="relative z-10">{children}</div></MotionConfig>
     </div>
@@ -87,15 +87,15 @@ export function WorldRoom({ room: given, calm = false, particles = false, classN
 export function useStoryLook(view: { gameId?: string; status?: string; events?: { kind: string }[] } | null) {
   const last = useRef<typeof view>(null);
   const [beat, setBeat] = useState(0);
-  const [now, setNow] = useState(0);
+  const [tension, setTension] = useState(0);
   useEffect(() => {
     if (beatBetween(last.current, view)) setBeat((b) => b + 1);
     last.current = view;
+    setTension((t) => tensionTick(t, view));
   }, [view]);
   useEffect(() => {
-    setNow(Date.now());
-    const t = setInterval(() => setNow(Date.now()), 5000);
+    const t = setInterval(() => setTension((prev) => tensionTick(prev, last.current)), 5000);
     return () => clearInterval(t);
   }, []);
-  return { tension: view && now ? tensionLevel(view, now) : 0, beat };
+  return { tension, beat };
 }

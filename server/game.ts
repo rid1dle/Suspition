@@ -1740,6 +1740,7 @@ export function mentions(game, text) {
 export function forDataset(game) {
   const copy = structuredClone(game);
   delete copy.hostToken;
+  if (copy.setup) delete copy.setup.recent;
   for (const p of copy.players ?? []) delete p.token;
   return copy;
 }
@@ -1916,6 +1917,8 @@ function roomFor(game) {
 function publicCore(game, now) {
   const st = game.state;
   const sc = game.scenario;
+  // Past world titles help the world writer only; they stay on the server.
+  const { recent, ...setup } = game.setup ?? {};
   const vote = st?.hintVote && st.hintVote.endsAt > now ? st.hintVote : null;
   const ask = st?.voteAsk && st.voteAsk.endsAt > now ? st.voteAsk : null;
   return {
@@ -1924,7 +1927,7 @@ function publicCore(game, now) {
     room: sc ? roomFor(game) : null,
     error: game.error,
     players: game.players.map((p) => ({ id: p.id, name: p.name })),
-    setup: game.setup,
+    setup: game.setup ? setup : null,
     surprise: ['lobby', 'failed'].includes(game.status) ? game.lobby?.surprise ?? null : null,
     title: sc?.title ?? null,
     background: sc?.background ?? [],
@@ -2056,10 +2059,14 @@ export function tableView(game, now = Date.now()) {
 }
 
 // This round's own picture, table only; null until it is drawn (the scene picture stands in).
+// The final vote and the reveal keep the newest round picture.
 export function roundPicture(game) {
   const st = game.state;
-  if (!st || game.status !== 'playing') return null;
-  return st.roundArt?.[roundNumber(game)] ?? null;
+  if (!st) return null;
+  if (game.status === 'playing') return st.roundArt?.[roundNumber(game)] ?? null;
+  if (!['final', 'reveal'].includes(game.status)) return null;
+  const newest = Object.keys(st.roundArt ?? {}).map(Number).sort((a, b) => b - a)[0];
+  return newest ? st.roundArt[newest] : null;
 }
 
 export function setRoundPicture(game, round, svg) {

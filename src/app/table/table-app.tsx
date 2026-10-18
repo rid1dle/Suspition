@@ -155,7 +155,7 @@ export function TableApp() {
   const look = useStoryLook(view);
   return (
     <WorldRoom room={room} calm={calm} particles={rich && PARTICLE_AMBIENTS.has(room!.ambient)} tension={calm ? 0 : look.tension} beat={calm ? 0 : look.beat} backdrop={view?.picture ?? view?.illustration ?? null}>
-      {rich && <TableEffects room={room!} />}
+      {rich && <TableEffects room={room!} tension={calm ? 0 : look.tension} />}
       <Toaster theme="dark" position="top-center" />
       <div className="min-h-dvh pb-16">
         {!view && <div className="flex min-h-dvh items-center justify-center text-muted-foreground">Connecting…</div>}

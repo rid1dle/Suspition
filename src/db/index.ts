@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import { and, asc, desc, eq, inArray, like } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, like, ne, sql } from 'drizzle-orm';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -99,6 +99,15 @@ export class Db {
     if (!row) return null;
     const game = parse<Game | null>(row.state, null);
     return game && { ...game, learning: row.learning as Learning, note: row.note };
+  }
+
+  // "Title: setting line" for the newest worlds, read from the summary columns in one query. Playtests are skipped.
+  recentWorlds(n: number): string[] {
+    return this.orm.select({ title: schema.games.title, setting: sql<string | null>`json_extract(${schema.games.state}, '$.scenario.setting_summary')` })
+      .from(schema.games)
+      .where(and(ne(schema.games.learning, 'playtest'), ne(schema.games.title, '')))
+      .orderBy(desc(schema.games.createdAt)).limit(n).all()
+      .map((r) => `${r.title}: ${r.setting ?? ''}`.trim());
   }
 
   getMeta(key: string): string | null {

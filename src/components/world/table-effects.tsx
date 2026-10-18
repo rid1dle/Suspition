@@ -29,7 +29,17 @@ export function useLowFrameRate() {
   return low;
 }
 
-function particleOptions(ambient: string, color: string): ISourceOptions {
+type Speed = number | { min: number; max: number };
+const quicken = (speed: Speed, k: number): Speed => (typeof speed === 'number' ? speed * k : { min: speed.min * k, max: speed.max * k });
+
+// Tension quickens the particles a little: up to half again as fast.
+export function particleOptions(ambient: string, color: string, tension = 0) {
+  const options = baseParticles(ambient, color);
+  const move = options.particles.move;
+  return { ...options, particles: { ...options.particles, move: { ...move, speed: quicken(move.speed as Speed, 1 + 0.5 * tension) } } };
+}
+
+function baseParticles(ambient: string, color: string) {
   const base = { fullScreen: { enable: false }, fpsLimit: 40, detectRetina: false, background: { color: 'transparent' } };
   if (ambient === 'snow') return { ...base, particles: { number: { value: 90 }, paint: { fill: { enable: true, color: { value: '#ffffff' } } }, opacity: { value: { min: 0.3, max: 0.8 } }, size: { value: { min: 1, max: 3.5 } }, move: { enable: true, direction: 'bottom', speed: { min: 0.4, max: 1.4 }, straight: false, drift: { min: -0.4, max: 0.4 } } } };
   if (ambient === 'embers') return { ...base, particles: { number: { value: 55 }, paint: { fill: { enable: true, color: { value: ['#ffb347', '#ff7a3d', color] } } }, opacity: { value: { min: 0.2, max: 0.9 }, animation: { enable: true, speed: 0.8 } }, size: { value: { min: 0.8, max: 2.6 } }, move: { enable: true, direction: 'top', speed: { min: 0.3, max: 1.2 }, random: true } } };
@@ -44,10 +54,10 @@ const initEngine = async (engine: Parameters<typeof loadSlim>[0]) => {
 
 // The table's living background: a slow colour field from the room's palette, plus particles
 // for embers, fireflies, snow and dust. Only on the table; never on phones.
-export default function TableEffects({ room }: { room: Room }) {
+export default function TableEffects({ room, tension = 0 }: { room: Room; tension?: number }) {
   const particles = PARTICLE_AMBIENTS.has(room.ambient);
   const c = room.colors;
-  const options = useMemo(() => particleOptions(room.ambient, c.accent), [room.ambient, c.accent]);
+  const options = useMemo(() => particleOptions(room.ambient, c.accent, tension) as ISourceOptions, [room.ambient, c.accent, tension]);
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 -z-10">
       <MeshGradient className="absolute inset-0 opacity-40" colors={[c.bg, c.surface, c.surfaceAlt, c.accent]} distortion={0.6} swirl={0.3} speed={room.intensity === 'medium' ? 0.25 : 0.12} maxPixelCount={1280 * 720} minPixelRatio={1} />

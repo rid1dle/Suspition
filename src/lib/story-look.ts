@@ -5,6 +5,12 @@ export function tensionLevel(view: unknown, now = Date.now()) {
   return Math.round(intensityFor(view, now) * 20) / 20;
 }
 
+// The next tension step; the same value when the step has not moved, so the room does not re-render.
+export function tensionTick(prev: number, view: unknown, now = Date.now()) {
+  const next = view ? tensionLevel(view, now) : 0;
+  return next === prev ? prev : next;
+}
+
 const BEATS = new Set(['ripple', 'event', 'phase', 'round']);
 
 // A story turn: something new the whole room notices, or the reveal.

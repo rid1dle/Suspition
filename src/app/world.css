@@ -107,8 +107,10 @@
 /* The story's tension at the screen edges: a vignette that deepens and a warm tint that grows.
    Both are clear in the centre, so the reading column never changes. A story turn glows the edges once. */
 .story-edge { position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / calc(0.15 + var(--tension, 0) * 0.35)));
-  transition: background 3s ease; }
+}
+/* The vignette is one fixed gradient; tension fades it in with opacity, which can ease smoothly. */
+.story-vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.5));
+  opacity: calc(0.3 + var(--tension, 0) * 0.7); transition: opacity 3s ease; }
 .story-edge::before { content: ''; position: absolute; inset: 0;
   background: radial-gradient(ellipse at center, transparent 60%, color-mix(in oklab, #e0603a calc(var(--tension, 0) * 60%), var(--primary)));
   opacity: calc(var(--tension, 0) * 0.25); transition: opacity 3s ease; }
@@ -125,9 +127,9 @@
 .ambient[data-effect='petals'] i:nth-child(2) { background-size: 320px 300px; animation-duration: 26s; opacity: 0.7; }
 .ambient[data-effect='petals'] i:nth-child(3) { background-size: 180px 220px; animation-duration: 13s; opacity: 0.45; }
 
-.ambient[data-effect='sparks'] i { background-image: radial-gradient(circle, color-mix(in oklab, #fff1b8 95%, transparent) 0 1px, transparent 1.8px), radial-gradient(circle at 40% 60%, color-mix(in oklab, #ffc857 90%, transparent) 0 1px, transparent 1.6px); background-size: 110px 150px; animation: rise 6s linear infinite, flicker 0.9s ease-in-out infinite alternate; }
-.ambient[data-effect='sparks'] i:nth-child(2) { background-size: 170px 210px; animation-duration: 9s, 1.3s; }
-.ambient[data-effect='sparks'] i:nth-child(3) { background-size: 70px 110px; animation-duration: 4.5s, 0.7s; opacity: 0.5; }
+.ambient[data-effect='sparks'] i { background-image: radial-gradient(circle, color-mix(in oklab, #fff1b8 95%, transparent) 0 1px, transparent 1.8px), radial-gradient(circle at 40% 60%, color-mix(in oklab, #ffc857 90%, transparent) 0 1px, transparent 1.6px); background-size: 110px 150px; animation: rise 6s linear infinite, flicker 1.7s ease-in-out infinite alternate; }
+.ambient[data-effect='sparks'] i:nth-child(2) { background-size: 170px 210px; animation-duration: 9s, 2.4s; }
+.ambient[data-effect='sparks'] i:nth-child(3) { background-size: 70px 110px; animation-duration: 4.5s, 1.9s; opacity: 0.5; }
 
 .ambient[data-effect='leaves'] i { background-image: radial-gradient(ellipse 6px 3px at 22% 30%, color-mix(in oklab, #c8742c 80%, transparent) 0 100%, transparent 101%), radial-gradient(ellipse 5px 2.5px at 70% 64%, color-mix(in oklab, #9a6b2f 80%, transparent) 0 100%, transparent 101%); background-size: 260px 280px; animation: fall 24s linear infinite; }
 .ambient[data-effect='leaves'] i:nth-child(2) { background-size: 340px 320px; animation-duration: 32s; opacity: 0.7; }
