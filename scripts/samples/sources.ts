@@ -6,13 +6,12 @@
 export type PitchedSource = { id: string; folder: string; pick: RegExp; note: (file: string) => string | null; range: [number, number]; seconds: number };
 export type KitSource = { id: string; folder: string; file: string; seconds: number };
 
-const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+import { noteName } from '../../src/lib/soundtrack/notes.ts';
+
 const named = (file: string) => /_([A-G]#?\d)(?=[_.])/.exec(file)?.[1] ?? null;
 const pianoKey = (file: string) => {
   const m = /_(\d{3})\.wav$/.exec(file);
-  if (!m) return null;
-  const midi = 21 + 2 * Number(m[1]);
-  return `${NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+  return m ? noteName(21 + 2 * Number(m[1])) : null;
 };
 
 export const PITCHED: PitchedSource[] = [

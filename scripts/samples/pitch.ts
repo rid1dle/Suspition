@@ -1,16 +1,6 @@
 // Pitch of a recorded note, read from raw PCM by autocorrelation. Build-only: the VSCO file names
 // are not scientific pitch, so every sample is named by what it measures.
-const NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
-export function noteName(midi: number): string {
-  return `${NAMES[((midi % 12) + 12) % 12]}${Math.floor(midi / 12) - 1}`;
-}
-
-export function noteMidi(name: string): number {
-  const m = /^([A-G]#?)(-?\d+)$/.exec(name);
-  if (!m) return NaN;
-  return NAMES.indexOf(m[1]) + 12 * (Number(m[2]) + 1);
-}
+export { noteName, noteMidi } from '../../src/lib/soundtrack/notes.ts';
 
 export function hzToMidi(hz: number): number {
   return 69 + 12 * Math.log2(hz / 440);
