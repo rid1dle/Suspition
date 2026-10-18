@@ -32,7 +32,7 @@ describe('learning about yourself is fair play', () => {
     assert.match(all, /6 private questions each round/);
     assert.match(all, /Ask about your own character, your past or your goal/);
     assert.match(all, /2 overrides/);
-    assert.match(all, /up to 3 play points/);
+    assert.match(all, /up to 3 play points each round/);
     assert.match(all, /Anyone can ask to vote early/);
   });
 

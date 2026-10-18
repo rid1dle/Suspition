@@ -14,6 +14,6 @@ export function rulesLines({ rounds, questions, overrides, hints }: { rounds: nu
     `The group has ${plural(hints, 'hint')}: anyone can ask for one, the group votes.`,
     'Anyone can ask to vote early on the round question. Everyone has to agree. Ask twice with no takers and you wait for the next round.',
     'At the end, everyone names who did it, how and why. Culprits vote too.',
-    `Points: 1 for the right culprit, up to 2 for how, up to 2 for why, 1 for your own goal. Plus up to ${PLAY_MAX} play points for good moves.`,
+    `Points: 1 for the right culprit, up to 2 for how, up to 2 for why, 1 for your own goal. Plus up to ${PLAY_MAX} play points each round for good moves.`,
   ];
 }

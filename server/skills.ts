@@ -45,7 +45,12 @@ export function scoreMoves(play: Play | null | undefined, read: ReadFlags, opts:
 
 export const playEarned = (moves: Move[] | undefined | null): number => current(moves).reduce((sum, m) => sum + m.points, 0);
 
-export const playTotal = (moves: Move[] | undefined | null): number => clamp(current(moves).reduce((sum, m) => sum + m.points, 0), PLAY_MIN, PLAY_MAX);
+// Each round counts up to PLAY_MAX, so strong play across rounds shows; the game total never drops below PLAY_MIN.
+export function playTotal(moves: Move[] | undefined | null): number {
+  const rounds = new Map<unknown, number>();
+  for (const m of current(moves)) rounds.set(m.round, (rounds.get(m.round) ?? 0) + m.points);
+  return Math.max(PLAY_MIN, [...rounds.values()].reduce((sum, n) => sum + Math.min(PLAY_MAX, n), 0));
+}
 
 export function skillSplit(moves: Move[] | undefined | null): Record<string, number> {
   const out: Record<string, number> = {};

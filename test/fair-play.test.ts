@@ -4,7 +4,7 @@ import * as G from '../server/game.ts';
 import { makeScenario, gameInReading } from './fixtures.ts';
 import { cleanRead, formForGM } from '../server/reader.ts';
 import { FAIR_PLAY } from '../server/prompts.ts';
-import { RUBRIC_VERSION } from '../server/skills.ts';
+import { RUBRIC_VERSION, playTotal } from '../server/skills.ts';
 import { totalLine } from '../src/lib/score.ts';
 import { emptyPhase } from './fixtures.ts';
 
@@ -193,7 +193,7 @@ describe('fair play points', () => {
     G.applyScore(game, G.computeVerdict(game), { reveal_story: 'S', players: [] });
     const p2 = game.state.result.players.find((p) => p.player_id === 'p2');
     assert.deepEqual([p2.play, p2.play_earned], [3, 7]);
-    assert.equal(totalLine({ culprit_correct: true, method_score: 1, play: 3, play_earned: 7 }), 'Case 2/6 · Play +3 (7 earned, 3 count)');
+    assert.equal(totalLine({ culprit_correct: true, method_score: 1, play: 3, play_earned: 7 }), 'Case 2/6 · Play +3 (7 earned, at most 3 a round)');
     assert.equal(totalLine({ culprit_correct: true, method_score: 1, play: 2, play_earned: 2 }), 'Case 2/6 · Play +2');
   });
 });
@@ -341,3 +341,16 @@ describe('review fixes', () => {
     assert.equal(app.game.scenario.phases[0].reward, '');
   });
 });
+
+describe('the play cap is per round', () => {
+  const m = (points, round) => ({ points, skill: 'searching', why: '', rubric: RUBRIC_VERSION, from: 'private', round });
+
+  test('should cap play points at 3 in each round, not for the whole game', () => {
+    assert.equal(playTotal([m(2, 1), m(2, 1), m(2, 2), m(2, 2), m(1, 3)]), 7);
+  });
+
+  test('should keep the -2 floor for the whole game', () => {
+    assert.equal(playTotal([m(-1, 1), m(-1, 2), m(-1, 3)]), -2);
+  });
+});
+
