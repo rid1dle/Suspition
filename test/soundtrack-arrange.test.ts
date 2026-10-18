@@ -207,4 +207,9 @@ describe('stingerNotes', () => {
     assert.ok(pitched[pitched.length - 1].velocity > pitched[0].velocity, 'gets louder');
     assert.ok(stingerNotes(BOX, 'seat').every((n) => n.instrument !== 'cymbal'));
   });
+
+  test('should roll the timpani under a swell when the kit has the roll', () => {
+    assert.ok(stingerNotes({ ...DRUMS, kit: ['timpani_roll'] }, 'vote').some((n) => n.instrument === 'timpani_roll' && n.at === 0));
+    assert.ok(stingerNotes(DRUMS, 'vote').every((n) => n.instrument !== 'timpani_roll'));
+  });
 });

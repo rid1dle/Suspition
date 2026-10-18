@@ -271,6 +271,7 @@ export function stingerNotes(d: Direction, kind: StingerKind | 'hint'): NoteEven
       const [a, b, c] = fitLine(chord, rangeOf(d.harmony));
       const out = [s(0, d.harmony, a, 4, 0.35), s(1, d.harmony, b, 3, 0.55), s(2, d.harmony, c, 2, 0.75)];
       if (d.kit.includes('cymbal')) out.push(s(0, 'cymbal', 60, 4, 0.7));
+      if (d.kit.includes('timpani_roll')) out.push(s(0, 'timpani_roll', 60, 4, 0.6));
       return out;
     }
   }
