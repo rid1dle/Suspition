@@ -931,6 +931,15 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     logRefused(game, playerId, why, false, now);
     return;
   }
+  // What the player asserted as the narrator only happens if the GM grants it; every other claim is answered out loud to them.
+  const answers = Array.isArray(result.claims_answer) ? result.claims_answer : [];
+  for (const [i, claim] of (ask.read?.claims ?? []).entries()) {
+    const answer = answers.find((a) => String(a?.claim ?? '').trim().toLowerCase() === String(claim).trim().toLowerCase()) ?? answers[i];
+    if (answer?.granted === true) continue;
+    const reason = String(answer?.why ?? '').trim().slice(0, 200) || `"${claim}" is not up to you; other people decide for themselves.`;
+    thread.push({ from: 'system', text: `That can't happen: ${reason}`, at: now });
+    logRefused(game, playerId, reason, false, now);
+  }
 
   const clueIds = new Set(openClues(game));
   for (const id of result.clues_found ?? []) {

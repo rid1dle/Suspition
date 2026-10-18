@@ -132,6 +132,6 @@ describe('fixes from the final review and the live check', () => {
   test("should put the reader's claims to the GM to grant or refuse", () => {
     const game = playing();
     const prompt = askPrompt({ snapshot: {}, player: game.scenario.players[1], kind: 'action', text: 'x', read: { kind: 'action', target: '', place: '', attempt: 'finds a letter', said_aloud: '', out_of_world: false, sways_gm: false, claims: ['a letter proves Asha did it'] } });
-    assert.match(prompt, /The player also claims: a letter proves Asha did it\. Grant each claim only if it fits the story; otherwise set refused and say why\./);
+    assert.match(prompt, /The player also claims: a letter proves Asha did it\. Answer each claim in claims_answer/);
   });
 });
