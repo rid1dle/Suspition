@@ -19,6 +19,7 @@ import { Narrator, narrationFor } from '@/lib/narration';
 import { tableSound } from '@/lib/alerts';
 import { Sfx } from '@/lib/sfx';
 import type { TableView } from '@/lib/views';
+import { RejoinPanel } from '@/components/game/rejoin';
 import { Setup, Generating, Failed } from './setup';
 import { Reading } from './reading';
 import { Playing } from './playing';
@@ -124,8 +125,28 @@ function MediaBar({ media, view, host, calm, setCalm }: { media: Media | null; v
       }}>{sfx.enabled ? <Volume2Icon className="size-3.5" /> : <VolumeXIcon className="size-3.5" />} {!sfx.enabled ? 'Sounds off' : locked ? 'Tap anywhere for sounds' : 'Sounds on'}</button>
       <button className={chip(!calm)} aria-pressed={!calm} onClick={() => { setCalm(!calm); storage.set('detective-calm', calm ? 'off' : 'on'); }}><SparklesIcon className="size-3.5" /> {calm ? 'Calm screen' : 'Effects on'}</button>
       {host && <a className={chip(false)} href={`/games#host=${encodeURIComponent(host)}`} target="_blank"><LibraryIcon className="size-3.5" /> Saved games</a>}
+      {host && view && ['reading', 'playing', 'final'].includes(view.status) && <Rejoin host={host} players={view.players} chip={chip(false)} />}
       <span className="ml-auto truncate text-xs text-muted-foreground">{view?.musicDescription ?? ''}</span>
     </aside>
+  );
+}
+
+function Rejoin({ host, players, chip }: { host: string; players: { id: string; name: string }[]; chip: string }) {
+  const [open, setOpen] = useState(false);
+  const [code, setCode] = useState<{ name: string; url: string } | null>(null);
+  const pick = async (id: string) => {
+    const res = await fetch(`/api/rejoin?host=${encodeURIComponent(host)}&player=${encodeURIComponent(id)}`);
+    if (res.ok) setCode(await res.json());
+  };
+  return (
+    <>
+      <button className={chip} onClick={() => setOpen((o) => !o)}>Rejoin a player</button>
+      {open && (
+        <div className="fixed bottom-16 left-4 z-50 w-80 max-w-[calc(100vw-2rem)]">
+          <RejoinPanel players={players} code={code} onPick={pick} onClose={() => { setOpen(false); setCode(null); }} />
+        </div>
+      )}
+    </>
   );
 }
 

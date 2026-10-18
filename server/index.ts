@@ -116,6 +116,7 @@ export function createHandler(app, { joinUrl, next = null }) {
         return push(s);
       }
       if (url.pathname === '/api/info') return send(res, 200, { joinUrl });
+      if (url.pathname === '/api/rejoin') return send(res, 200, app.rejoin(url.searchParams.get('host'), url.searchParams.get('player'), joinUrl));
       if (url.pathname === '/api/people') return send(res, 200, { people: await app.knownPeople() });
       if (url.pathname === '/api/games') return send(res, 200, { games: await app.listGames(url.searchParams.get('host')) });
       if (url.pathname === '/api/game') return send(res, 200, await app.gameDetail(url.searchParams.get('host'), url.searchParams.get('id')));

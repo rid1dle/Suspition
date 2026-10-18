@@ -65,7 +65,7 @@ export function shuffleSurprise(game, recent = [], random = Math.random) {
 }
 
 export function addPlayer(game, { name, wish, username } = {}) {
-  if (game.status !== 'lobby') fail('The game has already started.', 409);
+  if (game.status !== 'lobby') fail('The game has already started. If you were playing, ask the table for your rejoin code: Rejoin a player.', 409);
   const clean = String(name ?? '').trim().slice(0, 24);
   if (!clean) fail('Enter a name.');
   if (game.players.length >= MAX_PLAYERS) fail(`The game is full (${MAX_PLAYERS} players).`, 409);

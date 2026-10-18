@@ -562,6 +562,14 @@ export class App {
     answer(yes === true);
   }
 
+  // A player whose phone lost its seat gets back in with their own link, which only the table can show.
+  rejoin(hostToken, playerId, base) {
+    this.requireHost(hostToken);
+    const p = this.game.players.find((x) => x.id === playerId);
+    if (!p) throw new GameError('No such player.', 404);
+    return { name: p.name, url: `${base}#t=${p.token}` };
+  }
+
   async go(tok, place) {
     const p = G.playerByToken(this.game, tok);
     G.goTo(this.game, p.id, place, this.clock());
