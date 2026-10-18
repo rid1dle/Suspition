@@ -23,7 +23,10 @@ function plain(x: unknown, max: number): string {
 
 function nameWords(names: string[]): string[] {
   const words = new Set<string>();
-  for (const n of names) for (const w of String(n).split(/[^\p{L}]+/u)) if (w.length >= 3 && !TITLES.has(w.toLowerCase())) words.add(w);
+  for (const n of names) {
+    const parts = String(n).split(/[^\p{L}]+/u).filter(Boolean);
+    for (const w of parts) if ((w.length >= 3 || (parts.length === 1 && w.length >= 2)) && !TITLES.has(w.toLowerCase())) words.add(w);
+  }
   return [...words];
 }
 

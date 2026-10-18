@@ -5,6 +5,9 @@ import { SKILLS, PENALTIES } from './skills.ts';
 import { ROOM_SCHEMA } from './room.ts';
 import { DEFAULT_STYLE, styleRules } from '../src/lib/art-styles.ts';
 import { difficultyPrompt } from '../src/lib/difficulty.ts';
+import { INSTRUMENTS, KIT_IDS } from '../src/lib/soundtrack/instruments.ts';
+import { BEATS } from '../src/lib/soundtrack/clean.ts';
+import { ROLES, VARIATIONS, PULSES, GROOVES, STINGER_STYLES, STINGER_KINDS } from '../src/lib/soundtrack/types.ts';
 
 export const LENGTHS = {
   short: { phases: 3, minutes: 10, questions: 3 },
@@ -645,4 +648,79 @@ Then lay out who was where, so the group can work it out:
 THE MYSTERY:
 ${JSON.stringify(scenario)}
 reminders: only for a player whose card has no reminders, 6 to 10 short third-person lines (under 18 words, never starting with "You") that remind them who they are: job, ties to others, where they were and when. Leave it empty otherwise.`;
+}
+
+// The soundtrack: 3 directions, composed from public facts only (never the truth, the cards or the clues).
+const forRole = (role) => Object.keys(INSTRUMENTS).filter((id) => INSTRUMENTS[id].roles.includes(role));
+const unit = { type: 'number', minimum: 0, maximum: 1 };
+const int = (minimum, maximum) => ({ type: 'integer', minimum, maximum });
+const oneOf = (list) => ({ type: 'string', enum: [...list] });
+
+export const SOUNDTRACK_SCHEMA = obj({
+  directions: {
+    type: 'array',
+    minItems: 3,
+    maxItems: 3,
+    items: obj({
+      name: str,
+      line: str,
+      tempo: int(50, 140),
+      root: oneOf(ROOTS),
+      mode: oneOf(Object.keys(MODES)),
+      ...Object.fromEntries(ROLES.map((role) => [role, oneOf(forRole(role))])),
+      kit: { type: 'array', maxItems: 3, items: oneOf(KIT_IDS) },
+      theme: { type: 'array', minItems: 6, maxItems: 12, items: obj({ degree: int(-7, 14), beats: { type: 'number', enum: BEATS }, rest: { type: 'boolean' } }) },
+      rounds: {
+        type: 'array',
+        minItems: 1,
+        maxItems: 6,
+        items: obj({
+          mood: str,
+          chords: { type: 'array', minItems: 4, maxItems: 8, items: int(0, 6) },
+          variation: oneOf(VARIATIONS),
+          shift: int(-5, 7),
+          pulse: oneOf(PULSES),
+          groove: oneOf(GROOVES),
+          low: unit,
+          high: unit,
+        }),
+      },
+      stingers: obj(Object.fromEntries(STINGER_KINDS.map((k) => [k, oneOf(STINGER_STYLES)]))),
+    }),
+  },
+});
+
+export const COMPOSE_SYSTEM = 'You write soundtrack plans for a party mystery game, as JSON. Use only the facts you are given. Write in plain, simple English.';
+
+export function composePrompt(game) {
+  const sc = game.scenario;
+  const rounds = sc.phases.map((p) => p.name);
+  const list = (role) => forRole(role).map((id) => `${id} (${INSTRUMENTS[id].label})`).join(', ');
+  return `You are the composer for a party mystery game. Write 3 different soundtrack directions for this world.
+Each direction is a full plan. Make the three really different, for example one big and orchestral, one small and close (piano, harp, a solo voice), one built on rhythm.
+- name: 2 to 4 plain words. line: one sentence a host can read aloud, under 15 words, saying what it sounds like ("Slow cellos and a ticking clock").
+- Never use the name of any person in the story.
+- Pick instruments only from the lists. lead plays the theme, harmony holds the chords, bass is the low line, texture adds colour.
+- theme: 6 to 12 notes, easy to hum. Mostly steps, one leap at most. degree 0 is the key note.
+- rounds: one plan per round, in order. Round 1 is quiet and curious (low about 0.1, high about 0.4). The middle rounds build. The last round is the most intense (high up to 1).
+- chords: 4 or 8 scale degrees per round (0 to 6). Change the chords from round to round so each round feels new.
+- variation changes the theme for that round. shift moves the round to a new key (in semitones, 0 keeps it).
+- Fit the tone: cozy is warm and light, tense is tight and pulsing, dark is low and slow, funny is bouncy and bright.
+
+THE WORLD:
+Title: ${sc.title}
+Setting: ${sc.setting_summary}
+Tone: ${game.setup?.tone ?? 'tense'}
+Opening scene: ${sc.opening_scene}
+Rounds (${rounds.length}): ${rounds.map((name, i) => `${i + 1}. ${name}`).join('; ')}
+
+INSTRUMENTS:
+lead: ${list('lead')}
+harmony: ${list('harmony')}
+bass: ${list('bass')}
+texture: ${list('texture')}
+kit (up to 3): ${KIT_IDS.join(', ')}
+pulse: ${PULSES.join(', ')}. groove: ${GROOVES.join(', ')}. variation: ${VARIATIONS.join(', ')}.
+stingers (short sounds for the big moments): round starts, seat (a hot seat goes live), vote opens, reveal. Each is one of ${STINGER_STYLES.join(', ')}.
+theme beats are note lengths: ${BEATS.join(', ')}. rest: true makes a silent beat.`;
 }

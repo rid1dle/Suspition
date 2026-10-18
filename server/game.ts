@@ -7,6 +7,7 @@ import { LENGTHS, PLAN_SECTIONS } from './prompts.ts';
 import { roomTheme, guessRoom } from './room.ts';
 import { GENERATION_STEPS } from './progress.ts';
 import { sanitizeMusic } from '../src/lib/music-theory.ts';
+import { cleanSoundtrack } from '../src/lib/soundtrack/clean.ts';
 import { DECK, drawIdea } from '../src/lib/settings-deck.ts';
 import { ART_CHOICES, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 import { difficultyOf } from '../src/lib/difficulty.ts';
@@ -2261,7 +2262,36 @@ function revealView(game) {
 }
 
 export function tableView(game, now = Date.now()) {
-  return { ...publicCore(game, now), picture: roundPicture(game), reveal: game.status === 'reveal' ? revealView(game) : null };
+  return { ...publicCore(game, now), picture: roundPicture(game), soundtrack: soundtrackView(game), reveal: game.status === 'reveal' ? revealView(game) : null };
+}
+
+// The soundtrack the GM composes during the reading step. Table only: phones play no music.
+export function startSoundtrack(game) {
+  game.state.soundtrack = { status: 'writing' };
+}
+
+export function applySoundtrack(game, raw) {
+  const sc = game.scenario;
+  const names = [...game.players.map((p) => p.name), ...sc.players.map((p) => p.character_name), ...(sc.npcs ?? []).map((n) => n.name)].filter(Boolean);
+  const clean = cleanSoundtrack(raw, { rounds: sc.phases.length, names });
+  game.state.soundtrack = clean ? { status: 'ready', directions: clean.directions, chosen: 0 } : { status: 'failed' };
+}
+
+export function failSoundtrack(game) {
+  game.state.soundtrack = { status: 'failed' };
+}
+
+export function pickSoundtrack(game, index) {
+  const s = game.state?.soundtrack;
+  if (s?.status !== 'ready') fail('The music is not ready yet.', 409);
+  if (!Number.isInteger(index) || index < 0 || index >= s.directions.length) fail('That music is not on the list.', 400);
+  s.chosen = index;
+}
+
+function soundtrackView(game) {
+  const s = game.state?.soundtrack;
+  if (!s) return null;
+  return s.status === 'ready' ? { status: s.status, directions: s.directions, chosen: s.chosen } : { status: s.status };
 }
 
 // This round's own picture, table only; null until it is drawn (the scene picture stands in).

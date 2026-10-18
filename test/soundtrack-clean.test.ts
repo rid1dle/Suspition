@@ -121,6 +121,11 @@ describe('cleanSoundtrack', () => {
     assert.equal(s.directions[1].line, 'Slow piano at night.');
   });
 
+  test('should hide a two-letter player name but not two-letter words inside longer names', () => {
+    assert.equal(clean([direction({ name: "Bo's Blues" })], { names: ['Bo'] })!.directions[0].name, 'Music 1');
+    assert.equal(clean([direction({ name: 'Al and the Sea' })], { names: ['Jo Al Smith'] })!.directions[0].name, 'Al and the Sea');
+  });
+
   test('should keep a name when a person is only part of a longer word', () => {
     assert.equal(clean([direction({ name: 'Valentine Waltz' })], { names: ['Vale'] })!.directions[0].name, 'Valentine Waltz');
   });
