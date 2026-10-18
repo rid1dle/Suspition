@@ -447,7 +447,7 @@ Rules: start with <svg and use viewBox="0 0 800 400". Flat shapes and gradients,
 export const AUDIT_SCHEMA = obj({
   players: {
     type: 'array',
-    items: obj({ player_id: str, add: strArr, known_hidden_fact_ids: strArr, wants: str, fears: str, goal_why: str, reasons: strArr, night: { type: 'array', items: obj({ time: str, where: str, doing: str }) }, reminders: strArr }),
+    items: obj({ player_id: str, add: strArr, known_hidden_fact_ids: strArr, hook: str, distrusts: str, distrust_why: str, reveals: strArr, wants: str, fears: str, goal_why: str, reasons: strArr, night: { type: 'array', items: obj({ time: str, where: str, doing: str }) }, reminders: strArr }),
   },
   key_times: { type: 'array', items: obj({ time: str, what: str }) },
   alibis: { type: 'array', items: obj({ id: str, alibi: { type: 'array', items: obj({ time: str, where: str }) } }) },
@@ -467,6 +467,9 @@ Then make each player feel why, not just read what:
 - fears: what they are scared will come out tonight and what they would lose (1 sentence).
 - goal_why: why their secret goal matters to them personally (1 sentence).
 - reasons: for each thing they did tonight that their card mentions or that you add, one sentence on why they did it, as they would remember it ("You went back to the stairs because you thought Arjun had your letter."). Take the reason from the truth and their story. If the story gives none, use the most natural reason that fits everything and contradicts nothing.
+- hook: one line in the second person that a player can play at once: who they are and what they want tonight ("You are the cook, and you need tonight to end before anyone finds your debt.").
+- distrusts: the id of ONE other player character this character distrusts, and distrust_why: one short reason they could say out loud. Never themselves. Spread the targets so not everyone distrusts the same person.
+- reveals: 3 short true lines about this character that the room could learn about them, ordered mild to sharp. Never name the culprit, the method or the motive, even for a culprit.
 Never give away their hidden facts in any of these. Give an entry for every player; use empty lists when nothing is missing.
 
 Then lay out who was where, so the group can work it out:

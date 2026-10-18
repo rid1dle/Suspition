@@ -43,6 +43,13 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
         </motion.div>
       </button>
 
+      {card.hook && (
+        <Section title="Who you are tonight">
+          <p className="text-lg font-medium">{card.hook}</p>
+          {card.distrusts && <p className="text-sm">You don't trust {card.distrusts}. {card.distrust_why}</p>}
+        </Section>
+      )}
+
       {persona && (persona.intent || persona.persona) && (
         <Section title="How you are playing it">
           {persona.intent && <p>{persona.intent}</p>}
@@ -59,6 +66,12 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
         </Section>
       </div>
 
+      {card.locked?.includes('drives') && (
+        <Section title="What drives you" tone="hidden"><Muted>Unlocks after your first hot seat.</Muted></Section>
+      )}
+      {card.locked?.includes('reasons') && !card.locked?.includes('drives') && (
+        <Section title="Why you did what you did" tone="hidden"><Muted>Unlocks after your second hot seat, or when the room votes for you.</Muted></Section>
+      )}
       {(card.wants || card.fears || card.reasons?.length > 0) && (
         <Section title="What drives you">
           {card.wants && <p>{card.wants}</p>}

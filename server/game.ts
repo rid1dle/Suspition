@@ -119,6 +119,15 @@ export function applyAudit(scenario, audit) {
       .filter((t, i, all) => t && all.indexOf(t) === i && !known.includes(t.toLowerCase()));
     if (adds.length) p.starting_knowledge = [String(p.starting_knowledge ?? '').trim(), ...adds].filter(Boolean).join(' ');
     changes += adds.length;
+    const hook = String(entry.hook ?? '').trim().slice(0, 200);
+    if (hook && !p.hook) p.hook = hook;
+    const distrusts = String(entry.distrusts ?? '').trim();
+    if (!p.distrusts && distrusts !== p.id && scenario.players.some((x) => x.id === distrusts)) {
+      p.distrusts = distrusts;
+      p.distrust_why = String(entry.distrust_why ?? '').trim().slice(0, 200);
+    }
+    const reveals = (entry.reveals ?? []).map((t) => String(t ?? '').trim().slice(0, 200)).filter((t) => t && !namesCulprit(scenario, [], t)).slice(0, 3);
+    if (reveals.length && !p.reveals?.length) p.reveals = reveals;
     for (const key of ['wants', 'fears', 'goal_why']) {
       const text = String(entry[key] ?? '').trim();
       if (text && !String(p[key] ?? '').trim()) {
@@ -416,6 +425,7 @@ export function attachScenario(game, scenario, now = Date.now()) {
     illustration: null,
     knowledge: [],
     moments: [],
+    unlocked: {},
     overridesLeft: Object.fromEntries(game.players.map((p) => [p.id, game.setup.overrides ?? 3])),
     submissions: {},
     transitioning: false,
@@ -1536,6 +1546,22 @@ export function tableView(game, now = Date.now()) {
   return { ...publicCore(game, now), reveal: game.status === 'reveal' ? revealView(game) : null };
 }
 
+// Hot seats style opens each card on its hook; "drives" and "reasons" unlock during play. Classic and older games never lock.
+const CARD_SECTIONS = ['drives', 'reasons'];
+function lockedSections(game, playerId) {
+  const st = game.state;
+  if (game.setup?.roundStyle !== 'hotseats' || !st?.unlocked) return [];
+  return CARD_SECTIONS.filter((s) => !(st.unlocked[playerId] ?? []).includes(s));
+}
+
+export function unlockCard(game, playerId, section) {
+  const st = game.state;
+  if (!st || !CARD_SECTIONS.includes(section)) return;
+  st.unlocked ??= {};
+  const list = (st.unlocked[playerId] ??= []);
+  if (!list.includes(section)) list.push(section);
+}
+
 export function playerView(game, playerId, now = Date.now()) {
   const me = game.players.find((p) => p.id === playerId);
   const view = { ...publicCore(game, now), me: { id: me.id, name: me.name } };
@@ -1543,6 +1569,7 @@ export function playerView(game, playerId, now = Date.now()) {
   if (!st) return view;
   const card = game.scenario.players.find((p) => p.id === playerId);
   const revealed = st.revealed[playerId];
+  const locked = lockedSections(game, playerId);
   view.card = {
     name: card.character_name,
     role: card.role_title,
@@ -1553,10 +1580,14 @@ export function playerView(game, playerId, now = Date.now()) {
     side: card.side,
     side_explanation: card.side_explanation,
     starting_knowledge: card.starting_knowledge,
-    wants: card.wants ?? '',
-    fears: card.fears ?? '',
+    hook: card.hook ?? '',
+    distrusts: game.scenario.players.find((p) => p.id === card.distrusts)?.character_name ?? '',
+    distrust_why: card.distrusts ? card.distrust_why ?? '' : '',
+    locked,
+    wants: locked.includes('drives') ? '' : card.wants ?? '',
+    fears: locked.includes('drives') ? '' : card.fears ?? '',
     goal_why: card.goal_why ?? '',
-    reasons: card.reasons ?? [],
+    reasons: locked.includes('reasons') ? [] : card.reasons ?? [],
     pellets: pelletsFor(card),
     reminders: remindersFor(card),
     night: card.night ?? [],
