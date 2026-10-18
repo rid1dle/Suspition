@@ -86,6 +86,7 @@ function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void
     }
   }, [now, view]);
   const hv = view.hintVote as { proposer: string; yes: number; need: number } | null;
+  const va = view.voteAsk as { proposer: string; yes: number; need: number } | null;
   return (
     <header className="sticky top-0 z-30 flex flex-col gap-2 border-b border-border bg-background/85 px-4 pt-[calc(env(safe-area-inset-top)+0.75rem)] pb-3 backdrop-blur">
       <div className="flex items-baseline justify-between gap-3">
@@ -102,6 +103,12 @@ function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void
           <span className="flex gap-1"><Button size="sm" onClick={() => act('vote', { token: tokenOf(), yes: true })}>Yes</Button><Button size="sm" variant="secondary" onClick={() => act('vote', { token: tokenOf(), yes: false })}>No</Button></span>
         </div>
       )}
+      {va && (view.myVoteAsk == null ? (
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-card p-2 text-sm">
+          <span><b>{va.proposer}</b> wants to vote now.</span>
+          <span className="flex gap-1"><Button size="sm" onClick={() => act('voteaskanswer', { token: tokenOf(), yes: true })}>Yes</Button><Button size="sm" variant="secondary" onClick={() => act('voteaskanswer', { token: tokenOf(), yes: false })}>Not yet</Button></span>
+        </div>
+      ) : <div className="rounded-lg bg-card p-2 text-sm text-muted-foreground">{va.yes} of {va.need} ready to vote. Everyone has to say yes.</div>)}
       <AnimatePresence>
         {reminder && view.card && (
           <ReminderCard key={reminder} name={view.card.name} line={reminder} onOpen={() => { setReminder(null); onOpenCard(); }} onDismiss={() => setReminder(null)} />
@@ -172,6 +179,11 @@ function StoryTab({ view, onAskTab, onGo }: { view: PlayerView; onAskTab: () => 
         <Muted className="text-xs">Out loud: free, everyone hears. In private: only you, uses 1 question ({left} left). Tap the 🎤 on your keyboard to speak.</Muted>
       </section>
       <Recap recap={view.recap} />
+      {view.round?.question && !view.round.done && !vote && (view.voteAskBlocked
+        ? <Muted className="text-xs">Nobody took your last two requests. You can ask for the vote again next round.</Muted>
+        : <button className="self-start text-sm text-muted-foreground hover:text-foreground disabled:opacity-50" disabled={Boolean(view.voteAsk) || view.transitioning} onClick={() => act('voteask', { token: tokenOf() })}>
+          Ask to vote now · everyone has to agree
+        </button>)}
       <button className="self-start text-sm text-muted-foreground hover:text-foreground disabled:opacity-50" disabled={view.hintsLeft < 1 || Boolean(view.hintVote)} onClick={() => act('hint', { token: tokenOf() })}>
         {view.hintsLeft < 1 ? 'No group hints left' : `Ask the group for a hint · ${view.hintsLeft} left`}
       </button>

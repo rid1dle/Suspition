@@ -104,6 +104,7 @@ export function Playing(props: TableProps) {
   const last = (view.phase?.number ?? 0) >= (view.phase?.count ?? 0);
   const nextLabel = vote ? 'Close the vote' : view.round && !view.round.done && view.round.question ? 'Start the vote' : last ? 'Go to the final vote' : 'Next round';
   const hv = view.hintVote as { proposer: string; yes: number; no: number; need: number } | null;
+  const va = view.voteAsk as { proposer: string; yes: number; need: number } | null;
   const sendNote = async () => { if (note.trim() && await act('note', { text: note })) setNote(''); };
 
   return (
@@ -143,6 +144,7 @@ export function Playing(props: TableProps) {
               </motion.div>
             )}
           </AnimatePresence>
+          {va && <div className="rounded-xl bg-card p-4"><b>{va.proposer}</b> wants to vote now. {va.yes} of {va.need} ready. Everyone has to say yes on their phone.</div>}
           {hv && <div className="rounded-xl bg-card p-4"><b>{hv.proposer}</b> wants a hint. Vote on your phone: {hv.yes} yes, {hv.no} no. Needs {hv.need}.</div>}
           <section className={cn('flex flex-col gap-5 rounded-2xl bg-card p-6 transition', vote && 'ring-2 ring-primary')}>
             <CaseBox question={view.caseQuestion} />

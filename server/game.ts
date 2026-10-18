@@ -652,6 +652,7 @@ export function beginPhaseChange(game) {
   if (game.state.transitioning) fail('The phase is already changing.', 409);
   game.state.transitioning = true;
   game.state.hintVote = null;
+  game.state.voteAsk = null;
 }
 
 export function cancelPhaseChange(game) {
@@ -726,6 +727,57 @@ export function resolveHintVote(game, now = Date.now()) {
     st.hintVote = null;
     addEvent(game, 'The group kept its hint.', 'hint', now);
     return 'saved';
+  }
+  return 'open';
+}
+
+// Any player can ask to vote now. Every other player must say yes; one no or a quiet minute ends it.
+// Two requests nobody else took, within five minutes, block that player until the next round.
+export const VOTE_ASK_MS = 60_000;
+const VOTE_ASK_WINDOW_MS = 5 * 60_000;
+
+export function askVote(game, playerId, now = Date.now()) {
+  if (game.status !== 'playing') fail('You can ask for a vote during a round.', 409);
+  const st = game.state;
+  if (st.transitioning) fail('The round is changing.', 409);
+  if (st.roundVote) fail('A vote is open now.', 409);
+  if (!needsRoundVote(game)) fail('This round has no question to vote on.', 409);
+  if (st.voteAsk) fail('Someone already asked. Say yes or no on your phone.', 409);
+  if (st.voteAskBlocked?.[playerId] === roundNumber(game)) fail('Nobody took your last two requests. You can ask again next round.', 409);
+  st.voteAsk = { by: playerId, votes: { [playerId]: true }, at: now, endsAt: now + VOTE_ASK_MS };
+  addEvent(game, `${nameOf(game, playerId)} wants to vote now. Everyone else has to say yes.`, 'voteask', now);
+  return resolveVoteAsk(game, now);
+}
+
+export function answerVoteAsk(game, playerId, yes, now = Date.now()) {
+  const ask = game.state?.voteAsk;
+  if (!ask || ask.endsAt <= now) fail('Nobody is asking to vote right now.', 409);
+  ask.votes[playerId] = Boolean(yes);
+  return resolveVoteAsk(game, now);
+}
+
+export function resolveVoteAsk(game, now = Date.now()) {
+  const st = game.state;
+  const ask = st?.voteAsk;
+  if (!ask) return null;
+  const answers = Object.entries(ask.votes);
+  if (game.players.every((p) => ask.votes[p.id] === true)) {
+    st.voteAsk = null;
+    beginRoundVote(game, now);
+    return 'started';
+  }
+  if (answers.some(([, v]) => v === false) || ask.endsAt <= now) {
+    st.voteAsk = null;
+    const takers = answers.filter(([id, v]) => v && id !== ask.by).length;
+    if (!takers) {
+      const round = roundNumber(game);
+      st.voteAskMisses ??= {};
+      const misses = [...(st.voteAskMisses[ask.by] ?? []), { at: ask.at, round }].filter((m) => m.round === round && ask.at - m.at <= VOTE_ASK_WINDOW_MS);
+      st.voteAskMisses[ask.by] = misses;
+      if (misses.length >= 2) (st.voteAskBlocked ??= {})[ask.by] = round;
+    }
+    addEvent(game, 'Not everyone was ready. The round goes on.', 'voteask', now);
+    return 'dropped';
   }
   return 'open';
 }
@@ -906,6 +958,7 @@ export function beginRoundVote(game, now = Date.now()) {
   if (st.roundVote) return st.roundVote;
   if (!needsRoundVote(game)) fail('This round has no question to vote on.', 409);
   st.hintVote = null;
+  st.voteAsk = null;
   st.roundVote = { phaseIndex: st.phaseIndex, votes: {}, endsAt: now + ROUND_VOTE_MS };
   addEvent(game, `Time to vote: ${roundQuestion(game, st.phaseIndex).question}`, 'vote', now);
   return st.roundVote;
@@ -1267,6 +1320,7 @@ function publicCore(game, now) {
   const st = game.state;
   const sc = game.scenario;
   const vote = st?.hintVote && st.hintVote.endsAt > now ? st.hintVote : null;
+  const ask = st?.voteAsk && st.voteAsk.endsAt > now ? st.voteAsk : null;
   return {
     gameId: game.id,
     status: game.status,
@@ -1306,6 +1360,12 @@ function publicCore(game, now) {
       no: Object.values(vote.votes).filter((v) => !v).length,
       need: Math.floor(game.players.length / 2) + 1,
       endsAt: vote.endsAt,
+    },
+    voteAsk: ask && {
+      proposer: nameOf(game, ask.by),
+      yes: Object.values(ask.votes).filter(Boolean).length,
+      need: game.players.length,
+      endsAt: ask.endsAt,
     },
     suspicion: st?.suspicion ?? null,
     events: (st?.events ?? []).map(({ read, ...e }) => e),
@@ -1430,6 +1490,8 @@ export function playerView(game, playerId, now = Date.now()) {
     return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id) };
   });
   view.myVote = st.hintVote ? st.hintVote.votes[playerId] ?? null : null;
+  view.myVoteAsk = st.voteAsk ? st.voteAsk.votes[playerId] ?? null : null;
+  view.voteAskBlocked = st.voteAskBlocked?.[playerId] === roundNumber(game);
   view.myRoundVote = st.roundVote ? st.roundVote.votes[playerId] ?? null : null;
   view.publicPending = st.publicPending?.[playerId] ?? null;
   view.publicError = st.publicErrors?.[playerId] ?? null;

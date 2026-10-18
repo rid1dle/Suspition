@@ -448,6 +448,18 @@ export class App {
     await this.changed();
   }
 
+  async askVote(tok) {
+    const p = G.playerByToken(this.game, tok);
+    G.askVote(this.game, p.id, this.clock());
+    await this.changed();
+  }
+
+  async answerVoteAsk(tok, yes) {
+    const p = G.playerByToken(this.game, tok);
+    G.answerVoteAsk(this.game, p.id, yes, this.clock());
+    await this.changed();
+  }
+
   async nextPhase(hostToken) {
     this.requireHost(hostToken);
     this.advance();
@@ -542,6 +554,10 @@ export class App {
     let dirty = false;
     if (st.hintVote && st.hintVote.endsAt <= now) {
       G.resolveHintVote(game, now);
+      dirty = true;
+    }
+    if (st.voteAsk && st.voteAsk.endsAt <= now) {
+      G.resolveVoteAsk(game, now);
       dirty = true;
     }
     if (G.tickMoments(game, now)) dirty = true;
