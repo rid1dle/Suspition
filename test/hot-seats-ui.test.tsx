@@ -94,3 +94,16 @@ describe('point on screen', () => {
 });
 
 import { PointButtons } from '../src/components/game/people';
+
+import { Setup } from '../src/app/table/setup';
+
+describe('round style on the setup screen', () => {
+  test('should offer hot seats and classic, with hot seats picked', () => {
+    const game = G.createGame(1_000);
+    for (const name of ['A', 'B', 'C']) G.addPlayer(game, { name });
+    const html = renderToStaticMarkup(h(Setup, { view: G.tableView(game), host: 'h', act: async () => null, readNow: () => {}, onNewGame: () => {} } as never));
+    assert.match(html, /Round style/);
+    assert.match(html, /aria-checked="true"[^>]*>Hot seats/);
+    assert.match(html, /Classic quiz/);
+  });
+});

@@ -90,7 +90,8 @@ export function applySetup(game, input = {}) {
   if (!Number.isInteger(npcs) || npcs < 0 || npcs > 6) fail('GM characters must be between 0 and 6.');
   const replays = input.replays === undefined ? 2 : Number(input.replays);
   if (!Number.isInteger(replays) || replays < 0 || replays > MAX_REPLAYS) fail(`Replays must be between 0 and ${MAX_REPLAYS}.`);
-  const questions = input.questions === undefined ? LENGTHS[input.length].questions : Number(input.questions);
+  const roundStyle = input.roundStyle === 'hotseats' ? 'hotseats' : 'classic';
+  const questions = input.questions === undefined ? (roundStyle === 'hotseats' ? 2 : LENGTHS[input.length].questions) : Number(input.questions);
   if (!Number.isInteger(questions) || questions < 1 || questions > 6) fail('Private questions must be between 1 and 6.');
   const npcRole = input.npcRole ?? 'mixed';
   if (!NPC_ROLES.includes(npcRole)) fail('Pick what the GM characters do.');
@@ -104,6 +105,7 @@ export function applySetup(game, input = {}) {
     npcRole,
     replays,
     questions,
+    roundStyle,
     notes: String(input.notes ?? '').trim().slice(0, 500),
   };
   game.status = 'generating';
@@ -692,6 +694,7 @@ const resultsThisRound = (game) => game.state.roundResults.filter((r) => r.phase
 
 // A round the group voted on and got wrong is played again, up to the number of replays chosen at setup.
 export function willReplay(game) {
+  if (game.setup?.roundStyle === 'hotseats') return false;
   const last = resultsThisRound(game).at(-1);
   const voted = (last?.counts ?? []).some((n) => n > 0);
   return Boolean(last && !last.correct && voted && (game.state.replays ?? 0) < (game.setup?.replays ?? 0));
@@ -741,6 +744,7 @@ export function completePhase(game, result, now = Date.now()) {
   const st = game.state;
   st.transitioning = false;
   const replay = willReplay(game);
+  if (game.setup?.roundStyle === 'hotseats') postRoundReward(game, now);
   if (isLastPhase(game) && !replay) {
     game.status = 'final';
     st.phaseEndsAt = null;
@@ -1205,8 +1209,14 @@ export function closeOpenMoments(game, now = Date.now()) {
   }
 }
 
+export const SPOTLIGHT_QUESTION = 'Who should the room look at?';
+
 export function roundQuestion(game, index) {
   const ph = game.scenario?.phases?.[index];
+  if (game.setup?.roundStyle === 'hotseats') {
+    if (!ph) return null;
+    return { kind: 'spotlight', question: SPOTLIGHT_QUESTION, options: game.scenario.players.map((p) => p.character_name), answer: -1, reward: String(ph.reward ?? ''), rewardTime: String(ph.reward_time ?? ''), rewardOrder: Number(ph.reward_order) || 0, nudge: '' };
+  }
   const options = (ph?.options ?? []).map((o) => String(o ?? '').trim()).filter(Boolean).slice(0, 4);
   const answer = Number(ph?.answer_index);
   if (!ph?.question || options.length < 2 || !Number.isInteger(answer) || answer < 0 || answer >= options.length) return null;
@@ -1236,6 +1246,7 @@ export function voteRound(game, playerId, choice, now = Date.now()) {
   const q = roundQuestion(game, vote.phaseIndex);
   const pick = Number(choice);
   if (!Number.isInteger(pick) || pick < 0 || pick >= q.options.length) fail('Pick one of the answers.');
+  if (q.kind === 'spotlight' && game.scenario.players[pick]?.id === playerId) fail('You cannot vote for yourself.');
   vote.votes[playerId] = pick;
   return resolveRoundVote(game, now);
 }
@@ -1253,6 +1264,7 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   const top = Math.max(...counts);
   const winners = counts.flatMap((c, i) => (c === top && top > 0 ? [i] : []));
   const picked = winners.length === 1 ? winners[0] : null;
+  if (q.kind === 'spotlight') return resolveSpotlight(game, vote, q, picked, counts, now);
   const correct = picked === q.answer;
   const result = { phaseIndex: vote.phaseIndex, round: roundNumber(game), question: q.question, picked, pickedText: picked === null ? null : q.options[picked], correct, counts };
   st.roundResults.push(result);
@@ -1266,6 +1278,44 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   } else {
     addEvent(game, `${said} Not quite. ${q.nudge}`, 'round', now);
     st.suspicion = clamp(st.suspicion - 10, 0, 100);
+  }
+  return result;
+}
+
+// The spotlight never removes anyone: the top player's next safe line goes public, and an innocent pick covers the culprit.
+// In hot seats style the round's reward closes the round as its cliffhanger.
+function postRoundReward(game, now) {
+  const st = game.state;
+  const q = roundQuestion(game, st.phaseIndex);
+  if (!q?.reward || namesCulprit(game.scenario, game.players, q.reward)) return;
+  addEvent(game, q.reward, 'event', now);
+  st.timelineExtra.push({ order: q.rewardOrder, time: q.rewardTime, event: q.reward });
+}
+
+function resolveSpotlight(game, vote, q, picked, counts, now) {
+  const st = game.state;
+  const target = picked === null ? null : game.scenario.players[picked];
+  const result = { kind: 'spotlight', phaseIndex: vote.phaseIndex, round: roundNumber(game), question: q.question, picked, pickedText: target?.character_name ?? null, top: target?.id ?? null, line: null, correct: null, counts };
+  st.roundResults.push(result);
+  st.roundVote = null;
+  if (!target) {
+    addEvent(game, 'The room is split.', 'round', now);
+    return result;
+  }
+  st.revealsUsed ??= {};
+  const used = st.revealsUsed[target.id] ?? 0;
+  const line = (target.reveals ?? [])[used] ?? null;
+  if (line) {
+    st.revealsUsed[target.id] = used + 1;
+    result.line = line;
+    addEvent(game, `The room looks at ${target.character_name}. ${line}`, 'round', now);
+    addFacts(game, [{ person: target.id, fact: line }], 'round', now);
+  } else addEvent(game, `Nothing new about ${target.character_name}.`, 'round', now);
+  unlockCard(game, target.id, 'reasons');
+  if (target.side !== 'culprit') {
+    st.suspicion = clamp(st.suspicion - 10, 0, 100);
+    const culprits = game.scenario.players.filter((p) => p.side === 'culprit');
+    whisper(game, culprits.map((c) => ({ player_id: c.id, text: `The room is looking at ${target.character_name}, not you.` })), now);
   }
   return result;
 }

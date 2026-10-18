@@ -249,3 +249,98 @@ describe('point at someone', () => {
     assert.equal(G.tableView(game, 25_001).point.current.from, game.players[1].name);
   });
 });
+
+describe('spotlight vote and round style', () => {
+  const setupGame = (input = {}) => {
+    const game = G.createGame(1_000);
+    for (const name of ['A', 'B', 'C']) G.addPlayer(game, { name });
+    G.applySetup(game, { tone: 'tense', length: 'short', hints: 2, ...input });
+    return game;
+  };
+  const spot = (n = 3) => {
+    const game = hotGame(n, { questions: true });
+    game.scenario.players.forEach((p, i) => (p.reveals = [`REVEAL ${p.id} one.`, `REVEAL ${p.id} two.`].slice(0, i === 2 ? 0 : 2)));
+    G.startPlay(game, 1_000);
+    G.beginRoundVote(game, 2_000);
+    return game;
+  };
+  const idx = (game, pid) => game.scenario.players.findIndex((p) => p.id === pid);
+
+  test('should default the setup form to hot seats and keep classic as an option', () => {
+    assert.equal(setupGame({ roundStyle: 'hotseats' }).setup.roundStyle, 'hotseats');
+    assert.equal(setupGame({ roundStyle: 'hotseats' }).setup.questions, 2);
+    assert.equal(setupGame({ roundStyle: 'hotseats', questions: 4 }).setup.questions, 4);
+    assert.equal(setupGame({}).setup.roundStyle, 'classic');
+  });
+
+  test('should run a spotlight vote instead of the round question in hot seats style', () => {
+    const game = spot();
+    const round = G.tableView(game, 2_000).round;
+    assert.equal(round.question, 'Who should the room look at?');
+    assert.deepEqual(round.options, game.scenario.players.map((p) => p.character_name));
+  });
+
+  test('should refuse a vote for yourself', () => {
+    const game = spot();
+    assert.throws(() => G.voteRound(game, 'p1', idx(game, 'p1'), 2_500), /yourself/);
+  });
+
+  test("should reveal the top player's next line", () => {
+    const game = spot();
+    G.voteRound(game, 'p1', idx(game, 'p2'), 2_500);
+    G.voteRound(game, 'p3', idx(game, 'p2'), 2_500);
+    G.voteRound(game, 'p2', idx(game, 'p1'), 2_500);
+    assert.ok(game.state.events.some((e) => e.kind === 'round' && e.text.includes('REVEAL p2 one.')), 'the reveal line is posted');
+    assert.ok(G.playerView(game, 'p2').card.locked.every((s) => s !== 'reasons'), 'reasons unlock for the top player');
+  });
+
+  test('should say the room is split on a tie (3 players 1-1-1)', () => {
+    const game = spot();
+    G.voteRound(game, 'p1', idx(game, 'p2'), 2_500);
+    G.voteRound(game, 'p2', idx(game, 'p3'), 2_500);
+    G.voteRound(game, 'p3', idx(game, 'p1'), 2_500);
+    assert.equal(game.state.events.filter((e) => e.kind === 'round').at(-1).text, 'The room is split.');
+  });
+
+  test('should give the culprit cover when the room picks someone innocent', () => {
+    const game = spot();
+    const before = game.state.suspicion;
+    G.voteRound(game, 'p1', idx(game, 'p2'), 2_500);
+    G.voteRound(game, 'p3', idx(game, 'p2'), 2_500);
+    G.voteRound(game, 'p2', idx(game, 'p3'), 2_500);
+    assert.equal(game.state.suspicion, Math.max(0, before - 10));
+    assert.match(game.state.threads.p1.at(-1).text, /looking at .* not you/);
+  });
+
+  test('should say nothing new when a player has no reveal lines left', () => {
+    const game = spot();
+    G.voteRound(game, 'p1', idx(game, 'p3'), 2_500);
+    G.voteRound(game, 'p2', idx(game, 'p3'), 2_500);
+    G.voteRound(game, 'p3', idx(game, 'p1'), 2_500);
+    assert.match(game.state.events.filter((e) => e.kind === 'round').at(-1).text, /^Nothing new about /);
+  });
+
+  test('should never replay a round in hot seats style', () => {
+    const game = spot();
+    game.setup.replays = 2;
+    for (const p of ['p1', 'p2']) G.voteRound(game, p, idx(game, 'p3'), 2_500);
+    G.voteRound(game, 'p3', idx(game, 'p1'), 2_500);
+    assert.equal(G.willReplay(game), false);
+  });
+
+  test('should keep the classic round question in a classic game', () => {
+    const game = gameInReading(3, 1_000, { questions: true });
+    G.startPlay(game, 1_000);
+    assert.equal(G.tableView(game, 2_000).round.question, 'QUESTION-1');
+  });
+});
+
+describe('round end in hot seats style', () => {
+  test("should post the round's reward when a hot seats round ends", () => {
+    const game = hotGame(3, { questions: true });
+    G.startPlay(game, 1_000);
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 2_000);
+    assert.ok(game.state.events.some((e) => e.kind === 'event' && e.text === 'REWARD-1'), 'the reward closes the round');
+  });
+});
