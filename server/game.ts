@@ -396,6 +396,7 @@ export function resolveStoryIds(s) {
   const place = fix(places);
   const anywhere = fix(new Map([...places, ...people]));
   for (const h of s.red_herrings ?? []) if (h) h.points_at = person(h.points_at);
+  for (const o of s.key_objects ?? []) if (o) o.where = anywhere(o.where);
   for (const x of s.suspects ?? []) if (x) x.character_id = person(x.character_id);
   for (const w of s.truth?.whereabouts ?? []) {
     if (!w) continue;
@@ -1746,6 +1747,17 @@ const WIN = {
   wildcard: 'You win by reaching your own goal, whoever gets caught.',
 };
 
+// The objects that matter, as everyone sees them: where only when the world says it is public.
+export function keyObjectsView(game) {
+  const sc = game.scenario;
+  const nameFor = (id) => sc.locations.find((l) => l.id === id)?.name ?? sc.players.find((p) => p.id === id)?.character_name ?? sc.npcs.find((n) => n.id === id)?.name ?? null;
+  return (sc?.key_objects ?? []).filter((o) => String(o?.name ?? '').trim()).map((o) => ({
+    name: String(o.name).trim(),
+    about: String(o.about ?? '').trim(),
+    where: o.where_is_public === true ? nameFor(String(o.where ?? '').trim()) : null,
+  }));
+}
+
 export function briefingSteps(game) {
   const sc = game.scenario;
   if (!sc) return [];
@@ -1753,6 +1765,7 @@ export function briefingSteps(game) {
     { kind: 'scene', title: sc.title, lines: [sc.setting_summary] },
     { kind: 'story', title: 'What just happened', lines: [sc.opening_scene, `The big question: ${caseQuestion(sc)}`] },
     { kind: 'background', title: 'What everyone knows', lines: [...(sc.how_we_talk ? [`How you talk: ${sc.how_we_talk}`] : []), ...(sc.background ?? [])] },
+    { kind: 'objects', title: 'Things that matter', lines: keyObjectsView(game).map((o) => `${o.name}: ${o.about}${o.where ? ` (${o.where})` : ''}`) },
     { kind: 'map', title: 'The place', lines: ['This is the map. It shows every place and who is there.', 'Players are gold. People the GM plays are grey.'] },
   ];
   for (const c of sc.players) {
@@ -2112,6 +2125,7 @@ function publicCore(game, now) {
     title: sc?.title ?? null,
     background: sc?.background ?? [],
     caseQuestion: sc ? caseQuestion(sc) : null,
+    keyObjects: sc ? keyObjectsView(game) : [],
     alibis: game.state ? alibiTable(sc) : null,
     timeline: publicTimeline(game),
     briefing: game.status === 'reading' && st ? { step: st.brief?.step ?? 0, steps: briefingSteps(game) } : null,

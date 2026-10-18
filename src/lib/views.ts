@@ -30,6 +30,7 @@ export interface PublicView {
   status: 'lobby' | 'generating' | 'failed' | 'reading' | 'playing' | 'final' | 'reveal' | string;
   room: Room | null;
   error: string | null;
+  keyObjects?: { name: string; about: string; where: string | null }[];
   surprise?: { id: string; text: string } | null;
   picture?: string | null;
   players: { id: string; name: string }[];

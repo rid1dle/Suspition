@@ -166,3 +166,19 @@ export function GoalsPanel({ caseQuestion, job, goal, open = [] }: { caseQuestio
     </section>
   );
 }
+
+// The objects the whole room knows matter, from the start. What they prove is found in play.
+export function KeyObjects({ objects = [] }: { objects?: { name: string; about: string; where: string | null }[] }) {
+  if (!objects.length) return null;
+  return (
+    <section className="flex flex-col gap-2 rounded-2xl bg-card p-4">
+      <Label>Things that matter</Label>
+      {objects.map((o) => (
+        <div key={o.name}>
+          <b>{o.name}</b> <span className="text-muted-foreground">{o.about}</span>
+          {o.where && <div className="text-xs text-muted-foreground">Where: {o.where}</div>}
+        </div>
+      ))}
+    </section>
+  );
+}

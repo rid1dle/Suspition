@@ -114,6 +114,10 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     });
   });
 
+  (s.key_objects ?? []).forEach((o, i) => {
+    if (pointsAtCulprit(s, players, o?.about) || (o?.where_is_public && culprits.includes(o?.where))) out.push(`giveaway: key_objects[${i}] points at the culprit; keep where it is secret and say only what it is.`);
+  });
+
   // A GM character who freely tells a later round's clue hands it out in round 1.
   (s.npcs ?? []).forEach((n, i) => {
     for (const c of s.clues ?? []) {

@@ -9,7 +9,7 @@ import { Label, Muted } from '@/components/game/label';
 import { RoundCard } from '@/components/game/round';
 import { Feed } from '@/components/game/feed';
 import { PeopleList } from '@/components/game/people';
-import { CaseBox, Timeline, Alibis, SharedClues, Recap, ScenePicture } from '@/components/game/panels';
+import { CaseBox, Timeline, Alibis, SharedClues, Recap, ScenePicture, KeyObjects } from '@/components/game/panels';
 import { whoisLines } from '@/lib/score';
 import { visibleCount } from '@/lib/feed';
 import { countdown, suspicionLabel } from '@/lib/phone';
@@ -173,6 +173,7 @@ export function Playing(props: TableProps) {
             )}
           </section>
           <Recap recap={view.recap} />
+          <KeyObjects objects={view.keyObjects ?? []} />
           <WhoIs view={view} />
           {host && (
             <div className="flex gap-2">
