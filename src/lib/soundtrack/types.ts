@@ -16,7 +16,8 @@ export type Groove = typeof GROOVES[number];
 export type StingerStyle = typeof STINGER_STYLES[number];
 export type StingerKind = typeof STINGER_KINDS[number];
 
-export type ThemeNote = { degree: number; beats: number; rest?: boolean };
+// alter: semitones added after the scale step (only the dark variation sets it).
+export type ThemeNote = { degree: number; beats: number; rest?: boolean; alter?: number };
 
 export type RoundPlan = { mood: string; chords: number[]; variation: Variation; shift: number; pulse: Pulse; groove: Groove; low: number; high: number };
 
