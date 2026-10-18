@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Worlds that are hard, complete and full of real suspects. Every character has a motive and a clue against them, red herrings are built from evidence, the culprit takes several clues across rounds to name, everyone's whereabouts agree with the crime, and a GM consistency check catches the holes code can't.
+**Goal:** Worlds that are hard, complete and full of real suspects, and that stay whole while they are played. Every character has a motive and a clue against them, red herrings are built from evidence, the culprit takes several clues across rounds to name, everyone's whereabouts agree with the crime, and a GM consistency check catches the holes code can't.
 
 **Architecture:**
 - **New structured fields in the world** (`suspects`, `red_herrings`, `truth.crime`, `truth.whereabouts`, clue `reveal_round`, deduction `about`) turn story rules into things code can check.
@@ -210,11 +210,68 @@ Fix small problems with patches to the allowed fields only. Choose rewrite only 
   - `should keep the audit's night for an old world without whereabouts`
 - [ ] **Step 2 to 5:** RED, implement, GREEN, commit `feat: each player's night matches the truth`.
 
-### Task 7: Live check against the audit
+### Task 7: Continuity during play
+
+**Files:**
+- Create: `server/continuity.ts`
+- Modify: `server/prompts.ts` (`CONTINUITY_SCHEMA`, `continuityPrompt`; `playSystem` and `publicSystem` read `canon`), `server/gm.ts` (`continuity(game)`, its own 1-slot limiter), `server/app.ts` (`checkContinuity(game, reason)`: at each round change before the phase call's result is applied, after every 8 GM answers, before the final vote), `server/game.ts` (`st.canon`, `st.continuity` log, `snapshotForGM.canon`)
+- Test: `test/continuity.test.ts`
+
+**Interfaces:**
+- Produces:
+  - `CONTINUITY_SCHEMA = { problems: [{ what, kind: 'contradiction' | 'truth' | 'ignored' | 'broken' }], canon_add: [{ fact, about: strArr }], corrections: [{ to: 'table' | player_id, speaker: npc_id, text }], patches: [{ path, value }], solvable: boolean, missing: strArr }`
+  - `applyContinuity(game, result, now): { canon: number; corrections: number; applied: number; skipped: string[] }`
+  - `continuityPrompt(game)`: truth, the remaining plan, canon, and the record since `st.continuity.lastAt`.
+- Rules:
+  - Patches may only change future fields:
+    - `phases[i]` with i > phaseIndex: `planned_beat`, `question`, `options`, `answer_index`, `reward`, `wrong_nudge`
+    - unfound clues: `where`, `reveal_round`, `shows`
+    - unused hints: `text`
+    - `npcs[i]`: `knows`, `lies`
+    - `clues` may gain one backup clue when an essential clue was destroyed
+  - Anything else is skipped and logged.
+  - Corrections go out as a ripple (table) or a whisper, are spoken by a GM character, and pass `dropPuppeting`.
+  - Canon is capped at 60 facts, oldest merged first. `playSystem` and `publicSystem` say: "Established facts (canon) are true; never contradict them."
+- The fixed copy at the top of `continuityPrompt`:
+
+```
+You keep a mystery whole while it is played. Read what was said since the last check against the truth, the plan and the established facts. List every contradiction, every answer that contradicts the truth, every fact players established that the plan ignores, and every player action that broke the case. Fix them: add facts to canon so later answers agree; let a GM character correct a mistake in the story; patch only the future parts of the plan so the case stays solvable. Never change who did it, how or why, never undo what a player found, never reveal a secret, never speak for a player.
+```
+
+- [ ] **Step 1: Write the failing tests** (a fake GM):
+  - `should run at a round change, after 8 answers and before the final vote, one at a time`
+  - `should add canon that later GM prompts carry`
+  - `should send a correction as a GM character's ripple or whisper, never in a player's voice`
+  - `should patch only future fields and skip the rest` (a patch to the current round or to `truth` is skipped)
+  - `should add a backup clue when an essential clue was destroyed`
+  - `should change nothing when the check fails or times out`
+  - `should keep its own GM slot` (answers do not wait behind it)
+- [ ] **Step 2 to 5:** RED, implement, GREEN, run the suite, commit `feat: the GM keeps the story whole during play`.
+
+### Task 8: Polish from the living story review
+
+**Files:** `server/game.ts`, `src/db/library.ts`, `src/lib/settings-deck.ts`, `server/app.ts`, `src/components/world/room.tsx`, `src/components/world/table-effects.tsx`, `src/app/world.css`
+**Test:** `test/polish.test.ts`
+
+One failing test each, then the fix:
+- `should keep past world titles off the views and out of the dataset export`: the view's `setup` has no `recent`, and neither does `forDataset`.
+- `should read recent worlds with one query, newest 10, without playtests`: `GameLibrary.recentWorlds` reads only summary columns through `json_extract` and never calls `loadGame`.
+- `should draw the idea matching only the oldest recent world when every idea matches`: score each idea by the newest world it matches and take the oldest.
+- `should keep the newest round picture through the final vote and the reveal`.
+- `should draw a missing round picture after a restart mid-round`: `init` calls `drawRound` when playing.
+- `should quicken the particle effects with tension`: `particleOptions(ambient, color, tension)` scales `move.speed` by `1 + 0.5 * tension`.
+- `should keep sparks no faster than embers`: CSS sparks flicker from 1.7 s.
+- `should fade the vignette with opacity, not gradient steps`: a fixed gradient whose `opacity` follows `--tension`.
+- `should re-render the room only when the tension value changes`: the hook keeps the previous value when the step is the same.
+
+Commit `fix: polish from the living story review`.
+
+### Task 9: Live check against the audit
 
 - [ ] **Step 1:** Write 2 Normal worlds offline with a script in the scratchpad: `new GM(...)`, then `generate` on a 4-player lobby game, with the setting drawn from the deck. Save each world JSON in the scratchpad. Record the time for each step, including the story check, from the GM log.
 - [ ] **Step 2:** Give the same audit brief as before to a fresh opus reviewer for the 2 new worlds. Compare its scores, the suspects with motive, opportunity and a pointer, the real red herrings and the plot holes against the earlier table (best before: complete 3, red herrings 4, plot holes 4).
-- [ ] **Step 3:** Report the before and after numbers to the user. Never print the worlds' contents.
+- [ ] **Step 3:** Play one of the worlds for 2 rounds on a scratch port with bot moves that push on its weak spots: contradict an answer, destroy a clue, ask the same question twice. Check that the continuity log finds and fixes the contradictions and that the case stays solvable.
+- [ ] **Step 4:** Report the before and after numbers to the user. Never print the worlds' contents.
 
 ## Final review
 
