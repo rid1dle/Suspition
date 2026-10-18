@@ -134,6 +134,14 @@ export const isMinor = (npc) => npc?.importance === 'minor';
 
 export function applyAudit(scenario, audit) {
   let changes = 0;
+  // A culprit's reveals never retell a clue that points at them; a herring target's alibi never names a witness.
+  const culpritIds = scenario.truth?.culprit_ids ?? [];
+  const culpritClueIds = new Set([
+    ...(scenario.key_deductions ?? []).filter((k) => k.about === 'culprit').flatMap((k) => k.clue_ids ?? []),
+    ...(scenario.suspects ?? []).filter((x) => culpritIds.includes(x?.character_id)).flatMap((x) => x.pointer_clue_ids ?? []),
+  ]);
+  const culpritClues = (scenario.clues ?? []).filter((c) => culpritClueIds.has(c.id));
+  const herringTargets = new Set((scenario.red_herrings ?? []).map((h) => h?.points_at));
   for (const entry of audit?.players ?? []) {
     const p = scenario.players.find((x) => x.id === entry?.player_id);
     if (!p) continue;
@@ -154,7 +162,8 @@ export function applyAudit(scenario, audit) {
       const why = String(entry.distrust_why ?? '').trim().slice(0, 200);
       p.distrust_why = namesCulprit(others, [], why) ? '' : why;
     }
-    const reveals = (entry.reveals ?? []).map((t) => String(t ?? '').trim().slice(0, 200)).filter((t) => t && !namesCulprit(others, [], t)).slice(0, 3);
+    const reveals = (entry.reveals ?? []).map((t) => String(t ?? '').trim().slice(0, 200))
+      .filter((t) => t && !namesCulprit(others, [], t) && !(culpritIds.includes(p.id) && culpritClues.some((c) => retells(t, c.shows)))).slice(0, 3);
     if (reveals.length && !p.reveals?.length) p.reveals = reveals;
     for (const key of ['wants', 'fears', 'goal_why']) {
       const text = String(entry[key] ?? '').trim();
@@ -184,7 +193,7 @@ export function applyAudit(scenario, audit) {
   }
   for (const entry of audit?.alibis ?? []) {
     const c = [...scenario.players, ...scenario.npcs].find((x) => x.id === entry?.id);
-    const alibi = cleanSlots(entry?.alibi, ['time', 'where']);
+    const alibi = cleanSlots(entry?.alibi, ['time', 'where']).map((a) => (herringTargets.has(entry?.id) ? { ...a, where: a.where.replace(/,?\s+with\s.*$/i, '').trim() } : a));
     if (c && alibi.length && !c.alibi?.length) {
       c.alibi = alibi;
       changes += 1;

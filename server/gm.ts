@@ -182,6 +182,7 @@ export class GM {
     let prompt = generationPrompt(game, twists, culprits);
     let errors = [];
     let fallback = null;
+    const issueRules = { players: game.players, difficulty: game.setup.difficulty, rounds: rules.phases };
     const retryWith = (problems) => `${generationPrompt(game, twists, culprits)}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       onProgress({ kind: 'attempt', attempt, broke: errors.length });
@@ -200,7 +201,7 @@ export class GM {
         // A rewrite that fails keeps the world that already passed the checks.
         if (!fallback) throw err;
         this.log(`gm generate#${attempt} failed (${err.message}); keeping the checked first world`);
-        return this.finishWorld(fallback, onProgress);
+        return this.finishWorld(fallback, onProgress, issueRules);
       }
       onProgress({ kind: 'checking' });
       resolveStoryIds(scenario);
@@ -208,12 +209,12 @@ export class GM {
       if (errors.length) {
         // The errors can name who is innocent; the terminal only hears how many. The GM gets them in full.
         this.log(`gm generate#${attempt} invalid: ${errors.length} problem${errors.length === 1 ? '' : 's'}`);
-        if (fallback) return this.finishWorld(fallback, onProgress);
+        if (fallback) return this.finishWorld(fallback, onProgress, issueRules);
         prompt = retryWith(errors);
         continue;
       }
       onProgress({ kind: 'story' });
-      const issues = storyIssues(scenario, { players: game.players, difficulty: game.setup.difficulty, rounds: rules.phases });
+      const issues = storyIssues(scenario, issueRules);
       this.log(`gm story issues: ${issueCounts(issues)}`);
       const check = await this.checkStory(scenario, issues);
       if (check?.verdict === 'rewrite' && attempt < 2) {
@@ -223,14 +224,16 @@ export class GM {
         continue;
       }
       if (check) this.applyCheck(scenario, check, rules);
-      return this.finishWorld(scenario, onProgress);
+      return this.finishWorld(scenario, onProgress, issueRules);
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
   }
 
-  async finishWorld(scenario, onProgress) {
+  // The card check writes alibis, reveals and nights after the story check; its result is checked again (counts only).
+  async finishWorld(scenario, onProgress, issueRules) {
     onProgress({ kind: 'cards' });
     await this.completeCards(scenario);
+    if (issueRules) this.log(`gm story issues after cards: ${issueCounts(storyIssues(scenario, issueRules))}`);
     return scenario;
   }
 
