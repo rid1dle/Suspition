@@ -35,7 +35,7 @@ const WORLD_SCHEMA = obj({
   case_question: str,
   truth: obj({
     summary: str,
-    timeline: { type: 'array', items: obj({ time: str, event: str }) },
+    timeline: { type: 'array', items: obj({ time: str, event: str, location_id: str, character_ids: strArr }) },
     culprit_ids: strArr,
     method: str,
     motive: str,
@@ -283,7 +283,7 @@ Design rules:
 - Everyone is a suspect. For every player and important GM character except the victim, fill suspects: a motive_against_victim (a real reason to want the victim harmed tonight; a secret crime of their own is not a motive, say why it makes them want the victim gone), where_at_crime_time, alibi_witness (empty: nobody can vouch for them during the crime), pointer_clue_ids (clues that point at them) and cleared_by_clue_ids (a different clue, found later, that clears them; empty only for the culprit).
 - Red herrings are built, not labelled. Each red_herring points at an innocent for the murder itself, is convincing (why_convincing), and is ruled out only by a different clue found in a later round (refuted_by_clue_ids). "It is a different crime" never rules anything out. Never write in a clue's own text that it has nothing to do with the death.
 - No giveaways. No single clue, public line, hint, round question, reward, public_info or intro line may point at the culprit alone. A clue states what is seen, never the conclusion, and never names who did it. Each clue has a reveal_round: the round it can first be found.
-- Whereabouts: in truth.whereabouts, say where every character was at each key time (at least the crime time) and who saw them. Nobody but the culprit and the victim is at truth.crime's place at its time, unless asleep or out of sight; say which.
+- Whereabouts: in truth.whereabouts, say where every character was at each key time (at least the crime time) and who saw them; say where every character was at each time in truth.timeline. Nobody but the culprit and the victim is at truth.crime's place at its time, unless asleep or out of sight; say which. Each step of truth.timeline says where it happened (location_id, empty if nowhere in particular) and who acted (character_ids). The culprit's whole path must be clear of witnesses, not only the crime: nobody but the people acting is where the culprit acts at that time, unless asleep or out of sight.
 - Variety: each character's secret is a different kind. Use workplace theft or forged papers only when the setting needs them. Do not make the twist "the victim was secretly kind".
 - Every player gets 1 or 2 hidden_facts: true things about their own character that they do not know. Each must be discoverable through at least one clue or GM character, and must matter to the story. A hidden fact is never something the character did, said or saw while awake and aware; it is something they could not know (it happened while they slept or were knocked out, when they were a child, or others kept it from them). No other player's card may state a hidden fact.
 - Motives you can feel: private_info reads like a short story in order: what you wanted, what you did tonight and why, what went wrong. Every action has a reason the player can feel (love, money, fear, pride, guilt, loyalty), never just a fact. wants is what the character wants most tonight and the personal reason. fears is what they are scared will come out and what they would lose. goal_why is why their secret goal matters to them personally.

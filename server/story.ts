@@ -75,12 +75,24 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     if (!refuting.length || Math.max(...refuting.map(roundOf)) <= Math.max(0, ...own.map(roundOf))) out.push(`herring: red_herrings[${i}] is refuted too soon; a refuting clue must open in a later round than its own clues.`);
   });
 
+  // Nobody awake may stand where the culprit acts: at the crime, or at any other step of the culprit's path.
   const crime = s.truth?.crime;
   const suspects = new Set(s.suspects.map((x) => x?.character_id));
+  const witness = (w, place, time, acting = []) => w?.location_id === place && sameTime(w?.time, time)
+    && !culprits.includes(w.character_id) && !acting.includes(w.character_id) && suspects.has(w.character_id) && !ASLEEP.test(w.doing ?? '');
+  const flagged = new Set();
   (s.truth?.whereabouts ?? []).forEach((w, i) => {
-    if (!crime || w?.location_id !== crime.location_id || !sameTime(w?.time, crime.time)) return;
-    if (culprits.includes(w.character_id) || !suspects.has(w.character_id) || ASLEEP.test(w.doing ?? '')) return;
+    if (!crime || !witness(w, crime.location_id, crime.time)) return;
+    flagged.add(i);
     out.push(`presence: truth.whereabouts[${i}] puts ${w.character_id} at the crime place at the crime time, awake; move them or say they were asleep or out of sight.`);
+  });
+  (s.truth?.timeline ?? []).forEach((t, j) => {
+    if (!t?.location_id || !(t.character_ids ?? []).some((id) => culprits.includes(id))) return;
+    (s.truth?.whereabouts ?? []).forEach((w, i) => {
+      if (flagged.has(i) || !witness(w, t.location_id, t.time, t.character_ids)) return;
+      flagged.add(i);
+      out.push(`presence: truth.whereabouts[${i}] puts ${w.character_id} where a culprit acts (truth.timeline[${j}]), awake; move them or say they were asleep or out of sight.`);
+    });
   });
 
   out.push(...clueWhereErrors(s).map((e) => `where: ${e}`));

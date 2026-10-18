@@ -395,6 +395,11 @@ export function resolveStoryIds(s) {
     if (Array.isArray(w.seen_by)) w.seen_by = w.seen_by.map(person);
   }
   if (s.truth?.crime) s.truth.crime.location_id = place(s.truth.crime.location_id);
+  for (const t of s.truth?.timeline ?? []) {
+    if (!t) continue;
+    if (t.location_id) t.location_id = place(t.location_id);
+    if (Array.isArray(t.character_ids)) t.character_ids = t.character_ids.map(person);
+  }
   for (const c of s.clues ?? []) if (c) c.where = anywhere(c.where);
   return s;
 }
@@ -422,6 +427,10 @@ function storyFieldErrors(s, { players, npcIds, clueIds, placeIds, phases }) {
     unknownClues(`red_herrings ${i + 1}`, [...(h?.clue_ids ?? []), ...(h?.refuted_by_clue_ids ?? [])]);
   }
   if (!places.has(s.truth?.crime?.location_id)) errors.push('truth.crime.location_id must be a place.');
+  for (const [i, t] of (s.truth?.timeline ?? []).entries()) {
+    if (t?.location_id && !places.has(t.location_id)) errors.push(`truth.timeline[${i}] names unknown place ${t.location_id}.`);
+    for (const id of t?.character_ids ?? []) if (!people.has(id)) errors.push(`truth.timeline[${i}] names unknown character ${id}.`);
+  }
   for (const w of s.truth?.whereabouts ?? []) {
     if (!people.has(w?.character_id)) errors.push(`truth.whereabouts names unknown character ${w?.character_id}.`);
     if (!places.has(w?.location_id)) errors.push(`truth.whereabouts for ${w?.character_id} names unknown place ${w?.location_id}.`);
