@@ -83,4 +83,30 @@ describe('ripples', () => {
     assert.match(playSystem(game.scenario), rule);
     assert.match(publicSystem({ title: 'x' }, []), rule);
   });
+
+  test('should name the actor when the move was clearly seen', () => {
+    const game = playing();
+    G.beginAsk(game, 'p1', { kind: 'action', text: 'I drag the crate out loudly.' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, move_is_public: true, public_event: 'Character 1 drags a crate across the yard.' }, 10_000);
+    assert.deepEqual(ripples(game).map((e) => e.text), ['Character 1 drags a crate across the yard.']);
+  });
+
+  test('should let a loud move through the 45 second gap and the 3 minute gap', () => {
+    const game = playing();
+    move(game, 'p1', 'A dog barks.', 10_000);
+    G.beginAsk(game, 'p2', { kind: 'action', text: 'I burn the letter.' });
+    G.completeAsk(game, 'p2', { ...emptyAsk, clues_destroyed: ['c1'], public_event: 'Smoke curls out of the stove.' }, 20_000);
+    G.beginAsk(game, 'p1', { kind: 'action', text: 'I smash the lamp.' });
+    G.completeAsk(game, 'p1', { ...emptyAsk, suspicion_change: 12, public_event: 'Glass shatters somewhere below.' }, 30_000);
+    assert.deepEqual(ripples(game).map((e) => e.text), ['A dog barks.', 'Smoke curls out of the stove.', 'Glass shatters somewhere below.']);
+  });
+
+  test('should record every dropped ripple and why', () => {
+    const game = playing();
+    move(game, 'p1', 'A door bangs.', 10_000);
+    move(game, 'p2', 'A dog barks.', 20_000);
+    move(game, 'p1', 'A bell rings.', 100_000);
+    assert.deepEqual(game.state.rippleDrops.map((d) => d.why), ['table', 'player']);
+  });
 });
+

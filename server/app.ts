@@ -184,6 +184,11 @@ export class App {
     return this.library;
   }
 
+  logRippleDrop(game, before) {
+    const list = game.state.rippleDrops ?? [];
+    if (list.length > before || (list.length === 50 && list.at(-1)?.at === this.clock())) this.log(`ripple dropped (${list.at(-1).why} gap)`);
+  }
+
   // The worlds this group played lately, so a drawn setting and the world writer can steer away from them.
   recentWorlds() {
     try {
@@ -407,7 +412,9 @@ export class App {
         if (this.game !== game) return;
         const { lines, answer, asker_read: read, ripple } = await this.gm.publicAnswer(game, q, words);
         if (this.game !== game) return;
+        const drops = game.state.rippleDrops?.length ?? 0;
         G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, words, ripple);
+        this.logRippleDrop(game, drops);
       } catch (err) {
         if (this.game !== game) return;
         G.failPublicAsk(game, p.id, 'The GM could not read that. Try saying that again.');
@@ -474,7 +481,9 @@ export class App {
       try {
         const result = await this.gm.answer(game, p.id, { ...ask, read });
         if (this.game !== game) return;
+        const drops = game.state.rippleDrops?.length ?? 0;
         G.completeAsk(game, p.id, result, this.clock());
+        this.logRippleDrop(game, drops);
       } catch (err) {
         if (this.game !== game) return;
         G.failAsk(game, p.id);

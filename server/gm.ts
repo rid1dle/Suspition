@@ -156,6 +156,8 @@ export class GM {
     this.setupEffort = setupEffort;
     this.limiter = new Limiter(maxParallel);
     this.readLimiter = new Limiter(maxParallel);
+    // Pictures take a minute or two; they get their own slot so answers never queue behind them.
+    this.pictureLimiter = new Limiter(1);
     this.log = log;
   }
 
@@ -280,7 +282,7 @@ export class GM {
       schema: ILLUSTRATION_SCHEMA,
       model: this.playModel,
       timeoutMs: 300_000,
-    });
+    }, this.pictureLimiter);
   }
 
   score(game, verdict) {

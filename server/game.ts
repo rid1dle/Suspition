@@ -552,9 +552,9 @@ export const RIPPLE_PLAYER_MS = 180_000;
 export const RIPPLE_TABLE_MS = 45_000;
 export const RIPPLE_WORDS = 20;
 
-// A small change the whole room notices because of one player's move. It never says whose move it was,
+// A small change the whole room notices because of one player's move. It never says whose secret move it was,
 // and the table gets at most one every 45 s and one per player every 3 minutes, so it never floods.
-export function addRipple(game, playerId, text, now = Date.now(), { hideActor = false } = {}) {
+export function addRipple(game, playerId, text, now = Date.now(), { hideActor = false, loud = false } = {}) {
   const st = game.state;
   let clean = String(text ?? '').trim();
   if (hideActor) {
@@ -563,7 +563,12 @@ export function addRipple(game, playerId, text, now = Date.now(), { hideActor = 
   clean = capWords(clean, RIPPLE_WORDS);
   if (!clean) return false;
   st.rippleAt ??= {};
-  if (now - (st.rippleAt[playerId] ?? -Infinity) < RIPPLE_PLAYER_MS || now - (st.rippleLast ?? -Infinity) < RIPPLE_TABLE_MS) return false;
+  // A loud move (evidence destroyed, a big stir) always reaches the room; the gaps only thin out small ones.
+  const why = loud ? null : now - (st.rippleAt[playerId] ?? -Infinity) < RIPPLE_PLAYER_MS ? 'player' : now - (st.rippleLast ?? -Infinity) < RIPPLE_TABLE_MS ? 'table' : null;
+  if (why) {
+    st.rippleDrops = [...(st.rippleDrops ?? []), { at: now, why }].slice(-50);
+    return false;
+  }
   st.rippleAt[playerId] = now;
   st.rippleLast = now;
   addEvent(game, clean, 'ripple', now);
@@ -725,7 +730,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   learn(game, result.learned, playerId, now);
   if (result.player_location && (kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
-  addRipple(game, playerId, unpuppet(result.public_event, null, { others: true }), now, { hideActor: true });
+  const loud = (result.clues_destroyed ?? []).length > 0 || Number(result.suspicion_change) >= 10;
+  addRipple(game, playerId, unpuppet(result.public_event, null, { others: true }), now, { hideActor: !result.move_is_public, loud });
   whisper(game, (result.messages_to_players ?? []).map((m) => ({ ...m, text: unpuppet(m?.text, m?.player_id, { others: m?.player_id !== playerId }) })), now);
 }
 
