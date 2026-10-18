@@ -341,6 +341,43 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
   const ladder = Array.isArray(s.hint_ladder) ? s.hint_ladder : [];
   if (ladder.filter((h) => !h.is_false).length < hints) errors.push(`Need at least ${hints} true hints.`);
   if (ladder.filter((h) => h.is_false).length > 1) errors.push('At most one false hint.');
+  if (Array.isArray(s.suspects)) errors.push(...storyFieldErrors(s, { players: got, npcIds, clueIds, placeIds: ids(s.locations), phases }));
+  return errors;
+}
+
+// Clues whose where is not a place or character id. A story problem the check can patch, not a reason to fail a draft.
+export function clueWhereErrors(s) {
+  const known = new Set([...(s?.locations ?? []), ...(s?.players ?? []), ...(s?.npcs ?? [])].map((x) => x?.id));
+  return (s?.clues ?? []).filter((c) => !known.has(String(c.where ?? '').trim())).map((c) => `Clue ${c.id} sits nowhere real; where must be a place or character id.`);
+}
+
+// The story fields of a world written since difficulty came in. Old worlds have none and skip this.
+function storyFieldErrors(s, { players, npcIds, clueIds, placeIds, phases }) {
+  const errors = [];
+  const people = new Set([...players, ...npcIds]);
+  const clues = new Set(clueIds);
+  const places = new Set(placeIds);
+  const unknownClues = (label, list) => (list ?? []).filter((c) => !clues.has(c)).forEach((c) => errors.push(`${label} names unknown clue ${c}.`));
+  for (const id of players) if (!s.suspects.some((x) => x?.character_id === id)) errors.push(`${id} needs a suspects entry.`);
+  for (const x of s.suspects) {
+    if (!people.has(x?.character_id)) errors.push(`suspects names unknown character ${x?.character_id}.`);
+    unknownClues(`suspects entry for ${x?.character_id}`, [...(x?.pointer_clue_ids ?? []), ...(x?.cleared_by_clue_ids ?? [])]);
+  }
+  for (const [i, h] of (s.red_herrings ?? []).entries()) {
+    if (!people.has(h?.points_at)) errors.push(`red_herrings ${i + 1} points at unknown character ${h?.points_at}.`);
+    unknownClues(`red_herrings ${i + 1}`, [...(h?.clue_ids ?? []), ...(h?.refuted_by_clue_ids ?? [])]);
+  }
+  if (!places.has(s.truth?.crime?.location_id)) errors.push('truth.crime.location_id must be a place.');
+  for (const w of s.truth?.whereabouts ?? []) {
+    if (!people.has(w?.character_id)) errors.push(`truth.whereabouts names unknown character ${w?.character_id}.`);
+    if (!places.has(w?.location_id)) errors.push(`truth.whereabouts for ${w?.character_id} names unknown place ${w?.location_id}.`);
+  }
+  for (const c of s.clues ?? []) {
+    if (!Number.isInteger(c.reveal_round) || c.reveal_round < 1 || c.reveal_round > phases) errors.push(`Clue ${c.id} opens in round ${c.reveal_round}; the game has ${phases} rounds.`);
+  }
+  for (const about of ['culprit', 'method', 'motive']) {
+    if (!(s.key_deductions ?? []).some((k) => k.about === about)) errors.push(`Need a key deduction about the ${about}.`);
+  }
   return errors;
 }
 

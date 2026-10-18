@@ -40,6 +40,8 @@ const WORLD_SCHEMA = obj({
     method: str,
     motive: str,
     ambiguities: str,
+    crime: obj({ time: str, location_id: str }),
+    whereabouts: { type: 'array', items: obj({ time: str, character_id: str, location_id: str, doing: str, seen_by: strArr }) },
   }),
   players: {
     type: 'array',
@@ -102,9 +104,12 @@ const WORLD_SCHEMA = obj({
       does_not_prove: str,
       importance: { type: 'string', enum: ['essential', 'useful', 'misleading'] },
       can_be_destroyed: { type: 'boolean' },
+      reveal_round: { type: 'integer', minimum: 1, maximum: 5 },
     }),
   },
-  key_deductions: { type: 'array', items: obj({ id: str, statement: str, clue_ids: strArr }) },
+  key_deductions: { type: 'array', items: obj({ id: str, statement: str, clue_ids: strArr, about: { type: 'string', enum: ['culprit', 'method', 'motive', 'other'] } }) },
+  suspects: { type: 'array', items: obj({ character_id: str, motive_against_victim: str, where_at_crime_time: str, alibi_witness: str, pointer_clue_ids: strArr, cleared_by_clue_ids: strArr }) },
+  red_herrings: { type: 'array', items: obj({ points_at: str, clue_ids: strArr, why_convincing: str, refuted_by_clue_ids: strArr }) },
   phases: {
     type: 'array',
     items: obj({
@@ -260,7 +265,7 @@ export const PLAIN_STYLE = `Writing style (the most important rule):
 - Say less. Players read on phones and talk out loud. The talk is the fun, not the text.
 - Players call the phases "rounds". In any text they see, say "round", never "phase".
 - Never use em dashes; use commas or full stops.
-- Ids (p1, n1, c3, l2, k1, h1) go only in id and *_ids fields. Never write an id in text; use the name.`;
+- Ids (p1, n1, c3, l2, k1, h1) go only in id fields, *_id and *_ids fields, where, points_at and seen_by. Never write an id in text; use the name.`;
 
 export const GENERATION_SYSTEM = `You design one-session hidden-role mystery games for friends playing in the same room.
 Each player is a character inside the mystery. Some are investigators with their own secrets, one or more are the culprits, and there may be a wildcard whose goal fits neither side.
@@ -273,14 +278,19 @@ Pick the room: how this world looks and sounds on every screen. seed_color is on
 
 Design rules:
 - Write the truth first: what happened, in order, who did what, when, where, how and why. Everything else must be consistent with it.
-- Every player's private_info and goal must connect to the central event. No filler secrets. Innocent players hide real things (debts, affairs, small crimes, loyalties) that create honest red herrings.
+- Every player's private_info and goal must connect to the central event. No filler secrets.
+- Everyone is a suspect. For every player and important GM character except the victim, fill suspects: a motive_against_victim (a real reason to want the victim harmed tonight; a secret crime of their own is not a motive, say why it makes them want the victim gone), where_at_crime_time, alibi_witness (empty: nobody can vouch for them during the crime), pointer_clue_ids (clues that point at them) and cleared_by_clue_ids (a different clue, found later, that clears them; empty only for the culprit).
+- Red herrings are built, not labelled. Each red_herring points at an innocent for the murder itself, is convincing (why_convincing), and is ruled out only by a different clue found in a later round (refuted_by_clue_ids). "It is a different crime" never rules anything out. Never write in a clue's own text that it has nothing to do with the death.
+- No giveaways. No single clue, public line, hint, round question, reward, public_info or intro line may point at the culprit alone. A clue states what is seen, never the conclusion, and never names who did it. Each clue has a reveal_round: the round it can first be found.
+- Whereabouts: in truth.whereabouts, say where every character was at each key time (at least the crime time) and who saw them. Nobody but the culprit and the victim is at truth.crime's place at its time, unless asleep or out of sight; say which.
+- Variety: each character's secret is a different kind. Use workplace theft or forged papers only when the setting needs them. Do not make the twist "the victim was secretly kind".
 - Every player gets 1 or 2 hidden_facts: true things about their own character that they do not know. Each must be discoverable through at least one clue or GM character, and must matter to the story. A hidden fact is never something the character did, said or saw while awake and aware; it is something they could not know (it happened while they slept or were knocked out, when they were a child, or others kept it from them). No other player's card may state a hidden fact.
 - Motives you can feel: private_info reads like a short story in order: what you wanted, what you did tonight and why, what went wrong. Every action has a reason the player can feel (love, money, fear, pride, guilt, loyalty), never just a fact. wants is what the character wants most tonight and the personal reason. fears is what they are scared will come out and what they would lose. goal_why is why their secret goal matters to them personally.
 - Self-knowledge (strict): a player always knows what their own character did, said, saw, and where they were. Anything about a player character's own actions that appears anywhere (truth, timelines, other cards, GM character sheets, clues, rounds) must also be on that player's own card, in private_info or starting_knowledge.
-- 4 to 6 key deductions. Each one needs at least 2 independent clues (different kinds of evidence, not duplicates).
+- 4 to 6 key deductions. Each one needs at least 2 independent clues (different kinds of evidence, not duplicates). about says what it settles: at least one each about the culprit, the method and the motive.
 - GM characters (witnesses, staff, family): use the number given in the request. The victim may be one of them if they are alive, otherwise describe the victim in the truth.
 - Mark each GM character's importance. important: tied to the case (knows something that matters, holds a clue, has a stake). minor: part of the place only (a porter, a guest); they know everyday things, hold no clue and no secret that matters, and point players to others. Make about half important, at least one, unless the request says background only. Players track important ones; minor ones keep the cast easy to follow.
-- 4 to 6 locations. Clues sit in locations or with GM characters.
+- 4 to 6 locations. Clues sit in locations or with GM characters; a clue's where is the id of that place or person.
 - Culprits know they are culprits. Their private_info says exactly what they did and what they must hide, and their goal is to avoid being named.
 - case_question is the one big question the whole group must answer by the end, under 12 words, naming the victim or event (for example "Who poisoned Mr Rao, and why?").
 - Every goal is one sentence that starts with a verb and says exactly what counts as done, so the player and the GM can both tell at the end if it happened (for example "Get Rao's notebook back before the final vote."). Investigators already want to solve the case (that is the group goal), so their goal is only their personal objective. A wildcard's goal is something else entirely (escape with an item, protect someone, expose a different secret).

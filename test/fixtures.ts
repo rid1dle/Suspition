@@ -18,7 +18,13 @@ export function makeScenario(playerCount = 4, { phases = 3, hints = 3, questions
     title: 'The Test Case',
     setting_summary: 'A test setting.',
     opening_scene: 'OPENING',
-    truth: { summary: 'TRUTH-SUMMARY', timeline: [{ time: '9pm', event: 'It happened' }], culprit_ids: ['p1'], method: 'METHOD', motive: 'MOTIVE', ambiguities: '' },
+    truth: {
+      summary: 'TRUTH-SUMMARY', timeline: [{ time: '9pm', event: 'It happened' }], culprit_ids: ['p1'], method: 'METHOD', motive: 'MOTIVE', ambiguities: '',
+      crime: { time: '9pm', location_id: 'l1' },
+      whereabouts: players.map((p, i) => ({ time: '9pm', character_id: p.id, location_id: i === 0 ? 'l1' : 'l2', doing: i === 0 ? 'DOING-IT' : 'COOKING', seen_by: [] })),
+    },
+    suspects: players.map((p, i) => ({ character_id: p.id, motive_against_victim: `MOTIVE-OF-${i + 1}`, where_at_crime_time: i === 0 ? 'Ballroom' : 'Kitchen', alibi_witness: '', pointer_clue_ids: i === 0 ? ['c1'] : ['c3'], cleared_by_clue_ids: i === 0 ? [] : ['c2'] })),
+    red_herrings: [{ points_at: 'p2', clue_ids: ['c3'], why_convincing: 'WHY-CONVINCING', refuted_by_clue_ids: ['c2'] }],
     players,
     npcs: [
       { id: 'n1', name: 'The Butler', role_title: 'Butler', public_info: 'Serves drinks', knows: 'NPC-KNOWS', secrets: 'NPC-SECRET', lies: '', reveals_freely: '', reveals_under_pressure: '', start_location: 'l2' },
@@ -29,14 +35,14 @@ export function makeScenario(playerCount = 4, { phases = 3, hints = 3, questions
       { id: 'l2', name: 'Kitchen', public_info: 'Hot', x: 80, y: 70, neighbors: ['l1', 'l9'] },
     ],
     clues: [
-      { id: 'c1', name: 'Torn glove', where: 'l1', shows: 'CLUE-1-SHOWS', does_not_prove: '', importance: 'essential', can_be_destroyed: true },
-      { id: 'c2', name: 'Ledger', where: 'l2', shows: 'CLUE-2-SHOWS', does_not_prove: '', importance: 'essential', can_be_destroyed: false },
-      { id: 'c3', name: 'Note', where: 'n1', shows: 'CLUE-3-SHOWS', does_not_prove: '', importance: 'useful', can_be_destroyed: true },
+      { id: 'c1', name: 'Torn glove', where: 'l1', shows: 'CLUE-1-SHOWS', does_not_prove: '', importance: 'essential', can_be_destroyed: true, reveal_round: 1 },
+      { id: 'c2', name: 'Ledger', where: 'l2', shows: 'CLUE-2-SHOWS', does_not_prove: '', importance: 'essential', can_be_destroyed: false, reveal_round: Math.min(2, phases) },
+      { id: 'c3', name: 'Note', where: 'n1', shows: 'CLUE-3-SHOWS', does_not_prove: '', importance: 'useful', can_be_destroyed: true, reveal_round: 1 },
     ],
     key_deductions: [
-      { id: 'k1', statement: 'A', clue_ids: ['c1', 'c2'] },
-      { id: 'k2', statement: 'B', clue_ids: ['c2', 'c3'] },
-      { id: 'k3', statement: 'C', clue_ids: ['c1', 'c3'] },
+      { id: 'k1', statement: 'A', clue_ids: ['c1', 'c2'], about: 'culprit' },
+      { id: 'k2', statement: 'B', clue_ids: ['c2', 'c3'], about: 'method' },
+      { id: 'k3', statement: 'C', clue_ids: ['c1', 'c3'], about: 'motive' },
     ],
     phases: Array.from({ length: phases }, (_, i) => ({
       name: `Phase name ${i + 1}`,
