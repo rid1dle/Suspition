@@ -7,6 +7,7 @@ import { LENGTHS, PLAN_SECTIONS } from './prompts.ts';
 import { roomTheme, guessRoom } from './room.ts';
 import { GENERATION_STEPS } from './progress.ts';
 import { sanitizeMusic } from '../src/lib/music-theory.ts';
+import { DECK, drawIdea } from '../src/lib/settings-deck.ts';
 
 export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 10;
@@ -37,6 +38,7 @@ const fail = (msg, status) => {
 };
 
 export function createGame(now = Date.now()) {
+  const surprise = drawIdea([]);
   return {
     id: token().slice(0, 12),
     createdAt: now,
@@ -47,7 +49,17 @@ export function createGame(now = Date.now()) {
     scenario: null,
     state: null,
     error: null,
+    lobby: { surprise, shown: [surprise.id] },
   };
+}
+
+// A new setting idea for an empty setting box, away from recent worlds and from ideas shown in this lobby.
+export function shuffleSurprise(game, recent = [], random = Math.random) {
+  game.lobby ??= { surprise: null, shown: [] };
+  const idea = drawIdea(recent.map((r) => String(r).toLowerCase()), random, game.lobby.shown);
+  game.lobby.surprise = idea;
+  game.lobby.shown = game.lobby.shown.length >= DECK.length ? [idea.id] : [...game.lobby.shown, idea.id];
+  return idea;
 }
 
 export function addPlayer(game, { name, wish, username } = {}) {
@@ -108,6 +120,7 @@ export function applySetup(game, input = {}) {
     roundStyle,
     notes: String(input.notes ?? '').trim().slice(0, 500),
   };
+  if (!game.setup.setting && game.lobby?.surprise) game.setup.surprise = { ...game.lobby.surprise };
   game.status = 'generating';
   game.error = null;
   return game.setup;
@@ -1665,6 +1678,7 @@ function publicCore(game, now) {
     error: game.error,
     players: game.players.map((p) => ({ id: p.id, name: p.name })),
     setup: game.setup,
+    surprise: ['lobby', 'failed'].includes(game.status) ? game.lobby?.surprise ?? null : null,
     title: sc?.title ?? null,
     background: sc?.background ?? [],
     caseQuestion: sc ? caseQuestion(sc) : null,

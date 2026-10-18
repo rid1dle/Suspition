@@ -26,6 +26,7 @@ export class App {
 
   async init() {
     this.game = (await this.store.load()) ?? G.createGame(this.clock());
+    if (this.game.status === 'lobby' && !this.game.lobby) G.shuffleSurprise(this.game, this.recentWorlds());
     if (this.game.scenario) G.cleanScenario(this.game);
     if (this.game.status === 'generating') {
       this.game.status = 'failed';
@@ -116,6 +117,7 @@ export class App {
     this.asks.clear();
     await this.keep(this.game);
     this.game = G.createGame(this.clock());
+    G.shuffleSurprise(this.game, this.recentWorlds());
     await this.changed();
     return this.game.hostToken;
   }
@@ -179,6 +181,24 @@ export class App {
     return this.library;
   }
 
+  // The worlds this group played lately, so a drawn setting and the world writer can steer away from them.
+  recentWorlds() {
+    try {
+      return this.library?.recentWorlds?.(10) ?? [];
+    } catch (err) {
+      this.log(`recent worlds failed: ${err.message}`);
+      return [];
+    }
+  }
+
+  async shuffleSurprise(hostToken) {
+    this.requireHost(hostToken);
+    if (!['lobby', 'failed'].includes(this.game.status)) throw new GameError('The world is already written.', 409);
+    const idea = G.shuffleSurprise(this.game, this.recentWorlds());
+    await this.changed();
+    return idea;
+  }
+
   async listGames(hostToken) {
     this.requireHost(hostToken);
     return this.requireLibrary().list();
@@ -228,6 +248,7 @@ export class App {
   async setup(hostToken, input) {
     this.requireHost(hostToken);
     G.applySetup(this.game, input);
+    if (!this.game.setup.setting) this.game.setup.recent = this.recentWorlds();
     for (const p of this.game.players) Object.assign(p, aboutForGM(this.profiles.get(p.username)));
     if (input.testGame === true) this.game.learning = 'test';
     await this.changed();

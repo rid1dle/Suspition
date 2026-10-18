@@ -285,7 +285,7 @@ Design rules:
 - public_info, setting_summary and opening_scene are read by everyone. They must never reveal a culprit, a secret or a hidden fact.
 - The hint ladder runs from vague to specific. Write at least as many hints as requested. If you use the false-hint twist, mark exactly one hint is_false: true and make it plausible but refutable by evidence.
 - Use exactly the twists listed in the request, woven into the characters and phases. Record each in twists with a description of how it works in this game.
-- Background: 5 to 8 short lines everyone reads at the start. Cover: the place and the year, why everyone is here tonight, who the victim is and what they were like, what just happened, what is cut off or blocked, and one or two things everyone in this world would know. No secrets.
+- Background: 5 to 8 short lines everyone reads at the start. Cover: the place and the year, why everyone is here tonight, who the victim is and what they were like, what just happened, why nobody can simply leave or call for help tonight (it can be a storm, but also a moving train, a ceremony that must finish, a promise, a locked event, a rule), and one or two things everyone in this world would know. No secrets.
 - Public timeline: 3 to 8 times everyone knows or can learn. reveal_round 0 means known from the start; 1 to the number of rounds means it is announced when that round starts. order sorts the whole story in time (use 10, 20, 30... so new entries fit between). Never put a secret in it.
 - Rounds (phases): one entry per round, with a short name and a planned beat (an event that changes the situation). objective says what the group should do this round, starting with a verb, under 15 words ("Find out where everyone was when the lights went out."). try gives 2 or 3 pointers under 10 words each, naming people or places to check, never the answer ("Ask the watchman about the gate."). Each round has a clear goal: question is what the group must work out this round, answerable from clues and talk in that round (for example "How did the lights go out?"). options are 3 or 4 short answers; answer_index is the right one. The last round's question must not be "who did it" (that is the final vote). reward is one new fact the group unlocks if they get it right; reward_time and reward_order place it on the timeline ('' and 0 if it has no time). wrong_nudge is one gentle line pointing them the right way if they get it wrong. reward and wrong_nudge never name a culprit or point at one person as the one who did it. The questions should build: each round's answer helps the next.
 - Character names are in-world names that fit the setting. Use the player's wish if they gave one.
@@ -298,6 +298,17 @@ Design rules:
 
 ${PLAIN_STYLE}`;
 
+function settingLines(setup) {
+  if (setup.setting) return `Setting: ${setup.setting}`;
+  const idea = setup.surprise?.text
+    ? `Setting idea (drawn by the game): ${setup.surprise.text}. Build the world around it; make it specific and surprising.`
+    : 'Setting: your choice. Make it specific and surprising.';
+  const recent = (setup.recent ?? []).filter(Boolean);
+  return recent.length
+    ? `${idea}\nWorlds this group played recently (make this one clearly different in place, era and the reason people are stuck):\n${recent.map((r) => `- ${r}`).join('\n')}`
+    : idea;
+}
+
 export function generationPrompt(game, twists = pickTwists(game.players.length), culprits = pickCulprits(game.players.length, twists)) {
   const { setup, players } = game;
   const length = LENGTHS[setup.length];
@@ -308,7 +319,7 @@ export function generationPrompt(game, twists = pickTwists(game.players.length),
 Players (${roster.length}):
 ${JSON.stringify(roster, null, 2)}
 
-Setting: ${setup.setting || 'Surprise us'}
+${settingLines(setup)}
 Tone: ${setup.tone}
 Phases: exactly ${length.phases}
 Global hints to write: at least ${setup.hints + 1}

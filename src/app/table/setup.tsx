@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
+import { ShuffleIcon } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,18 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label, Muted } from '@/components/game/label';
 import { PlanSteps } from '@/components/game/plan';
 import type { TableProps } from './table-app';
+
+// With an empty setting box the game draws an idea; the host sees it and can draw another.
+export function SurpriseLine({ setting, surprise, onShuffle }: { setting: string; surprise: { id: string; text: string } | null | undefined; onShuffle: () => void }) {
+  if (setting.trim() || !surprise) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      <span className="text-muted-foreground">If you leave this empty:</span>
+      <span>{surprise.text}</span>
+      <Button variant="ghost" size="sm" onClick={onShuffle}><ShuffleIcon /> Shuffle</Button>
+    </div>
+  );
+}
 
 // A button that needs a second tap within 3 seconds, for things that cannot be undone.
 export function ConfirmButton({ label, confirm = 'Tap again', onConfirm, className, variant = 'ghost' }: { label: string; confirm?: string; onConfirm: () => void; className?: string; variant?: 'ghost' | 'default' | 'destructive' | 'secondary' }) {
@@ -114,6 +127,7 @@ export function Setup(props: TableProps) {
             <h2 className="font-heading text-2xl">Set up the game</h2>
             <Field label="Where is it?">
               <Input value={form.setting} maxLength={200} placeholder="Leave empty for a surprise" onChange={(e) => set('setting', e.target.value)} />
+              <SurpriseLine setting={form.setting} surprise={view.surprise} onShuffle={() => act('surprise')} />
               <div className="flex flex-wrap gap-2">{SETTINGS.map((s) => <button key={s} onClick={() => set('setting', s)} className="rounded-full bg-muted/50 px-3 py-1 text-xs hover:text-primary">{s}</button>)}</div>
             </Field>
             <Field label="Mood"><Chips options={TONES} value={form.tone} onPick={(v) => set('tone', v)} /></Field>
