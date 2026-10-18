@@ -630,7 +630,7 @@ export class App {
         for (const p of problems) kinds[p?.kind] = (kinds[p?.kind] ?? 0) + 1;
         c.log = [...c.log, { at: this.clock(), reason, problems: problems.length, kinds, ...out, skipped: out.skipped.length, solvable: result?.solvable !== false }].slice(-40);
         const kindText = Object.entries(kinds).map(([k, n]) => `${k} ${n}`).join(', ');
-        this.log(`gm continuity (${reason}): ${problems.length} problems${kindText ? ` (${kindText})` : ''}, ${out.canon} canon, ${out.corrections} corrections, ${out.applied} patches, ${out.skipped.length} skipped${out.offers ? `, ${out.offers} offers` : ''}${result?.solvable === false ? `, not solvable (${(result.missing ?? []).length} missing)` : ''}`);
+        this.log(`gm continuity (${reason}): ${problems.length} problems${kindText ? ` (${kindText})` : ''}, ${out.canon} canon, ${out.corrections} corrections, ${out.applied} patches, ${out.skipped.length} skipped${out.offers ? `, ${out.offers} offers` : ''}${out.rounds ? ', 1 round added' : ''}${result?.solvable === false ? `, not solvable (${(result.missing ?? []).length} missing)` : ''}`);
         await this.changed();
       } catch (err) {
         this.log(`gm continuity (${reason}) skipped: ${err.message}`);

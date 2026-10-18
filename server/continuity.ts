@@ -1,5 +1,5 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { roundNumber, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts } from './game.ts';
+import { roundNumber, totalRounds, roundCap, addRound, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts } from './game.ts';
 import { applyPatches } from './story.ts';
 import { CONTINUITY_RULES, FAIR_PLAY, PLAIN_STYLE } from './prompts.ts';
 
@@ -116,7 +116,9 @@ export function applyContinuity(game, result, now = Date.now()) {
   const corrections = correct(game, result?.corrections, now);
   const { applied, skipped } = patchPlan(game, result?.patches, now);
   const offers = (result?.offers ?? []).filter((o) => offerToPlayer(game, o?.player_id, o?.text, o?.choice, now)).length;
-  return { canon, corrections, applied, skipped, offers };
+  const extra = (result?.extra_rounds ?? [])[0];
+  const rounds = extra && addRound(game, extra, now) ? 1 : 0;
+  return { canon, corrections, applied, skipped, offers, rounds };
 }
 
 // The truth, what is still to come, the canon, and everything said since the last check.
@@ -127,6 +129,8 @@ export function continuityPrompt(game) {
   const found = foundClues(game);
   const plan = {
     round_now: roundNumber(game),
+    rounds_in_all: totalRounds(game),
+    rounds_you_may_add: Math.max(0, roundCap(game) - totalRounds(game)),
     rounds_to_come: sc.phases.map((ph, index) => ({ index, ...ph })).filter((ph) => ph.index > st.phaseIndex),
     clues_not_found: sc.clues.map((c, index) => ({ index, ...c })).filter((c) => !found.has(c.id) && !st.destroyed.includes(c.id)),
     clues_destroyed: st.destroyed,

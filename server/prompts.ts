@@ -565,6 +565,7 @@ export const CONTINUITY_SCHEMA = obj({
   corrections: { type: 'array', items: obj({ to: str, speaker: str, text: str }) },
   patches: { type: 'array', items: obj({ path: str, value: str }) },
   offers: { type: 'array', items: obj({ player_id: str, text: str, choice: str }) },
+  extra_rounds: { type: 'array', items: obj({ name: str, objective: str, planned_beat: str, question: str, options: strArr, answer_index: { type: 'integer', minimum: 0, maximum: 3 }, reward: str, wrong_nudge: str, why: str }) },
   solvable: { type: 'boolean' },
   missing: strArr,
 });
@@ -582,6 +583,7 @@ What to return:
   - npcs.N.knows, npcs.N.lies
   - path "clues.+" adds one backup clue when an essential clue was destroyed; value is JSON {"replaces": the destroyed clue id, "name", "where", "shows", "does_not_prove", "reveal_round"}
 - offers: when the story needs something new from a player's character (where they were, what they did), ask that player privately first. text is the question to them, under 20 words ("The story needs to know where you were at 11."). choice is one short suggested answer they can tap ("By the shed"). Nobody may mention it until they answer.
+- extra_rounds: only when what players did opened something the rounds left cannot close (a new thread, a lost clue that needs a new way in, a big turn), add one round; it goes before the last round. At most one per check, and never more than rounds_you_may_add. Usually empty. Give it a name, an objective, a planned beat, a question with 3 or 4 options and the right answer_index, a reward and a wrong_nudge (never naming a culprit), and why.
 - solvable: can the group still work out the culprit, the method and the motive from clues they can still find? missing: what is missing, if anything.`;
 
 export const AUDIT_SCHEMA = obj({

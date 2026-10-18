@@ -495,6 +495,7 @@ export function attachScenario(game, scenario, now = Date.now()) {
   game.status = 'reading';
   game.state = {
     phaseIndex: -1,
+    basePhases: scenario.phases.length,
     phaseEndsAt: null,
     questionsPerPhase: game.setup.questions ?? length.questions,
     phaseMinutes: length.minutes,
@@ -893,7 +894,37 @@ export function willReplay(game) {
   if (game.setup?.roundStyle === 'hotseats') return false;
   const last = resultsThisRound(game).at(-1);
   const voted = (last?.counts ?? []).some((n) => n > 0);
-  return Boolean(last && !last.correct && voted && (game.state.replays ?? 0) < (game.setup?.replays ?? 0));
+  return Boolean(last && !last.correct && voted && (game.state.replays ?? 0) < (game.setup?.replays ?? 0) && totalRounds(game) < roundCap(game));
+}
+
+// Rounds grow with the story, never past the rounds the game started with plus EXTRA_ROUNDS (replays count too).
+export const EXTRA_ROUNDS = 2;
+export const roundCap = (game) => (game.state.basePhases ?? game.scenario.phases.length - (game.state.addedRounds ?? 0)) + EXTRA_ROUNDS;
+
+// A new round goes before the last one, so the last stays the closing round, and never into the round being played.
+export function addRound(game, round, now = Date.now()) {
+  const st = game.state;
+  const sc = game.scenario;
+  const name = String(round?.name ?? '').trim().slice(0, 60);
+  if (!name || totalRounds(game) >= roundCap(game)) return false;
+  const text = (k) => String(round?.[k] ?? '').trim();
+  const options = Array.isArray(round?.options) ? round.options.map((o) => String(o ?? '').trim()).filter(Boolean).slice(0, 4) : [];
+  const ph = { name, objective: text('objective'), try: [], planned_beat: text('planned_beat') };
+  if (text('question') && options.length >= 2) {
+    const answer = Number(round.answer_index);
+    Object.assign(ph, { question: text('question'), options, answer_index: Number.isInteger(answer) && answer >= 0 && answer < options.length ? answer : 0, reward: text('reward'), reward_time: '', reward_order: 0, wrong_nudge: text('wrong_nudge') });
+    if (namesCulprit(sc, game.players, ph.reward)) ph.reward = '';
+    if (namesCulprit(sc, game.players, ph.wrong_nudge)) ph.wrong_nudge = '';
+  }
+  // During a round change the next round is already being prepared, and the final vote never gains a round.
+  if (st.transitioning && isLastPhase(game)) return false;
+  const at = Math.max(st.phaseIndex + (st.transitioning ? 2 : 1), sc.phases.length - 1);
+  sc.phases.splice(at, 0, ph);
+  for (const c of sc.clues ?? []) if (Number.isInteger(c.reveal_round) && c.reveal_round >= at + 1) c.reveal_round += 1;
+  for (const t of sc.public_timeline ?? []) if (Number(t.reveal_round) >= at + 1) t.reveal_round = Number(t.reveal_round) + 1;
+  st.addedRounds = (st.addedRounds ?? 0) + 1;
+  addEvent(game, `The story needs one more round. There are now ${totalRounds(game)} rounds.`, 'phase', now);
+  return true;
 }
 
 export function goesToFinal(game) {
