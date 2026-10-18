@@ -188,3 +188,9 @@ export function KeyObjects({ objects = [] }: { objects?: { name: string; about: 
     </section>
   );
 }
+
+// What kind of story it began as and what the players made of it, said at the end.
+export function StoryShape({ line }: { line?: string | null }) {
+  if (!line) return null;
+  return <p data-story-shape className="font-heading text-lg text-primary">{line}</p>;
+}

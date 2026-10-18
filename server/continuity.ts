@@ -1,5 +1,5 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { roundNumber, totalRounds, roundCap, addRound, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts } from './game.ts';
+import { roundNumber, totalRounds, roundCap, addRound, namesCulprit, mentions, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts } from './game.ts';
 import { applyPatches, guardedPatches } from './story.ts';
 import { CONTINUITY_RULES, FAIR_PLAY, PLAIN_STYLE } from './prompts.ts';
 
@@ -111,6 +111,14 @@ function correct(game, items, now) {
   return sent;
 }
 
+// What the story is becoming, said at the reveal. Never a name.
+function keepStoryNow(game, text) {
+  const line = String(text ?? '').trim().slice(0, 100);
+  if (!line || namesCulprit(game.scenario, game.players, line) || mentions(game, line).length) return;
+  const st = game.state;
+  st.storyArc = [...(st.storyArc ?? []), { round: roundNumber(game), text: line }].slice(-10);
+}
+
 export function applyContinuity(game, result, now = Date.now()) {
   continuityState(game);
   const canon = addCanon(game, result?.canon_add, now);
@@ -119,6 +127,7 @@ export function applyContinuity(game, result, now = Date.now()) {
   const offers = (result?.offers ?? []).filter((o) => offerToPlayer(game, o?.player_id, o?.text, o?.choice, now)).length;
   const extra = (result?.extra_rounds ?? [])[0];
   const rounds = extra && addRound(game, extra, now) ? 1 : 0;
+  keepStoryNow(game, result?.story_now);
   return { canon, corrections, applied, skipped, offers, rounds };
 }
 

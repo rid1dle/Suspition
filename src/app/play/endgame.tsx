@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label, Muted } from '@/components/game/label';
 import { SkillBars, TotalLine } from '@/components/game/score';
+import { StoryShape } from '@/components/game/panels';
 import { emptyAnswers } from '@/lib/phone';
 import { useDraft } from '@/lib/live';
 import type { PlayerView } from '@/lib/views';
@@ -105,6 +106,7 @@ export function Reveal({ view }: { view: PlayerView }) {
       <section className="flex flex-col gap-2 rounded-2xl bg-card p-5">
         <Label>What really happened</Label>
         <p className="whitespace-pre-wrap leading-relaxed">{r.reveal_story}</p>
+        <StoryShape line={r.story_shape} />
       </section>
     </main>
   );

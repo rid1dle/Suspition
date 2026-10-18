@@ -161,7 +161,7 @@ export function Playing(props: TableProps) {
           <section className={cn('flex flex-col gap-5 rounded-2xl bg-card p-6 transition', vote && 'ring-2 ring-primary')}>
             {view.picture && <ScenePicture svg={view.picture} className="round-picture max-h-48 object-cover" />}
             <CaseBox question={view.caseQuestion} />
-            {view.round ? <RoundCard round={view.round} countdown={vote ? countdown(vote.endsAt, now).text : ''} />
+            {view.round ? <RoundCard round={view.round} brief={view.voteBrief} countdown={vote ? countdown(vote.endsAt, now).text : ''} />
               : <div><Label>This round</Label><div className="font-heading text-xl">Talk, look around and share clues.</div></div>}
             {vote && (
               <div className="flex flex-col gap-1">

@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA } from './prompts.ts';
+import { SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA, pickStoryType } from './prompts.ts';
 import { continuityPrompt } from './continuity.ts';
 import { storyIssues, issueCounts, applyStoryPatches } from './story.ts';
 import { validateScenario, resolveStoryIds, placeOf, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore } from './game.ts';
@@ -178,11 +178,12 @@ export class GM {
     const twists = pickTwists(game.players.length, this.random);
     const culprits = pickCulprits(game.players.length, twists, this.random);
     const rules = { playerCount: game.players.length, phases: LENGTHS[game.setup.length].phases, hints: game.setup.hints, npcs: game.setup.npcs, npcRole: game.setup.npcRole, culprits };
+    const storyType = pickStoryType(this.random);
     this.log(`gm twists: ${twists.map((t) => t.id).join(', ')}`);
-    let prompt = generationPrompt(game, twists, culprits);
+    let prompt = generationPrompt(game, twists, culprits, storyType);
     let errors = [];
     const issueRules = { players: game.players, difficulty: game.setup.difficulty, rounds: rules.phases };
-    const retryWith = (problems) => `${generationPrompt(game, twists, culprits)}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
+    const retryWith = (problems) => `${generationPrompt(game, twists, culprits, storyType)}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       onProgress({ kind: 'attempt', attempt, broke: errors.length });
       const scenario = await this.call(`generate#${attempt}`, {
@@ -207,6 +208,7 @@ export class GM {
       const issues = storyIssues(scenario, issueRules);
       this.log(`gm story issues: ${issueCounts(issues)}`);
       const check = await this.checkStory(scenario, issues);
+      scenario.story_type = storyType;
       if (check) this.applyCheck(scenario, check, rules);
       // A rewrite would write the whole world again (8 minutes or more): a second check patches what the first could not.
       if (check?.verdict === 'rewrite') {

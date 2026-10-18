@@ -174,6 +174,8 @@ describe('App', () => {
   test('should go to the final reconstruction without a GM call after the last phase', async () => {
     const ctx = await setupApp();
     await toPlaying(ctx);
+    // A room on track: every clue found, so the story keeps its planned rounds.
+    ctx.app.game.state.found.p1.push(...ctx.app.game.scenario.clues.map((c) => c.id));
     for (let i = 0; i < 3; i += 1) {
       await ctx.app.nextPhase(ctx.host);
       await ctx.app.idle();

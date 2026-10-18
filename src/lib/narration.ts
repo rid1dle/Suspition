@@ -15,7 +15,7 @@ export function narrationFor(prev, next) {
   }
   if (next.status === 'reveal' && prev.status !== 'reveal' && next.reveal) {
     const win = next.reveal.verdict.winner === 'investigators';
-    lines.push(win ? 'The detectives win.' : 'The culprits got away with it.', next.reveal.reveal_story);
+    lines.push(win ? 'The detectives win.' : 'The culprits got away with it.', next.reveal.reveal_story, next.reveal.story_shape);
   }
   return lines.filter(Boolean);
 }

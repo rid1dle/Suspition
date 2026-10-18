@@ -1,14 +1,27 @@
 'use client';
 
 import { motion } from 'motion/react';
-import type { Round } from '@/lib/views';
+import type { Round, VoteBriefView } from '@/lib/views';
 import { cn } from '@/lib/utils';
 import { Label, Muted } from './label';
 
+// Everyone votes from the same picture: where things stand, what is still open, one public line per person.
+export function VoteBrief({ brief }: { brief: VoteBriefView | null | undefined }) {
+  if (!brief || !(brief.lines.length || brief.open.length || brief.people.some((p) => p.line))) return null;
+  return (
+    <div data-vote-brief className="flex flex-col gap-1 rounded-xl bg-muted/50 p-3 text-sm">
+      <Label>Before you vote</Label>
+      {brief.lines.map((l) => <p key={l}>{l}</p>)}
+      {brief.open.length > 0 && <p className="text-muted-foreground">Still open: {brief.open.join(' ')}</p>}
+      {brief.people.filter((p) => p.line).map((p) => <p key={p.name}><b>{p.name}:</b> {p.line}</p>)}
+    </div>
+  );
+}
+
 // The round's job (what to do now), its pointers, and the question everyone votes on at the end.
-export function RoundCard({ round, voting = false, myVote = null, countdown = '', tappable = false, onVote, onIdea }: {
+export function RoundCard({ round, voting = false, myVote = null, countdown = '', tappable = false, brief = null, onVote, onIdea }: {
   round: Round | null | undefined; voting?: boolean; myVote?: number | null; countdown?: string; tappable?: boolean;
-  onVote?: (i: number) => void; onIdea?: (text: string) => void;
+  brief?: VoteBriefView | null; onVote?: (i: number) => void; onIdea?: (text: string) => void;
 }) {
   if (!round) return null;
   const vote = round.vote;
@@ -34,6 +47,7 @@ export function RoundCard({ round, voting = false, myVote = null, countdown = ''
   return (
     <div className="flex flex-col gap-2">
       {job}
+      {vote && <VoteBrief brief={brief} />}
       <Label className={job ? 'mt-3' : ''}>{head}</Label>
       <div className={job ? 'text-lg' : 'font-heading text-xl'}>{round.question}</div>
       {voting && vote ? (

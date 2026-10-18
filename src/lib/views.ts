@@ -22,6 +22,7 @@ export interface CastNpc { id: string; name: string; role: string; info: string;
 export interface Cast { players: CastPlayer[]; npcs: CastNpc[]; locations: { id: string; name: string; [key: string]: unknown }[] }
 
 export interface Round { objective: string; tips: string[]; question: string | null; options: string[]; done: boolean; vote: { endsAt: number; voted: number; of: number } | null }
+export interface VoteBriefView { lines: string[]; open: string[]; people: { name: string; line: string }[] }
 export interface Phase { index: number; number: number; count: number; name: string; endsAt: number | null }
 export interface GameEvent { at: number; phase: number | null; kind: string; text: string; by?: string; q?: string; lines?: { speaker: string; text: string }[] }
 
@@ -39,6 +40,7 @@ export interface PublicView {
   caseQuestion: string;
   cast: Cast | null;
   round: Round | null;
+  voteBrief?: VoteBriefView | null;
   phase: Phase | null;
   events: GameEvent[];
   progress: Progress | null;

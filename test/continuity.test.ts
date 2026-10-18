@@ -33,6 +33,8 @@ describe('continuity during play', () => {
   test('should run at a round change, after 8 answers and before the final vote, one at a time', async () => {
     const ctx = await appPlaying();
     const { app, gm, tokens } = ctx;
+    // A room on track: every clue found, so the story keeps its planned rounds.
+    app.game.state.found.p1.push(...app.game.scenario.clues.map((c) => c.id));
     for (let i = 0; i < 7; i += 1) {
       await app.ask(tokens[i % 3], { kind: 'question', text: `Question ${i}` });
       await app.idle();

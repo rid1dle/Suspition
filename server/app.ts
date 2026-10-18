@@ -633,6 +633,7 @@ export class App {
       this.notify();
       return null;
     }
+    G.paceStory(game, this.clock());
     G.beginPhaseChange(game);
     this.notify();
     return this.background('phase', async () => {

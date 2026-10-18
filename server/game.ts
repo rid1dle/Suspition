@@ -1083,7 +1083,7 @@ export function willReplay(game) {
   if (game.setup?.roundStyle === 'hotseats') return false;
   const last = resultsThisRound(game).at(-1);
   const voted = (last?.counts ?? []).some((n) => n > 0);
-  return Boolean(last && !last.correct && voted && (game.state.replays ?? 0) < (game.setup?.replays ?? 0) && totalRounds(game) < roundCap(game));
+  return Boolean(last && last.correct === false && voted && (game.state.replays ?? 0) < (game.setup?.replays ?? 0) && totalRounds(game) < roundCap(game));
 }
 
 // Rounds grow with the story, never past the rounds the game started with plus EXTRA_ROUNDS (replays count too).
@@ -1116,6 +1116,58 @@ export function addRound(game, round, now = Date.now()) {
   return true;
 }
 
+// Code decides how long the story runs: asked "do you want another round?", the GM never says yes.
+export function paceStory(game, now = Date.now()) {
+  const st = game.state;
+  const sc = game.scenario;
+  if (game.status !== 'playing' || st.transitioning || willReplay(game)) return 'on';
+  const culprits = sc.truth?.culprit_ids ?? [];
+  const opened = openClues(game);
+  const found = new Set(Object.values(st.found ?? {}).flat());
+  const share = opened.length ? opened.filter((id) => found.has(id)).length / opened.length : 1;
+  const last = resultsThisRound(game).at(-1);
+  const missed = Boolean(last && (last.kind === 'spotlight' ? last.top && !culprits.includes(last.top) : last.kind !== 'choice' && last.correct === false));
+  const unsolvable = st.continuity?.log?.at(-1)?.solvable === false;
+  const next = st.phaseIndex + 1;
+  if (next === sc.phases.length - 1 && (missed || share < 0.5 || unsolvable)) {
+    if (!addRound(game, { name: 'One More Round', planned_beat: 'The room needs more time: bring what they are missing into reach.' }, now)) return 'on';
+    sc.phases[next].vote_kind = 'spotlight';
+    return 'more';
+  }
+  const spots = st.roundResults.filter((r) => r.kind === 'spotlight').slice(-2);
+  const twice = spots.length === 2 && spots.every((r) => culprits.includes(r.top));
+  if (!st.closedSooner && sc.phases.length >= 4 && next < sc.phases.length - 1 && next + 1 >= 3 && twice && share >= 0.75) {
+    const closing = next + 1;
+    sc.phases.splice(next, sc.phases.length - 1 - next);
+    for (const c of sc.clues ?? []) if (Number.isInteger(c.reveal_round) && c.reveal_round > closing) c.reveal_round = closing;
+    for (const t of sc.public_timeline ?? []) if (Number(t.reveal_round) > closing) t.reveal_round = closing;
+    st.closedSooner = true;
+    addEvent(game, 'The room is closing in. The next round is the last.', 'phase', now);
+    return 'sooner';
+  }
+  return 'on';
+}
+
+// The GM writes the coming round as it starts: its name, the line that ties it to the room's choice, and its vote.
+function planRound(game, index, result, replay) {
+  const sc = game.scenario;
+  const ph = sc.phases[index];
+  if (!ph || replay) return;
+  const safe = (t, max) => {
+    const text = String(t ?? '').trim().slice(0, max);
+    return text && !namesCulprit(sc, game.players, text) ? text : '';
+  };
+  const name = safe(result.round_name, 60);
+  if (name) ph.name = name;
+  const v = result.vote;
+  if (v?.kind === 'spotlight') ph.vote_kind = 'spotlight';
+  const options = (Array.isArray(v?.options) ? v.options : []).map((o) => safe(o, 80)).filter(Boolean).slice(0, 3);
+  if (v?.kind === 'choice' && safe(v.question, 160) && options.length >= 2 && options.length === (v.options ?? []).length) {
+    const lastChoice = game.state.roundResults.at(-1)?.kind === 'choice';
+    if (lastChoice) ph.vote_kind = 'spotlight';
+    else Object.assign(ph, { vote_kind: 'choice', choice_question: safe(v.question, 160), choice_options: options });
+  }
+}
 export function goesToFinal(game) {
   return isLastPhase(game) && !willReplay(game);
 }
@@ -1182,7 +1234,10 @@ export function completePhase(game, result, now = Date.now()) {
   enterPhase(game, next, now);
   planSeats(game, now, carry);
   setJob(game, result);
+  planRound(game, next, result, replay);
   addEvent(game, phaseLine(game, next, replay), 'phase', now);
+  const because = String(result.because ?? '').trim().slice(0, 200);
+  if (because && !namesCulprit(game.scenario, game.players, because)) addEvent(game, dropPuppeting(game, null, because).text, 'because', now);
   addEvent(game, dropPuppeting(game, null, result.public_event).text, 'event', now);
   setRecap(game, result, now);
   addFacts(game, result.public_facts, 'round change', now);
@@ -1323,11 +1378,22 @@ export function computeVerdict(game) {
   };
 }
 
+const withArticle = (t) => (/^(a|an|the)\s/i.test(t) ? t.replace(/^\w+/, (w) => w.toLowerCase()) : `${/^[aeiou]/i.test(t) ? 'an' : 'a'} ${t}`);
+
+// What kind of story it began as (drawn in code at world writing) and what the players made of it.
+export function storyShape(game) {
+  const type = String(game.scenario?.story_type ?? '').trim();
+  if (!type) return '';
+  const became = String((game.state?.storyArc ?? []).at(-1)?.text ?? '').trim().replace(/[.!]+$/, '');
+  return became ? `This story began as ${withArticle(type)}. It became ${withArticle(became)}.` : `This story was ${withArticle(type)}.`;
+}
+
 export function applyScore(game, verdict, score) {
   const byId = Object.fromEntries((score.players ?? []).map((p) => [p.player_id, p]));
   game.state.result = {
     verdict,
     reveal_story: String(score.reveal_story ?? ''),
+    story_shape: storyShape(game),
     players: game.players.map((p) => {
       const s = byId[p.id] ?? {};
       return {
@@ -1639,7 +1705,10 @@ export const SPOTLIGHT_QUESTION = 'Who should the room look at?';
 
 export function roundQuestion(game, index) {
   const ph = game.scenario?.phases?.[index];
-  if (game.setup?.roundStyle === 'hotseats') {
+  if (ph?.vote_kind === 'choice' && ph.choice_question && (ph.choice_options ?? []).length >= 2) {
+    return { kind: 'choice', question: String(ph.choice_question), options: ph.choice_options.map(String), answer: -1, reward: '', rewardTime: '', rewardOrder: 0, nudge: '' };
+  }
+  if (game.setup?.roundStyle === 'hotseats' || ph?.vote_kind === 'spotlight') {
     if (!ph) return null;
     return { kind: 'spotlight', question: SPOTLIGHT_QUESTION, options: game.scenario.players.map((p) => p.character_name), answer: -1, reward: String(ph.reward ?? ''), rewardTime: String(ph.reward_time ?? ''), rewardOrder: Number(ph.reward_order) || 0, nudge: '' };
   }
@@ -1691,6 +1760,13 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   const winners = counts.flatMap((c, i) => (c === top && top > 0 ? [i] : []));
   const picked = winners.length === 1 ? winners[0] : null;
   if (q.kind === 'spotlight') return resolveSpotlight(game, vote, q, picked, counts, now);
+  if (q.kind === 'choice') {
+    const result = { kind: 'choice', phaseIndex: vote.phaseIndex, round: roundNumber(game), question: q.question, picked, pickedText: picked === null ? null : q.options[picked], correct: null, counts };
+    st.roundResults.push(result);
+    st.roundVote = null;
+    addEvent(game, picked === null ? 'The room is split.' : `The room chose: ${q.options[picked]}.`, 'round', now);
+    return result;
+  }
   const correct = picked === q.answer;
   const result = { phaseIndex: vote.phaseIndex, round: roundNumber(game), question: q.question, picked, pickedText: picked === null ? null : q.options[picked], correct, counts };
   st.roundResults.push(result);
@@ -1718,12 +1794,40 @@ function postRoundReward(game, now) {
   st.timelineExtra.push({ order: q.rewardOrder, time: q.rewardTime, event: q.reward });
 }
 
+// What a player said out loud this round: lines they said and questions they asked the room.
+function saidThisRound(game, playerId) {
+  const st = game.state;
+  const round = roundNumber(game);
+  const name = game.players.find((p) => p.id === playerId)?.name;
+  const spoken = (st.facts ?? []).filter((f) => f.id === playerId && f.round === round && f.fact.startsWith('Said out loud: "')).map((f) => f.fact);
+  const asked = (st.events ?? []).filter((e) => e.kind === 'qa' && e.by === name && e.phase === st.phaseIndex).map((e) => e.q);
+  return [...spoken, ...asked];
+}
+
+// Turning the room is play: away from you after a spotlight, or onto the person you named out loud.
+function rewardTurns(game, result) {
+  const sc = game.scenario;
+  const prev = game.state.roundResults.filter((r) => r.kind === 'spotlight' && r !== result).at(-1);
+  sc.players.forEach((card, i) => {
+    const said = saidThisRound(game, card.id);
+    if (!said.length) return;
+    const before = prev?.counts?.[i] ?? 0;
+    if (prev && (prev.top === card.id || before >= 2) && (result.counts[i] ?? 0) < before && result.top !== card.id) {
+      recordPlay(game, card.id, { points: 1, skill: card.side === 'culprit' ? 'bluffing' : 'persuading', why: 'Turned the room away from you.' }, null, 'out loud');
+    }
+    if (result.top && result.top !== card.id && said.some((t) => mentions(game, t).includes(result.top))) {
+      recordPlay(game, card.id, { points: 1, skill: 'persuading', why: 'The room followed your lead.' }, null, 'out loud');
+    }
+  });
+}
+
 function resolveSpotlight(game, vote, q, picked, counts, now) {
   const st = game.state;
   const target = picked === null ? null : game.scenario.players[picked];
   const result = { kind: 'spotlight', phaseIndex: vote.phaseIndex, round: roundNumber(game), question: q.question, picked, pickedText: target?.character_name ?? null, top: target?.id ?? null, line: null, correct: null, counts };
   st.roundResults.push(result);
   st.roundVote = null;
+  rewardTurns(game, result);
   if (!target) {
     addEvent(game, 'The room is split.', 'round', now);
     return result;
@@ -2119,6 +2223,17 @@ function roomFor(game) {
   return rooms.get(key);
 }
 
+// Before a vote everyone sees the same picture: where things stand, what is still open, and one public line per person.
+function voteBrief(game) {
+  const st = game.state;
+  if (!st?.roundVote) return null;
+  const q = roundQuestion(game, st.roundVote.phaseIndex);
+  const people = q?.kind === 'spotlight'
+    ? game.scenario.players.map((p) => ({ name: p.character_name, line: [...(st.facts ?? [])].reverse().find((f) => f.id === p.id)?.fact ?? '' }))
+    : [];
+  return { lines: st.recap?.lines ?? [], open: st.recap?.open ?? [], people };
+}
+
 function publicCore(game, now) {
   const st = game.state;
   const sc = game.scenario;
@@ -2129,6 +2244,7 @@ function publicCore(game, now) {
   return {
     gameId: game.id,
     status: game.status,
+    voteBrief: voteBrief(game),
     room: sc ? roomFor(game) : null,
     error: game.error,
     players: game.players.map((p) => ({ id: p.id, name: p.name })),

@@ -177,7 +177,7 @@ function StoryTab({ view, onAskTab, onGo }: { view: PlayerView; onAskTab: () => 
   return (
     <div className="flex flex-col gap-5">
       <section className="rounded-2xl bg-card p-5 shadow-sm">
-        <RoundCard round={view.round} voting myVote={view.myRoundVote ?? null} countdown={vote ? countdown(vote.endsAt, now).text : ''} tappable
+        <RoundCard round={view.round} brief={view.voteBrief} voting myVote={view.myRoundVote ?? null} countdown={vote ? countdown(vote.endsAt, now).text : ''} tappable
           onVote={(i) => act('roundvote', { token: tokenOf(), choice: i })}
           onIdea={(t) => { setText(t); box.current?.focus(); }} />
       </section>
