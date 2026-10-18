@@ -212,9 +212,11 @@ describe('the GM steps', () => {
     assert.match(text(<PlanSteps progress={progress({ plan, thinking: false })} now={1} />), /2 characters so far/);
   });
 
-  test('should say when the GM is fixing something', () => {
+  test('should say when the GM is writing the world again', () => {
     const plan = [{ title: 'A', state: 'done' }, { title: 'B', state: 'active' }, { title: 'C', state: 'todo' }];
-    assert.match(text(<PlanSteps progress={progress({ plan, thinking: false, redraft: true })} now={1} />), /Fixing something, about a minute more/);
+    const out = text(<PlanSteps progress={progress({ plan, thinking: false, redraft: true, retry: { reason: 'rules', broke: 2, tookMs: 60_000, at: 0 } })} now={1} />);
+    assert.match(out, /First draft written/);
+    assert.match(out, /writing it again/);
   });
 
   test('should collapse finished steps into one line when compact', () => {

@@ -1335,7 +1335,8 @@ export function cleanPlan(steps, sections = PLAN_SECTIONS) {
 
 function planView(p) {
   const redraft = (p.attempt ?? 1) > 1 || (p.draft ?? 0) > 1;
-  if (!p.plan) return { plan: null, thinking: true, redraft };
+  const retry = p.retry ? { reason: p.retry.reason, broke: p.retry.broke, tookMs: p.retry.tookMs, at: p.retry.at } : null;
+  if (!p.plan) return { plan: null, thinking: true, redraft, retry };
   const keys = new Set(p.keys ?? []);
   const finishing = ['checking', 'cards'].includes(p.step);
   const plan = p.plan.map((st) => {
@@ -1345,7 +1346,7 @@ function planView(p) {
     return { title: st.title, state: active ? 'active' : done ? 'done' : 'todo', ...(counted ? { count: `${p.counts[counted]} ${SECTION_WORDS[counted]} so far` } : {}) };
   });
   if (p.step === 'cards') plan.push({ title: CARD_STEP, state: 'active' });
-  return { plan, thinking: false, redraft };
+  return { plan, thinking: false, redraft, retry };
 }
 
 function bestPlay(result) {

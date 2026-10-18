@@ -176,7 +176,7 @@ export class GM {
     let prompt = generationPrompt(game, twists, culprits);
     let errors = [];
     for (let attempt = 1; attempt <= 2; attempt += 1) {
-      onProgress({ kind: 'attempt', attempt });
+      onProgress({ kind: 'attempt', attempt, broke: errors.length });
       const scenario = await this.call(`generate#${attempt}`, {
         onProgress,
         system: GENERATION_SYSTEM,

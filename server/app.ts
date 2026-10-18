@@ -262,13 +262,21 @@ export class App {
       p.key = null;
       p.keys = [];
     };
+    // A second try keeps only why and how long the first took: never the broken rules, they can name a culprit.
+    const retry = (reason, broke = 0) => {
+      const now = this.clock();
+      p.retry = { reason, broke, tookMs: now - (p.triedAt ?? p.startedAt), at: now };
+      p.triedAt = now;
+    };
     if (e.kind === 'attempt') {
       p.attempt = e.attempt;
       p.draft = 0;
+      if (e.attempt > 1) retry('rules', Number(e.broke) || 0);
       restart();
     } else if (e.kind === 'draft') {
       p.draft += 1;
       if (p.draft > 1) {
+        retry('garbled');
         restart();
         this.log(`gm generate: draft ${p.draft} (the previous one was not valid JSON, the GM is rewriting it)`);
       }

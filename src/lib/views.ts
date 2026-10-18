@@ -5,6 +5,7 @@ export interface RoomColors { bg: string; surface: string; surfaceAlt: string; t
 export interface Room { fontPair: string; texture: string; ambient: string; intensity: 'low' | 'medium'; soundSet: 'soft' | 'tense' | 'playful'; colors: RoomColors }
 
 export interface PlanStep { title: string; state: 'done' | 'active' | 'todo'; count?: string }
+export interface Retry { reason: 'rules' | 'garbled'; broke: number; tookMs: number; at: number }
 export interface Progress {
   attempt: number;
   draft: number;
@@ -12,6 +13,7 @@ export interface Progress {
   plan: PlanStep[] | null;
   thinking: boolean;
   redraft: boolean;
+  retry?: Retry | null;
   [key: string]: unknown;
 }
 
