@@ -10,8 +10,6 @@ import { applyContinuity, continuityState, CHECK_AFTER_ANSWERS } from './continu
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
-// At a round change the next round waits this long for a running continuity check, so its fixes reach the round.
-export const CONTINUITY_GRACE_MS = 20_000;
 
 export class App {
   constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null, people = new MemoryPeople(), library = null }) {
@@ -579,12 +577,11 @@ export class App {
       try {
         await Promise.allSettled([...this.asks.values()]);
         const final = G.goesToFinal(game);
-        const check = this.checkContinuity(game, final ? 'final' : 'round');
         const result = final ? {} : await this.gm.phase(game);
         if (this.game !== game) return;
-        await this.waitBriefly(check, CONTINUITY_GRACE_MS);
-        if (this.game !== game) return;
         G.completePhase(game, result, this.clock());
+        // The check reads the new round as it opened, its loud event included; it never holds the round up.
+        this.checkContinuity(game, final ? 'final' : 'round');
         this.writeSeats(game);
         this.drawRound(game);
         game.error = null;
@@ -603,13 +600,6 @@ export class App {
     const c = continuityState(game);
     c.answers += 1;
     if (c.answers >= CHECK_AFTER_ANSWERS) this.checkContinuity(game, 'answers');
-  }
-
-  async waitBriefly(task, ms) {
-    if (!task) return;
-    let timer;
-    await Promise.race([task, new Promise((r) => (timer = setTimeout(r, ms)))]);
-    clearTimeout(timer);
   }
 
   // The GM reads what was said since the last check and keeps the story whole: canon, in-story corrections, future patches.
