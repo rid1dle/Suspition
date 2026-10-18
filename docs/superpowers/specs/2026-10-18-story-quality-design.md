@@ -101,7 +101,7 @@ Engaging is the strongest area, but all 5 worlds reuse the same surprise ("the v
 
 ## Polish carried over from the living story review
 
-These are fixed in the story quality plan's polish task:
+These are fixed in the story quality plan's Task 8 (polish):
 - Past world titles stay on the server (not in the view, not in the dataset export).
 - Recent worlds come from one database query (newest 10, playtests skipped).
 - When every idea matches a recent world, the idea that matches only the oldest world is drawn.
@@ -117,9 +117,10 @@ These are fixed in the story quality plan's polish task:
 Branch `feat/first-playable`. Pushed up to 08a3f00; everything after (briefing pager, the living story plan, the plan docs) is committed but **not pushed**. Ask before pushing.
 
 1. **Story quality** (this design): `docs/superpowers/plans/2026-10-18-story-quality.md`. The creator has approved the design, the difficulty levels and the consistency check; the plan is waiting for their go-ahead.
-   - Tasks 1 to 7: difficulty, world fields, story issues, clue rounds, consistency check, nights from whereabouts, live check.
-   - Task 8: continuity during play.
-   - Task 9: polish.
+   - Tasks 1 to 6: difficulty, world fields, story issues, clue rounds, consistency check, nights from whereabouts.
+   - Task 7: continuity during play.
+   - Task 8: polish.
+   - Task 9: live check against the audit.
    - Built here tests first, with one review at the end.
 2. **The living map**, plan to write.
    - The creator chose "GM plans, code draws". The GM gives terrain, 6 to 12 made-up landmarks and the real scale of the place (one building up to a whole city). Code draws clean landmarks, winding paths and a compass in the world's colours.
