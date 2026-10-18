@@ -75,6 +75,7 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     if (!pointers.length) out.push(`suspect: ${at} has no clue points at them.`);
     if (!clears.length) out.push(`suspect: ${at} has no clue that clears them.`);
     if (clears.some((c) => pointers.includes(c))) out.push(`suspect: ${at} has a clue that both clears and points at them; use a different clue to clear them.`);
+    if (pointers.length && clears.length && Math.min(...clears.map(roundOf)) <= Math.min(...pointers.map(roundOf))) out.push(`suspect: ${at} is cleared (round ${Math.min(...clears.map(roundOf))}) before anything points at them (round ${Math.min(...pointers.map(roundOf))}); open a pointer clue first.`);
   });
   for (const n of s.npcs ?? []) {
     if (!isMinor(n) && !s.suspects.some((x) => x?.character_id === n.id)) out.push(`suspect: GM character ${n.id} has no suspects entry; add one unless they are the victim.`);
@@ -86,6 +87,9 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     const own = h?.clue_ids ?? [];
     const refuting = h?.refuted_by_clue_ids ?? [];
     if (culprits.includes(h?.points_at)) out.push(`herring: red_herrings[${i}] points at a culprit; it must point at an innocent.`);
+    const target = s.suspects.find((x) => x?.character_id === h?.points_at);
+    const seen = (s.truth?.whereabouts ?? []).some((w) => w?.character_id === h?.points_at && s.truth?.crime && sameTime(w.time, s.truth.crime.time) && (w.seen_by ?? []).length);
+    if (String(target?.alibi_witness ?? '').trim() || seen) out.push(`herring: red_herrings[${i}] points at ${h?.points_at}, but they have a witness at the crime time, so it cannot mislead; remove the witness until the refuting clue.`);
     if (refuting.some((c) => own.includes(c))) out.push(`herring: red_herrings[${i}] rules itself out: a refuting clue is one of its own clues.`);
     if (!refuting.length || Math.max(...refuting.map(roundOf)) <= Math.max(0, ...own.map(roundOf))) out.push(`herring: red_herrings[${i}] is refuted too soon; a refuting clue must open in a later round than its own clues.`);
   });
