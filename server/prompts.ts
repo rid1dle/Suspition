@@ -3,6 +3,7 @@ import { ROOTS, MODES, PALETTES, PERCUSSION } from '../src/lib/music-theory.ts';
 import { formForGM, quoteRaw } from './reader.ts';
 import { SKILLS, PENALTIES } from './skills.ts';
 import { ROOM_SCHEMA } from './room.ts';
+import { DEFAULT_STYLE, styleRules } from '../src/lib/art-styles.ts';
 
 export const LENGTHS = {
   short: { phases: 3, minutes: 10, questions: 3 },
@@ -485,9 +486,15 @@ SEATS:
 ${JSON.stringify(seats)}`;
 }
 
-export function illustrationPrompt(scenario) {
-  return `Draw one simple, moody picture of this setting as SVG: ${scenario.setting_summary} ${scenario.background?.slice(0, 3).join(' ')}
-Rules: start with <svg and use viewBox="0 0 800 400". Flat shapes and gradients, 4 to 7 colours, a clear silhouette of the place. No text, no people's faces, no scripts, no links, no external images, no foreignObject. Under 7000 characters.`;
+// One picture as SVG, in one art style. The safety rules hold for every style.
+export function artPrompt(scene, styleId = DEFAULT_STYLE) {
+  return `Draw one picture as SVG: ${scene}
+Style: ${styleRules(styleId)}
+Rules: start with <svg and use viewBox="0 0 800 400". No text, no people's faces, no scripts, no links, no external images, no foreignObject. Under 9000 characters.`;
+}
+
+export function illustrationPrompt(scenario, styleId = DEFAULT_STYLE) {
+  return artPrompt(`${scenario.setting_summary} ${scenario.background?.slice(0, 3).join(' ') ?? ''}`.trim(), styleId);
 }
 
 export const AUDIT_SCHEMA = obj({

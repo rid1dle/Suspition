@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <filter id="ps" x="-30%" y="-30%" width="170%" height="170%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#141b28" flood-opacity="0.42"/>
+    </filter>
+    <filter id="pss" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.6" flood-color="#141b28" flood-opacity="0.45"/>
+    </filter>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f2cf85" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#f2cf85" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#f2cf85" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moonglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ece5d4" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ece5d4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- sky -->
+  <rect width="800" height="400" fill="#38455b"/>
+
+  <!-- stars -->
+  <g fill="#ece5d4" opacity="0.75">
+    <circle cx="70" cy="60" r="2.2"/><circle cx="130" cy="120" r="1.5"/>
+    <circle cx="210" cy="48" r="1.8"/><circle cx="300" cy="96" r="1.3"/>
+    <circle cx="380" cy="42" r="2"/><circle cx="470" cy="70" r="1.4"/>
+    <circle cx="560" cy="38" r="1.7"/><circle cx="640" cy="92" r="1.3"/>
+    <circle cx="720" cy="50" r="2.1"/><circle cx="762" cy="128" r="1.5"/>
+    <circle cx="36" cy="150" r="1.4"/><circle cx="252" cy="150" r="1.6"/>
+    <circle cx="418" cy="128" r="1.2"/><circle cx="596" cy="120" r="1.5"/>
+  </g>
+
+  <!-- moon -->
+  <circle cx="150" cy="96" r="74" fill="url(#moonglow)"/>
+  <circle cx="150" cy="96" r="30" fill="#ece5d4" filter="url(#pss)"/>
+
+  <!-- far hill layer -->
+  <path filter="url(#ps)" fill="#46566e"
+        d="M0,252 C110,228 200,206 310,214 C430,222 500,186 610,192 C700,196 760,214 800,230 L800,400 L0,400 Z"/>
+
+  <!-- mid hill layer -->
+  <path filter="url(#ps)" fill="#50627a"
+        d="M0,292 C90,286 170,272 270,252 C360,234 430,246 540,238 C650,230 730,252 800,268 L800,400 L0,400 Z"/>
+
+  <!-- main hill layer (house sits here) -->
+  <path filter="url(#ps)" fill="#5a6d82"
+        d="M0,330 C120,322 250,286 380,232 C448,203 520,180 600,188 C692,197 756,218 800,236 L800,400 L0,400 Z"/>
+
+  <!-- lamp glow from house -->
+  <ellipse cx="512" cy="150" rx="118" ry="86" fill="url(#glow)"/>
+
+  <!-- tree beside the house -->
+  <g filter="url(#ps)">
+    <rect x="626" y="150" width="11" height="46" rx="3" fill="#4a4336"/>
+    <path fill="#3f5a4c" d="M631,96 C664,104 678,130 668,146 C690,152 688,176 660,178 C640,180 622,176 610,170 C586,164 586,140 606,134 C598,114 612,96 631,96 Z"/>
+    <path fill="#4e6b58" opacity="0.85" d="M631,104 C652,108 662,124 656,138 C646,152 620,154 609,144 C600,132 610,108 631,104 Z"/>
+  </g>
+
+  <!-- road winding up -->
+  <path filter="url(#ps)" fill="#8b93a2"
+        d="M283,400 C300,360 372,350 378,322 C384,296 318,272 332,252 C346,232 420,205 465,178 L472,188 C430,210 362,232 350,250 C338,268 408,292 412,318 C416,346 340,366 317,400 Z"/>
+  <path fill="#9ea6b3" opacity="0.5"
+        d="M296,400 C312,364 376,352 382,323 C388,296 324,272 338,253 C352,234 424,208 468,182 L470,186 C428,210 360,233 348,251 C336,269 404,292 408,318 C412,346 338,366 314,400 Z"/>
+
+  <!-- house: back wing -->
+  <g filter="url(#ps)">
+    <rect x="548" y="128" width="42" height="42" fill="#c8bdac"/>
+    <path fill="#8b6159" d="M540,131 L569,108 L598,131 Z"/>
+  </g>
+
+  <!-- house: main body -->
+  <g filter="url(#ps)">
+    <rect x="462" y="114" width="92" height="58" rx="2" fill="#ded3c3"/>
+    <rect x="462" y="114" width="92" height="10" fill="#cdc1b0"/>
+    <path fill="#9d6f68" d="M450,118 L508,74 L566,118 Z"/>
+    <rect x="528" y="76" width="13" height="26" rx="2" fill="#8b6159"/>
+  </g>
+
+  <!-- windows & door -->
+  <g filter="url(#pss)">
+    <rect x="474" y="130" width="20" height="18" rx="2" fill="#f2cf85"/>
+    <rect x="508" y="130" width="20" height="18" rx="2" fill="#f2cf85"/>
+    <rect x="558" y="138" width="16" height="16" rx="2" fill="#f2cf85" opacity="0.85"/>
+    <rect x="490" y="152" width="22" height="20" rx="2" fill="#8b6159"/>
+  </g>
+  <g fill="#38455b" opacity="0.45">
+    <rect x="483" y="130" width="2" height="18"/>
+    <rect x="517" y="130" width="2" height="18"/>
+    <rect x="474" y="138" width="20" height="2"/>
+    <rect x="508" y="138" width="20" height="2"/>
+  </g>
+  <!-- warm spill on ground -->
+  <path fill="#f2cf85" opacity="0.18" d="M474,172 L560,172 L598,196 L444,196 Z"/>
+
+  <!-- foreground layer -->
+  <path filter="url(#ps)" fill="#2f3b50"
+        d="M0,360 C110,344 200,366 300,378 C410,391 520,366 630,352 C710,342 764,352 800,362 L800,400 L0,400 Z"/>
+  <path fill="#283346"
+        d="M0,386 C140,374 300,398 460,390 C600,383 700,388 800,382 L800,400 L0,400 Z"/>
+
+  <!-- small foreground bushes -->
+  <g filter="url(#pss)" fill="#3f5a4c">
+    <path d="M96,366 C112,352 136,356 140,370 C144,382 120,388 104,384 C90,380 86,374 96,366 Z"/>
+    <path d="M690,352 C704,340 726,344 730,357 C734,369 712,375 698,371 C685,367 681,360 690,352 Z"/>
+  </g>
+</svg>

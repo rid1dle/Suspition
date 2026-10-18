@@ -4,6 +4,7 @@ import { GENERATION_STEPS, stepForKey } from './progress.ts';
 import { MemoryPeople } from './store.ts';
 import { QUESTIONS, pickQuestions } from './questions.ts';
 import { usernameFor, newProfile, addAnswer, aboutForGM, recordGame, profileView } from './profiles.ts';
+import { resolveStyle, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
@@ -340,7 +341,7 @@ export class App {
 
   drawPicture(game) {
     this.background('illustrate', async () => {
-      const { svg } = await this.gm.illustrate(game);
+      const { svg } = await this.gm.illustrate(game, { style: resolveStyle(game.setup?.artStyle ?? DEFAULT_STYLE, game.id, 0) });
       if (this.game !== game || !game.state) return;
       const clean = G.cleanSvg(svg);
       if (!clean) throw new Error('the picture was not a safe SVG');

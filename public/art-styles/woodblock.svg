@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <clipPath id="frame"><rect x="18" y="14" width="764" height="372" rx="2"/></clipPath>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffd978" stop-opacity=".85"/>
+      <stop offset="60%" stop-color="#f0b24e" stop-opacity=".30"/>
+      <stop offset="100%" stop-color="#f0b24e" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moonglow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f6ecd2" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#f6ecd2" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="800" height="400" fill="#efe2c8"/>
+
+  <g clip-path="url(#frame)">
+    <!-- sky bands -->
+    <rect x="18" y="14" width="764" height="372" fill="#223a60"/>
+    <rect x="18" y="14" width="764" height="96" fill="#17284a"/>
+    <rect x="18" y="104" width="764" height="60" fill="#2b4a72"/>
+
+    <!-- moon -->
+    <circle cx="198" cy="92" r="64" fill="url(#moonglow)"/>
+    <circle cx="198" cy="92" r="34" fill="#f5ead1" stroke="#16203a" stroke-width="3"/>
+    <g fill="#f5ead1" opacity=".9">
+      <circle cx="340" cy="52" r="2.4"/><circle cx="466" cy="38" r="2"/>
+      <circle cx="612" cy="60" r="2.6"/><circle cx="700" cy="110" r="2"/>
+      <circle cx="96" cy="150" r="2.2"/><circle cx="268" cy="146" r="1.8"/>
+      <circle cx="542" cy="94" r="1.8"/><circle cx="738" cy="46" r="2.2"/>
+    </g>
+
+    <!-- curling clouds -->
+    <g stroke="#16203a" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path fill="#dfeaf0" d="M372,78 C398,58 452,56 476,72 C516,58 578,66 592,88 C624,84 640,106 618,118 C592,130 540,122 496,118 C448,116 394,112 372,100 C354,90 354,84 372,78 Z"/>
+      <path fill="none" d="M402,96 C418,86 438,84 452,92 C462,98 456,108 446,104 C438,101 440,94 448,95"/>
+      <path fill="none" d="M508,104 C524,94 546,92 560,100 C570,106 564,116 554,112 C546,109 548,102 556,103"/>
+      <path fill="#cfdde8" d="M88,196 C118,180 168,180 190,192 C222,180 268,188 278,204 C304,200 314,218 294,226 C270,234 214,228 174,224 C130,220 92,216 76,206 C62,198 70,190 88,196 Z"/>
+      <path fill="none" d="M120,210 C134,202 152,201 164,208 C173,214 167,222 158,218 C151,215 153,209 160,210"/>
+      <path fill="#dfeaf0" d="M624,160 C650,146 696,146 716,158 C748,152 766,170 748,180 C724,190 672,186 638,182 C608,178 600,166 624,160 Z"/>
+      <path fill="none" d="M652,170 C666,163 682,163 692,170 C700,176 694,183 686,179 C680,176 682,171 688,172"/>
+    </g>
+
+    <!-- distant ridge -->
+    <path fill="#3d5f7e" stroke="#16203a" stroke-width="3" d="M18,268 C90,244 150,254 212,236 C286,214 330,228 406,208 C470,192 520,206 584,196 C660,184 726,206 782,222 L782,386 L18,386 Z"/>
+
+    <!-- main hill -->
+    <path fill="#2c5a51" stroke="#16203a" stroke-width="3.5" d="M18,344 C120,334 206,312 300,282 C402,250 468,212 562,200 C664,188 742,220 782,252 L782,386 L18,386 Z"/>
+
+    <!-- hill contour lines -->
+    <g fill="none" stroke="#1d4239" stroke-width="3" opacity=".75">
+      <path d="M18,372 C120,360 214,344 292,318"/>
+      <path d="M640,224 C690,228 730,244 762,264"/>
+      <path d="M330,312 C410,290 470,266 540,252"/>
+    </g>
+
+    <!-- winding road -->
+    <path fill="#e7d9ba" stroke="#16203a" stroke-width="3" d="M46,386 C122,336 96,300 188,268 C282,236 300,214 420,200 C468,194 512,192 548,191 L560,199 C520,202 468,206 430,218 C340,246 328,256 250,286 C172,316 194,352 164,386 Z"/>
+    <g fill="none" stroke="#c9b893" stroke-width="2.5" stroke-dasharray="14 18">
+      <path d="M104,384 C160,336 140,304 220,276 C312,244 326,224 440,210 C488,204 524,200 554,198"/>
+    </g>
+
+    <!-- lamp light spill -->
+    <ellipse cx="566" cy="214" rx="120" ry="48" fill="url(#glow)"/>
+
+    <!-- tree beside house -->
+    <path fill="#3a2a22" stroke="#16203a" stroke-width="3" d="M664,212 L664,176 L676,176 L676,212 Z"/>
+    <g fill="#1f4a3b" stroke="#16203a" stroke-width="3" stroke-linejoin="round">
+      <path d="M670,112 C686,134 706,156 716,174 C702,170 692,174 684,178 C696,188 710,196 720,206 C702,203 686,206 670,208 C652,206 638,203 620,206 C630,196 644,188 656,178 C648,174 638,170 624,174 C634,156 654,134 670,112 Z"/>
+    </g>
+    <path fill="none" stroke="#9ec6ae" stroke-width="2.5" opacity=".7" d="M670,128 L670,204"/>
+
+    <!-- house -->
+    <g stroke="#16203a" stroke-width="3.5" stroke-linejoin="round">
+      <path fill="#6d5b4b" d="M514,158 L514,200 L620,200 L620,158 Z"/>
+      <path fill="#d9d2c2" d="M522,164 L522,196 L612,196 L612,164 Z"/>
+      <path fill="#3c4a63" d="M498,156 C512,140 540,120 566,114 C592,120 620,140 634,156 C639,161 632,163 622,161 L510,161 C500,163 493,161 498,156 Z"/>
+      <path fill="#2e3a50" d="M486,160 C500,152 630,152 646,160 C650,163 644,166 634,165 L498,165 C488,166 482,163 486,160 Z"/>
+      <path fill="#2e3a50" d="M560,112 L572,112 L572,100 L560,100 Z"/>
+    </g>
+    <g stroke="#16203a" stroke-width="3">
+      <rect x="532" y="172" width="26" height="22" fill="#ffd36e"/>
+      <rect x="576" y="172" width="26" height="22" fill="#ffd36e"/>
+      <path d="M545,172 L545,194 M532,183 L558,183 M589,172 L589,194 M576,183 L602,183" stroke-width="2"/>
+    </g>
+    <!-- hanging lantern -->
+    <g stroke="#16203a" stroke-width="2.5">
+      <path d="M624,162 L624,172" fill="none"/>
+      <ellipse cx="624" cy="179" rx="7" ry="9" fill="#ffd36e"/>
+    </g>
+
+    <!-- foreground mist curls -->
+    <g stroke="#16203a" stroke-width="3" stroke-linecap="round">
+      <path fill="#dfe8ea" opacity=".92" d="M18,330 C64,318 112,322 140,332 C172,326 212,334 220,348 C244,344 254,360 234,368 C208,376 150,370 108,366 C66,362 28,358 18,350 Z"/>
+      <path fill="none" d="M60,348 C74,340 92,339 104,346 C113,352 107,360 98,356 C91,353 93,347 100,348"/>
+      <path fill="#dfe8ea" opacity=".85" d="M620,318 C656,306 710,308 736,320 C770,314 790,330 782,342 C760,352 700,346 662,342 C624,338 598,328 620,318 Z"/>
+      <path fill="none" d="M660,330 C674,323 690,323 700,330 C708,336 702,343 694,339 C688,336 690,331 696,332"/>
+    </g>
+  </g>
+
+  <rect x="18" y="14" width="764" height="372" fill="none" stroke="#16203a" stroke-width="4"/>
+  <rect x="26" y="22" width="748" height="356" fill="none" stroke="#16203a" stroke-width="1.5" opacity=".5"/>
+</svg>

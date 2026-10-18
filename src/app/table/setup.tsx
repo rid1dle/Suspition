@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label, Muted } from '@/components/game/label';
 import { PlanSteps } from '@/components/game/plan';
+import { ArtStylePicker } from '@/components/game/art-style-picker';
 import type { TableProps } from './table-app';
 
 // With an empty setting box the game draws an idea; the host sees it and can draw another.
@@ -112,7 +113,7 @@ function JoinCard({ view }: { view: TableProps['view'] }) {
 
 export function Setup(props: TableProps) {
   const { view, host, act } = props;
-  const [form, setForm] = useState({ setting: '', tone: 'tense', length: 'standard', roundStyle: 'hotseats', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 2, testGame: false, notes: '' });
+  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 2, testGame: false, notes: '' });
   const [picked, setPicked] = useState(false);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const enough = view.players.length >= 3;
@@ -129,6 +130,9 @@ export function Setup(props: TableProps) {
               <Input value={form.setting} maxLength={200} placeholder="Leave empty for a surprise" onChange={(e) => set('setting', e.target.value)} />
               <SurpriseLine setting={form.setting} surprise={view.surprise} onShuffle={() => act('surprise')} />
               <div className="flex flex-wrap gap-2">{SETTINGS.map((s) => <button key={s} onClick={() => set('setting', s)} className="rounded-full bg-muted/50 px-3 py-1 text-xs hover:text-primary">{s}</button>)}</div>
+            </Field>
+            <Field label="Art style" note="How the GM draws this world's pictures. Mix draws each one in a new style.">
+              <ArtStylePicker value={form.artStyle} onPick={(v) => set('artStyle', v)} />
             </Field>
             <Field label="Mood"><Chips options={TONES} value={form.tone} onPick={(v) => set('tone', v)} /></Field>
             <Field label="How long?"><Chips options={LENGTHS.map(([v, l, d]) => [v, <span key={v}>{l} <span className="opacity-70">{d}</span></span>] as [string, ReactNode])} value={form.length}

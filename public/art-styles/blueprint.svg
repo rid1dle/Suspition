@@ -1,0 +1,122 @@
+<svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern id="g20" width="20" height="20" patternUnits="userSpaceOnUse">
+<path d="M20 0H0V20" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width=".6"/>
+</pattern>
+<pattern id="g100" width="100" height="100" patternUnits="userSpaceOnUse">
+<rect width="100" height="100" fill="url(#g20)"/>
+<path d="M100 0H0V100" fill="none" stroke="#ffffff" stroke-opacity=".18" stroke-width=".9"/>
+</pattern>
+</defs>
+
+<rect width="800" height="400" fill="#0a2a5e"/>
+<rect width="800" height="400" fill="url(#g100)"/>
+
+<g fill="none" stroke="#ffffff" stroke-linecap="round">
+
+<!-- sheet frame + corner ticks -->
+<g stroke-opacity=".45" stroke-width="1">
+<rect x="12" y="12" width="776" height="376"/>
+<path d="M12 36h24M36 12v24M788 36h-24M764 12v24M12 364h24M36 388v-24M788 364h-24M764 388v-24"/>
+</g>
+
+<!-- horizon / datum guides -->
+<g stroke-opacity=".3" stroke-width=".9" stroke-dasharray="10 7">
+<path d="M14 300h772"/>
+<path d="M14 150h772"/>
+</g>
+
+<!-- stars as survey marks -->
+<g stroke-opacity=".7" stroke-width=".9">
+<path d="M76 56h12M82 50v12M176 112h10M181 107v10M300 46h12M306 40v12M556 66h10M561 61v10M418 86h12M424 80v12M120 186h10M125 181v10M754 168h10M759 163v10"/>
+</g>
+
+<!-- moon with construction circles -->
+<g stroke-opacity=".5" stroke-width=".9" stroke-dasharray="6 5">
+<circle cx="700" cy="76" r="40"/>
+<path d="M652 76h96M700 28v96"/>
+</g>
+<circle cx="700" cy="76" r="27" stroke-opacity=".9" stroke-width="1.2"/>
+<path d="M690 52a27 27 0 0 0 0 48 32 32 0 0 1 0-48" stroke-opacity=".7" stroke-width="1"/>
+
+<!-- hill profile -->
+<path d="M14 346C110 341 206 331 282 306 356 281 400 252 450 250H600c62 2 112 26 186 46" stroke-opacity=".95" stroke-width="1.4"/>
+<!-- hill contour guides -->
+<g stroke-opacity=".3" stroke-width=".8" stroke-dasharray="7 6">
+<path d="M14 366C120 361 220 350 296 326 368 303 404 274 452 272H604c62 2 110 24 182 44"/>
+<path d="M60 384C150 380 236 372 306 350 374 329 410 296 456 294H608"/>
+</g>
+
+<!-- winding road -->
+<path d="M248 388c42-46-34-62 18-92 52-30 136-18 190-44" stroke-opacity=".9" stroke-width="1.2"/>
+<path d="M332 388c36-44-42-50 2-78 48-30 110-16 160-52" stroke-opacity=".9" stroke-width="1.2"/>
+<path d="M290 388c40-45-38-56 10-85 50-30 122-17 175-48" stroke-opacity=".55" stroke-width="1" stroke-dasharray="14 12"/>
+
+<!-- house -->
+<g stroke-opacity=".95" stroke-width="1.4">
+<path d="M470 250v-62h110v62"/>
+<path d="M452 192 525 148l73 44"/>
+<path d="M470 188h110"/>
+<path d="M556 168v-30h14v38"/>
+<path d="M504 250v-38h26v38"/>
+<path d="M478 204h32v26h-32z"/>
+<path d="M494 204v26M478 217h32"/>
+<path d="M544 204h24v22h-24z"/>
+</g>
+<!-- house construction guides -->
+<g stroke-opacity=".35" stroke-width=".8" stroke-dasharray="6 5">
+<path d="M525 130v130M452 192h150M470 250V170M580 250V170"/>
+<path d="M452 192 598 250M598 192 452 250"/>
+</g>
+
+<!-- lamp light from window -->
+<g stroke-opacity=".6" stroke-width="1" stroke-dasharray="9 7">
+<path d="M478 206 372 262M478 228 392 292M494 232l-46 66"/>
+<path d="M494 182a34 34 0 0 0 0 68M494 166a50 50 0 0 0 0 100M494 150a66 66 0 0 0 0 132"/>
+</g>
+
+<!-- lamp post by the road -->
+<g stroke-opacity=".9" stroke-width="1.2">
+<path d="M436 252v-56M428 196h16M430 190l6-6 6 6"/>
+</g>
+<g stroke-opacity=".5" stroke-width=".9" stroke-dasharray="7 6">
+<path d="M436 196 400 254M436 196 474 254"/>
+<circle cx="436" cy="193" r="16"/>
+</g>
+
+<!-- tree -->
+<g stroke-opacity=".95" stroke-width="1.3">
+<path d="M650 252v-62"/>
+<path d="M650 224l-20-16M650 212l20-18M650 236l-16-10"/>
+<circle cx="650" cy="178" r="34"/>
+<path d="M624 198c8-14 8-30 0-42M676 198c-8-14-8-30 0-42M632 152c12-8 26-8 38 0"/>
+</g>
+<g stroke-opacity=".35" stroke-width=".8" stroke-dasharray="6 5">
+<rect x="612" y="140" width="76" height="76"/>
+<path d="M650 124v138M606 178h88"/>
+</g>
+
+<!-- dimension: house width -->
+<g stroke-opacity=".45" stroke-width=".9">
+<path d="M470 252v112M580 252v112" stroke-dasharray="6 5"/>
+<path d="M470 356h110M470 350v12M580 350v12M478 352l-8 4 8 4M572 352l8 4-8 4"/>
+</g>
+<!-- dimension: house height -->
+<g stroke-opacity=".45" stroke-width=".9">
+<path d="M525 148h198M580 250h143" stroke-dasharray="6 5"/>
+<path d="M714 148v102M708 148h12M708 250h12M710 156l4-8 4 8M710 242l4 8 4-8"/>
+</g>
+<!-- dimension: hill crest level -->
+<g stroke-opacity=".4" stroke-width=".9">
+<path d="M90 250h340" stroke-dasharray="6 5"/>
+<path d="M104 250v96M98 338h12M98 258h12M100 266l4-8 4 8M100 330l4 8 4-8"/>
+</g>
+
+<!-- north arrow -->
+<g stroke-opacity=".55" stroke-width="1">
+<circle cx="88" cy="88" r="22" stroke-dasharray="5 4"/>
+<path d="M88 112V64M80 76l8-12 8 12"/>
+</g>
+
+</g>
+</svg>

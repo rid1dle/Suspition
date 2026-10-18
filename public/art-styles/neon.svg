@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <defs>
+    <filter id="b1" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
+    <radialGradient id="warm" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffd93b" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#ffd93b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sky" cx="52%" cy="78%" r="70%">
+      <stop offset="0%" stop-color="#0b1020"/>
+      <stop offset="100%" stop-color="#04040a"/>
+    </radialGradient>
+
+    <g id="art" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <!-- hill ridge -->
+      <path d="M0 335 C120 330 230 315 330 270 C420 230 500 215 580 230 C680 250 740 265 800 270"
+            stroke="#00f0ff" stroke-width="3"/>
+      <path d="M0 372 C140 364 250 352 360 330 C520 300 660 306 800 322" stroke="#00f0ff" stroke-width="1.6" opacity=".55"/>
+
+      <!-- road -->
+      <path d="M285 400 C320 345 282 318 330 288 C372 262 404 252 432 233" stroke="#ff2fa0" stroke-width="2.6"/>
+      <path d="M392 400 C418 350 352 330 392 302 C420 282 438 256 452 233" stroke="#ff2fa0" stroke-width="2.6"/>
+      <path d="M338 400 C372 348 318 322 362 294 C396 272 420 254 442 234" stroke="#ff2fa0" stroke-width="1.6"
+            stroke-dasharray="9 15" opacity=".8"/>
+
+      <!-- house -->
+      <path d="M398 232 L398 178 L492 178 L492 232 Z" stroke="#ff2fa0" stroke-width="3"/>
+      <path d="M386 181 L445 137 L504 181" stroke="#ff2fa0" stroke-width="3"/>
+      <path d="M445 137 L445 178" stroke="#ff2fa0" stroke-width="1.4" opacity=".6"/>
+      <path d="M470 161 L470 142 L482 142 L482 152" stroke="#ff2fa0" stroke-width="2.4"/>
+      <path d="M432 232 L432 204 L458 204 L458 232" stroke="#ff2fa0" stroke-width="2.4"/>
+      <circle cx="452" cy="219" r="2" stroke="#ffd93b" stroke-width="2"/>
+
+      <!-- lit windows -->
+      <path d="M408 192 L428 192 L428 212 L408 212 Z M418 192 L418 212 M408 202 L428 202" stroke="#ffd93b" stroke-width="2.4"/>
+      <path d="M466 192 L486 192 L486 212 L466 212 Z M476 192 L476 212 M466 202 L486 202" stroke="#ffd93b" stroke-width="2.4"/>
+      <path d="M441 150 L449 150 L449 160 L441 160 Z" stroke="#ffd93b" stroke-width="2"/>
+
+      <!-- porch lamp -->
+      <path d="M418 178 L418 170 M412 170 L424 170 L421 162 L415 162 Z" stroke="#ffd93b" stroke-width="2"/>
+
+      <!-- lamp post on road -->
+      <path d="M352 302 L352 258 M352 258 C352 250 358 248 364 250" stroke="#00f0ff" stroke-width="2.4"/>
+      <path d="M360 252 L372 252 L368 263 L364 263 Z" stroke="#ffd93b" stroke-width="2.2"/>
+
+      <!-- tree -->
+      <path d="M575 232 L575 192" stroke="#00f0ff" stroke-width="3"/>
+      <path d="M575 208 L562 196 M575 202 L589 190" stroke="#00f0ff" stroke-width="2"/>
+      <circle cx="575" cy="172" r="30" stroke="#00f0ff" stroke-width="2.8"/>
+      <circle cx="553" cy="186" r="16" stroke="#00f0ff" stroke-width="2.4"/>
+      <circle cx="598" cy="185" r="15" stroke="#00f0ff" stroke-width="2.4"/>
+      <circle cx="575" cy="172" r="14" stroke="#00f0ff" stroke-width="1.4" opacity=".5"/>
+
+      <!-- moon + stars -->
+      <circle cx="690" cy="78" r="26" stroke="#ffd93b" stroke-width="2.4"/>
+      <circle cx="681" cy="72" r="6" stroke="#ffd93b" stroke-width="1.2" opacity=".6"/>
+      <circle cx="698" cy="90" r="4" stroke="#ffd93b" stroke-width="1.2" opacity=".6"/>
+      <path d="M96 62 L96 78 M88 70 L104 70" stroke="#00f0ff" stroke-width="2"/>
+      <path d="M210 40 L210 52 M204 46 L216 46" stroke="#ff2fa0" stroke-width="2"/>
+      <path d="M330 100 L330 112 M324 106 L336 106" stroke="#00f0ff" stroke-width="2"/>
+      <path d="M560 56 L560 68 M554 62 L566 62" stroke="#ffd93b" stroke-width="2"/>
+      <path d="M470 86 L470 96 M465 91 L475 91" stroke="#00f0ff" stroke-width="1.8"/>
+      <circle cx="150" cy="130" r="2" stroke="#ff2fa0" stroke-width="2"/>
+      <circle cx="260" cy="150" r="2" stroke="#00f0ff" stroke-width="2"/>
+      <circle cx="400" cy="52" r="2" stroke="#00f0ff" stroke-width="2"/>
+      <circle cx="620" cy="140" r="2" stroke="#ff2fa0" stroke-width="2"/>
+      <circle cx="740" cy="170" r="2" stroke="#00f0ff" stroke-width="2"/>
+      <circle cx="60" cy="200" r="2" stroke="#ffd93b" stroke-width="2"/>
+    </g>
+  </defs>
+
+  <rect width="800" height="400" fill="url(#sky)"/>
+  <ellipse cx="445" cy="200" rx="150" ry="120" fill="url(#warm)" opacity=".45"/>
+  <ellipse cx="690" cy="78" rx="90" ry="90" fill="url(#warm)" opacity=".35"/>
+  <ellipse cx="366" cy="258" rx="55" ry="45" fill="url(#warm)" opacity=".35"/>
+
+  <use href="#art" filter="url(#b2)" opacity=".75"/>
+  <use href="#art" filter="url(#b1)" opacity=".85"/>
+  <use href="#art"/>
+</svg>

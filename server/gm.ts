@@ -273,10 +273,10 @@ export class GM {
     });
   }
 
-  illustrate(game) {
+  illustrate(game, { style = undefined, prompt = undefined } = {}) {
     return this.call('illustrate', {
-      system: 'You draw clean, simple SVG illustrations. Output only the SVG in the svg field.',
-      prompt: illustrationPrompt(game.scenario),
+      system: 'You draw clean SVG illustrations in the style you are given. Output only the SVG in the svg field.',
+      prompt: prompt ?? illustrationPrompt(game.scenario, style),
       schema: ILLUSTRATION_SCHEMA,
       model: this.playModel,
       timeoutMs: 300_000,

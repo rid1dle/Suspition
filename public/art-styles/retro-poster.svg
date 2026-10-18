@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <rect width="800" height="400" fill="#16233f"/>
+
+  <!-- sunburst / moonburst rays -->
+  <g fill="#22365c">
+    <g transform="rotate(0,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(24,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(48,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(72,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(96,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(120,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(144,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(168,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(192,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(216,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(240,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(264,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(288,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(312,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+    <g transform="rotate(336,660,95)"><polygon points="660,95 1600,-95 1600,95"/></g>
+  </g>
+
+  <!-- moon -->
+  <circle cx="660" cy="95" r="52" fill="#f6e7c8"/>
+
+  <!-- stars -->
+  <g fill="#f6e7c8">
+    <circle cx="80" cy="60" r="3.5"/>
+    <circle cx="170" cy="120" r="2.5"/>
+    <circle cx="260" cy="48" r="3"/>
+    <circle cx="360" cy="110" r="2.2"/>
+    <circle cx="430" cy="40" r="3"/>
+    <circle cx="540" cy="60" r="2.4"/>
+    <circle cx="760" cy="180" r="2.8"/>
+    <circle cx="120" cy="190" r="2.2"/>
+  </g>
+
+  <!-- far ridge rising left -->
+  <path d="M-10 400 L-10 232 Q140 194 300 236 Q430 270 540 312 L540 400 Z" fill="#22365c"/>
+
+  <!-- main hill rising right -->
+  <path d="M-10 400 L-10 334 Q190 304 376 252 Q512 208 622 186 Q722 172 810 198 L810 400 Z" fill="#2a5e55"/>
+
+  <!-- winding road -->
+  <path d="M30 400 C150 346 96 304 250 282 C372 264 420 236 492 200 L536 199 C456 240 420 264 302 294 C190 322 256 352 170 400 Z" fill="#f6e7c8"/>
+
+  <!-- lamp light spill from windows -->
+  <polygon points="452 150 452 182 318 300 272 250" fill="#f4b548" opacity="0.2"/>
+
+  <!-- house -->
+  <rect x="524" y="100" width="15" height="30" fill="#16233f"/>
+  <rect x="450" y="140" width="112" height="58" fill="#f6e7c8"/>
+  <polygon points="436 143 506 97 576 143" fill="#16233f"/>
+  <rect x="458" y="152" width="24" height="24" fill="#f4b548"/>
+  <rect x="530" y="152" width="24" height="24" fill="#f4b548"/>
+  <rect x="494" y="164" width="26" height="34" fill="#f4b548"/>
+
+  <!-- tree beside the house -->
+  <rect x="624" y="140" width="13" height="52" fill="#16233f"/>
+  <circle cx="630" cy="128" r="40" fill="#16233f"/>
+  <circle cx="600" cy="146" r="24" fill="#16233f"/>
+  <circle cx="660" cy="148" r="22" fill="#16233f"/>
+
+  <!-- foreground ridge -->
+  <path d="M400 400 Q560 344 810 356 L810 400 Z" fill="#16233f"/>
+  <path d="M-10 400 L-10 388 Q60 372 120 400 Z" fill="#16233f"/>
+</svg>

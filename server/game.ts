@@ -8,6 +8,7 @@ import { roomTheme, guessRoom } from './room.ts';
 import { GENERATION_STEPS } from './progress.ts';
 import { sanitizeMusic } from '../src/lib/music-theory.ts';
 import { DECK, drawIdea } from '../src/lib/settings-deck.ts';
+import { ART_CHOICES, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 
 export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 10;
@@ -119,6 +120,7 @@ export function applySetup(game, input = {}) {
     questions,
     roundStyle,
     notes: String(input.notes ?? '').trim().slice(0, 500),
+    artStyle: ART_CHOICES.includes(input.artStyle) ? input.artStyle : DEFAULT_STYLE,
   };
   if (!game.setup.setting && game.lobby?.surprise) game.setup.surprise = { ...game.lobby.surprise };
   game.status = 'generating';

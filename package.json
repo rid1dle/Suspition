@@ -16,7 +16,8 @@
     "seed-bots": "node scripts/check-node.cjs && node scripts/playtest/seed.ts",
     "attacks": "node scripts/check-node.cjs && node scripts/attacks.ts",
     "build": "next build",
-    "dev": "node scripts/check-node.cjs && node server/index.ts --dev"
+    "dev": "node scripts/check-node.cjs && node server/index.ts --dev",
+    "art-samples": "node scripts/check-node.cjs && node scripts/art-samples.ts"
   },
   "engines": {
     "node": ">=24"
