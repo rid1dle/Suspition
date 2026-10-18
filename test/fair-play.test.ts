@@ -53,3 +53,66 @@ describe('naming a culprit', () => {
     assert.equal(G.namesCulprit(s, [], 'Character 2 was at the gate.'), false);
   });
 });
+
+describe('no words put in players mouths', () => {
+  const named = () => {
+    const game = gameInReading(3, 1_000);
+    G.startPlay(game, 1_000);
+    const names = [['Nikhil', 'Nikhil Rao'], ['Rishabh', 'Rishabh Sen'], ['Himanshu', 'Himanshu Lal']];
+    game.players.forEach((p, i) => (p.name = names[i][0]));
+    game.scenario.players.forEach((c, i) => (c.character_name = names[i][1]));
+    game.scenario.npcs[0].name = 'Ramesh Yadav';
+    return game;
+  };
+  const askOutLoud = (game, answer) => {
+    G.beginPublicAsk(game, 'p1', 'Where was everyone at nine?');
+    G.completePublicAsk(game, 'p1', answer, 2_000);
+    return game.state.events.at(-1).text;
+  };
+
+  test('should drop reported speech of another player in the middle of a sentence', () => {
+    assert.equal(G.dropPuppeting(named(), 'p1', 'Ask Ramesh and Himanshu Lal, who both say they heard the door.').dropped, 1);
+  });
+
+  test('should drop an invented alibi in a public answer', () => {
+    assert.equal(askOutLoud(named(), 'Rishabh says he was by the stove. The coat is on the hook.'), 'The coat is on the hook.');
+  });
+
+  test('should keep a direct quote of what the player really said out loud', () => {
+    const game = named();
+    G.addFacts(game, [{ person: 'p2', fact: 'Said out loud: "I was in the cellar"' }], 'said', 1_500);
+    assert.equal(askOutLoud(game, 'Rishabh said "I was in the cellar". The coat is on the hook.'), 'Rishabh said "I was in the cellar". The coat is on the hook.');
+  });
+
+  test('should still post an answer when every sentence was dropped', () => {
+    assert.equal(askOutLoud(named(), 'Rishabh says he was by the stove.'), 'Nobody knows that yet.');
+  });
+
+  test('should keep a GM character who shares a first name with a player', () => {
+    const game = named();
+    game.players[1].name = 'Ramesh';
+    assert.equal(G.dropPuppeting(game, 'p1', 'Ramesh Yadav says the gate was shut.').dropped, 0);
+  });
+
+  test('should filter recap lines and round events too', () => {
+    const game = named();
+    G.beginPhaseChange(game);
+    G.completePhase(game, { public_event: 'Himanshu says he heard the door. The lights flicker.', recap: ['Himanshu says he heard the door.', 'The gate was locked at ten.'], messages_to_players: [], clues_destroyed: [], suspicion_change: 0 }, 3_000);
+    assert.deepEqual(game.state.recap.lines, ['The gate was locked at ten.']);
+    assert.ok(game.state.events.some((e) => e.kind === 'event' && e.text === 'The lights flicker.'));
+  });
+
+  test('should keep a recap line about what a player did, not what they said', () => {
+    const game = named();
+    G.beginPhaseChange(game);
+    G.completePhase(game, { public_event: 'x', recap: ['Nikhil asked Ramesh about the gate.'], messages_to_players: [], clues_destroyed: [], suspicion_change: 0 }, 3_000);
+    assert.deepEqual(game.state.recap.lines, ['Nikhil asked Ramesh about the gate.']);
+  });
+
+  test('should drop a GM character line that reports what a player said, in an out-loud answer', () => {
+    const game = named();
+    G.beginPublicAsk(game, 'p1', 'Where was everyone?');
+    G.completePublicAsk(game, 'p1', [{ speaker: game.scenario.npcs[0].id, text: 'Rishabh told me he was by the stove.' }, { speaker: '', text: 'The coat is on the hook.' }], 2_000);
+    assert.deepEqual(game.state.events.at(-1).lines, [{ speaker: '', text: 'The coat is on the hook.' }]);
+  });
+});
