@@ -99,6 +99,23 @@ Engaging is the strongest area, but all 5 worlds reuse the same surprise ("the v
 - **The check is logged** (problems found, fixes made) for the playtest report.
 - **Cost:** about one extra background GM call per round, plus one per 8 answers.
 
+## Player agency first (added by the creator, 2026-10-18)
+
+"It's an RP first game, so they should know what they are doing before the other characters." The game must never announce what a player's character did, said or where they were unless that player did it in play or it is on their own card. The failure this prevents: the room hears "Rishabh says Nikhil went to the shed" when Nikhil never decided that and does not know it.
+
+- **The source rule.** A player character's actions, words and whereabouts may appear in any GM text only from:
+  - their own card (private_info, starting_knowledge, night, revealed hidden facts), or
+  - their own record in play (their moves, things they said out loud, moments they accepted).
+
+  This covers answers, ripples, round events, recaps, hot seat whispers and follow-ups, and continuity corrections. Nothing else, including another character's account.
+- **Other characters may only report what the player did in play or what is on that player's card.** A GM character can say "I saw Nikhil by the shed" only if Nikhil's card or record puts him there.
+- **When the story needs something new from a player character** (a continuity fix, a new beat), it goes to that player first, privately, as an offer they can take or change. Example: "The story needs to know where you were at 11. Say it, or tap: by the shed." Only after the player answers may anyone else mention it.
+- **Code backs the prompt rule.** The puppet filter today drops reported speech. It extends to actions and gestures: a sentence that has a player character move, act or react ("Nikhil went", "Ben flinches") is dropped unless the fact is on their card or in their record. This also closes the living story review's "ripples about gestures" question.
+- **The checks enforce it.**
+  - The consistency check (before play) confirms every truth and whereabouts fact about a player character is on that player's own card.
+  - The continuity check (during play) lists any text that has a player doing something they never did. It fixes it with a correction or a private offer, never by asserting it.
+- Built in the story quality plan as part of Task 7 (continuity) and a new player-agency task, ahead of the polish task.
+
 ## Polish carried over from the living story review
 
 These are fixed in the story quality plan's Task 8 (polish):
@@ -119,6 +136,7 @@ Branch `feat/first-playable`. Pushed up to 08a3f00; everything after (briefing p
 1. **Story quality** (this design): `docs/superpowers/plans/2026-10-18-story-quality.md`. The creator has approved the design, the difficulty levels and the consistency check; the plan is waiting for their go-ahead.
    - Tasks 1 to 6: difficulty, world fields, story issues, clue rounds, consistency check, nights from whereabouts.
    - Task 7: continuity during play.
+   - Task 7b: player agency first (the source rule, the private offer, the action and gesture filter).
    - Task 8: polish.
    - Task 9: live check against the audit.
    - Built here tests first, with one review at the end.

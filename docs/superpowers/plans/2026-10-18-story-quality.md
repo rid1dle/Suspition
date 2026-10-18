@@ -248,6 +248,32 @@ You keep a mystery whole while it is played. Read what was said since the last c
   - `should keep its own GM slot` (answers do not wait behind it)
 - [ ] **Step 2 to 5:** RED, implement, GREEN, run the suite, commit `feat: the GM keeps the story whole during play`.
 
+### Task 7b: Player agency first
+
+**Files:**
+- Modify:
+  - `server/game.ts`:
+    - `dropPuppeting` gains action and gesture verbs, with a `backed(game, pid, sentence)` escape for facts on the player's card or in their record
+    - `playerFacts(game, pid)`
+    - `offerToPlayer(game, pid, text, choice)`
+  - `server/prompts.ts`: `FAIR_PLAY` gains the source rule; `continuityPrompt` and `storyCheckPrompt` add the checklist item
+  - `server/continuity.ts`: needs from the story become private offers
+- Test: `test/player-agency.test.ts`
+
+**Rule copy (add to `FAIR_PLAY`):**
+
+```
+A player character's actions, words and whereabouts come only from their own card or from what that player did or said in play. Never tell anyone a player went somewhere, did, said or felt something unless it is on that player's card or in their record. If the story needs something new from a player's character, ask that player privately first; never assert it.
+```
+
+- [ ] **Step 1: Write the failing tests:**
+  - `should drop a sentence that has a player do something they never did` ("Nikhil went to the shed at eleven.", no backing)
+  - `should keep it when the player's card or record backs it` (the card says the shed, or Nikhil's own move went there)
+  - `should drop gestures of other players in ripples and answers` ("Ben flinches.")
+  - `should send a story need to the player as a private offer, and only let others mention it after the player answers`
+  - `should list unbacked player facts as continuity problems`
+- [ ] **Step 2 to 5:** RED, implement, GREEN, run the suite, commit `feat: players drive their own characters; nothing about them is told before they know it`.
+
 ### Task 8: Polish from the living story review
 
 **Files:** `server/game.ts`, `src/db/library.ts`, `src/lib/settings-deck.ts`, `server/app.ts`, `src/components/world/room.tsx`, `src/components/world/table-effects.tsx`, `src/app/world.css`
@@ -270,7 +296,7 @@ Commit `fix: polish from the living story review`.
 
 - [ ] **Step 1:** Write 2 Normal worlds offline with a script in the scratchpad: `new GM(...)`, then `generate` on a 4-player lobby game, with the setting drawn from the deck. Save each world JSON in the scratchpad. Record the time for each step, including the story check, from the GM log.
 - [ ] **Step 2:** Give the same audit brief as before to a fresh opus reviewer for the 2 new worlds. Compare its scores, the suspects with motive, opportunity and a pointer, the real red herrings and the plot holes against the earlier table (best before: complete 3, red herrings 4, plot holes 4).
-- [ ] **Step 3:** Play one of the worlds for 2 rounds on a scratch port with bot moves that push on its weak spots: contradict an answer, destroy a clue, ask the same question twice. Check that the continuity log finds and fixes the contradictions and that the case stays solvable.
+- [ ] **Step 3:** Play one of the worlds for 2 rounds on a scratch port with bot moves that push on its weak spots: contradict an answer, destroy a clue, ask the same question twice, ask a GM character where another player was. Check that the continuity log finds and fixes the contradictions, that the case stays solvable, and that no text puts a player somewhere they never chose.
 - [ ] **Step 4:** Report the before and after numbers to the user. Never print the worlds' contents.
 
 ## Final review
