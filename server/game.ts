@@ -754,7 +754,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const shown = (m) => ({ points: m.points, skill: m.skill, why: m.why });
   thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: shown(scored), ...(penalty ? { penalty: shown(penalty) } : {}), at: now });
 
-  const clueIds = new Set(game.scenario.clues.map((c) => c.id));
+  const clueIds = new Set(openClues(game));
   for (const id of result.clues_found ?? []) {
     if (clueIds.has(id) && !st.destroyed.includes(id) && !st.found[playerId].includes(id)) {
       st.found[playerId].push(id);
@@ -772,6 +772,13 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const loud = (result.clues_destroyed ?? []).length > 0 || Number(result.suspicion_change) >= 10;
   addRipple(game, playerId, unpuppet(result.public_event, null, { others: true }), now, { hideActor: !result.move_is_public, loud });
   whisper(game, (result.messages_to_players ?? []).map((m) => ({ ...m, text: unpuppet(m?.text, m?.player_id, { others: m?.player_id !== playerId }) })), now);
+}
+
+// Clues that can be found now: each opens in its reveal_round. A clue without one (older worlds) is always open.
+export function openClues(game) {
+  const st = game.state;
+  const round = ['final', 'reveal'].includes(game.status) ? Infinity : (st?.phaseIndex ?? -1) + 1;
+  return game.scenario.clues.filter((c) => !Number.isInteger(c.reveal_round) || c.reveal_round <= round).map((c) => c.id);
 }
 
 export function isLastPhase(game) {
@@ -1676,6 +1683,7 @@ export function quietPlayers(game) {
 
 export function snapshotForGM(game) {
   const st = game.state;
+  const open = openClues(game);
   return {
     phase: st.phaseIndex >= 0 ? { number: roundNumber(game), of: totalRounds(game), name: game.scenario.phases[st.phaseIndex]?.name, stage: storyStage(game, st.phaseIndex) } : null,
     where_we_are: st.recap ?? null,
@@ -1690,6 +1698,8 @@ export function snapshotForGM(game) {
     overrides_left: st.overridesLeft,
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     shared_clues: st.shared.map((x) => x.clueId),
+    clues_open_now: open,
+    clues_later: game.scenario.clues.filter((c) => !open.includes(c.id)).map((c) => ({ id: c.id, round: c.reveal_round })),
     clues_found_by_player: st.found,
     revealed_hidden_facts: st.revealed,
     public_events: st.events.filter((e) => e.kind !== 'opening').map((e) => (e.kind === 'qa' ? `${e.by} asked out loud: ${e.read ? playerWords(e.read, e.q, 'public') : e.q} Answer: ${e.text}` : eventForGM(e))),
