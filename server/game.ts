@@ -305,7 +305,18 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
   const ladder = Array.isArray(s.hint_ladder) ? s.hint_ladder : [];
   if (ladder.filter((h) => !h.is_false).length < hints) errors.push(`Need at least ${hints} true hints.`);
   if (ladder.filter((h) => h.is_false).length > 1) errors.push('At most one false hint.');
+  (Array.isArray(s.phases) ? s.phases : []).forEach((ph, i) => {
+    if (namesCulprit(s, [], ph?.reward)) errors.push(`Round ${i + 1} reward names a culprit. Rewards and nudges must never say who did it.`);
+    if (namesCulprit(s, [], ph?.wrong_nudge)) errors.push(`Round ${i + 1} nudge names a culprit. Rewards and nudges must never say who did it.`);
+  });
   return errors;
+}
+
+// True when a text names a culprit, by character name or the player's own name (the same rule as mentions).
+export function namesCulprit(scenario, players, text) {
+  const culprits = scenario?.truth?.culprit_ids ?? [];
+  if (!text || !culprits.length || !scenario?.players) return false;
+  return mentions({ scenario: { players: scenario.players, npcs: scenario.npcs ?? [] }, players: players ?? [] }, text).some((id) => culprits.includes(id));
 }
 
 export function mapOf(scenario, edits = {}) {
@@ -981,6 +992,7 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   const everyone = game.players.every((p) => vote.votes[p.id] !== undefined);
   if (!everyone && !force && vote.endsAt > now) return null;
   const q = roundQuestion(game, vote.phaseIndex);
+  if (namesCulprit(game.scenario, game.players, q.reward)) q.reward = '';
   const counts = q.options.map((_, i) => Object.values(vote.votes).filter((v) => v === i).length);
   const top = Math.max(...counts);
   const winners = counts.flatMap((c, i) => (c === top && top > 0 ? [i] : []));
@@ -991,7 +1003,7 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   st.roundVote = null;
   const said = picked === null ? 'The group could not agree.' : `The group picked: ${q.options[picked]}.`;
   if (correct) {
-    addEvent(game, `${said} That is right! ${q.reward}`, 'round', now);
+    addEvent(game, `${said} That is right!${q.reward ? ` ${q.reward}` : ''}`, 'round', now);
     if (q.reward) st.timelineExtra.push({ order: q.rewardOrder, time: q.rewardTime, event: q.reward });
     addFacts(game, mentions(game, q.reward).map((id) => ({ person: id, fact: q.reward })), 'round', now);
     st.suspicion = clamp(st.suspicion + 10, 0, 100);
