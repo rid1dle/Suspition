@@ -133,6 +133,13 @@ describe('recent worlds and the shuffle', () => {
     db.close();
   });
 
+  test('should draw the first idea away from recent worlds on a fresh start', async () => {
+    let asked = 0;
+    const library = { recentWorlds: () => { asked += 1; return ['Cold Air at Station Nine: a weather post in Ladakh, snowed in.']; }, list: () => [] };
+    await new App({ gm: new FakeGM(), store: new MemoryStore(), library } as never).init();
+    assert.ok(asked >= 1, 'a fresh lobby asks for the recent worlds before showing an idea');
+  });
+
   test('should shuffle only for the host, away from recent worlds', async () => {
     const library = { recentWorlds: () => ['Cold Air at Station Nine: a weather post in Ladakh, snowed in.'], list: () => [] };
     const app = await new App({ gm: new FakeGM(), store: new MemoryStore(), library } as never).init();

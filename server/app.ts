@@ -27,8 +27,9 @@ export class App {
   }
 
   async init() {
-    this.game = (await this.store.load()) ?? G.createGame(this.clock());
-    if (this.game.status === 'lobby' && !this.game.lobby) G.shuffleSurprise(this.game, this.recentWorlds());
+    const saved = await this.store.load();
+    this.game = saved ?? G.createGame(this.clock());
+    if (this.game.status === 'lobby' && (!saved || !this.game.lobby)) G.shuffleSurprise(this.game, this.recentWorlds());
     if (this.game.scenario) G.cleanScenario(this.game);
     if (this.game.status === 'generating') {
       this.game.status = 'failed';
