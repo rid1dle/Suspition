@@ -524,13 +524,19 @@ export function geographyOf(scenario) {
   return planGeography(mapOf(scenario), scenario?.geography, { ids, names });
 }
 
-// How long the walk between two places takes ("4 min walk"); '' for a world without geography.
-export function walkBetween(scenario, fromId, toId) {
-  if (!scenario?.geography || !fromId || !toId || fromId === toId) return '';
+// Metres of path between two places; null for a world without geography or an unknown place.
+export function walkMetres(scenario, fromId, toId) {
+  if (!scenario?.geography || !fromId || !toId || fromId === toId) return null;
   const places = mapOf(scenario);
   const a = places.find((p) => p.id === fromId);
   const b = places.find((p) => p.id === toId);
-  return a && b ? tripTime(pathMetres(a, b, geographyOf(scenario).across_m)) : '';
+  return a && b ? pathMetres(a, b, geographyOf(scenario).across_m) : null;
+}
+
+// How long the walk between two places takes ("4 min walk"); '' for a world without geography.
+export function walkBetween(scenario, fromId, toId) {
+  const m = walkMetres(scenario, fromId, toId);
+  return m === null ? '' : tripTime(m);
 }
 
 export function startPositions(scenario) {

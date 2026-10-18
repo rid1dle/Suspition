@@ -24,9 +24,11 @@ function metresText(m) {
   return `${km} km`;
 }
 
+export const walkMinutes = (m) => m / WALK_M_PER_MIN;
+
 // "under a minute", "4 min walk", "75 min walk, 12 min by car".
 export function tripTime(m, about = false) {
-  const walk = m / WALK_M_PER_MIN;
+  const walk = walkMinutes(m);
   const text = walk < 1 ? 'under a minute' : `${Math.round(walk)} min walk${m > DRIVE_FROM_M ? `, ${Math.max(1, Math.round(m / DRIVE_M_PER_MIN))} min by car` : ''}`;
   return about ? `about ${text}` : text;
 }

@@ -8,8 +8,8 @@ import { MemoryStore } from '../server/store.ts';
 import { GM } from '../server/gm.ts';
 import { SCENARIO_SCHEMA, GENERATION_SYSTEM } from '../server/prompts.ts';
 import { editPlace, geographyOf, walkBetween, resolveStoryIds } from '../server/game.ts';
-import { makeScenario } from './fixtures.ts';
-import { FakeGM } from './fixtures.ts';
+import { storyIssues } from '../server/story.ts';
+import { FakeGM, makeScenario } from './fixtures.ts';
 
 const tick = () => new Promise((r) => setTimeout(r, 5));
 const move = (place) => ({ kind: 'question', target: '', place, attempt: 'looks at the desk', said_aloud: '', out_of_world: false, sways_gm: false, claims: [] });
@@ -110,6 +110,44 @@ describe('the GM plans the geography', () => {
     assert.match(GENERATION_SYSTEM, /across_m/);
     assert.match(GENERATION_SYSTEM, /a lodge and its boathouse are a few hundred metres apart/);
     assert.match(GENERATION_SYSTEM, /Landmarks are scenery only/);
-    assert.ok(!GENERATION_SYSTEM.includes('—'));
+    assert.ok(!GENERATION_SYSTEM.includes(String.fromCharCode(0x2014)));
+  });
+});
+
+describe('the story respects the map', () => {
+  const players = [1, 2].map((i) => ({ id: `p${i}`, name: `Player${i}` }));
+  // Ballroom to Kitchen is 72 grid units: across 3000 m that is about 2.8 km, a 35 min walk.
+  const world = (across_m, times, geography = true) => {
+    const s = makeScenario(2);
+    if (geography) s.geography = { ...GEO, across_m };
+    s.truth.whereabouts = [
+      { time: times[0], character_id: 'p2', location_id: 'l1', doing: 'Dancing', seen_by: [] },
+      { time: times[1], character_id: 'p2', location_id: 'l2', doing: 'Cooking', seen_by: [] },
+      { time: '9pm', character_id: 'p1', location_id: 'l1', doing: 'Talking', seen_by: [] },
+    ];
+    return s;
+  };
+  const far = (s) => storyIssues(s, { players, rounds: s.phases.length }).filter((l) => l.startsWith('far:'));
+
+  test('should flag a whereabouts pair that is too far apart for the time between', () => {
+    const lines = far(world(3000, ['10:00 pm', '10:10 pm']));
+    assert.equal(lines.length, 1);
+    assert.match(lines[0], /truth\.whereabouts\[0\] and truth\.whereabouts\[1\]/);
+    assert.match(lines[0], /35 min walk/);
+    assert.match(lines[0], /only 10 minutes apart/);
+  });
+
+  test('should not flag a pair with enough time, across midnight too', () => {
+    assert.deepEqual(far(world(3000, ['11:30 pm', '12:10 am'])), []);
+    assert.deepEqual(far(world(300, ['10:00 pm', '10:05 pm'])), []);
+    assert.equal(far(world(3000, ['11:50 pm', '12:10 am'])).length, 1);
+  });
+
+  test('should skip times it cannot read', () => {
+    assert.deepEqual(far(world(3000, ['at dusk', 'later'])), []);
+  });
+
+  test('should skip the far check for a world without geography', () => {
+    assert.deepEqual(far(world(3000, ['10:00 pm', '10:01 pm'], false)), []);
   });
 });
