@@ -1,6 +1,6 @@
 # Soundtrack: composed per game, per round
 
-Status: DRAFT, 2026-10-18
+Status: APPROVED, 2026-10-18
 
 ## Why
 
