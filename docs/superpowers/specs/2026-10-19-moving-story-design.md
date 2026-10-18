@@ -16,13 +16,14 @@ Status: approved by the creator ("design everything, I approve all already", 202
 
 After each round's vote, `storyPace(game)` returns `more`, `on` or `sooner`. Code decides, so it cannot be skipped.
 
+- **Only public signals decide it.** Who the room picked in a spotlight never does: a round added or cut because the pick was right or wrong would tell everyone who did it, since the round count is on every screen. (Changed after the review; the first version paced on spotlight picks.)
 - **more:** the coming round would be the last planned one, and at least one of these holds:
-  - the room's last spotlight (or last quiz answer) was wrong
-  - fewer than half of the clues opened so far have been found by anyone
+  - the room's last quiz answer was wrong (a quiz result is public already)
+  - fewer than half of the clues opened so far have been found by anyone (worlds whose clues have no rounds skip this)
   - the last story check said the case is not solvable
 
   One round is added before the closing round, up to +2 in all (the existing `EXTRA_ROUNDS`). The GM names it at the round change.
-- **sooner:** at least 4 rounds are planned, the coming round is not yet the last, the room's last two spotlights both named a culprit, and three quarters of the opened clues are found. The coming round becomes the closing round: the middle rounds between are dropped and their clues open in the closing round. At most once a game, never below 3 rounds.
+- **sooner:** at least 4 rounds are planned, the coming round is not yet the last, at least 3 clues are open and 9 in 10 of them are found, and the last check did not say unsolvable. The coming round becomes the closing round: the middle rounds between are dropped and their clues open in the closing round. At most once a game, never below 3 rounds, and no round is added after it.
 - **on:** nothing changes.
 - The room is told: "The story needs one more round." or "The room is closing in. The next round is the last."
 - The phone and the table say "Round 2 of 4" as now; the count simply changes when the story does.
@@ -32,7 +33,7 @@ After each round's vote, `storyPace(game)` returns `more`, `on` or `sooner`. Cod
 The round-change GM call (it already writes the loud event, the job and the recap) also returns:
 
 - `round_name`: 2 to 5 words named from what happened, not the plan. It replaces the planned name. Empty keeps the plan's.
-- `because`: one line that ties the room's last choice to what happens now ("Because the room looked at Nikhil, the clerk is asked for the seal log."). It is the first line of the new round, so everyone sees their choice matter.
+- `because`: (it may name the person the room just picked, culprit or not, since that pick is public; any other culprit's name drops the line, so a missing line never tells) one line that ties the room's last choice to what happens now ("Because the room looked at Nikhil, the clerk is asked for the seal log."). It is the first line of the new round, so everyone sees their choice matter.
 - `vote`: the coming round's question, in one of two kinds:
   - **spotlight:** who the room looks at (as now)
   - **choice:** a story decision for the room with 2 or 3 options and no right answer ("Break the strongroom door now, or wait for the key?"). The room's pick is told to the next round's GM call and to the story check, the same way a spotlight is, so the story follows it.

@@ -19,7 +19,7 @@ import { Narrator, narrationFor } from '@/lib/narration';
 import { tableSound } from '@/lib/alerts';
 import { Sfx } from '@/lib/sfx';
 import type { TableView } from '@/lib/views';
-import { RejoinPanel } from '@/components/game/rejoin';
+import { RejoinPanel, REJOIN_SHOW_MS } from '@/components/game/rejoin';
 import { Setup, Generating, Failed } from './setup';
 import { Reading } from './reading';
 import { Playing } from './playing';
@@ -134,6 +134,11 @@ function MediaBar({ media, view, host, calm, setCalm }: { media: Media | null; v
 function Rejoin({ host, players, chip }: { host: string; players: { id: string; name: string }[]; chip: string }) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState<{ name: string; url: string } | null>(null);
+  useEffect(() => {
+    if (!code) return;
+    const t = setTimeout(() => setCode(null), REJOIN_SHOW_MS);
+    return () => clearTimeout(t);
+  }, [code]);
   const pick = async (id: string) => {
     const res = await fetch(`/api/rejoin?host=${encodeURIComponent(host)}&player=${encodeURIComponent(id)}`);
     if (res.ok) setCode(await res.json());

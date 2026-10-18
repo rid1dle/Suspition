@@ -3,6 +3,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Label, Muted } from '@/components/game/label';
 
+// The code is on a shared screen: it hides itself soon, and each new code replaces the player's old link.
+export const REJOIN_SHOW_MS = 30_000;
+
 // Host only: a dropped player scans their own code and is back in their seat, card and all.
 export function RejoinPanel({ players, code, onPick, onClose }: { players: { id: string; name: string }[]; code: { name: string; url: string } | null; onPick: (id: string) => void; onClose: () => void }) {
   return (
@@ -18,7 +21,7 @@ export function RejoinPanel({ players, code, onPick, onClose }: { players: { id:
         <div className="flex flex-col items-start gap-2">
           <div className="rounded-xl bg-white p-3"><QRCodeSVG value={code.url} size={180} /></div>
           <Muted className="break-all text-xs">{code.name}: scan this, or open {code.url}</Muted>
-          <Muted className="text-xs">Only show it to {code.name}: it opens their card.</Muted>
+          <Muted className="text-xs">Only show it to {code.name}: it opens their card. It hides in 30 seconds. Their old link no longer works.</Muted>
         </div>
       )}
     </div>

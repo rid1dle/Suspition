@@ -13,6 +13,9 @@ export const RETRY_MS = 60_000;
 // How long a move waits for the player to say Go before it counts as Not now.
 export const CONFIRM_MS = 90_000;
 
+// A player who chose not to go asks from where they stand.
+const stayed = (read) => (read ? { ...read, goes_to: '', place: '', attempt: `${read.attempt ?? ''} They chose not to go anywhere and stay where they are.`.trim() } : read);
+
 export class App {
   constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null, people = new MemoryPeople(), library = null }) {
     this.gm = gm;
@@ -28,6 +31,7 @@ export class App {
     this.tasks = new Set();
     this.asks = new Map();
     this.confirms = new Map();
+    this.confirmOwners = new Map();
   }
 
   async init() {
@@ -429,15 +433,13 @@ export class App {
       try {
         const words = await this.gm.read(game, p.id, q, 'public');
         if (this.game !== game) return;
-        if (await this.goFirst(game, p.id, words, 'out loud') === 'stay') {
-          if (this.game === game) G.failPublicAsk(game, p.id, 'You stayed where you are.');
-          return;
-        }
+        let heard = words;
+        if (await this.goFirst(game, p.id, words, 'out loud') === 'stay') heard = stayed(words);
         if (this.game !== game) return;
-        const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, words);
+        const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, heard);
         if (this.game !== game) return;
         const drops = game.state.rippleDrops?.length ?? 0;
-        G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, words, ripple, refused);
+        G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, heard, ripple, refused);
         this.logRippleDrop(game, drops);
         this.countAnswer(game);
       } catch (err) {
@@ -518,11 +520,10 @@ export class App {
       game.state.pending[p.id].read = read;
       game.state.pending[p.id].from = G.currentPlace(game, p.id);
       if (await this.goFirst(game, p.id, read, 'private') === 'stay') {
-        if (this.game !== game) return;
-        G.failAsk(game, p.id);
-        game.state.threads[p.id].push({ from: 'system', text: 'You stayed where you are. No act was used.', at: this.clock() });
-        await this.changed();
-        return;
+        if (this.game !== game || !game.state.pending[p.id]) return;
+        read = stayed(read);
+        game.state.pending[p.id].read = read;
+        game.state.threads[p.id].push({ from: 'system', text: 'You stayed where you are. The GM answers you here.', at: this.clock() });
       }
       if (this.game !== game || !game.state.pending[p.id]) return;
       const settled = G.settleAct(game, p.id, read);
@@ -549,21 +550,28 @@ export class App {
 
   // A move that would take the character somewhere else is confirmed first; going is announced to everyone.
   async goFirst(game, pid, read, from) {
-    const dest = G.placeIdFromText(game, read?.place);
+    // Only a move during a round, one at a time per player; "where it happens" is not "where I go".
+    if (game.status !== 'playing' || game.state.transitioning || this.confirms.has(pid)) return 'none';
+    const dest = G.placeIdFromText(game, typeof read?.goes_to === 'string' ? read.goes_to : read?.place);
     if (!dest || dest === G.currentPlace(game, pid)) return 'none';
     (game.state.moveConfirm ??= {})[pid] = { place: dest, from };
     await this.changed();
     const yes = await new Promise((resolve) => {
       const timer = setTimeout(() => resolve(false), CONFIRM_MS);
       timer.unref?.();
-      this.confirms.set(pid, (v) => {
+      const mine = (v) => {
         clearTimeout(timer);
         resolve(v);
-      });
+      };
+      this.confirms.set(pid, mine);
+      this.confirmOwners.set(pid, { mine, game });
     });
-    this.confirms.delete(pid);
-    delete game.state.moveConfirm[pid];
-    if (this.game !== game || !yes || game.status !== 'playing') return 'stay';
+    if (this.confirmOwners.get(pid)?.game === game) {
+      this.confirms.delete(pid);
+      this.confirmOwners.delete(pid);
+    }
+    delete game.state.moveConfirm?.[pid];
+    if (this.game !== game || !yes || game.status !== 'playing' || game.state.transitioning) return 'stay';
     G.goTo(game, pid, dest, this.clock(), 'to check something');
     await this.changed();
     return 'go';
@@ -581,7 +589,9 @@ export class App {
     this.requireHost(hostToken);
     const p = this.game.players.find((x) => x.id === playerId);
     if (!p) throw new GameError('No such player.', 404);
-    return { name: p.name, url: `${base}#t=${p.token}` };
+    const fresh = G.newPlayerToken(this.game, p.id);
+    this.keep(this.game).catch(() => {});
+    return { name: p.name, url: `${base}#t=${fresh}` };
   }
 
   async go(tok, place) {
@@ -647,6 +657,8 @@ export class App {
       this.notify();
       return null;
     }
+    // A move nobody confirmed is Not now: the round change never waits on it.
+    for (const answer of [...this.confirms.values()]) answer(false);
     G.paceStory(game, this.clock());
     G.beginPhaseChange(game);
     this.notify();
@@ -683,15 +695,20 @@ export class App {
   // One runs at a time; a failed or slow one changes nothing and the next one catches up.
   checkContinuity(game, reason) {
     if (typeof this.gm.continuity !== 'function' || !game.state || !['playing', 'final'].includes(game.status)) return null;
-    if (this.continuityTask) return this.continuityTask;
+    // A check asked for while one runs waits its turn: the round check must read the new round.
+    if (this.continuityTask) {
+      this.continuityNext = reason;
+      return this.continuityTask;
+    }
     const c = continuityState(game);
     const startedAt = this.clock();
+    const roundsVersion = game.state.roundsVersion ?? 0;
     c.answers = 0;
     const task = this.background(`continuity ${reason}`, async () => {
       try {
         const result = await this.gm.continuity(game, reason);
         if (this.game !== game) return;
-        const out = applyContinuity(game, result, this.clock());
+        const out = applyContinuity(game, result, this.clock(), { roundsVersion });
         c.lastAt = startedAt;
         const problems = Array.isArray(result?.problems) ? result.problems : [];
         const kinds = {};
@@ -704,6 +721,9 @@ export class App {
         this.log(`gm continuity (${reason}) skipped: ${err.message}`);
       } finally {
         this.continuityTask = null;
+        const next = this.continuityNext;
+        this.continuityNext = null;
+        if (next && this.game === game) this.checkContinuity(game, next);
       }
     });
     this.continuityTask = task;

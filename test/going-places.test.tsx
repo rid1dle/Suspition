@@ -47,17 +47,17 @@ describe('going places', () => {
     assert.ok(t.gm.calls.includes('answer'));
   });
 
-  test('should keep the question when the player stays', async () => {
+  test('should answer where the player stands when they say Not now', async () => {
     const t = await playing();
     t.gm.readResult = move('Ballroom');
     await t.app.ask(t.tokens[1], { kind: 'chat', text: 'I go to the ballroom' });
     await tick();
     await t.app.confirmMove(t.tokens[1], false);
     await t.app.idle();
-    assert.equal(t.view(1).questionsLeft, 3);
     assert.equal(t.app.game.state.at.p2, 'l2');
     assert.deepEqual(t.events(), []);
-    assert.ok(!t.gm.calls.includes('answer'));
+    assert.ok(t.gm.calls.includes('answer'));
+    assert.match(t.gm.lastAsk.read.attempt, /They chose not to go anywhere/);
   });
 
   test('should ask first for a question out loud too', async () => {

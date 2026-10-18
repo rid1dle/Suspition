@@ -14,6 +14,7 @@ export interface Read {
   fair_part?: string;
   claims: string[];
   acts?: boolean;
+  goes_to?: string;
 }
 
 export interface FinalRead {

@@ -71,16 +71,14 @@ describe('code decides how long the story runs', () => {
     assert.equal(game.scenario.phases.length, 3);
   });
 
-  test('should close sooner when the room found the culprit twice and most clues', () => {
+  test('should close sooner when the room found almost every clue so far', () => {
     const game = playing({ phases: 5, round: 2 });
-    game.scenario.clues[1].reveal_round = 4;
-    findAll(game, ['c1', 'c3']);
-    spot(game, 'p1', 1);
-    spot(game, 'p1', 2);
+    game.scenario.clues.push({ id: 'c4', name: 'Late letter', where: 'l1', shows: 'LATE', does_not_prove: '', importance: 'useful', can_be_destroyed: false, reveal_round: 4 });
+    findAll(game, ['c1', 'c2', 'c3']);
     assert.equal(G.paceStory(game, 5_000), 'sooner');
     assert.equal(game.scenario.phases.length, 3);
     assert.equal(game.scenario.phases[2].name, 'Phase name 5');
-    assert.equal(game.scenario.clues[1].reveal_round, 3);
+    assert.equal(game.scenario.clues[3].reveal_round, 3);
     assert.equal(game.state.events.at(-1).text, 'The room is closing in. The next round is the last.');
     assert.equal(G.paceStory(game, 6_000), 'on', 'only once a game');
   });

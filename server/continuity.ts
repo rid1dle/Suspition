@@ -119,12 +119,17 @@ function keepStoryNow(game, text) {
   st.storyArc = [...(st.storyArc ?? []), { round: roundNumber(game), text: line }].slice(-10);
 }
 
-export function applyContinuity(game, result, now = Date.now()) {
+// A check that started before the rounds changed wrote its round numbers for the old list: those patches are dropped.
+// Offers and corrections only reach phones while the round is being played.
+export function applyContinuity(game, result, now = Date.now(), { roundsVersion = game.state?.roundsVersion ?? 0 } = {}) {
   continuityState(game);
+  const live = game.status === 'playing';
+  const moved = (game.state.roundsVersion ?? 0) !== roundsVersion;
+  const roundPath = (p) => /^phases\.|\.reveal_round$/.test(String(p?.path ?? '').trim());
   const canon = addCanon(game, result?.canon_add, now);
-  const corrections = correct(game, result?.corrections, now);
-  const { applied, skipped } = patchPlan(game, result?.patches, now);
-  const offers = (result?.offers ?? []).filter((o) => offerToPlayer(game, o?.player_id, o?.text, o?.choice, now)).length;
+  const corrections = live ? correct(game, result?.corrections, now) : 0;
+  const { applied, skipped } = patchPlan(game, moved ? (result?.patches ?? []).filter((p) => !roundPath(p)) : result?.patches, now);
+  const offers = live ? (result?.offers ?? []).filter((o) => offerToPlayer(game, o?.player_id, o?.text, o?.choice, now)).length : 0;
   const extra = (result?.extra_rounds ?? [])[0];
   const rounds = extra && addRound(game, extra, now) ? 1 : 0;
   keepStoryNow(game, result?.story_now);

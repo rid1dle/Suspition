@@ -85,6 +85,14 @@ export function addPlayer(game, { name, wish, username } = {}) {
   return player;
 }
 
+// A rejoin link replaces the old one, so a photo of the table's code stops working once it is used again.
+export function newPlayerToken(game, playerId) {
+  const p = game.players.find((x) => x.id === playerId);
+  if (!p) fail('No such player.', 404);
+  p.token = token();
+  return p.token;
+}
+
 export function playerByToken(game, tok) {
   const player = tok && game.players.find((p) => p.token === tok);
   if (!player) fail('Unknown player. Join the game again.', 401);
@@ -1049,7 +1057,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   markGoalSteps(game, playerId, result.goal_steps_done);
   const answers = Array.isArray(result.claims_answer) ? result.claims_answer : [];
   for (const [i, claim] of (ask.read?.claims ?? []).entries()) {
-    const answer = answers.find((a) => String(a?.claim ?? '').trim().toLowerCase() === String(claim).trim().toLowerCase()) ?? answers[i];
+    const answer = answers.find((a) => String(a?.claim ?? '').trim().toLowerCase() === String(claim).trim().toLowerCase()) ?? (answers.length === (ask.read?.claims ?? []).length ? answers[i] : undefined);
     if (answer?.granted === true) continue;
     const given = String(answer?.why ?? '').trim().slice(0, 200);
     const reason = given ? cleanWhy(game, given) : `"${claim}" is not up to you; other people decide for themselves.`;
@@ -1115,11 +1123,20 @@ export const currentPlace = (game, pid) => game.state?.at?.[pid] ?? game.state?.
 const placeKey = (t) => String(t ?? '').trim().toLowerCase().replace(/^the\s+/, '');
 
 // The place a reader's "place" names, by its name; null when it names no place on the map.
+const GENERIC_PLACE = new Set(['room', 'hall', 'house', 'here', 'there', 'area', 'place', 'inside', 'outside', 'upstairs', 'downstairs']);
+const phraseIn = (phrase, text) => new RegExp(`(^|[^a-z0-9])${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^a-z0-9])`).test(text);
+
 export function placeIdFromText(game, text) {
   const key = placeKey(text);
   if (!key) return null;
   const locs = game.scenario.locations;
-  return (locs.find((l) => placeKey(l.name) === key) ?? locs.find((l) => key.includes(placeKey(l.name)) || placeKey(l.name).includes(key)))?.id ?? null;
+  const exact = locs.find((l) => placeKey(l.name) === key);
+  if (exact) return exact.id;
+  // Whole words only: "room" is not the Reading Room, "the reading room upstairs" is.
+  const inText = locs.find((l) => placeKey(l.name).length >= 4 && phraseIn(placeKey(l.name), key));
+  if (inText) return inText.id;
+  const inName = !GENERIC_PLACE.has(key) && key.length >= 5 ? locs.find((l) => phraseIn(key, placeKey(l.name))) : null;
+  return inName?.id ?? null;
 }
 
 // A character walks somewhere in plain sight: the map shows it and everyone is told.
@@ -1150,7 +1167,8 @@ function placeFor(game, clue) {
   const sc = game.scenario;
   if (sc.locations.some((l) => l.id === where)) return where;
   if (sc.npcs.some((n) => n.id === where)) return game.state.positions[where] ?? null;
-  if (sc.players.some((p) => p.id === where)) return game.state.at?.[where] ?? game.state.positions[where] ?? null;
+  // A player's secret trip stays secret: their clue is where the map shows them.
+  if (sc.players.some((p) => p.id === where)) return game.state.positions[where] ?? null;
   return null;
 }
 
@@ -1189,7 +1207,7 @@ export function addRound(game, round, now = Date.now()) {
   const st = game.state;
   const sc = game.scenario;
   const name = String(round?.name ?? '').trim().slice(0, 60);
-  if (game.status !== 'playing' || !name || totalRounds(game) >= roundCap(game)) return false;
+  if (game.status !== 'playing' || !name || st.closedSooner || totalRounds(game) >= roundCap(game)) return false;
   const text = (k) => String(round?.[k] ?? '').trim();
   const options = Array.isArray(round?.options) ? round.options.map((o) => String(o ?? '').trim()).filter(Boolean).slice(0, 4) : [];
   const ph = { name, objective: text('objective'), try: [], planned_beat: text('planned_beat') };
@@ -1206,6 +1224,7 @@ export function addRound(game, round, now = Date.now()) {
   for (const c of sc.clues ?? []) if (Number.isInteger(c.reveal_round) && c.reveal_round >= at + 1) c.reveal_round += 1;
   for (const t of sc.public_timeline ?? []) if (Number(t.reveal_round) >= at + 1) t.reveal_round = Number(t.reveal_round) + 1;
   st.addedRounds = (st.addedRounds ?? 0) + 1;
+  st.roundsVersion = (st.roundsVersion ?? 0) + 1;
   addEvent(game, `The story needs one more round. There are now ${totalRounds(game)} rounds.`, 'phase', now);
   return true;
 }
@@ -1215,27 +1234,28 @@ export function paceStory(game, now = Date.now()) {
   const st = game.state;
   const sc = game.scenario;
   if (game.status !== 'playing' || st.transitioning || willReplay(game)) return 'on';
-  const culprits = sc.truth?.culprit_ids ?? [];
-  const opened = openClues(game);
+  // Only things the room can already see decide it. Who the room picked never does: a round added or cut
+  // because the pick was right or wrong would tell everyone who did it.
+  const timed = (sc.clues ?? []).some((c) => Number.isInteger(c.reveal_round));
+  const opened = timed ? openClues(game) : [];
   const found = new Set(Object.values(st.found ?? {}).flat());
-  const share = opened.length ? opened.filter((id) => found.has(id)).length / opened.length : 1;
+  const share = opened.length ? opened.filter((id) => found.has(id)).length / opened.length : null;
   const last = resultsThisRound(game).at(-1);
-  const missed = Boolean(last && (last.kind === 'spotlight' ? last.top && !culprits.includes(last.top) : last.kind !== 'choice' && last.correct === false));
+  const missed = Boolean(last && !['spotlight', 'choice'].includes(last.kind) && last.correct === false);
   const unsolvable = st.continuity?.log?.at(-1)?.solvable === false;
   const next = st.phaseIndex + 1;
-  if (next === sc.phases.length - 1 && (missed || share < 0.5 || unsolvable)) {
+  if (next === sc.phases.length - 1 && (missed || (share !== null && share < 0.5) || unsolvable)) {
     if (!addRound(game, { name: 'One More Round', planned_beat: 'The room needs more time: bring what they are missing into reach.' }, now)) return 'on';
     sc.phases[next].vote_kind = 'spotlight';
     return 'more';
   }
-  const spots = st.roundResults.filter((r) => r.kind === 'spotlight').slice(-2);
-  const twice = spots.length === 2 && spots.every((r) => culprits.includes(r.top));
-  if (!st.closedSooner && sc.phases.length >= 4 && next < sc.phases.length - 1 && next + 1 >= 3 && twice && share >= 0.75) {
+  if (!st.closedSooner && !unsolvable && sc.phases.length >= 4 && next < sc.phases.length - 1 && next + 1 >= 3 && opened.length >= 3 && share >= 0.9) {
     const closing = next + 1;
     sc.phases.splice(next, sc.phases.length - 1 - next);
     for (const c of sc.clues ?? []) if (Number.isInteger(c.reveal_round) && c.reveal_round > closing) c.reveal_round = closing;
     for (const t of sc.public_timeline ?? []) if (Number(t.reveal_round) > closing) t.reveal_round = closing;
     st.closedSooner = true;
+    st.roundsVersion = (st.roundsVersion ?? 0) + 1;
     addEvent(game, 'The room is closing in. The next round is the last.', 'phase', now);
     return 'sooner';
   }
@@ -1243,18 +1263,29 @@ export function paceStory(game, now = Date.now()) {
 }
 
 // The GM writes the coming round as it starts: its name, the line that ties it to the room's choice, and its vote.
+// The room's own pick is public: a line may name them whoever they are. Any other culprit's name drops the line,
+// so a missing line never says whether the pick was right.
+function sayable(game) {
+  const st = game.state;
+  const last = st.roundResults.at(-1);
+  const pick = last?.kind === 'spotlight' && last.round === roundNumber(game) - 1 ? last.top : null;
+  const others = (game.scenario.truth?.culprit_ids ?? []).filter((id) => id !== pick);
+  return (t, max) => {
+    const text = String(t ?? '').trim().slice(0, max);
+    return text && !namesAnyOf(game.scenario, game.players, others, text) && !leaksLaterClue(game, text) ? text : '';
+  };
+}
+
 function planRound(game, index, result, replay) {
   const sc = game.scenario;
   const ph = sc.phases[index];
   if (!ph || replay) return;
-  const safe = (t, max) => {
-    const text = String(t ?? '').trim().slice(0, max);
-    return text && !namesCulprit(sc, game.players, text) ? text : '';
-  };
+  const safe = sayable(game);
   const name = safe(result.round_name, 60);
   if (name) ph.name = name;
   const v = result.vote;
-  if (v?.kind === 'spotlight') ph.vote_kind = 'spotlight';
+  // A planned quiz keeps its reward and its second try; only a story choice replaces it.
+  if (v?.kind === 'spotlight' && (game.setup?.roundStyle === 'hotseats' || !roundQuestion(game, index))) ph.vote_kind = 'spotlight';
   const options = (Array.isArray(v?.options) ? v.options : []).map((o) => safe(o, 80)).filter(Boolean).slice(0, 3);
   if (v?.kind === 'choice' && safe(v.question, 160) && options.length >= 2 && options.length === (v.options ?? []).length) {
     const lastChoice = game.state.roundResults.at(-1)?.kind === 'choice';
@@ -1330,8 +1361,8 @@ export function completePhase(game, result, now = Date.now()) {
   setJob(game, result);
   planRound(game, next, result, replay);
   addEvent(game, phaseLine(game, next, replay), 'phase', now);
-  const because = String(result.because ?? '').trim().slice(0, 200);
-  if (because && !namesCulprit(game.scenario, game.players, because)) addEvent(game, dropPuppeting(game, null, because).text, 'because', now);
+  const because = sayable(game)(result.because, 200);
+  if (because) addEvent(game, dropPuppeting(game, null, because).text, 'because', now);
   addEvent(game, dropPuppeting(game, null, result.public_event).text, 'event', now);
   setRecap(game, result, now);
   addFacts(game, result.public_facts, 'round change', now);
@@ -1478,7 +1509,7 @@ const withArticle = (t) => (/^(a|an|the)\s/i.test(t) ? t.replace(/^\w+/, (w) => 
 export function storyShape(game) {
   const type = String(game.scenario?.story_type ?? '').trim();
   if (!type) return '';
-  const became = String((game.state?.storyArc ?? []).at(-1)?.text ?? '').trim().replace(/[.!]+$/, '');
+  const became = String((game.state?.storyArc ?? []).at(-1)?.text ?? '').trim().replace(/[.!]+$/, '').replace(/^\w/, (c) => c.toLowerCase());
   return became ? `This story began as ${withArticle(type)}. It became ${withArticle(became)}.` : `This story was ${withArticle(type)}.`;
 }
 
@@ -1909,7 +1940,7 @@ function rewardTurns(game, result) {
     if (prev && (prev.top === card.id || before >= 2) && (result.counts[i] ?? 0) < before && result.top !== card.id) {
       recordPlay(game, card.id, { points: 1, skill: card.side === 'culprit' ? 'bluffing' : 'persuading', why: 'Turned the room away from you.' }, null, 'out loud');
     }
-    if (result.top && result.top !== card.id && said.some((t) => mentions(game, t).includes(result.top))) {
+    if (result.top && result.top !== card.id && said.some((t) => { const named = mentions(game, t); return named.length === 1 && named[0] === result.top; })) {
       recordPlay(game, card.id, { points: 1, skill: 'persuading', why: 'The room followed your lead.' }, null, 'out loud');
     }
   });
@@ -1960,11 +1991,17 @@ const WIN = {
 export function keyObjectsView(game) {
   const sc = game.scenario;
   const nameFor = (id) => sc.locations.find((l) => l.id === id)?.name ?? sc.players.find((p) => p.id === id)?.character_name ?? sc.npcs.find((n) => n.id === id)?.name ?? null;
-  return (sc?.key_objects ?? []).filter((o) => String(o?.name ?? '').trim()).map((o) => ({
-    name: String(o.name).trim(),
-    about: String(o.about ?? '').trim(),
-    where: o.where_is_public === true ? nameFor(String(o.where ?? '').trim()) : null,
-  }));
+  const culprits = sc?.truth?.culprit_ids ?? [];
+  const held = (id) => sc.players.some((p) => p.id === id);
+  return (sc?.key_objects ?? []).filter((o) => String(o?.name ?? '').trim()).map((o) => {
+    const about = String(o.about ?? '').trim();
+    const where = String(o.where ?? '').trim();
+    return {
+      name: String(o.name).trim(),
+      about: namesAnyOf(sc, game.players, culprits, about) ? '' : about,
+      where: o.where_is_public === true && !held(where) ? nameFor(where) : null,
+    };
+  });
 }
 
 export function briefingSteps(game) {
