@@ -15,6 +15,10 @@ export const HINT_VOTE_MS = 60_000;
 export const ROUND_VOTE_MS = 90_000;
 export const MOMENT_READY_MS = 60_000;
 export const EXTEND_MS = 5 * 60_000;
+export const SEAT_FIRST_MS = 60_000;
+export const SEAT_READY_MS = 15_000;
+export const SEAT_LIVE_MS = 90_000;
+const SEAT_ASKERS = 3;
 
 export class GameError extends Error {
   constructor(message, status = 400) {
@@ -451,6 +455,7 @@ export function startPlay(game, now = Date.now()) {
   game.state.roundNumber = 1;
   game.state.replays = 0;
   enterPhase(game, 0, now);
+  planSeats(game, now);
   game.state.events.push({ at: now, phase: 0, kind: 'phase', text: phaseLine(game, 0) });
   announceRound(game, 0, now);
 }
@@ -748,7 +753,9 @@ export function completePhase(game, result, now = Date.now()) {
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -20, 20), 0, 100);
   if (replay) st.replays = (st.replays ?? 0) + 1;
   st.roundNumber = roundNumber(game) + 1;
+  const carry = closeSeats(game);
   enterPhase(game, next, now);
+  planSeats(game, now, carry);
   setJob(game, result);
   addEvent(game, phaseLine(game, next, replay), 'phase', now);
   addEvent(game, dropPuppeting(game, null, result.public_event).text, 'event', now);
@@ -913,6 +920,89 @@ export function applyScore(game, verdict, score) {
     }),
   };
   game.status = 'reveal';
+}
+
+// Hot seats: one player on the spot at a time, a fair rotation across the game.
+export const seatsPerRound = (players, rounds) => Math.min(3, Math.max(1, Math.ceil(players / Math.max(1, rounds))));
+
+export function planSeats(game, now, carry = []) {
+  const st = game.state;
+  if (game.setup?.roundStyle !== 'hotseats' || game.status !== 'playing') return;
+  if (!st.seatOrder) {
+    st.seatOrder = game.players.map((p) => p.id).sort(() => Math.random() - 0.5);
+    st.seatCursor = 0;
+    st.seatCounts = {};
+  }
+  const n = seatsPerRound(game.players.length, game.scenario.phases.length);
+  const pids = carry.filter((pid) => game.players.some((p) => p.id === pid)).slice(0, n);
+  for (let guard = 0; pids.length < n && guard < st.seatOrder.length * 2; guard += 1) {
+    const pid = st.seatOrder[st.seatCursor % st.seatOrder.length];
+    st.seatCursor += 1;
+    if (!pids.includes(pid)) pids.push(pid);
+  }
+  const slot = (Math.max(st.phaseEndsAt - now, SEAT_FIRST_MS) - SEAT_FIRST_MS) / pids.length;
+  let askCursor = 0;
+  const list = pids.map((pid, k) => {
+    const askers = [];
+    for (let i = 0; askers.length < SEAT_ASKERS && i < st.seatOrder.length; i += 1) {
+      const who = st.seatOrder[(askCursor + i) % st.seatOrder.length];
+      if (who !== pid && !askers.includes(who)) askers.push(who);
+    }
+    askCursor += SEAT_ASKERS;
+    return { pid, status: 'waiting', readyAt: Math.round(now + SEAT_FIRST_MS + k * slot), liveAt: null, endsAt: null, askers: askers.map((a) => ({ pid: a, question: '', followup: '' })), whisper: [], written: false };
+  });
+  st.seats = { round: roundNumber(game), list };
+}
+
+function startSeat(seat, now) {
+  seat.status = 'getready';
+  seat.liveAt = now + SEAT_READY_MS;
+  seat.endsAt = seat.liveAt + SEAT_LIVE_MS;
+}
+
+function finishSeat(game, seat) {
+  const st = game.state;
+  seat.status = 'done';
+  st.seatCounts[seat.pid] = (st.seatCounts[seat.pid] ?? 0) + 1;
+  unlockCard(game, seat.pid, 'drives');
+  if (st.seatCounts[seat.pid] >= 2) unlockCard(game, seat.pid, 'reasons');
+}
+
+export function tickSeats(game, now = Date.now()) {
+  const st = game.state;
+  if (!st?.seats || st.transitioning || game.status !== 'playing') return false;
+  let changed = false;
+  for (let guard = 0; guard < 10; guard += 1) {
+    const active = st.seats.list.find((s) => s.status === 'getready' || s.status === 'live');
+    if (active?.status === 'getready' && now >= active.liveAt) {
+      active.status = 'live';
+      addEvent(game, `Hot seat: ${nameOf(game, active.pid)}. 90 seconds.`, 'seat', now);
+    } else if (active?.status === 'live' && now >= active.endsAt) finishSeat(game, active);
+    else if (!active) {
+      const next = st.seats.list.find((s) => s.status === 'waiting' && s.readyAt <= now);
+      if (!next) break;
+      startSeat(next, now);
+    } else break;
+    changed = true;
+  }
+  return changed;
+}
+
+export function seatNow(game, now = Date.now()) {
+  const st = game.state;
+  if (game.status !== 'playing' || !st.seats) fail('There are no hot seats this round.', 409);
+  if (st.seats.list.some((s) => s.status === 'getready' || s.status === 'live')) fail('Someone is already in the hot seat.', 409);
+  const next = st.seats.list.find((s) => s.status === 'waiting');
+  if (!next) fail('Everyone has had their seat this round.', 409);
+  startSeat(next, now);
+}
+
+// At round end a seat in progress counts as sat; seats that never ran go first next round.
+function closeSeats(game) {
+  const st = game.state;
+  if (!st.seats) return [];
+  for (const s of st.seats.list) if (s.status === 'getready' || s.status === 'live') finishSeat(game, s);
+  return st.seats.list.filter((s) => s.status === 'waiting').map((s) => s.pid);
 }
 
 const OPEN = ['getready', 'called'];

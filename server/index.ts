@@ -86,6 +86,7 @@ export function createHandler(app, { joinUrl, next = null }) {
     'POST /api/public': (b) => app.askPublic(b.token, b.text),
     'POST /api/vote': (b) => app.voteHint(b.token, b.yes),
     'POST /api/voteask': (b) => app.askVote(b.token),
+    'POST /api/seatnow': (b) => app.seatNow(b.host),
     'POST /api/voteaskanswer': (b) => app.answerVoteAsk(b.token, b.yes),
     'POST /api/submit': (b) => app.submit(b.token, b),
     'POST /api/checkname': (b) => app.checkName(b.name),

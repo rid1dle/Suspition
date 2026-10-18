@@ -461,6 +461,12 @@ export class App {
     await this.changed();
   }
 
+  async seatNow(hostToken) {
+    this.requireHost(hostToken);
+    G.seatNow(this.game, this.clock());
+    await this.changed();
+  }
+
   async nextPhase(hostToken) {
     this.requireHost(hostToken);
     this.advance();
@@ -562,6 +568,7 @@ export class App {
       dirty = true;
     }
     if (G.tickMoments(game, now)) dirty = true;
+    if (G.tickSeats(game, now)) dirty = true;
     if (dirty) await this.changed();
     if (st.roundVote && st.roundVote.endsAt <= now) return this.advance();
     if (!st.transitioning && !st.roundVote && st.phaseEndsAt && st.phaseEndsAt <= now) this.advance();
