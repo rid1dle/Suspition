@@ -846,8 +846,30 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
       return claims && !backed(game, p.id, sentence, backing[p.id] ?? []);
     });
   };
+  // "He" or "she" opening a sentence stands for the last person named before it; for a player, the same rule holds.
+  const lastNamed = (sentence) => {
+    const words = wordsOf(sentence);
+    let last = null;
+    words.forEach((w, i) => {
+      const p = people.find((x) => (x.full.length && x.full.every((f, k) => words[i + k] === f)) || (x.names.has(w) && owners[w] === 1));
+      if (p) last = p;
+    });
+    return last;
+  };
+  let previous = null;
+  const pronounActs = (sentence) => {
+    const words = wordsOf(sentence);
+    const p = previous;
+    if (!p?.player || !['he', 'she'].includes(words[0]) || (!others && p.id === actorId)) return false;
+    let next = words.slice(1, 4);
+    if (/ly$/.test(next[0] ?? '')) next = next.slice(1);
+    const claims = ACT_VERBS.has(next[0]) || GESTURES.has(next[0]) || (['was', 'were'].includes(next[0]) && PLACE_PREPS.has(next[1]));
+    return claims && !backed(game, p.id, sentence, backing[p.id] ?? []);
+  };
   const kept = sentences.filter((sentence) => {
-    if (reports(sentence) || acts(sentence)) return false;
+    const pronoun = pronounActs(sentence);
+    previous = lastNamed(sentence) ?? previous;
+    if (pronoun || reports(sentence) || acts(sentence)) return false;
     const words = wordsOf(sentence);
     const lead = leadOf(words);
     if (reportOnly || actorId === null || !lead || !lead.player || lead.id === actorId) return true;
@@ -925,7 +947,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const shown = (m) => ({ points: m.points, skill: m.skill, why: m.why });
   thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: shown(scored), ...(penalty ? { penalty: shown(penalty) } : {}), at: now });
   // A move that would contradict the story does not happen: no clue, no move, no stir. The player is told why.
-  const why = refusedWhy(result);
+  const why = refusedWhy(result) && cleanWhy(game, refusedWhy(result));
   if (why) {
     thread.push({ from: 'system', text: `That can't happen: ${why}`, at: now });
     logRefused(game, playerId, why, false, now);
@@ -936,7 +958,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   for (const [i, claim] of (ask.read?.claims ?? []).entries()) {
     const answer = answers.find((a) => String(a?.claim ?? '').trim().toLowerCase() === String(claim).trim().toLowerCase()) ?? answers[i];
     if (answer?.granted === true) continue;
-    const reason = String(answer?.why ?? '').trim().slice(0, 200) || `"${claim}" is not up to you; other people decide for themselves.`;
+    const given = String(answer?.why ?? '').trim().slice(0, 200);
+    const reason = given ? cleanWhy(game, given) : `"${claim}" is not up to you; other people decide for themselves.`;
     thread.push({ from: 'system', text: `That can't happen: ${reason}`, at: now });
     logRefused(game, playerId, reason, false, now);
   }
@@ -967,6 +990,12 @@ export function openClues(game) {
   const round = ['final', 'reveal'].includes(game.status) ? Infinity : (st?.phaseIndex ?? -1) + 1;
   return game.scenario.clues.filter((c) => !Number.isInteger(c.reveal_round) || c.reveal_round <= round).map((c) => c.id);
 }
+
+// The refusal line is read by the player (or the room): it never speaks for a player or names the culprit.
+const cleanWhy = (game, why) => {
+  const text = dropPuppeting(game, null, why, { others: true }).text;
+  return !text || namesCulprit(game.scenario, game.players, text) ? 'It does not fit the story.' : text;
+};
 
 const refusedWhy = (result) => (result?.refused?.refused === true ? String(result.refused.why ?? '').trim().slice(0, 200) || 'It would break the story.' : '');
 
@@ -1791,7 +1820,7 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   delete st.publicPending[playerId];
   readPlayer(game, playerId, read, 'out loud', now);
   if (read?.play || words) recordPlay(game, playerId, read?.play, words, 'out loud');
-  const why = refusedWhy({ refused });
+  const why = refusedWhy({ refused }) && cleanWhy(game, refusedWhy({ refused }));
   if (!why) addFacts(game, read?.facts, 'asked out loud', now);
   const name = game.players.find((p) => p.id === playerId)?.name;
   // The asker's own question backs what their character does in the answer.
