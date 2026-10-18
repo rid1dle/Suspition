@@ -949,9 +949,43 @@ export function planSeats(game, now, carry = []) {
       if (who !== pid && !askers.includes(who)) askers.push(who);
     }
     askCursor += SEAT_ASKERS;
-    return { pid, status: 'waiting', readyAt: Math.round(now + SEAT_FIRST_MS + k * slot), liveAt: null, endsAt: null, askers: askers.map((a) => ({ pid: a, question: '', followup: '' })), whisper: [], written: false };
+    const plain = fallbackSeat(game, pid, askers);
+    return { pid, status: 'waiting', readyAt: Math.round(now + SEAT_FIRST_MS + k * slot), liveAt: null, endsAt: null, ...plain, written: false };
   });
   st.seats = { round: roundNumber(game), list };
+}
+
+const capWords = (text, n) => String(text ?? '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).slice(0, n).join(' ');
+
+// Before (or without) the GM: plain alibi questions and the player's own hook as the whisper.
+export function fallbackSeat(game, pid, askers) {
+  const card = game.scenario.players.find((p) => p.id === pid) ?? {};
+  const times = (card.alibi ?? []).map((a) => a.time).filter(Boolean);
+  const question = (k) => (times.length ? `Where were you at ${times[k % times.length]}?` : 'Where were you tonight, and who saw you?');
+  const hook = card.hook || String(card.private_info ?? '').split(/(?<=[.!?])\s/)[0];
+  return { askers: askers.map((a, k) => ({ pid: a, question: question(k), followup: '' })), whisper: hook ? [capWords(hook, 30)] : [] };
+}
+
+// The GM's writing for this round's seats; output for a round that already ended is ignored.
+export function applySeatWriting(game, round, result) {
+  const st = game.state;
+  if (!st?.seats || st.seats.round !== round) return false;
+  for (const w of result?.seats ?? []) {
+    const seat = st.seats.list.find((s) => s.pid === w?.player_id && s.status === 'waiting');
+    if (!seat) continue;
+    const whisper = (w.whisper ?? []).map((l) => capWords(l, 12)).filter(Boolean).slice(0, 3);
+    if (whisper.length) seat.whisper = whisper;
+    for (const a of w.askers ?? []) {
+      const asker = seat.askers.find((x) => x.pid === a?.player_id);
+      if (!asker) continue;
+      const question = capWords(a.question, 15);
+      if (question) asker.question = question;
+      const followup = String(a.followup ?? '').trim();
+      asker.followup = /^if\b/i.test(followup) ? capWords(followup, 25) : '';
+    }
+    seat.written = true;
+  }
+  return true;
 }
 
 function startSeat(seat, now) {

@@ -154,3 +154,60 @@ describe('hot seat engine', () => {
     assert.equal(game.state.seats ?? null, null);
   });
 });
+
+import { seatsPrompt, SEATS_SCHEMA } from '../server/prompts.ts';
+
+describe('the GM writes the seats', () => {
+  const ready = (n = 3) => {
+    const game = hotGame(n);
+    G.applyAudit(game.scenario, { players: [{ player_id: game.scenario.players[0].id, hook: 'You are the one with the key.' }, ...game.scenario.players.slice(1).map((p) => ({ player_id: p.id, hook: `Hook of ${p.id}.` }))], alibis: game.scenario.players.map((p) => ({ id: p.id, alibi: [{ time: '9:40 pm', where: 'Kitchen' }] })) });
+    G.startPlay(game, 1_000);
+    return game;
+  };
+
+  test('should fill every seat with alibi questions and the hook line before the GM answers', () => {
+    const game = ready();
+    const seat = game.state.seats.list[0];
+    assert.equal(seat.written, false);
+    assert.ok(seat.askers.every((a) => /^Where were you at 9:40 pm\?$/.test(a.question)));
+    assert.deepEqual(seat.whisper, [game.scenario.players.find((p) => p.id === seat.pid).hook]);
+    assert.ok(seat.askers.every((a) => a.followup === ''));
+  });
+
+  test('should store GM-written questions and whispers, capped to their lengths', () => {
+    const game = ready();
+    const seat = game.state.seats.list[0];
+    const long = Array(30).fill('word').join(' ');
+    G.applySeatWriting(game, game.state.seats.round, { seats: [{ player_id: seat.pid, whisper: [long, 'Two.', 'Three.', 'Four.'], askers: seat.askers.map((a) => ({ player_id: a.pid, question: long, followup: `If they say the kitchen, tell them: ${long}` })) }] });
+    assert.equal(seat.written, true);
+    assert.equal(seat.whisper.length, 3);
+    assert.equal(seat.whisper[0].split(' ').length, 12);
+    assert.ok(seat.askers.every((a) => a.question.split(' ').length === 15 && a.followup.split(' ').length <= 25));
+  });
+
+  test('should drop a follow-up that is not a conditional line', () => {
+    const game = ready();
+    const seat = game.state.seats.list[0];
+    G.applySeatWriting(game, game.state.seats.round, { seats: [{ player_id: seat.pid, whisper: ['Stay calm.'], askers: seat.askers.map((a) => ({ player_id: a.pid, question: 'Where were you?', followup: 'She is lying.' })) }] });
+    assert.ok(seat.askers.every((a) => a.followup === ''));
+  });
+
+  test('should ignore seat writing that arrives after its round ended', () => {
+    const game = ready();
+    const old = game.state.seats.round;
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 2_000);
+    const seat = game.state.seats.list[0];
+    assert.equal(G.applySeatWriting(game, old, { seats: [{ player_id: seat.pid, whisper: ['Late.'], askers: [] }] }), false);
+    assert.notDeepEqual(seat.whisper, ['Late.']);
+  });
+
+  test('should keep culprit facts out of early seats', () => {
+    const game = ready();
+    assert.match(seatsPrompt(game), /side secrets only/i);
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 2_000);
+    assert.match(seatsPrompt(game), /may now point at the culprit/i);
+    assert.ok(SEATS_SCHEMA.properties.seats);
+  });
+});

@@ -299,6 +299,24 @@ export class App {
     this.notify();
   }
 
+  // The round's hot seats already run on plain questions; the GM's version replaces them if it lands in time.
+  writeSeats(game) {
+    const round = game.state?.seats?.round;
+    if (!round || typeof this.gm.seats !== 'function') return null;
+    return this.background('seats', async () => {
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          const result = await this.gm.seats(game);
+          if (this.game !== game) return;
+          if (G.applySeatWriting(game, round, result)) await this.changed();
+          return;
+        } catch (err) {
+          if (attempt === 1) throw err;
+        }
+      }
+    });
+  }
+
   drawPicture(game) {
     this.background('illustrate', async () => {
       const { svg } = await this.gm.illustrate(game);
@@ -386,6 +404,7 @@ export class App {
   async start(hostToken) {
     this.requireHost(hostToken);
     G.startPlay(this.game, this.clock());
+    this.writeSeats(this.game);
     await this.changed();
   }
 
@@ -490,6 +509,7 @@ export class App {
         const result = G.goesToFinal(game) ? {} : await this.gm.phase(game);
         if (this.game !== game) return;
         G.completePhase(game, result, this.clock());
+        this.writeSeats(game);
         game.error = null;
       } catch (err) {
         if (this.game !== game) return;

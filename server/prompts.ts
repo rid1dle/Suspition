@@ -439,6 +439,40 @@ ${JSON.stringify(people)}` : ''}`;
 
 export const ILLUSTRATION_SCHEMA = obj({ svg: str });
 
+export const SEATS_SCHEMA = obj({
+  seats: { type: 'array', items: obj({ player_id: str, whisper: strArr, askers: { type: 'array', items: obj({ player_id: str, question: str, followup: str }) } }) },
+});
+
+// What an asker's own card shows them: never locked sections, never other players' secrets.
+const askerKnows = (c) => [c.public_info, c.private_info, c.starting_knowledge, ...(c.alibi ?? []).map((a) => `You told people you were at ${a.where} at ${a.time}.`), ...(c.night ?? []).map((n) => `At ${n.time} you were really at ${n.where}. ${n.doing}`)].filter(Boolean);
+
+export function seatsPrompt(game) {
+  const sc = game.scenario;
+  const st = game.state;
+  const n = sc.phases.length;
+  const i = st.phaseIndex;
+  const card = (id) => sc.players.find((p) => p.id === id);
+  const seats = (st.seats?.list ?? []).map((s) => ({
+    player_id: s.pid,
+    character: card(s.pid)?.character_name,
+    askers: s.askers.map((a) => ({ player_id: a.pid, character: card(a.pid)?.character_name, knows: askerKnows(card(a.pid) ?? {}) })),
+  }));
+  return `Write this round's hot seats for a mystery played out loud in one room. A hot seat puts one player on the spot for 90 seconds while up to 3 others each ask them one question out loud.
+Round ${i + 1} of ${n}. ${i < n - 2
+    ? "Side secrets only: questions, whispers and follow-ups may touch each player's private secrets, but nothing that points at the culprit, the method or the motive."
+    : 'The case is closing: questions and follow-ups may now point at the culprit, the method and the motive.'}
+For each seat:
+- whisper: up to 3 short lines, 12 words or fewer each, for the seated player only, from their own card's truth: what is safe to admit, what to lie about, who to deflect onto. A culprit gets a believable lie. Someone innocent chooses to guard a side secret or come clean.
+- askers: for each listed asker, one question of 15 words or fewer that their own character could ask from what they know, pointing at something real in the case.
+- followup: only when that asker's own card truly contradicts a likely lie, one line that starts with "If" ("If Priya says she was in the library, tell her: the library was locked at nine."). Otherwise empty.
+Use only facts each asker knows (below) and public facts. Never write what anyone feels or answers.
+
+${PLAIN_STYLE}
+
+SEATS:
+${JSON.stringify(seats)}`;
+}
+
 export function illustrationPrompt(scenario) {
   return `Draw one simple, moody picture of this setting as SVG: ${scenario.setting_summary} ${scenario.background?.slice(0, 3).join(' ')}
 Rules: start with <svg and use viewBox="0 0 800 400". Flat shapes and gradients, 4 to 7 colours, a clear silhouette of the place. No text, no people's faces, no scripts, no links, no external images, no foreignObject. Under 7000 characters.`;
