@@ -42,6 +42,7 @@ const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o?.[k] !== undef
 export function botPrompt(view) {
   const screen = {
     status: view.status,
+    ...(view.lastRefusal ? { your_last_action_was_refused: `${view.lastRefusal} Pick something else this turn.` } : {}),
     you: view.me?.name,
     case_question: view.caseQuestion,
     card: pick(view.card, ['name', 'role', 'side', 'side_explanation', 'goal', 'goal_why', 'private_info', 'starting_knowledge', 'wants', 'fears', 'night', 'alibi', 'hidden_known', 'win']),

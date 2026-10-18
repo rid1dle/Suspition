@@ -210,3 +210,34 @@ describe('fair play points', () => {
   });
 });
 
+
+import { takeTurn } from '../scripts/playtest.ts';
+import { botPrompt } from '../scripts/playtest/bots.ts';
+
+describe('playtest bots', () => {
+  test('should give a bot one more try after the game refuses its action', async () => {
+    const calls = [];
+    const app = {
+      playerView: () => ({ status: 'playing', phase: { number: 1 }, me: { name: 'Bot' } }),
+      shareClue: async () => { throw new G.GameError('Everyone can already see that clue.', 409); },
+      ask: async () => {},
+    };
+    const actions = [{ action: 'share', clue_id: 'c1' }, { action: 'private', text: 'I look at the floor.' }];
+    const botCall = async ({ view }) => { calls.push(view.lastRefusal ?? null); return actions[calls.length - 1]; };
+    const bot = { token: 't', role: 'fair', log: [] };
+    await takeTurn(app, bot, 'act', botCall);
+    assert.deepEqual(bot.log.map((l) => l.result), ['refused: Everyone can already see that clue.', 'ok']);
+    assert.deepEqual(calls, [null, 'Everyone can already see that clue.']);
+  });
+
+  test('should retry only once', async () => {
+    const app = { playerView: () => ({ status: 'playing', phase: { number: 1 } }), shareClue: async () => { throw new G.GameError('No.', 409); } };
+    const bot = { token: 't', role: 'fair', log: [] };
+    await takeTurn(app, bot, 'act', async () => ({ action: 'share', clue_id: 'c1' }));
+    assert.equal(bot.log.length, 2);
+  });
+
+  test('should show the bot why its last action was refused', () => {
+    assert.match(JSON.stringify(botPrompt({ status: 'playing', lastRefusal: 'There is no vote right now.' })), /There is no vote right now/);
+  });
+});
