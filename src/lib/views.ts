@@ -103,6 +103,7 @@ export interface PlayerView extends PublicView {
   persona?: { intent: string; persona: string } | null;
   playTotal?: number;
   moments?: { id: string; line: string; why: string; status: string; readyAt?: number }[];
+  offers?: { id: string; text: string; choice: string }[];
   overridesLeft?: number;
   submission?: Record<string, unknown> | null;
   question?: { id: string; question: string; choices: string[] } | null;

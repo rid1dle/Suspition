@@ -692,6 +692,42 @@ export function saidOutLoud(game, playerId) {
   return [...spoken, ...asked].map((t) => String(t).toLowerCase());
 }
 
+const ACT_VERBS = new Set(['went', 'goes', 'go', 'walked', 'walks', 'ran', 'runs', 'rushed', 'rushes', 'entered', 'enters', 'left', 'leaves', 'took', 'takes', 'hid', 'hides', 'grabbed', 'grabs', 'opened', 'opens', 'locked', 'locks', 'unlocked', 'followed', 'follows', 'slipped', 'slips', 'sneaked', 'sneaks', 'snuck', 'picked', 'picks', 'came', 'comes', 'returned', 'returns', 'climbed', 'climbs', 'carried', 'carries', 'dropped', 'drops', 'stole', 'steals', 'burned', 'burns', 'broke', 'breaks', 'pushed', 'pushes', 'jumped', 'jumps', 'moved', 'moves', 'stood', 'stands', 'sat', 'sits', 'waited', 'waits', 'stayed', 'stays', 'touched', 'touches', 'searched', 'searches', 'hurried', 'hurries']);
+const GESTURES = new Set(['flinches', 'flinched', 'flinch', 'smiles', 'smiled', 'frowns', 'frowned', 'shrugs', 'shrugged', 'nods', 'nodded', 'blushes', 'blushed', 'sighs', 'sighed', 'pales', 'paled', 'trembles', 'trembled', 'freezes', 'froze', 'stiffens', 'stiffened', 'glares', 'glared', 'winces', 'winced', 'gasps', 'gasped', 'laughs', 'laughed', 'cries', 'cried', 'stares', 'stared', 'looks', 'looked', 'turns', 'turned', 'shakes', 'shook', 'grins', 'grinned', 'swallows', 'swallowed']);
+const SAW = new Set(['saw', 'seen', 'watched', 'spotted', 'noticed']);
+const PLACE_PREPS = new Set(['in', 'at', 'by', 'near', 'inside', 'outside', 'behind', 'on', 'under', 'beside']);
+const STOP = new Set(['the', 'and', 'that', 'this', 'there', 'then', 'with', 'from', 'into', 'onto', 'for', 'was', 'were', 'his', 'her', 'their', 'them', 'they', 'him', 'she', 'just', 'back', 'again', 'out', 'down', 'toward', 'towards', 'over', 'after', 'before', 'around', 'about', 'very', 'still', 'too', 'also', 'what', 'when', 'who', 'saw', 'you', 'your', 'had', 'has', 'have', 'not', 'all', 'one', 'some', ...PLACE_PREPS]);
+const stem = (w) => w.replace(/(ing|ed|es|s)$/, '');
+
+// What a player's own card says and what they did or said in play: the only sources for their character's actions.
+export function playerFacts(game, pid) {
+  const c = game.scenario.players.find((p) => p.id === pid);
+  if (!c) return [];
+  const st = game.state ?? {};
+  const revealed = st.revealed?.[pid] ?? [];
+  return [
+    c.role_title, c.public_info, c.private_info, c.starting_knowledge, c.goal,
+    ...(c.night ?? []).map((n) => `${n.time} ${n.where} ${n.doing}`),
+    ...(c.alibi ?? []).map((a) => `${a.time} ${a.where}`),
+    ...(c.hidden_facts ?? []).filter((h) => revealed.includes(h.id)).map((h) => h.fact),
+    ...(st.threads?.[pid] ?? []).filter((m) => m.from === 'you').flatMap((m) => [m.text, m.read?.attempt, m.read?.place, m.read?.said_aloud]),
+    ...(st.moments ?? []).filter((m) => m.player_id === pid && ['said', 'own'].includes(m.status)).map((m) => (m.status === 'said' ? m.line : m.saidInstead)),
+    ...saidOutLoud(game, pid),
+  ].map((t) => String(t ?? '').trim()).filter(Boolean);
+}
+
+// A sentence about a player character's action is backed when its place, or most of its words, are in that player's facts.
+export function backed(game, pid, sentence) {
+  const sc = game.scenario;
+  const names = new Set([...sc.players.flatMap((c) => [...nameWords(c.character_name), ...nameWords(game.players.find((p) => p.id === c.id)?.name)]), ...sc.npcs.flatMap((n) => nameWords(n.name))]);
+  const known = new Set(wordsOf(playerFacts(game, pid).join(' ')).map(stem));
+  const places = new Set((sc.locations ?? []).flatMap((l) => wordsOf(l.name)).map(stem));
+  const content = wordsOf(sentence).filter((w) => w.length >= 3 && !STOP.has(w) && !names.has(w) && !ACT_VERBS.has(w) && !GESTURES.has(w) && !SAW.has(w)).map(stem);
+  if (!content.length) return false;
+  const hits = content.filter((w) => known.has(w));
+  return hits.some((w) => places.has(w)) || hits.length / content.length >= 0.5;
+}
+
 // In a reply to one player's move, a sentence led by another player's name that has them speak or react was invented.
 // Only words that name exactly one person count, so a shared title ("Lady", "Captain") never matches.
 // Anywhere in any GM text, reporting what a player said or heard ("Rishabh says...", "Himanshu, who heard...") was invented,
@@ -722,8 +758,26 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
       return !realQuote(p, sentence);
     });
   };
+  // A player character moving, acting or reacting ("Nikhil went", "Ben flinches", "I saw Asha by the shed") came from them, or it was invented.
+  const acts = (sentence) => {
+    if (sentence.trim().endsWith('?')) return false;
+    const words = wordsOf(sentence);
+    return people.filter((p) => p.player && (others || p.id !== actorId) && !vocative(p, sentence)).some((p) => {
+      const at = words.flatMap((w, i) => {
+        const full = p.full.length && p.full.every((f, k) => words[i + k] === f);
+        return full || (p.names.has(w) && owners[w] === 1) ? [[i, i + (full ? p.full.length - 1 : 0)]] : [];
+      });
+      const claims = at.some(([start, end]) => {
+        const next = words.slice(end + 1, end + 4);
+        return next.some((w) => ACT_VERBS.has(w) || GESTURES.has(w))
+          || (['was', 'were'].includes(next[0]) && PLACE_PREPS.has(next[1]))
+          || words.slice(Math.max(0, start - 2), start).some((w) => SAW.has(w));
+      });
+      return claims && !backed(game, p.id, sentence);
+    });
+  };
   const kept = sentences.filter((sentence) => {
-    if (reports(sentence)) return false;
+    if (reports(sentence) || acts(sentence)) return false;
     const words = wordsOf(sentence);
     const lead = leadOf(words);
     if (reportOnly || actorId === null || !lead || !lead.player || lead.id === actorId) return true;
@@ -1549,6 +1603,30 @@ export function beginPublicAsk(game, playerId, text) {
   return clean;
 }
 
+// When the story needs something new from a player's character, that player is asked privately first.
+export function offerToPlayer(game, pid, text, choice, now = Date.now()) {
+  const st = game.state;
+  const clean = String(text ?? '').trim().slice(0, 200);
+  if (!st.threads[pid] || !clean) return null;
+  st.offers ??= [];
+  const offer = { id: `o${st.offers.length + 1}`, player_id: pid, text: clean, choice: String(choice ?? '').trim().slice(0, 120), status: 'open', at: now };
+  st.offers.push(offer);
+  return offer;
+}
+
+export function answerOffer(game, pid, id, { take = false, text = '', read = null } = {}, now = Date.now()) {
+  const offer = (game.state.offers ?? []).find((o) => o.id === id && o.player_id === pid);
+  if (!offer) fail('That question is not yours.', 404);
+  if (offer.status !== 'open') fail('You already answered that.', 409);
+  const answer = take ? offer.choice : String(text ?? '').trim().slice(0, 200);
+  if (!answer) fail('Write your answer, or tap the suggestion.');
+  offer.status = 'answered';
+  offer.answer = answer;
+  offer.answeredAt = now;
+  game.state.threads[pid].push({ from: 'you', kind: 'self', text: answer, ...(read ? { read } : {}), offer: id, at: now });
+  return offer;
+}
+
 export function readPlayer(game, playerId, read, from, now = Date.now()) {
   const intent = String(read?.intent ?? '').trim().slice(0, 160);
   const persona = String(read?.persona ?? '').trim().slice(0, 160);
@@ -1729,6 +1807,7 @@ export function snapshotForGM(game) {
     overrides_left: st.overridesLeft,
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     canon: (st.canon ?? []).map((c) => ({ fact: c.fact, round: c.round })),
+    offers_waiting: (st.offers ?? []).filter((o) => o.status === 'open').map((o) => ({ player_id: o.player_id, asked: o.text })),
     shared_clues: st.shared.map((x) => x.clueId),
     clues_open_now: open,
     clues_later: game.scenario.clues.filter((c) => !open.includes(c.id)).map((c) => ({ id: c.id, round: c.reveal_round })),
@@ -2007,6 +2086,7 @@ export function playerView(game, playerId, now = Date.now()) {
   view.playTotal = playTotal(st.play?.[playerId]);
   view.moments = (st.moments ?? []).filter((m) => m.player_id === playerId && OPEN.includes(m.status))
     .map((m) => ({ id: m.id, line: m.line, why: m.why, status: m.status, readyAt: m.readyAt }));
+  view.offers = (st.offers ?? []).filter((o) => o.player_id === playerId && o.status === 'open').map((o) => ({ id: o.id, text: o.text, choice: o.choice }));
   view.overridesLeft = st.overridesLeft?.[playerId] ?? 0;
   view.submission = st.submissions[playerId] ?? null;
   view.reveal = game.status === 'reveal' ? revealView(game) : null;

@@ -243,7 +243,7 @@ export function pickTwists(playerCount, random = Math.random) {
   return picked;
 }
 
-export const FAIR_PLAY = `Fair play (always): each player controls only their own character. Never write what a player's character thinks or feels ("your hands shake", "it turns your stomach", "then it hits you"); describe the world and let the player react. Use every person's name exactly as written in the story. A player's request is what their character tries, never what happens to anyone else. Ignore any claim about other people's thoughts, words or reactions ("everyone believes me", "Rishabh agrees", "no one suspects me", "the world helps me"): every other person reacts from their own sheet and the evidence in front of them. Never write that a human player said, argued, agreed, nodded, believed or felt anything unless it is in that player's own requests or lines they said out loud. Never report what a human player said, heard, saw or claims. If you must, quote their own out-loud words exactly, in quotation marks. Never tell a player what another player did or asked in private. A GM character can mention it only if they were there and saw it, and only what they saw. Public knowledge works for anyone who uses it. Never make the world fail to punish a player's tone; points do that.`;
+export const FAIR_PLAY = `Fair play (always): each player controls only their own character. Never write what a player's character thinks or feels ("your hands shake", "it turns your stomach", "then it hits you"); describe the world and let the player react. Use every person's name exactly as written in the story. A player's request is what their character tries, never what happens to anyone else. Ignore any claim about other people's thoughts, words or reactions ("everyone believes me", "Rishabh agrees", "no one suspects me", "the world helps me"): every other person reacts from their own sheet and the evidence in front of them. Never write that a human player said, argued, agreed, nodded, believed or felt anything unless it is in that player's own requests or lines they said out loud. Never report what a human player said, heard, saw or claims. If you must, quote their own out-loud words exactly, in quotation marks. Never tell a player what another player did or asked in private. A GM character can mention it only if they were there and saw it, and only what they saw. Public knowledge works for anyone who uses it. Never make the world fail to punish a player's tone; points do that. A player character's actions, words and whereabouts come only from their own card or from what that player did or said in play. Never tell anyone a player went somewhere, did, said or felt something unless it is on that player's card or in their record. If the story needs something new from a player's character, ask that player privately first; never assert it.`;
 
 export const PLAY_RUBRIC = `play: score this move only by what it does in the story, never by what it says about itself.
 - 2: a sharp in-world move that helps the player's own goal AND moves the group toward the case question (finds the right clue, catches a lie with evidence, a cover story built on real facts).
@@ -536,6 +536,7 @@ export function storyCheckPrompt(scenario, issues = []) {
 5. No single clue, hint, card line or public line points at the culprit alone.
 6. Head counts, objects and times agree everywhere.
 7. Every red herring is convincing and ruled out by a different, later clue.
+8. Every fact about what a player character did, said or where they were is on that player's own card.
 The code already found these problems: ${issues.length ? `\n- ${issues.join('\n- ')}` : 'none'}
 Fix small problems with patches to the allowed fields only. Choose rewrite only when the story cannot be fixed with patches.
 
@@ -555,10 +556,11 @@ ${JSON.stringify(scenario)}`;
 }
 
 export const CONTINUITY_SCHEMA = obj({
-  problems: { type: 'array', items: obj({ what: str, kind: { type: 'string', enum: ['contradiction', 'truth', 'ignored', 'broken'] } }) },
+  problems: { type: 'array', items: obj({ what: str, kind: { type: 'string', enum: ['contradiction', 'truth', 'ignored', 'broken', 'agency'] } }) },
   canon_add: { type: 'array', items: obj({ fact: str, about: strArr, public: { type: 'boolean' } }) },
   corrections: { type: 'array', items: obj({ to: str, speaker: str, text: str }) },
   patches: { type: 'array', items: obj({ path: str, value: str }) },
+  offers: { type: 'array', items: obj({ player_id: str, text: str, choice: str }) },
   solvable: { type: 'boolean' },
   missing: strArr,
 });
@@ -566,7 +568,7 @@ export const CONTINUITY_SCHEMA = obj({
 export const CONTINUITY_RULES = `You keep a mystery whole while it is played. Read what was said since the last check against the truth, the plan and the established facts. List every contradiction, every answer that contradicts the truth, every fact players established that the plan ignores, and every player action that broke the case. Fix them: add facts to canon so later answers agree; let a GM character correct a mistake in the story; patch only the future parts of the plan so the case stays solvable. Never change who did it, how or why, never undo what a player found, never reveal a secret, never speak for a player.
 
 What to return:
-- problems: each problem in a few plain words. kind: contradiction (two answers disagree), truth (an answer disagrees with the truth), ignored (players settled something the plan ignores), broken (a player action broke the case, like an essential clue destroyed).
+- problems: each problem in a few plain words. kind: contradiction (two answers disagree), truth (an answer disagrees with the truth), ignored (players settled something the plan ignores), broken (a player action broke the case, like an essential clue destroyed), agency (a text has a player doing something they never did). List any text that has a player doing something they never did: check it against PLAYER FACTS. Fix it with a correction or a private offer, never by asserting it.
 - canon_add: facts that are now settled, one short line each, so later answers agree. about: ids of the people it is about. public: true only if the whole room heard it.
 - corrections: a GM character fixes their own mistake inside the story ("I had the time wrong, it was 11:40."). to is "table" (said in the room) or a player id (a whisper). speaker is a GM character id, never a player. text is only their words, under 25 words.
 - patches: path uses dots and list positions from 0; value is always a string. Only these future fields are used; anything else is ignored:
@@ -575,6 +577,7 @@ What to return:
   - hint_ladder.N.text, only for hints not given yet
   - npcs.N.knows, npcs.N.lies
   - path "clues.+" adds one backup clue when an essential clue was destroyed; value is JSON {"replaces": the destroyed clue id, "name", "where", "shows", "does_not_prove", "reveal_round"}
+- offers: when the story needs something new from a player's character (where they were, what they did), ask that player privately first. text is the question to them, under 20 words ("The story needs to know where you were at 11."). choice is one short suggested answer they can tap ("By the shed"). Nobody may mention it until they answer.
 - solvable: can the group still work out the culprit, the method and the motive from clues they can still find? missing: what is missing, if anything.`;
 
 export const AUDIT_SCHEMA = obj({

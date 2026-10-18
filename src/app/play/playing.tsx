@@ -13,6 +13,7 @@ import { PeopleList, PointButtons } from '@/components/game/people';
 import { MapView } from '@/components/game/map';
 import { ReminderCard } from '@/components/game/reminder';
 import { SeatCard, type SeatView } from '@/components/game/hot-seat';
+import { OfferCard } from '@/components/game/offer';
 import { PlayChip, PlayLine } from '@/components/game/score';
 import { Timeline, Alibis, SharedClues, Recap, ScenePicture, Facts } from '@/components/game/panels';
 import { useDraft } from '@/lib/live';
@@ -49,6 +50,7 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
       <main className="flex flex-col gap-5 px-4 pt-4">
         <SeatNow seat={view.seat as SeatView | null} />
         <Moment view={view} now={Date.now()} />
+        {view.offers?.[0] && <OfferCard offer={view.offers[0]} onAnswer={(take, text = '') => act('offer', { token: tokenOf(), id: view.offers![0].id, action: take ? 'take' : 'own', text })} />}
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
             {tab === 'story' && <StoryTab view={view} onAskTab={() => go('ask')} onGo={(t) => go(t === 'clues' ? 'clues' : 'story')} />}

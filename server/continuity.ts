@@ -1,5 +1,5 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { roundNumber, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM } from './game.ts';
+import { roundNumber, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts } from './game.ts';
 import { applyPatches } from './story.ts';
 import { CONTINUITY_RULES, FAIR_PLAY, PLAIN_STYLE } from './prompts.ts';
 
@@ -115,7 +115,8 @@ export function applyContinuity(game, result, now = Date.now()) {
   const canon = addCanon(game, result?.canon_add, now);
   const corrections = correct(game, result?.corrections, now);
   const { applied, skipped } = patchPlan(game, result?.patches, now);
-  return { canon, corrections, applied, skipped };
+  const offers = (result?.offers ?? []).filter((o) => offerToPlayer(game, o?.player_id, o?.text, o?.choice, now)).length;
+  return { canon, corrections, applied, skipped, offers };
 }
 
 // The truth, what is still to come, the canon, and everything said since the last check.
@@ -154,5 +155,11 @@ THE PLAN STILL TO COME:
 ${JSON.stringify(plan)}
 
 SAID AND DONE SINCE THE LAST CHECK:
-${JSON.stringify(said)}`;
+${JSON.stringify(said)}
+
+PLAYER FACTS (each player's own card and what they did or said; the only sources for what their character did):
+${JSON.stringify(Object.fromEntries(game.players.map((p) => [p.id, playerFacts(game, p.id)])))}
+
+QUESTIONS WAITING FOR A PLAYER (nobody may mention these yet):
+${JSON.stringify((st.offers ?? []).filter((o) => o.status === 'open').map((o) => ({ player_id: o.player_id, text: o.text })))}`;
 }
