@@ -46,6 +46,13 @@ describe('moves know the walking time', () => {
     assert.deepEqual(t.events(), ['Ben goes to the Ballroom (4 min walk) to check something.']);
   });
 
+  test('should time a move from where the map shows you, not a secret trip', async () => {
+    const t = await playing();
+    t.app.game.state.at.p2 = 'l1';
+    await t.app.go(t.tokens[1], 'l2');
+    assert.deepEqual(t.events(), ['Ben goes to the Kitchen.']);
+  });
+
   test('should keep the old announcement for a world without geography', async () => {
     const t = await playing({ geography: null });
     await t.app.go(t.tokens[1], 'l1');

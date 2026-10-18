@@ -25,6 +25,15 @@ describe('planGeography', () => {
     assert.deepEqual(geo.paths.map((p) => p.kind).sort(), ['corridor', 'stairs']);
   });
 
+  test('should not draw a second route for neighbors joined past a landmark', () => {
+    const geo = planGeography(places, raw({
+      landmarks: [{ id: 'm1', name: 'Old well', kind: 'well', x: 25, y: 40 }],
+      paths: [{ from: 'l1', to: 'm1', kind: 'trail' }, { from: 'm1', to: 'l2', kind: 'trail' }],
+    }));
+    const keys = geo.paths.map((p) => [p.from, p.to].sort().join()).sort();
+    assert.deepEqual(keys, ['l1,m1', 'l2,l3', 'l2,m1']);
+  });
+
   test('should mark an old world about, with 300 m across', () => {
     const geo = planGeography(places, undefined);
     assert.equal(geo.about, true);

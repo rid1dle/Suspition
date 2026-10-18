@@ -72,6 +72,8 @@ export function planGeography(places, raw, keep = {}) {
     paths.push({ from, to, kind: PATH_KINDS.includes(kind) ? kind : defaultKind(terrain), m: pathMetres(points[from], points[to], across_m) });
   };
   for (const p of Array.isArray(g.paths) ? g.paths : []) add(String(p?.from ?? ''), String(p?.to ?? ''), p?.kind);
-  for (const p of places) for (const n of p.neighbors ?? []) add(p.id, n, null);
+  // Neighbors the GM already joined past one landmark keep that route; no second, direct one.
+  const joined = (a, b) => landmarks.some((l) => seen.has([a, l.id].sort().join('\u0000')) && seen.has([b, l.id].sort().join('\u0000')));
+  for (const p of places) for (const n of p.neighbors ?? []) if (!joined(p.id, n)) add(p.id, n, null);
   return { terrain, across_m, about, landmarks, paths };
 }

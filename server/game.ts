@@ -1073,7 +1073,8 @@ export function goTo(game, pid, locId, now = Date.now(), purpose = '') {
   if (!loc) fail('Unknown place.');
   const name = String(loc.name).replace(/^the\s+/i, '');
   if (currentPlace(game, pid) === locId) fail(`You are already in the ${name}.`, 409);
-  const walk = walkBetween(game.scenario, currentPlace(game, pid), locId);
+  // Timed from where the map shows them: the room never learns of a secret trip.
+  const walk = walkBetween(game.scenario, game.state.positions?.[pid], locId);
   game.state.at ??= {};
   game.state.at[pid] = locId;
   game.state.positions[pid] = locId;

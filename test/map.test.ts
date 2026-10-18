@@ -123,6 +123,14 @@ describe('the living map', () => {
     assert.ok(!mapHtml(world()).includes('map-trips'));
   });
 
+  test('should list only places you can go to, never a landmark', () => {
+    const geo = { ...geography, paths: [...geography.paths, { from: 'l1', to: 'm1', kind: 'trail', m: 120 }] };
+    const html = mapHtml(world({ here: 'Lodge', map: { ...world().map, geography: geo } }), { me: 'p1' });
+    const list = html.slice(html.indexOf('class="map-trips"'));
+    assert.match(list, /Boathouse, 390 m/);
+    assert.doesNotMatch(list, /Old well/);
+  });
+
   test('should draw an old world without geography, marked about', () => {
     const old = world();
     delete old.map.geography;

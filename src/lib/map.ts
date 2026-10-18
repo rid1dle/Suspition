@@ -199,7 +199,8 @@ export function mapHtml(view, { me = null, before = null, editing = false } = {}
   const compass = '<div class="compass" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3l4 10h-8z"/></svg><span>N</span></div>';
   // On the phone the trips from your place are also listed in words, so a label hidden by a chip is never lost.
   const plainName = (id) => String(points[id]?.name ?? '').replace(/^the\s+/i, '');
-  const fromHere = shown.filter((p) => p.near);
+  const placeIds = new Set(map.places.map((p) => p.id));
+  const fromHere = shown.filter((p) => p.near && placeIds.has(p.from === here ? p.to : p.from));
   const list = fromHere.length
     ? `<div class="map-trips"><b>From the ${esc(plainName(here))}:</b> ${fromHere.map((p) => `<span>${esc(plainName(p.from === here ? p.to : p.from))}, ${esc(tripLabel(p.m, geo.about))}</span>`).join(' ')}</div>`
     : '';
