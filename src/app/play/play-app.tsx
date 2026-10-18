@@ -12,7 +12,8 @@ import { WorldRoom } from '@/components/world/room';
 import { Label, Muted } from '@/components/game/label';
 import { PlanSteps } from '@/components/game/plan';
 import { QuestionCard, ProfilePanel } from '@/components/game/lobby';
-import { BriefStep } from '@/components/game/briefing';
+import { BriefPager } from '@/components/game/briefing';
+import { followTable } from '@/lib/brief';
 import { Timeline, Alibis } from '@/components/game/panels';
 import { News } from '@/components/game/panels';
 import { useLive, useDraft } from '@/lib/live';
@@ -240,12 +241,22 @@ function Reading({ view }: { view: PlayerView }) {
   const [tab, setTab] = useState<'story' | 'card'>('story');
   const [ask, setAsk] = useDraft(`world-${view.gameId}`);
   const done = view.ready.includes(view.me.id);
+  const tableStep = view.briefing?.step ?? 0;
+  const [at, setAt] = useState(tableStep);
+  const [seen, setSeen] = useState(tableStep);
+  if (seen !== tableStep) {
+    setSeen(tableStep);
+    setAt(followTable(at, seen, tableStep));
+  }
   return (
     <Tabs value={tab} onValueChange={(t) => setTab(t as 'story' | 'card')} className="mx-auto max-w-md gap-0 px-5 pt-6 pb-28">
       <main className="flex flex-col gap-5">
       {tab === 'story' ? (
         <>
-          <section className="rounded-2xl bg-card p-5"><BriefStep view={view as never} me={view.me.id} /></section>
+          <section className="rounded-2xl bg-card p-5">
+            <BriefPager view={view as never} me={view.me.id} at={at} onGo={setAt} swipe tableStep={tableStep}
+              finish={{ label: 'Go to my card', onClick: () => { setTab('card'); window.scrollTo({ top: 0 }); } }} />
+          </section>
           <details className="rounded-xl bg-card p-4"><summary className="cursor-pointer">Timeline so far</summary><div className="mt-3"><Timeline timeline={view.timeline} /></div></details>
           <details className="rounded-xl bg-card p-4"><summary className="cursor-pointer">Alibis <span className="text-sm text-muted-foreground">where people say they were</span></summary><div className="mt-3"><Alibis alibis={view.alibis} me={view.me.name} /></div></details>
           <section className="flex flex-col gap-2 rounded-xl bg-card p-4">

@@ -1,9 +1,10 @@
 'use client';
 
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Label, Muted } from '@/components/game/label';
-import { BriefStep } from '@/components/game/briefing';
+import { useEffect } from 'react';
+import { BriefStep, BriefPager } from '@/components/game/briefing';
 import { Timeline, Alibis, News } from '@/components/game/panels';
 import { Header } from './setup';
 import type { TableProps } from './table-app';
@@ -12,24 +13,26 @@ export function Reading(props: TableProps) {
   const { view, host, act, readNow } = props;
   const b = view.briefing;
   const step = b?.steps?.[b.step];
+  const go = (i: number) => { if (b && i !== b.step) act('brief', { delta: i - b.step }); };
+  useEffect(() => {
+    if (!host || !b) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.closest?.('input, textarea, [contenteditable]')) return;
+      if (e.key === 'ArrowRight') go(b.step + 1);
+      if (e.key === 'ArrowLeft') go(b.step - 1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
   return (
     <main className="mx-auto flex max-w-7xl flex-col gap-6 px-6 pt-8">
       <Header {...props} title={view.title} sub={view.setting} />
       <div className="grid gap-6 lg:grid-cols-[minmax(320px,1.7fr)_minmax(280px,1fr)]">
         <div className="flex flex-col gap-4">
-          <AnimatePresence mode="wait">
-            <motion.section key={b?.step} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }} transition={{ duration: 0.35 }}
-              className="rounded-2xl bg-card p-8 text-lg">
-              <BriefStep view={view as never} />
-            </motion.section>
-          </AnimatePresence>
-          {host && b && (
-            <div className="flex gap-2">
-              <Button variant="secondary" disabled={b.step === 0} onClick={() => act('brief', { delta: -1 })}>Back</Button>
-              <Button disabled={b.step >= b.steps.length - 1} onClick={() => act('brief', { delta: 1 })}>Next</Button>
-              <Button variant="ghost" onClick={() => step && readNow([`${step.title}.`, ...step.lines])}>Read it again</Button>
-            </div>
-          )}
+          <section className="rounded-2xl bg-card p-8 text-lg">
+              {host && b ? <BriefPager view={view as never} at={b.step} onGo={(i) => go(Math.max(0, Math.min(b.steps.length - 1, i)))} /> : <BriefStep view={view as never} />}
+          </section>
+          {host && b && <Button variant="ghost" className="self-start" onClick={() => step && readNow([`${step.title}.`, ...step.lines])}>Read this card out loud again</Button>}
         </div>
         <aside className="flex flex-col gap-4">
           <section className="flex flex-col gap-3 rounded-2xl bg-card p-5">
