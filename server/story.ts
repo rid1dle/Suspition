@@ -1,5 +1,6 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime, resolveStoryIds, retells } from './game.ts';
+import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime, resolveStoryIds, retells, nightMinutes, walkMetres } from './game.ts';
+import { walkMinutes, tripTime } from '../src/lib/geography.ts';
 import { difficultyRules, difficultyOf } from '../src/lib/difficulty.ts';
 
 const wordsOf = (text) => String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
@@ -125,7 +126,27 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     }
   });
 
+  out.push(...farIssues(s));
   out.push(...clueWhereErrors(s).map((e) => `where: ${e}`));
+  return out;
+}
+
+// Each character's whereabouts in time order: two places a longer walk apart than the minutes between them.
+function farIssues(s) {
+  if (!s.geography) return [];
+  const out = [];
+  const placeName = (id) => String((s.locations ?? []).find((l) => l.id === id)?.name ?? id).replace(/^the\s+/i, '');
+  const timed = (s.truth?.whereabouts ?? []).map((w, i) => ({ w, i, at: nightMinutes(w?.time) })).filter((x) => x.w && x.at !== null);
+  for (const id of new Set(timed.map((x) => x.w.character_id))) {
+    const own = timed.filter((x) => x.w.character_id === id).sort((a, b) => a.at - b.at);
+    for (let k = 1; k < own.length; k += 1) {
+      const [a, b] = [own[k - 1], own[k]];
+      const m = walkMetres(s, a.w.location_id, b.w.location_id);
+      const gap = b.at - a.at;
+      if (m === null || Math.round(walkMinutes(m)) <= gap) continue;
+      out.push(`far: truth.whereabouts[${a.i}] and truth.whereabouts[${b.i}] put ${id} in the ${placeName(a.w.location_id)} at ${a.w.time} and the ${placeName(b.w.location_id)} at ${b.w.time}, a ${tripTime(m)}, only ${gap} minute${gap === 1 ? '' : 's'} apart; change a place or a time.`);
+    }
+  }
   return out;
 }
 

@@ -10,6 +10,7 @@ import { sanitizeMusic } from '../src/lib/music-theory.ts';
 import { DECK, drawIdea } from '../src/lib/settings-deck.ts';
 import { ART_CHOICES, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 import { difficultyOf } from '../src/lib/difficulty.ts';
+import { planGeography, pathMetres, tripTime } from '../src/lib/geography.ts';
 
 export const MIN_PLAYERS = 3;
 export const MAX_PLAYERS = 10;
@@ -214,7 +215,7 @@ export function applyAudit(scenario, audit) {
 }
 
 // Minutes after noon-ish so a night sorts in order across midnight ("11 pm" before "12:30 am"); null when unreadable.
-function nightMinutes(time) {
+export function nightMinutes(time) {
   const m = /(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?/i.exec(String(time ?? ''));
   if (!m) return null;
   const pm = /^p/i.test(m[3] ?? '');
@@ -411,6 +412,11 @@ export function resolveStoryIds(s) {
     if (Array.isArray(t.character_ids)) t.character_ids = t.character_ids.map(person);
   }
   for (const c of s.clues ?? []) if (c) c.where = anywhere(c.where);
+  for (const p of s.geography?.paths ?? []) {
+    if (!p) continue;
+    p.from = place(p.from);
+    p.to = place(p.to);
+  }
   return s;
 }
 
@@ -502,6 +508,35 @@ export function mapOf(scenario, edits = {}) {
       neighbors: (l.neighbors ?? []).filter((n) => ids.includes(n) && n !== l.id),
     };
   });
+}
+
+// The map's geography at the GM's planned positions: a host dragging a place never changes a walking time.
+// A landmark is scenery only: never a place, a person, a clue or where any of them is.
+export function geographyOf(scenario) {
+  const people = [...(scenario?.players ?? []), ...(scenario?.npcs ?? [])];
+  const ids = [
+    ...people.flatMap((c) => [c.id, c.start_location]),
+    ...(scenario?.clues ?? []).flatMap((c) => [c.id, c.where]),
+    ...(scenario?.key_objects ?? []).map((o) => o?.where),
+    ...(scenario?.truth?.whereabouts ?? []).map((w) => w?.location_id),
+  ].filter(Boolean);
+  const names = [...people.map((c) => c.character_name ?? c.name), ...(scenario?.clues ?? []).map((c) => c.name)].filter(Boolean);
+  return planGeography(mapOf(scenario), scenario?.geography, { ids, names });
+}
+
+// Metres of path between two places; null for a world without geography or an unknown place.
+export function walkMetres(scenario, fromId, toId) {
+  if (!scenario?.geography || !fromId || !toId || fromId === toId) return null;
+  const places = mapOf(scenario);
+  const a = places.find((p) => p.id === fromId);
+  const b = places.find((p) => p.id === toId);
+  return a && b ? pathMetres(a, b, geographyOf(scenario).across_m) : null;
+}
+
+// How long the walk between two places takes ("4 min walk"); '' for a world without geography.
+export function walkBetween(scenario, fromId, toId) {
+  const m = walkMetres(scenario, fromId, toId);
+  return m === null ? '' : tripTime(m);
 }
 
 export function startPositions(scenario) {
@@ -1038,10 +1073,12 @@ export function goTo(game, pid, locId, now = Date.now(), purpose = '') {
   if (!loc) fail('Unknown place.');
   const name = String(loc.name).replace(/^the\s+/i, '');
   if (currentPlace(game, pid) === locId) fail(`You are already in the ${name}.`, 409);
+  // Timed from where the map shows them: the room never learns of a secret trip.
+  const walk = walkBetween(game.scenario, game.state.positions?.[pid], locId);
   game.state.at ??= {};
   game.state.at[pid] = locId;
   game.state.positions[pid] = locId;
-  addEvent(game, `${nameOf(game, pid)} goes to the ${name}${purpose ? ` ${purpose}` : ''}.`, 'move', now);
+  addEvent(game, `${nameOf(game, pid)} goes to the ${name}${walk ? ` (${walk})` : ''}${purpose ? ` ${purpose}` : ''}.`, 'move', now);
 }
 
 // The name of the place a player's character really is.
@@ -2271,7 +2308,7 @@ function publicCore(game, now) {
     setting: sc?.setting_summary ?? null,
     opening: sc?.opening_scene ?? null,
     cast: publicCast(game),
-    map: sc ? { places: mapOf(sc, st?.mapEdits), positions: st?.positions ?? startPositions(sc) } : null,
+    map: sc ? { places: mapOf(sc, st?.mapEdits), positions: st?.positions ?? startPositions(sc), geography: geographyOf(sc) } : null,
     phase: st && st.phaseIndex >= 0 ? { index: st.phaseIndex, number: roundNumber(game), count: totalRounds(game), name: sc.phases[st.phaseIndex].name, endsAt: st.phaseEndsAt } : null,
     recap: st?.recap ?? null,
     people: sc && st ? peopleView(game) : null,

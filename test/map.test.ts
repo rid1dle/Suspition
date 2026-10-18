@@ -17,7 +17,7 @@ describe('mapHtml', () => {
   test('should place each place at its position and draw each path once', () => {
     const html = mapHtml(view);
     assert.match(html, /left:20%;top:30%/);
-    assert.equal((html.match(/<line /g) ?? []).length, 1);
+    assert.equal((html.match(/data-path=/g) ?? []).length, 1);
   });
 
   test('should put each person in their place by first name, players and GM people told apart', () => {
@@ -74,5 +74,89 @@ describe('mapHtml minor people', () => {
     assert.match(html, /class="who npc minor" title="Florrie Dann \(minor\)"/);
     assert.match(html, /<span class="who npc minor">Minor<\/span>/);
     assert.ok(!mapHtml(view).includes('Minor'));
+  });
+});
+
+describe('the living map', () => {
+  const geography = {
+    terrain: 'forest', across_m: 1000, about: false,
+    landmarks: [{ id: 'm1', name: 'Old well', kind: 'well', x: 50, y: 15 }],
+    paths: [{ from: 'l1', to: 'l2', kind: 'trail', m: 390 }, { from: 'l2', to: 'l3', kind: 'road', m: 6000 }],
+  };
+  const world = (extra = {}) => ({
+    gameId: 'g1',
+    title: 'Night at the Lodge',
+    cast: view.cast,
+    map: {
+      places: [
+        { id: 'l1', name: 'Lodge', x: 20, y: 30, neighbors: ['l2'] },
+        { id: 'l2', name: 'Boathouse', x: 50, y: 50, neighbors: ['l1', 'l3'] },
+        { id: 'l3', name: 'Chapel', x: 80, y: 80, neighbors: ['l2'] },
+      ],
+      positions: { p1: 'l1', p2: 'l2', n1: 'l3' },
+      geography,
+    },
+    ...extra,
+  });
+  const trips = (html) => [...html.matchAll(/class="trip[^"]*"[^>]*>([^<]*)</g)].map((m) => m[1]);
+
+  test('should draw the same map for the same game every time', () => {
+    assert.equal(mapHtml(world()), mapHtml(world()));
+    assert.notEqual(mapHtml(world()), mapHtml(world({ gameId: 'g2' })));
+  });
+
+  test('should show every path time on the table', () => {
+    assert.deepEqual(trips(mapHtml(world())).sort(), ['390 m, 5 min walk', '6 km, 75 min walk, 12 min by car']);
+  });
+
+  test('should show the time on paths from your place and fade the rest on your phone', () => {
+    const html = mapHtml(world({ here: 'Lodge' }), { me: 'p1' });
+    assert.deepEqual(trips(html), ['390 m, 5 min walk']);
+    assert.match(html, /class="path trail near" data-path="l1-l2"/);
+    assert.match(html, /class="path road far" data-path="l2-l3"/);
+    assert.match(html, /class="place here" data-place="l1"/);
+  });
+
+  test('should list the trips from your place under the map on your phone', () => {
+    const html = mapHtml(world({ here: 'Lodge' }), { me: 'p1' });
+    assert.match(html, /class="map-trips"><b>From the Lodge:<\/b> <span>Boathouse, 390 m, 5 min walk<\/span><\/div>/);
+    assert.ok(!mapHtml(world()).includes('map-trips'));
+  });
+
+  test('should list only places you can go to, never a landmark', () => {
+    const geo = { ...geography, paths: [...geography.paths, { from: 'l1', to: 'm1', kind: 'trail', m: 120 }] };
+    const html = mapHtml(world({ here: 'Lodge', map: { ...world().map, geography: geo } }), { me: 'p1' });
+    const list = html.slice(html.indexOf('class="map-trips"'));
+    assert.match(list, /Boathouse, 390 m/);
+    assert.doesNotMatch(list, /Old well/);
+  });
+
+  test('should draw an old world without geography, marked about', () => {
+    const old = world();
+    delete old.map.geography;
+    const html = mapHtml(old);
+    assert.equal(trips(html).length, 2);
+    assert.ok(trips(html).every((t) => t.startsWith('about ')));
+    assert.match(html, /class="map" data-terrain="plain"/);
+  });
+
+  test('should draw landmarks as scenery, not places', () => {
+    const html = mapHtml(world());
+    assert.match(html, /class="landmark"[^>]*>.*Old well/);
+    assert.equal((html.match(/data-place=/g) ?? []).length, 3);
+    assert.match(html, /data-terrain="forest"/);
+  });
+
+  test('should draw a compass, a scale bar and the title', () => {
+    const html = mapHtml(world());
+    assert.match(html, /class="compass"[^>]*>.*N</);
+    assert.match(html, /class="scale"><i style="width:20%"><\/i><span>200 m<\/span>/);
+    assert.match(html, /class="map-title">Night at the Lodge</);
+  });
+
+  test('should escape landmark names and titles', () => {
+    const html = mapHtml(world({ title: '<i>T</i>', map: { ...world().map, geography: { ...geography, landmarks: [{ id: 'm1', name: '<b>Well</b>', kind: 'well', x: 50, y: 15 }] } } }));
+    assert.ok(!html.includes('<b>Well'));
+    assert.ok(!html.includes('<i>T</i>'));
   });
 });

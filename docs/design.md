@@ -156,6 +156,7 @@ terminal, because the host plays too.
 - The winner is decided in code from the culprit votes, not by the GM.
 - The "lock someone up" vote is left out of v1.
 - Notes are kept on each phone only.
+- The map is drawn in code from the GM's planned geography (terrain, width in metres, landmarks, paths). Walking times use the GM's planned positions, so a host dragging a place never changes them. Old worlds draw with "about" times and play as before.
 
 ## What comes next (2026-10-18)
 
