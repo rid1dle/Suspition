@@ -2,6 +2,22 @@
 import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime, resolveStoryIds } from './game.ts';
 import { difficultyRules, difficultyOf } from '../src/lib/difficulty.ts';
 
+const wordsOf = (text) => String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
+const stem = (w) => w.replace(/(ing|ed|es|s)$/, '');
+const ROLE_SKIP = new Set(['head', 'chief', 'senior', 'junior', 'night', 'day', 'young', 'old', 'assistant', 'main', 'second', 'first', 'lead', 'deputy', 'former']);
+
+// True when a text singles out a culprit: by name, or by a role word only a culprit's role has ("the gardener").
+export function pointsAtCulprit(s, players, text, except = null) {
+  const culprits = (s?.truth?.culprit_ids ?? []).filter((id) => id !== except);
+  if (namesAnyOf(s, players, culprits, text)) return true;
+  const people = [...(s?.players ?? []), ...(s?.npcs ?? [])];
+  const roleOf = (c) => new Set(wordsOf(c.role_title).filter((w) => w.length >= 4 && !ROLE_SKIP.has(w)).map(stem));
+  const owners = {};
+  for (const c of people) for (const w of roleOf(c)) owners[w] = (owners[w] ?? 0) + 1;
+  const said = new Set(wordsOf(text).map(stem));
+  return people.some((c) => culprits.includes(c.id) && [...roleOf(c)].some((w) => owners[w] === 1 && said.has(w)));
+}
+
 const ASLEEP = /\b(asleep|sleeping|slept|unconscious|knocked out|passed out|out of sight|hidden|hiding|behind a|blindfold)/i;
 
 // Story problems the code can see in a world, one plain line each, naming the field. They never fail a world;
@@ -18,29 +34,28 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
   const roundOf = (id) => Number(clue[id]?.reveal_round) || 1;
   const out = [];
 
+  // Names count everywhere; a role only the culprit has counts in clues, hints and round lines.
   const names = (text, except = null) => namesAnyOf(s, players, culprits.filter((id) => id !== except), text);
-  const check = (field, text, except = null) => {
-    if (names(text, except)) out.push(`giveaway: ${field} names the culprit; it must not point at them alone.`);
+  const check = (field, text, except = null, roles = false) => {
+    if (roles ? pointsAtCulprit(s, players, text, except) : names(text, except)) out.push(`giveaway: ${field} names the culprit; it must not point at them alone.`);
   };
-  (s.clues ?? []).forEach((c, i) => {
-    if (roundOf(c.id) < total) check(`clues[${i}].shows (${c.id})`, c.shows);
-  });
+  (s.clues ?? []).forEach((c, i) => check(`clues[${i}].shows (${c.id})`, c.shows, null, true));
   (s.public_timeline ?? []).forEach((t, i) => check(`public_timeline[${i}].event`, t?.event));
   (s.background ?? []).forEach((t, i) => check(`background[${i}]`, t));
   check('opening_scene', s.opening_scene);
   const ladder = s.hint_ladder ?? [];
   const free = rules.hintNames === 'never' ? ladder.length : rules.hintNames === 'last' ? ladder.length - 1 : Math.floor(ladder.length / 2);
   ladder.forEach((h, i) => {
-    if (i < free) check(`hint_ladder[${i}].text`, h?.text);
+    if (i < free) check(`hint_ladder[${i}].text`, h?.text, null, true);
   });
   (s.players ?? []).forEach((p, i) => {
     for (const key of ['public_info', 'intro_line', 'distrust_why']) check(`players[${i}].${key}`, p?.[key], p.id);
   });
   (s.phases ?? []).forEach((ph, i) => {
-    check(`phases[${i}].question`, ph?.question);
-    if ((ph?.options ?? []).some((o) => names(o))) out.push(`giveaway: phases[${i}].options names the culprit; it must not point at them alone.`);
-    check(`phases[${i}].reward`, ph?.reward);
-    check(`phases[${i}].wrong_nudge`, ph?.wrong_nudge);
+    check(`phases[${i}].question`, ph?.question, null, true);
+    if ((ph?.options ?? []).some((o) => pointsAtCulprit(s, players, o))) out.push(`giveaway: phases[${i}].options names the culprit; it must not point at them alone.`);
+    check(`phases[${i}].reward`, ph?.reward, null, true);
+    check(`phases[${i}].wrong_nudge`, ph?.wrong_nudge, null, true);
   });
 
   const culpritClues = [...new Set((s.key_deductions ?? []).filter((k) => k.about === 'culprit').flatMap((k) => k.clue_ids ?? []).filter((id) => clue[id]))];

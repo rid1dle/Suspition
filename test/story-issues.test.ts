@@ -32,14 +32,14 @@ describe('story issues found by code', () => {
     assert.deepEqual(issues(s), []);
   });
 
-  test('should find a clue that names the culprit before the last round', () => {
+  test('should find a clue that names the culprit, in any round', () => {
     const s = goodWorld();
     s.clues[0].shows = 'A glove with Character 1 stitched inside.';
     const found = only(issues(s), 'giveaway');
     assert.equal(found.length, 1);
     assert.match(found[0], /clues\[0\]\.shows/);
     s.clues[0].reveal_round = 3;
-    assert.deepEqual(only(issues(s), 'giveaway'), []);
+    assert.equal(only(issues(s), 'giveaway').length, 1);
   });
 
   test('should find a culprit\'s name in a hint or a card line', () => {
