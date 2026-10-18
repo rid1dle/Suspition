@@ -23,7 +23,7 @@ describe('the chat-first phone', () => {
     const out = phone(playing(), 'p2');
     for (const t of ['To the room', 'Private, to the GM', 'Me', 'Goals', 'Clues', 'Map', 'People', 'Case file', 'Send']) assert.ok(out.includes(t), t);
     assert.match(out, /3 acts left · talking is free/);
-    assert.match(out, /Everyone hears it and the room answers\. Free\./);
+    assert.match(out, /Everyone hears it\. Free\./);
   });
 
   test('should show the room and my private thread together, marking what only I see', () => {
@@ -41,7 +41,7 @@ describe('the chat-first phone', () => {
     const out = phone(playing(), 'p2');
     assert.match(out, /Your story so far Character 2/);
     assert.match(out, /BACKSTORY-OF-TWO/);
-    assert.match(out, /Introduce yourself to the room I'm Character 2, the Role 2\. I heard the bell at nine\./);
+    assert.match(out, /Introduce yourself to the room I'm Character 2, the role 2\. I heard the bell at nine\./);
     assert.match(out, /Just look around first/);
   });
 

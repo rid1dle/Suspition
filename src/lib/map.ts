@@ -138,9 +138,34 @@ function scaleBar(across, about) {
   return `<div class="scale"><i style="width:${n1((nice / across) * 100)}%"></i><span>${about ? 'about ' : ''}${metresText(nice)}</span></div>`;
 }
 
+// Places drawn too close to read are pushed apart on screen only; walking times still come from the real layout.
+function spread(places) {
+  const out = places.map((p) => ({ ...p }));
+  for (let pass = 0; pass < 40; pass += 1) {
+    let moved = false;
+    for (let i = 0; i < out.length; i += 1) {
+      for (let j = i + 1; j < out.length; j += 1) {
+        const a = out[i];
+        const b = out[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        if (Math.abs(dx) >= 18 || Math.abs(dy) >= 12) continue;
+        const push = (12 - Math.abs(dy)) / 2 + 0.5;
+        const down = dy > 0 || (dy === 0 && j % 2 === 0) ? 1 : -1;
+        a.y = Math.min(92, Math.max(8, a.y - push * down));
+        b.y = Math.min(92, Math.max(8, b.y + push * down));
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
+  return out.map((p) => ({ ...p, x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 }));
+}
+
 export function mapHtml(view, { me = null, before = null, editing = false } = {}) {
-  const map = view?.map;
-  if (!map?.places?.length) return '';
+  const raw = view?.map;
+  if (!raw?.places?.length) return '';
+  const map = { ...raw, places: editing ? raw.places : spread(raw.places) };
   const geo = map.geography ?? planGeography(map.places);
   const seed = String(view.gameId ?? '');
   const rand = seeded(`${seed}|map`);
@@ -180,7 +205,8 @@ export function mapHtml(view, { me = null, before = null, editing = false } = {}
   ].join('');
   const marks = scatter(geo.terrain, rand, [...map.places, ...geo.landmarks, ...shown.map((p) => ({ x: p.mx, y: p.my }))]);
   const landmarks = geo.landmarks.map((l) => `<span class="landmark" style="left:${Math.min(90, Math.max(10, l.x))}%;top:${Math.min(94, Math.max(6, l.y))}%" title="${esc(l.name)}">${glyph(l.kind)}<span>${esc(l.name)}</span></span>`).join('');
-  const trips = shown.map((p) => `<span class="trip${p.near ? ' near' : ''}" style="left:${n1(p.mx)}%;top:${n1(p.my)}%">${esc(tripLabel(p.m, geo.about))}</span>`).join('');
+  // An old world's times are guesses: they stay in the words under the phone map, not on the drawing.
+  const trips = geo.about ? '' : shown.map((p) => `<span class="trip${p.near ? ' near' : ''}" style="left:${n1(p.mx)}%;top:${n1(p.my)}%">${esc(tripLabel(p.m, geo.about))}</span>`).join('');
 
   const places = map.places.map((p) => {
     const inHere = people.filter((c) => map.positions[c.id] === p.id);

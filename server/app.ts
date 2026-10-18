@@ -14,7 +14,8 @@ export const RETRY_MS = 60_000;
 export const CONFIRM_MS = 90_000;
 
 // A player who chose not to go asks from where they stand.
-const stayed = (read) => (read ? { ...read, goes_to: '', place: '', attempt: `${read.attempt ?? ''} They chose not to go anywhere and stay where they are.`.trim() } : read);
+// Staying is talk: nothing is searched or moved, and the GM is told plainly.
+const stayed = (read) => (read ? { ...read, goes_to: '', place: '', acts: false, kind: read.kind === 'action' ? 'question' : read.kind, attempt: `They thought about going somewhere else, but chose not to go anywhere and stay where they are. (They had written: ${read.attempt ?? ''})` } : read);
 
 export class App {
   constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null, people = new MemoryPeople(), library = null }) {
@@ -523,6 +524,7 @@ export class App {
         if (this.game !== game || !game.state.pending[p.id]) return;
         read = stayed(read);
         game.state.pending[p.id].read = read;
+        game.state.pending[p.id].stayed = true;
         game.state.threads[p.id].push({ from: 'system', text: 'You stayed where you are. The GM answers you here.', at: this.clock() });
       }
       if (this.game !== game || !game.state.pending[p.id]) return;

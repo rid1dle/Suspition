@@ -131,12 +131,12 @@ describe('the living map', () => {
     assert.doesNotMatch(list, /Old well/);
   });
 
-  test('should draw an old world without geography, marked about', () => {
+  test('should draw an old world without geography, its guessed times kept off the drawing', () => {
     const old = world();
     delete old.map.geography;
     const html = mapHtml(old);
-    assert.equal(trips(html).length, 2);
-    assert.ok(trips(html).every((t) => t.startsWith('about ')));
+    assert.equal(trips(html).length, 0);
+    assert.match(html, /about \d+ m/, 'the scale bar still says about');
     assert.match(html, /class="map" data-terrain="plain"/);
   });
 

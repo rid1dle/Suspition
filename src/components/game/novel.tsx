@@ -11,7 +11,7 @@ export function Novel({ lines, animate = false }: { lines: Line[]; animate?: boo
       {lines.map((l, i) => {
         const same = lines[i - 1]?.speaker === l.speaker;
         const body = !l.speaker ? (
-          <p data-line="act" className="text-muted-foreground italic">{l.text}</p>
+          <p data-line="act" className="italic">{l.text}</p>
         ) : (
           <p data-line="say">
             {!same && <span data-speaker className="mr-1.5 font-heading font-semibold text-primary">{l.speaker}</span>}

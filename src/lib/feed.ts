@@ -1,5 +1,6 @@
 // @ts-nocheck -- ported from public/feed.js; typed when the screens settle
 import { esc } from './text.ts';
+import { askLine } from './chat.ts';
 
 // These kinds already show elsewhere: the round heading, the goal card, the vote card, the calling banner.
 const SHOWN_ELSEWHERE = new Set(['opening', 'phase', 'goal', 'vote', 'moment', 'recap', 'seat']);
@@ -14,7 +15,7 @@ export function feedItem(e) {
     return { kind: 'clue', text: by && name ? `${by} showed a clue: ${name}` : e.text, tab: 'clues' };
   }
   if (e.kind === 'timeline') return { kind: 'timeline', text: e.text, tab: 'timeline' };
-  if (e.kind === 'qa') return { kind: 'qa', text: e.text, ask: `${e.by} asked: ${e.q}`, lines: e.lines };
+  if (e.kind === 'qa') return { kind: 'qa', text: e.text, ask: askLine(e.by, e.q), lines: e.lines };
   // Only a quiz round has a right answer; the room picking someone to look at is never marked right or wrong.
   if (e.kind === 'round') return { kind: /That is right!/.test(e.text) ? 'right' : /Not quite\./.test(e.text) ? 'wrong' : 'round', text: e.text };
   return { kind: e.kind, text: e.text };

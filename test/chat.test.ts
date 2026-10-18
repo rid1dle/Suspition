@@ -54,7 +54,7 @@ describe('the chat stream', () => {
 describe('starting from your story', () => {
   test('should offer the card intro line and a plain introduction, without repeats', () => {
     const lines = introLines({ name: 'Asha Rao', role: 'Night Nurse', intro_line: 'I heard the bell at nine.', hook: '' });
-    assert.deepEqual(lines, ["I'm Asha Rao, the Night Nurse.", 'I heard the bell at nine.', 'Did anyone else hear something tonight?']);
+    assert.deepEqual(lines, ["I'm Asha Rao, the night nurse.", 'I heard the bell at nine.', 'Did anyone else hear something tonight?']);
   });
 
   test('should still offer lines when the card has no intro line', () => {

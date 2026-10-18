@@ -1052,6 +1052,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   }
   if (ask.held) thread.push({ from: 'system', text: ask.held === 'meeting' ? 'A meeting is on: no acts until it ends. You only talked.' : 'No acts left this round, so nothing was found or moved. Talking is still free.', at: now });
   // Talk changes nothing in the world: no find, no move, no stir, nothing destroyed.
+  // A player who said Not now stays where they are, whatever the answer says.
+  if (ask.stayed) result = { ...result, player_location: '', move_is_public: false };
   if (ask.spent === false) result = { ...result, clues_found: [], clues_destroyed: [], player_location: '', public_event: '', move_is_public: false, messages_to_players: (result.messages_to_players ?? []).filter((m) => m?.player_id === playerId) };
   // What the player asserted as the narrator only happens if the GM grants it; every other claim is answered out loud to them.
   markGoalSteps(game, playerId, result.goal_steps_done);

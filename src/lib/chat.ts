@@ -39,8 +39,14 @@ export function chatItems(view: { events?: GameEvent[]; thread?: ThreadEntry[]; 
   return items;
 }
 
+// A question to the room is asked; anything else is said to it.
+export const askLine = (by: string | undefined, q: string | undefined) => `${by} ${/\?\s*$/.test(String(q ?? '')) ? 'asked the room' : 'to the room'}: ${q}`;
+
+// A job title inside a sentence is lower case; a place after "from", "of", "at" or "in" keeps its capital.
+const roleInSentence = (role: string) => role.split(/\s+/).map((w, i, all) => (i > 0 && /^(from|of|at|in)$/i.test(all[i - 1]) ? w : w.toLowerCase())).join(' ');
+
 // A first line is the hardest: offer a few, to tap and edit.
 export function introLines(card: { name: string; role?: string; intro_line?: string; hook?: string }): string[] {
-  const plain = card.role ? `I'm ${card.name}, the ${card.role}.` : `I'm ${card.name}.`;
+  const plain = card.role ? `I'm ${card.name}, the ${roleInSentence(card.role)}.` : `I'm ${card.name}.`;
   return [...new Set([plain, String(card.intro_line ?? '').trim(), 'Did anyone else hear something tonight?'].filter(Boolean))];
 }

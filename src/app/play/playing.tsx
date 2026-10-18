@@ -29,7 +29,7 @@ type Drawer = 'card' | 'goals' | 'clues' | 'map' | 'people' | 'case';
 const DRAWERS: [Drawer, string][] = [['card', 'Me'], ['goals', 'Goals'], ['clues', 'Clues'], ['map', 'Map'], ['people', 'People'], ['case', 'Case file']];
 type Mode = 'room' | 'private';
 const STARTERS: [string, string][] = [['Talk to…', 'I ask '], ['Look at…', 'I look at '], ['Secretly…', 'Secretly, I '], ['Remember…', 'I try to remember ']];
-const ICONS: Record<string, string> = { move: '🚶', meeting: '📣', because: '➜', clue: '🔎', timeline: '⏱', hint: '✦', ripple: '〰', refused: '✋', said: '🗣', seat: '🎙', vote: '🗳', point: '👉', note: '💬', voteask: '🗳', sync: '📋', recap: '📋' };
+const ICONS: Record<string, string> = { event: '🔔', move: '🚶', meeting: '📣', because: '➜', clue: '🔎', timeline: '⏱', hint: '✦', ripple: '〰', refused: '✋', said: '🗣', seat: '🎙', vote: '🗳', point: '👉', note: '💬', voteask: '🗳', sync: '📋', recap: '📋' };
 
 function useNow(ms = 1000) {
   const [now, setNow] = useState(Date.now());
@@ -59,23 +59,32 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
     storage.set(`detective-intro-${view.gameId}`, '1');
     setIntro(false);
   };
+  // The bottom bar grows with what is pinned in it; the chat keeps its last line above it.
+  const bottom = useRef<HTMLDivElement>(null);
+  const [room, setRoom] = useState(256);
+  useEffect(() => {
+    const el = bottom.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setRoom(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col">
-      <TopBar view={view} onOpenCard={() => open('card')} />
-      <Pinned view={view} />
-      <main className="flex flex-1 flex-col gap-3 px-4 pt-3 pb-64">
+      <TopBar view={view} onOpenCard={() => open('card')} dots={dots} onDrawer={open} />
+      <main className="flex flex-1 flex-col gap-3 px-4 pt-3" style={{ paddingBottom: room + 16 }}>
         <RoundStrip view={view} onIdea={(t) => write(t, 'private')} />
         <RoomButtons view={view} />
         <Stream view={view} onGo={(d) => open(d)} />
       </main>
-      <Composer view={view} text={text} setText={setText} mode={mode} setMode={setMode} box={box} dots={dots} onDrawer={open} onIdea={(t) => write(t, mode, false)} />
+      <Composer view={view} text={text} setText={setText} mode={mode} setMode={setMode} box={box} barRef={bottom} onIdea={(t) => write(t, mode, false)} />
       <AnimatePresence>{drawer && <Sheet key={drawer} title={DRAWERS.find(([d]) => d === drawer)?.[1] ?? ''} onClose={() => setDrawer(null)}><DrawerBody view={view} drawer={drawer} /></Sheet>}</AnimatePresence>
       <AnimatePresence>{intro && view.card && <Intro view={view} onPick={(line) => { closeIntro(); write(line, 'room'); }} onClose={closeIntro} />}</AnimatePresence>
     </div>
   );
 }
 
-function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void }) {
+function TopBar({ view, onOpenCard, dots, onDrawer }: { view: PlayerView; onOpenCard: () => void; dots: Set<string>; onDrawer: (d: Drawer) => void }) {
   const now = useNow();
   const timer = view.phase?.endsAt ? countdown(view.phase.endsAt, now) : null;
   const [reminder, setReminder] = useState<string | null>(null);
@@ -102,6 +111,13 @@ function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void
         <span>{left} act{left === 1 ? '' : 's'} left · talking is free{view.here ? ` · You are in: ${view.here}` : ''}</span>
         <span>Suspicion: {suspicionLabel(view.suspicion)}</span>
       </div>
+      <div className="-mx-1 flex gap-1 overflow-x-auto">
+        {DRAWERS.map(([d, l]) => (
+          <button key={d} onClick={() => onDrawer(d)} className="relative shrink-0 rounded-full border border-border px-3 py-0.5 text-sm">
+            {l}{dots.has(d) && <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary" />}
+          </button>
+        ))}
+      </div>
       {hv && (
         <div className="flex items-center justify-between gap-2 rounded-lg bg-card p-2 text-sm">
           <span><b>{hv.proposer}</b> wants a hint ({hv.yes} of {hv.need} yes).</span>
@@ -123,7 +139,8 @@ function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void
   );
 }
 
-// What needs you now sits above the chat: a meeting, your hot seat, your moment, a move to confirm, a question for you, the vote.
+// What needs you now sits in the bottom bar, above the composer, wherever you are in the chat:
+// a meeting, your hot seat, your moment, a move to confirm, a question for you, the vote.
 function Pinned({ view }: { view: PlayerView }) {
   const now = useNow();
   const vote = view.round?.vote;
@@ -131,7 +148,7 @@ function Pinned({ view }: { view: PlayerView }) {
   const any = meeting || view.seat || view.moments?.[0] || view.moveConfirm || view.offers?.[0] || vote;
   if (!any) return null;
   return (
-    <div className="flex flex-col gap-3 px-4 pt-3">
+    <div data-tray className="flex max-h-[45dvh] flex-col gap-3 overflow-y-auto">
       {meeting && <MeetingCard meeting={meeting} mine={meeting.by === view.me.name} now={now} />}
       <SeatCard seat={view.seat as SeatView | null} now={now} />
       <Moment view={view} now={now} />
@@ -239,16 +256,14 @@ function RoomButtons({ view }: { view: PlayerView }) {
 
 function Stream({ view, onGo }: { view: PlayerView; onGo: (d: Drawer) => void }) {
   const items = chatItems(view);
-  const end = useRef<HTMLDivElement>(null);
   const last = items.at(-1)?.key;
   useEffect(() => {
-    end.current?.scrollIntoView?.({ behavior: 'smooth', block: 'end' });
+    window.scrollTo?.({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
   }, [items.length, last]);
   if (!items.length) return <Muted>Nothing yet. Say hello to the room.</Muted>;
   return (
     <div className="flex flex-col gap-2" data-chat>
       {items.map((it, i) => <ChatLine key={it.key} item={it} latest={i === items.length - 1} onGo={onGo} />)}
-      <div ref={end} />
     </div>
   );
 }
@@ -295,9 +310,9 @@ function PrivateLine({ item, latest, fade }: { item: ChatItem; latest: boolean; 
 }
 
 // One box for everything you say: to the room (everyone hears, free) or in private to the GM (talk is free, acts are counted).
-function Composer({ view, text, setText, mode, setMode, box, dots, onDrawer, onIdea }: {
+function Composer({ view, text, setText, mode, setMode, box, barRef, onIdea }: {
   view: PlayerView; text: string; setText: (t: string) => void; mode: Mode; setMode: (m: Mode) => void; box: React.RefObject<HTMLTextAreaElement | null>;
-  dots: Set<string>; onDrawer: (d: Drawer) => void; onIdea: (t: string) => void;
+  barRef: React.RefObject<HTMLDivElement | null>; onIdea: (t: string) => void;
 }) {
   const left = view.questionsLeft ?? 0;
   const busy = mode === 'room' ? Boolean(view.publicPending) : Boolean(view.pending) || Boolean(view.round?.vote) || view.transitioning;
@@ -309,15 +324,9 @@ function Composer({ view, text, setText, mode, setMode, box, dots, onDrawer, onI
     if (ok) setText('');
   };
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background pb-[env(safe-area-inset-bottom,0px)]">
+    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background pb-[env(safe-area-inset-bottom,0px)]">
       <div className="mx-auto flex max-w-md flex-col gap-2 px-3 pt-2 pb-3">
-        <div className="flex gap-1 overflow-x-auto">
-          {DRAWERS.map(([d, l]) => (
-            <button key={d} onClick={() => onDrawer(d)} className="relative shrink-0 rounded-full border border-border px-3 py-1 text-sm">
-              {l}{dots.has(d) && <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary" />}
-            </button>
-          ))}
-        </div>
+        <Pinned view={view} />
         <div className="flex gap-1 overflow-x-auto">
           {chips.map(([l, t]) => <button key={l} onClick={() => setText(t)} className="shrink-0 rounded-full border border-border px-3 py-1 text-xs">{l}</button>)}
           {names.map((n) => <button key={n} onClick={() => onIdea(n)} className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs">{n}</button>)}
@@ -334,7 +343,7 @@ function Composer({ view, text, setText, mode, setMode, box, dots, onDrawer, onI
             placeholder={mode === 'room' ? 'Say something to everyone. "Lata, when did the music stop?"' : 'Talk to someone, or do something. "I search the desk."'} />
           <Button className="self-end" disabled={!text.trim() || busy} onClick={send}>{busy ? '…' : 'Send'}</Button>
         </div>
-        <Muted className="text-xs">{mode === 'room' ? 'Everyone hears it and the room answers. Free.' : `Talk is free. An act (search, take, hide, follow) uses 1 of your ${left} this round.`} Tap the 🎤 on your keyboard to speak.</Muted>
+        <Muted className="text-xs">{mode === 'room' ? 'Everyone hears it. Free.' : `Talk is free. Search, take, hide or follow uses 1 act (${left} left).`}</Muted>
       </div>
     </div>
   );

@@ -57,7 +57,7 @@ describe('going places', () => {
     assert.equal(t.app.game.state.at.p2, 'l2');
     assert.deepEqual(t.events(), []);
     assert.ok(t.gm.calls.includes('answer'));
-    assert.match(t.gm.lastAsk.read.attempt, /They chose not to go anywhere/);
+    assert.match(t.gm.lastAsk.read.attempt, /chose not to go anywhere/);
   });
 
   test('should ask first for a question out loud too', async () => {

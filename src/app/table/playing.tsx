@@ -189,8 +189,8 @@ export function Playing(props: TableProps) {
               <Button variant="ghost" onClick={sendNote}>Tell the GM</Button>
             </div>
           )}
-          <Feed events={view.events} fresh={fresh} onGo={(t) => setSide(t === 'clues' ? 'clues' : 'timeline')} />
         </div>
+        <div className="flex min-w-0 flex-col gap-6">
         <Tabs value={side} onValueChange={(t) => setSide(t as Side)} className="min-w-0 gap-4">
           <TabsList variant="line" className="h-auto group-data-horizontal/tabs:h-auto w-full justify-start gap-1 rounded-none border-b border-border p-0">
             {SIDES.map(([t, l]) => {
@@ -210,6 +210,11 @@ export function Playing(props: TableProps) {
           {side === 'clues' && <SharedClues clues={view.sharedClues} />}
           {side === 'people' && <><ScenePicture svg={view.illustration} /><PeopleList people={view.people} openAll /></>}
         </Tabs>
+        <section data-room-feed className="flex flex-col gap-2 rounded-2xl bg-card p-5">
+          <Label>The room</Label>
+          <Feed events={view.events} fresh={fresh} onGo={(t) => setSide(t === 'clues' ? 'clues' : 'timeline')} />
+        </section>
+        </div>
       </div>
     </div>
   );
