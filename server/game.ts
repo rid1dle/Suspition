@@ -352,7 +352,12 @@ export function cleanScenario(game) {
 // True when a text names a culprit: by full character or player name, or by a name word only they have.
 // Stricter than mentions: a lone number ("1" in "Character 1") never counts, so "At 1 am" stays safe.
 export function namesCulprit(scenario, players, text) {
-  const culprits = scenario?.truth?.culprit_ids ?? [];
+  return namesAnyOf(scenario, players, scenario?.truth?.culprit_ids ?? [], text);
+}
+
+// Strict: a whole name, or a name word only that one person has; never a lone number or a title.
+export function namesAnyOf(scenario, players, ids, text) {
+  const culprits = ids ?? [];
   if (!text || !culprits.length || !scenario?.players) return false;
   const words = wordsOf(text);
   const joined = ` ${words.join(' ')} `;
@@ -541,6 +546,28 @@ function addEvent(game, text, kind, now, extra = {}) {
   if (clean) game.state.events.push({ at: now, phase: game.state.phaseIndex, kind, text: clean, ...extra });
 }
 
+export const RIPPLE_PLAYER_MS = 180_000;
+export const RIPPLE_TABLE_MS = 45_000;
+export const RIPPLE_WORDS = 20;
+
+// A small change the whole room notices because of one player's move. It never says whose move it was,
+// and the table gets at most one every 45 s and one per player every 3 minutes, so it never floods.
+export function addRipple(game, playerId, text, now = Date.now(), { hideActor = false } = {}) {
+  const st = game.state;
+  let clean = String(text ?? '').trim();
+  if (hideActor) {
+    clean = clean.split(/(?<=[.!?])\s+/).filter((s) => s && !namesAnyOf(game.scenario, game.players, [playerId], s)).join(' ');
+  }
+  clean = capWords(clean, RIPPLE_WORDS);
+  if (!clean) return false;
+  st.rippleAt ??= {};
+  if (now - (st.rippleAt[playerId] ?? -Infinity) < RIPPLE_PLAYER_MS || now - (st.rippleLast ?? -Infinity) < RIPPLE_TABLE_MS) return false;
+  st.rippleAt[playerId] = now;
+  st.rippleLast = now;
+  addEvent(game, clean, 'ripple', now);
+  return true;
+}
+
 function whisper(game, messages, now) {
   for (const m of messages ?? []) {
     const thread = game.state.threads[m?.player_id];
@@ -696,7 +723,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   learn(game, result.learned, playerId, now);
   if (result.player_location && (kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
-  addEvent(game, unpuppet(result.public_event, null, { others: true }), 'event', now);
+  addRipple(game, playerId, unpuppet(result.public_event, null, { others: true }), now, { hideActor: true });
   whisper(game, (result.messages_to_players ?? []).map((m) => ({ ...m, text: unpuppet(m?.text, m?.player_id, { others: m?.player_id !== playerId }) })), now);
 }
 
@@ -1455,7 +1482,7 @@ export function addNote(game, text, now = Date.now()) {
   addEvent(game, `The room thinks: ${clean}`, 'note', now);
 }
 
-export function completePublicAsk(game, playerId, answer, now = Date.now(), read = null, words = null) {
+export function completePublicAsk(game, playerId, answer, now = Date.now(), read = null, words = null, ripple = '') {
   const st = game.state;
   const q = st.publicPending[playerId];
   if (!q) return;
@@ -1468,6 +1495,7 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   const lines = Array.isArray(answer) ? novelLines(game, answer, { unpuppet: clean, unpuppetSpeech: clean }) : null;
   const text = (lines ? linesText(lines) : clean(String(answer ?? '').trim())) || 'Nobody knows that yet.';
   st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text, ...(lines?.length ? { lines } : {}), ...(words ? { read: words } : {}) });
+  addRipple(game, playerId, clean(String(ripple ?? '')), now);
 }
 
 export function failPublicAsk(game, playerId, message = '') {

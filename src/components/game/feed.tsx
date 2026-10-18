@@ -6,7 +6,7 @@ import type { GameEvent } from '@/lib/views';
 import { Label, Muted } from './label';
 import { Novel, type Line } from './novel';
 
-const ICONS: Record<string, string> = { said: '🗣', forced: '🗣', clue: '🔎', timeline: '⏱', hint: '✦', qa: '?', note: '💬', right: '✓', wrong: '✗' };
+const ICONS: Record<string, string> = { said: '🗣', forced: '🗣', clue: '🔎', timeline: '⏱', hint: '✦', qa: '?', note: '💬', right: '✓', wrong: '✗', ripple: '〰' };
 const TAB_NAMES: Record<string, string> = { clues: 'Clues', timeline: 'Timeline' };
 
 interface Item { kind: string; text: string; ask?: string; tab?: string; lines?: Line[] }
@@ -23,7 +23,7 @@ export function Feed({ events, fresh = 0, onGo }: { events: GameEvent[]; fresh?:
     return (
       <li key={`${it.kind}-${i}-${it.text.slice(0, 20)}`} data-kind={it.kind} className={`flex gap-3 rounded-lg px-2 py-1.5 ${isFresh ? 'bg-primary/10' : ''}`}>
         <span className={`w-5 shrink-0 text-center ${it.kind === 'right' ? 'text-emerald-400' : it.kind === 'wrong' ? 'text-destructive' : 'text-muted-foreground'}`}>{ICONS[it.kind] ?? '·'}</span>
-        <div className="min-w-0">
+        <div className={`min-w-0 ${it.kind === 'ripple' ? 'italic text-muted-foreground' : ''}`}>
           {it.ask && <Muted className="text-xs">{it.ask}</Muted>}
           {it.lines?.length ? <Novel lines={it.lines} /> : it.text}
           {it.tab && <button className="ml-1 text-sm text-primary" onClick={() => onGo?.(it.tab!)}>{TAB_NAMES[it.tab]} ›</button>}

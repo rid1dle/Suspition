@@ -402,9 +402,9 @@ export class App {
       try {
         const words = await this.gm.read(game, p.id, q, 'public');
         if (this.game !== game) return;
-        const { lines, answer, asker_read: read } = await this.gm.publicAnswer(game, q, words);
+        const { lines, answer, asker_read: read, ripple } = await this.gm.publicAnswer(game, q, words);
         if (this.game !== game) return;
-        G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, words);
+        G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, words, ripple);
       } catch (err) {
         if (this.game !== game) return;
         G.failPublicAsk(game, p.id, 'The GM could not read that. Try saying that again.');
