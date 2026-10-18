@@ -80,4 +80,38 @@ describe('the screens after the review', () => {
     for (const line of grain) assert.doesNotMatch(line, /animation:\s*grain/);
     assert.doesNotMatch(css, /@keyframes grain/);
   });
+
+  describe('reading comes first', () => {
+    const css = () => readFileSync('src/app/world.css', 'utf8');
+    const screens = () => [...files('src/app'), ...files('src/components/game')];
+
+    test('should set every world body in one clean readable font', () => {
+      const pairs = css().split('\n').filter((line) => line.startsWith(".world[data-font="));
+      assert.ok(pairs.length >= 10);
+      for (const line of pairs) assert.match(line, /--font-body: var\(--font-inter\)/, line.slice(0, 40));
+    });
+
+    test('should never set long reading text in the heading font', () => {
+      const bad = screens().flatMap((f) => readFileSync(f, 'utf8').split('\n')
+        .map((line, i) => [`${f}:${i + 1}`, line])
+        .filter(([, line]) => line.includes('font-heading') && /leading-relaxed|reveal_story|\.goal\}|m\.line/.test(line)))
+        .map(([at]) => at);
+      assert.deepEqual(bad, []);
+    });
+
+    test('should keep every text card solid so effects never show through words', () => {
+      const bad = screens().flatMap((f) => readFileSync(f, 'utf8').split('\n')
+        .map((line, i) => [`${f}:${i + 1}`, line])
+        .filter(([, line]) => /bg-card\/[1-8]\d\b/.test(line)))
+        .map(([at]) => at);
+      assert.deepEqual(bad, []);
+    });
+
+    test('should fade effects behind the reading column and scatter the snow', () => {
+      const style = css();
+      assert.match(style, /\.ambient \{[^}]*mask-image/);
+      const snow = style.split('\n').find((line) => line.startsWith(".ambient[data-effect='snow'] i {")) ?? '';
+      assert.ok((snow.match(/radial-gradient/g) ?? []).length >= 3, 'snow should be scattered, not one dot per tile');
+    });
+  });
 });

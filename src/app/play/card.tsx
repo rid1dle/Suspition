@@ -52,7 +52,7 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
       <div className="flex flex-col gap-3">
         <CaseBox question={caseQuestion} label="The group's goal" />
         <Section title="Your secret goal">
-          <p className="font-heading text-lg">{card.goal}</p>
+          <p className="text-lg font-medium">{card.goal}</p>
           {card.goal_why && <p className="text-sm">{card.goal_why}</p>}
           <p className="text-sm"><b>You are a {side}.</b> {card.win}</p>
           <Muted className="text-xs">Points: 1 for the right culprit, up to 2 for how, up to 2 for why, 1 for your own goal. Plus up to 3 play points for good moves.</Muted>

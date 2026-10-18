@@ -59,7 +59,7 @@ export function Final({ view }: { view: PlayerView }) {
       {([['How?', how, setHow, true, 600], ['Why?', why, setWhy, true, 600], ['Did you get your goal?', goal, setGoal, false, 400]] as const).map(([label, value, set, points, max]) => (
         <label key={label} className="flex flex-col gap-1">
           <Label>{label} {points && <span className="normal-case tracking-normal">(up to 2 points, one line is enough)</span>}</Label>
-          <Textarea value={value} maxLength={max} onChange={(e) => set(e.target.value)} className="min-h-20 bg-card/60" />
+          <Textarea value={value} maxLength={max} onChange={(e) => set(e.target.value)} className="min-h-20 bg-card" />
         </label>
       ))}
       {warn && (

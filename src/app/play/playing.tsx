@@ -130,7 +130,7 @@ function Moment({ view, now }: { view: PlayerView; now: number }) {
       className={`flex flex-col gap-2 rounded-2xl p-4 ${ready ? 'bg-card' : 'bg-primary/20 ring-2 ring-primary'}`}>
       <Label>{ready ? `Get ready. You are up in ${secs}s` : 'Your moment. Everyone is listening.'}</Label>
       {m.why && <Muted className="text-xs">{m.why}</Muted>}
-      <p className="font-heading text-xl">&ldquo;{m.line}&rdquo;</p>
+      <p className="text-xl font-medium">&ldquo;{m.line}&rdquo;</p>
       {own !== null ? (
         <div className="flex flex-col gap-2">
           <Textarea autoFocus value={own} maxLength={200} rows={2} onChange={(e) => setOwn(e.target.value)} placeholder="Type what you said, or use the mic on your keyboard" />
@@ -163,7 +163,7 @@ function StoryTab({ view, onAskTab, onGo }: { view: PlayerView; onAskTab: () => 
       </section>
       <section className="flex flex-col gap-2">
         <Textarea ref={box} value={text} maxLength={200} rows={2} onChange={(e) => setText(e.target.value)} placeholder='Ask anyone anything. "Lata, when did the music stop?"'
-          className="bg-card/60 text-base" />
+          className="bg-card text-base" />
         <div className="grid grid-cols-2 gap-2">
           <Button disabled={!text.trim() || Boolean(view.publicPending)} onClick={async () => { if (await act('public', { token: tokenOf(), text })) setText(''); }}>{view.publicPending ? 'Asking…' : 'Ask out loud'}</Button>
           <Button variant="secondary" disabled={!text.trim() || left < 1 || Boolean(view.pending) || Boolean(vote) || view.transitioning}
@@ -177,10 +177,10 @@ function StoryTab({ view, onAskTab, onGo }: { view: PlayerView; onAskTab: () => 
       </button>
       <Feed events={view.events} onGo={onGo} />
       <div className="flex flex-col gap-2">
-        <details className="rounded-xl bg-card/70 p-4"><summary className="cursor-pointer">Timeline <span className="text-sm text-muted-foreground">{view.timeline?.length || ''}</span></summary><div className="mt-3"><Timeline timeline={view.timeline} /></div></details>
-        <details className="rounded-xl bg-card/70 p-4"><summary className="cursor-pointer">Alibis <span className="text-sm text-muted-foreground">where people say they were</span></summary><div className="mt-3"><Alibis alibis={view.alibis} me={view.me.name} /></div></details>
-        <details className="rounded-xl bg-card/70 p-4"><summary className="cursor-pointer">Shared clues <span className="text-sm text-muted-foreground">{view.sharedClues?.length || ''}</span></summary><div className="mt-3"><SharedClues clues={view.sharedClues} /></div></details>
-        <details className="rounded-xl bg-card/70 p-4"><summary className="cursor-pointer">The place and the story so far</summary><div className="mt-3 flex flex-col gap-3"><ScenePicture svg={view.illustration} /><Facts lines={view.background} /></div></details>
+        <details className="rounded-xl bg-card p-4"><summary className="cursor-pointer">Timeline <span className="text-sm text-muted-foreground">{view.timeline?.length || ''}</span></summary><div className="mt-3"><Timeline timeline={view.timeline} /></div></details>
+        <details className="rounded-xl bg-card p-4"><summary className="cursor-pointer">Alibis <span className="text-sm text-muted-foreground">where people say they were</span></summary><div className="mt-3"><Alibis alibis={view.alibis} me={view.me.name} /></div></details>
+        <details className="rounded-xl bg-card p-4"><summary className="cursor-pointer">Shared clues <span className="text-sm text-muted-foreground">{view.sharedClues?.length || ''}</span></summary><div className="mt-3"><SharedClues clues={view.sharedClues} /></div></details>
+        <details className="rounded-xl bg-card p-4"><summary className="cursor-pointer">The place and the story so far</summary><div className="mt-3 flex flex-col gap-3"><ScenePicture svg={view.illustration} /><Facts lines={view.background} /></div></details>
       </div>
     </div>
   );
@@ -275,7 +275,7 @@ function CluesTab({ view }: { view: PlayerView }) {
       )) : <Muted>Nothing yet. Use Ask to look around and talk to people.</Muted>}
       <h2 className="mt-2 font-heading text-2xl">Notes</h2>
       <Muted className="text-xs">Only on this phone.</Muted>
-      <Textarea value={notes} onChange={(e) => { setNotes(e.target.value); storage.set(key, e.target.value); }} className="min-h-[30vh] bg-card/60" />
+      <Textarea value={notes} onChange={(e) => { setNotes(e.target.value); storage.set(key, e.target.value); }} className="min-h-[30vh] bg-card" />
     </div>
   );
 }

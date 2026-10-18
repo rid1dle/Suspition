@@ -67,7 +67,7 @@ export function Reveal(props: TableProps) {
       <div className="grid gap-6 lg:grid-cols-[minmax(320px,1.4fr)_minmax(280px,1fr)]">
         <section data-story className="flex flex-col gap-3 rounded-2xl bg-card p-6">
           <div className="flex items-center justify-between"><Label>What really happened</Label><Button size="sm" variant="ghost" onClick={() => readNow([r.reveal_story])}>Read it out</Button></div>
-          <p className="font-heading text-xl leading-relaxed whitespace-pre-wrap">{r.reveal_story}</p>
+          <p className="text-xl leading-relaxed whitespace-pre-wrap">{r.reveal_story}</p>
           <Label className="mt-3">Timeline</Label>
           <Timeline timeline={r.truth.timeline} />
         </section>

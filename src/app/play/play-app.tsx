@@ -246,9 +246,9 @@ function Reading({ view }: { view: PlayerView }) {
       {tab === 'story' ? (
         <>
           <section className="rounded-2xl bg-card p-5"><BriefStep view={view as never} me={view.me.id} /></section>
-          <details className="rounded-xl bg-card/70 p-4"><summary className="cursor-pointer">Timeline so far</summary><div className="mt-3"><Timeline timeline={view.timeline} /></div></details>
-          <details className="rounded-xl bg-card/70 p-4"><summary className="cursor-pointer">Alibis <span className="text-sm text-muted-foreground">where people say they were</span></summary><div className="mt-3"><Alibis alibis={view.alibis} me={view.me.name} /></div></details>
-          <section className="flex flex-col gap-2 rounded-xl bg-card/70 p-4">
+          <details className="rounded-xl bg-card p-4"><summary className="cursor-pointer">Timeline so far</summary><div className="mt-3"><Timeline timeline={view.timeline} /></div></details>
+          <details className="rounded-xl bg-card p-4"><summary className="cursor-pointer">Alibis <span className="text-sm text-muted-foreground">where people say they were</span></summary><div className="mt-3"><Alibis alibis={view.alibis} me={view.me.name} /></div></details>
+          <section className="flex flex-col gap-2 rounded-xl bg-card p-4">
             <Label>Ask about the world (free)</Label>
             <Textarea value={ask} maxLength={200} onChange={(e) => setAsk(e.target.value)} placeholder="How far is the town? Type, or use the mic on your keyboard." className="min-h-16" />
             <Button variant="secondary" disabled={!ask.trim() || Boolean(view.publicPending)} onClick={async () => { if (await act('public', { token: tokenOf(), text: ask })) setAsk(''); }}>{view.publicPending ? 'Asking…' : 'Ask everyone'}</Button>

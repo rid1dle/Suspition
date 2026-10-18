@@ -6,15 +6,15 @@
 .world h2, .world h3, .world .font-heading { font-family: var(--font-heading, var(--font-serif)), Georgia, serif; }
 
 .world[data-font='noir-serif'] { --font-display: var(--font-playfair); --font-heading: var(--font-playfair); --font-body: var(--font-inter); }
-.world[data-font='royal-deco'] { --font-display: var(--font-cinzel); --font-heading: var(--font-cormorant); --font-body: var(--font-cormorant); }
-.world[data-font='cozy-rounded'] { --font-display: var(--font-fredoka); --font-heading: var(--font-fredoka); --font-body: var(--font-nunito); }
-.world[data-font='old-typewriter'] { --font-display: var(--font-special-elite); --font-heading: var(--font-courier-prime); --font-body: var(--font-courier-prime); }
-.world[data-font='neon-grotesk'] { --font-display: var(--font-unbounded); --font-heading: var(--font-space-grotesk); --font-body: var(--font-space-grotesk); }
-.world[data-font='gothic-ink'] { --font-display: var(--font-pirata); --font-heading: var(--font-eb-garamond); --font-body: var(--font-eb-garamond); }
-.world[data-font='storybook'] { --font-display: var(--font-fraunces); --font-heading: var(--font-fraunces); --font-body: var(--font-nunito); }
-.world[data-font='modern-clean'] { --font-display: var(--font-sans); --font-heading: var(--font-sans); --font-body: var(--font-sans); }
-.world[data-font='tropical-script'] { --font-display: var(--font-pacifico); --font-heading: var(--font-karla); --font-body: var(--font-karla); }
-.world[data-font='vintage-press'] { --font-display: var(--font-abril); --font-heading: var(--font-libre-baskerville); --font-body: var(--font-libre-baskerville); }
+.world[data-font='royal-deco'] { --font-display: var(--font-cinzel); --font-heading: var(--font-cormorant); --font-body: var(--font-inter); }
+.world[data-font='cozy-rounded'] { --font-display: var(--font-fredoka); --font-heading: var(--font-fredoka); --font-body: var(--font-inter); }
+.world[data-font='old-typewriter'] { --font-display: var(--font-special-elite); --font-heading: var(--font-courier-prime); --font-body: var(--font-inter); }
+.world[data-font='neon-grotesk'] { --font-display: var(--font-unbounded); --font-heading: var(--font-space-grotesk); --font-body: var(--font-inter); }
+.world[data-font='gothic-ink'] { --font-display: var(--font-pirata); --font-heading: var(--font-eb-garamond); --font-body: var(--font-inter); }
+.world[data-font='storybook'] { --font-display: var(--font-fraunces); --font-heading: var(--font-fraunces); --font-body: var(--font-inter); }
+.world[data-font='modern-clean'] { --font-display: var(--font-sans); --font-heading: var(--font-sans); --font-body: var(--font-inter); }
+.world[data-font='tropical-script'] { --font-display: var(--font-pacifico); --font-heading: var(--font-karla); --font-body: var(--font-inter); }
+.world[data-font='vintage-press'] { --font-display: var(--font-abril); --font-heading: var(--font-libre-baskerville); --font-body: var(--font-inter); }
 
 /* Textures sit behind everything, very faint. */
 .world::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0.5; }
@@ -26,7 +26,10 @@
 
 
 /* Ambient effects: three layers (the <i> elements), each drifting at its own pace. */
-.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.ambient { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden;
+  /* Effects live at the edges: they fade out behind the reading column. */
+  mask-image: linear-gradient(90deg, #000 0, #000 calc(50% - 26rem), transparent calc(50% - 17rem), transparent calc(50% + 17rem), #000 calc(50% + 26rem), #000 100%); }
+@media (max-width: 40rem) { .ambient { mask-image: none; opacity: 0.35 !important; } }
 .ambient i { position: absolute; inset: -20% -10%; display: block; will-change: transform, opacity; }
 .ambient[data-intensity='low'] { opacity: 0.55; }
 .ambient[data-intensity='medium'] { opacity: 0.85; }
@@ -36,9 +39,9 @@
 .ambient[data-effect='rain'] i:nth-child(2) { background-size: 210px 210px; animation-duration: 1.3s; opacity: 0.6; }
 .ambient[data-effect='rain'] i:nth-child(3) { background-size: 90px 90px; animation-duration: 0.7s; opacity: 0.35; }
 
-.ambient[data-effect='snow'] i { background-image: radial-gradient(circle, color-mix(in oklab, white 85%, transparent) 0 2px, transparent 2.5px); background-size: 90px 110px; animation: fall 14s linear infinite; }
-.ambient[data-effect='snow'] i:nth-child(2) { background-size: 140px 150px; animation-duration: 22s; opacity: 0.7; }
-.ambient[data-effect='snow'] i:nth-child(3) { background-size: 60px 70px; animation-duration: 9s; opacity: 0.45; }
+.ambient[data-effect='snow'] i { background-image: radial-gradient(circle at 13% 21%, color-mix(in oklab, white 85%, transparent) 0 1.6px, transparent 2.2px), radial-gradient(circle at 64% 47%, color-mix(in oklab, white 85%, transparent) 0 2px, transparent 2.6px), radial-gradient(circle at 37% 83%, color-mix(in oklab, white 85%, transparent) 0 1.2px, transparent 1.8px); background-size: 230px 270px; animation: fall 14s linear infinite; }
+.ambient[data-effect='snow'] i:nth-child(2) { background-size: 310px 290px; animation-duration: 22s; opacity: 0.7; }
+.ambient[data-effect='snow'] i:nth-child(3) { background-size: 170px 210px; animation-duration: 9s; opacity: 0.45; }
 
 .ambient[data-effect='embers'] i { background-image: radial-gradient(circle, color-mix(in oklab, #ffb347 90%, transparent) 0 1.5px, transparent 2.5px); background-size: 120px 160px; animation: rise 11s linear infinite, flicker 2.4s ease-in-out infinite alternate; }
 .ambient[data-effect='embers'] i:nth-child(2) { background-size: 180px 230px; animation-duration: 17s, 3.1s; }
@@ -48,8 +51,8 @@
 .ambient[data-effect='fireflies'] i:nth-child(2) { background-size: 310px 260px; animation-duration: 27s, 4.1s; }
 .ambient[data-effect='fireflies'] i:nth-child(3) { background-size: 170px 220px; animation-duration: 23s, 2.6s; opacity: 0.6; }
 
-.ambient[data-effect='dust'] i { background-image: radial-gradient(circle, color-mix(in oklab, var(--foreground) 35%, transparent) 0 1px, transparent 1.5px); background-size: 70px 90px; animation: drift 40s linear infinite alternate; }
-.ambient[data-effect='dust'] i:nth-child(2) { background-size: 120px 100px; animation-duration: 55s; opacity: 0.6; }
+.ambient[data-effect='dust'] i { background-image: radial-gradient(circle at 21% 33%, color-mix(in oklab, var(--foreground) 35%, transparent) 0 1px, transparent 1.5px), radial-gradient(circle at 72% 18%, color-mix(in oklab, var(--foreground) 35%, transparent) 0 1px, transparent 1.5px), radial-gradient(circle at 48% 76%, color-mix(in oklab, var(--foreground) 35%, transparent) 0 1px, transparent 1.5px); background-size: 190px 230px; animation: drift 40s linear infinite alternate; }
+.ambient[data-effect='dust'] i:nth-child(2) { background-size: 260px 210px; animation-duration: 55s; opacity: 0.6; }
 .ambient[data-effect='dust'] i:nth-child(3) { display: none; }
 
 .ambient[data-effect='fog'] i { background: radial-gradient(ellipse 40% 25% at 30% 60%, color-mix(in oklab, var(--foreground) 9%, transparent), transparent 70%), radial-gradient(ellipse 35% 20% at 75% 35%, color-mix(in oklab, var(--foreground) 7%, transparent), transparent 70%); animation: sway 38s ease-in-out infinite alternate; }

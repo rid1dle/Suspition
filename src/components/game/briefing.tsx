@@ -16,17 +16,17 @@ export function BriefStep({ view, me = null }: { view: { briefing?: { step: numb
       <div className={mine ? 'rounded-xl bg-primary/10 p-4' : ''}>
         {step.icon && <div className="text-5xl">{step.icon}</div>}
         {mine && <div className="font-semibold text-primary">Your turn! Stand up and say:</div>}
-        <p className="font-heading text-xl leading-relaxed">{mine ? step.lines[0].replace(/^[^"]*"/, '"') : step.lines[0]}</p>
+        <p className="text-xl leading-relaxed">{mine ? step.lines[0].replace(/^[^"]*"/, '"') : step.lines[0]}</p>
       </div>
     );
   } else if (step.kind === 'map') {
     body = <>{step.lines.map((l, i) => <p key={i}>{l}</p>)}<MapView view={view} me={me} /></>;
   } else if (step.kind === 'scene') {
-    body = <><ScenePicture svg={view.illustration} />{step.lines.map((l, i) => <p key={i} className="font-heading text-lg leading-relaxed">{l}</p>)}</>;
+    body = <><ScenePicture svg={view.illustration} />{step.lines.map((l, i) => <p key={i} className="text-lg leading-relaxed">{l}</p>)}</>;
   } else if (step.kind === 'story') {
     body = step.lines.map((l, i) => (l.startsWith('The big question: ')
       ? <CaseBox key={i} question={l.slice('The big question: '.length)} />
-      : <p key={i} className="font-heading text-lg leading-relaxed">{l}</p>));
+      : <p key={i} className="text-lg leading-relaxed">{l}</p>));
   } else if (step.kind === 'goal') {
     const [group, ...rest] = step.lines;
     const card = me ? view.card : null;
@@ -36,7 +36,7 @@ export function BriefStep({ view, me = null }: { view: { briefing?: { step: numb
         {card && (
           <div className="rounded-xl border border-border bg-muted/40 p-4">
             <Label>Your secret goal</Label>
-            <div className="mt-1 font-heading text-lg">{card.goal}</div>
+            <div className="mt-1 text-lg">{card.goal}</div>
             {card.goal_why && <div className="text-sm">{card.goal_why}</div>}
             <div className="text-sm text-muted-foreground">{card.win}</div>
           </div>
