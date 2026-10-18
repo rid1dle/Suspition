@@ -90,3 +90,31 @@ describe('suspects, red herrings, whereabouts and clue rounds in the world', () 
     assert.deepEqual(G.validateScenario(s, rules), []);
   });
 });
+
+describe('names written where ids belong', () => {
+  test('should turn character and place names into ids in the story fields', () => {
+    const s = makeScenario(4);
+    s.red_herrings[0].points_at = 'Character 2';
+    s.suspects[1].character_id = 'character 2';
+    s.truth.whereabouts[1].location_id = 'The Kitchen';
+    s.truth.whereabouts[1].seen_by = ['The Butler'];
+    s.truth.crime.location_id = 'Ballroom';
+    s.clues[0].where = 'the ballroom';
+    G.resolveStoryIds(s);
+    assert.equal(s.red_herrings[0].points_at, 'p2');
+    assert.equal(s.suspects[1].character_id, 'p2');
+    assert.equal(s.truth.whereabouts[1].location_id, 'l2');
+    assert.deepEqual(s.truth.whereabouts[1].seen_by, ['n1']);
+    assert.equal(s.truth.crime.location_id, 'l1');
+    assert.equal(s.clues[0].where, 'l1');
+    assert.deepEqual(G.validateScenario(s, rules), []);
+  });
+
+  test('should leave a name that matches nobody as it is, so the check still catches it', () => {
+    const s = makeScenario(4);
+    s.red_herrings[0].points_at = 'Somebody Else';
+    G.resolveStoryIds(s);
+    assert.equal(s.red_herrings[0].points_at, 'Somebody Else');
+    assert.match(G.validateScenario(s, rules).join(), /unknown character Somebody Else/);
+  });
+});

@@ -266,7 +266,7 @@ export const PLAIN_STYLE = `Writing style (the most important rule):
 - Say less. Players read on phones and talk out loud. The talk is the fun, not the text.
 - Players call the phases "rounds". In any text they see, say "round", never "phase".
 - Never use em dashes; use commas or full stops.
-- Ids (p1, n1, c3, l2, k1, h1) go only in id fields, *_id and *_ids fields, where, points_at and seen_by. Never write an id in text; use the name.`;
+- Ids (p1, n1, c3, l2, k1, h1) go only in id fields, *_id and *_ids fields, where, points_at and seen_by; those fields always hold ids, never names (points_at is "p2", not the character's name). Never write an id in text; use the name.`;
 
 export const GENERATION_SYSTEM = `You design one-session hidden-role mystery games for friends playing in the same room.
 Each player is a character inside the mystery. Some are investigators with their own secrets, one or more are the culprits, and there may be a wildcard whose goal fits neither side.

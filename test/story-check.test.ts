@@ -150,3 +150,17 @@ describe('the consistency check', () => {
     assert.match(prompt, /Choose rewrite only when the story cannot be fixed with patches\./);
   });
 });
+
+describe('a world whose story fields use names', () => {
+  test('should still be accepted when the names match characters and places', async () => {
+    const named = () => {
+      const s = makeScenario(3, { phases: 3, hints: 2 });
+      s.red_herrings[0].points_at = 'Character 2';
+      return s;
+    };
+    const { run, calls } = fakeRun([ok], { worlds: [named] });
+    const world = await new GM({ workDir, random: () => 0, run }).generate(lobby());
+    assert.equal(world.red_herrings[0].points_at, 'p2');
+    assert.equal(calls.filter((c) => c.schema === SCENARIO_SCHEMA).length, 1);
+  });
+});

@@ -6,7 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA } from './prompts.ts';
 import { continuityPrompt } from './continuity.ts';
 import { storyIssues, issueCounts, applyStoryPatches } from './story.ts';
-import { validateScenario, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore } from './game.ts';
+import { validateScenario, resolveStoryIds, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore } from './game.ts';
 import { TopLevelTracker } from './progress.ts';
 import { READER_SCHEMA, FINAL_READER_SCHEMA, readerSystem, readerPrompt, readerContext, cleanRead, formForGM, quoteRaw } from './reader.ts';
 
@@ -195,6 +195,7 @@ export class GM {
         timeoutMs: 900_000,
       });
       onProgress({ kind: 'checking' });
+      resolveStoryIds(scenario);
       errors = validateScenario(scenario, rules);
       if (errors.length) {
         this.log(`gm generate#${attempt} invalid: ${errors.join(' | ')}`);

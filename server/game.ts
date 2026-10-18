@@ -373,6 +373,31 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
   return errors;
 }
 
+// The GM often writes a name where an id belongs ("Asha Varma" for p1, "the Shed" for l3). Exact names become ids;
+// anything else is left for the checks to catch.
+export function resolveStoryIds(s) {
+  if (!s || typeof s !== 'object') return s;
+  const key = (t) => String(t ?? '').trim().toLowerCase().replace(/^the\s+/, '');
+  const people = new Map([...(s.players ?? []).map((p) => [key(p.character_name), p.id]), ...(s.npcs ?? []).map((n) => [key(n.name), n.id])]);
+  const places = new Map((s.locations ?? []).map((l) => [key(l.name), l.id]));
+  const ids = new Set([...(s.players ?? []), ...(s.npcs ?? []), ...(s.locations ?? [])].map((x) => x.id));
+  const fix = (map) => (v) => (ids.has(String(v ?? '').trim()) ? String(v).trim() : map.get(key(v)) ?? v);
+  const person = fix(people);
+  const place = fix(places);
+  const anywhere = fix(new Map([...places, ...people]));
+  for (const h of s.red_herrings ?? []) if (h) h.points_at = person(h.points_at);
+  for (const x of s.suspects ?? []) if (x) x.character_id = person(x.character_id);
+  for (const w of s.truth?.whereabouts ?? []) {
+    if (!w) continue;
+    w.character_id = person(w.character_id);
+    w.location_id = place(w.location_id);
+    if (Array.isArray(w.seen_by)) w.seen_by = w.seen_by.map(person);
+  }
+  if (s.truth?.crime) s.truth.crime.location_id = place(s.truth.crime.location_id);
+  for (const c of s.clues ?? []) if (c) c.where = anywhere(c.where);
+  return s;
+}
+
 // Clues whose where is not a place or character id. A story problem the check can patch, not a reason to fail a draft.
 export function clueWhereErrors(s) {
   const known = new Set([...(s?.locations ?? []), ...(s?.players ?? []), ...(s?.npcs ?? [])].map((x) => x?.id));
