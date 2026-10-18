@@ -6,11 +6,12 @@ import { Label, Muted } from '@/components/game/label';
 import { useEffect } from 'react';
 import { BriefStep, BriefPager } from '@/components/game/briefing';
 import { Timeline, Alibis, News } from '@/components/game/panels';
+import { MusicPicker } from '@/components/game/music-picker';
 import { Header } from './setup';
 import type { TableProps } from './table-app';
 
 export function Reading(props: TableProps) {
-  const { view, host, act, readNow } = props;
+  const { view, host, act, readNow, music } = props;
   const b = view.briefing;
   const step = b?.steps?.[b.step];
   const go = (i: number) => { if (b && i !== b.step) act('brief', { delta: i - b.step }); };
@@ -35,6 +36,7 @@ export function Reading(props: TableProps) {
           {host && b && <Button variant="ghost" className="self-start" onClick={() => step && readNow([`${step.title}.`, ...step.lines])}>Read this card out loud again</Button>}
         </div>
         <aside className="flex flex-col gap-4">
+          <MusicPicker soundtrack={view.soundtrack ?? null} host={Boolean(host)} previewing={music?.previewing ?? null} onListen={(i) => music?.listen(i)} onPick={(index) => act('music', { index })} />
           <section className="flex flex-col gap-3 rounded-2xl bg-card p-5">
             <Label>Read your card on your phone. Then tap "Done".</Label>
             <div className="flex flex-wrap gap-2">

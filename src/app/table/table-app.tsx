@@ -6,7 +6,7 @@ import { useReducedMotion } from 'motion/react';
 import { useLowFrameRate } from '@/components/world/table-effects';
 import { PARTICLE_AMBIENTS, richEffects } from '@/lib/effects';
 import { toast } from 'sonner';
-import { Music2Icon, Volume2Icon, VolumeXIcon, MicIcon, SparklesIcon, LibraryIcon } from 'lucide-react';
+import { Music2Icon, Volume2Icon, VolumeXIcon, MicIcon, SparklesIcon, LibraryIcon, SkipForwardIcon } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
@@ -19,7 +19,9 @@ import { Narrator, narrationFor } from '@/lib/narration';
 import { tableSound } from '@/lib/alerts';
 import { Sfx } from '@/lib/sfx';
 import type { TableView } from '@/lib/views';
+import type { TableSoundtrack } from '@/lib/soundtrack/types';
 import { RejoinPanel } from '@/components/game/rejoin';
+import { musicLine } from '@/components/game/music-picker';
 import { Setup, Generating, Failed } from './setup';
 import { Reading } from './reading';
 import { Playing } from './playing';
@@ -76,7 +78,7 @@ function useMedia(view: TableView | null) {
   return media.current;
 }
 
-function MediaBar({ media, view, host, calm, setCalm }: { media: Media | null; view: TableView | null; host: string | null; calm: boolean; setCalm: (c: boolean) => void }) {
+function MediaBar({ media, view, host, act, calm, setCalm }: { media: Media | null; view: TableView | null; host: string | null; act: ReturnType<typeof hostAct>; calm: boolean; setCalm: (c: boolean) => void }) {
   const [, force] = useState(0);
   const [level, setLevel] = useState(0);
   useEffect(() => {
@@ -88,6 +90,8 @@ function MediaBar({ media, view, host, calm, setCalm }: { media: Media | null; v
   }, [media]);
   if (!media) return null;
   const { score, narrator, sfx } = media;
+  const source = score.source as 'composed' | 'loading' | 'simple';
+  const soundtrack: TableSoundtrack | null = view?.soundtrack ?? null;
   const locked = sfx.enabled && sfx.ctx?.state !== 'running';
   const chip = (on: boolean) => `flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition ${on ? 'border-primary text-primary' : 'border-border text-muted-foreground'}`;
   return (
@@ -100,6 +104,15 @@ function MediaBar({ media, view, host, calm, setCalm }: { media: Media | null; v
       </button>
       <Slider min={0} max={1} step={0.05} defaultValue={[score.volume]} aria-label="Music volume" className="w-24"
         onValueChange={([v]) => { score.setVolume(v); storage.set('detective-music-volume', String(v)); }} />
+      {source === 'composed' && host && soundtrack?.directions && (
+        <Select value={String(soundtrack.chosen ?? 0)} onValueChange={(v) => act('music', { index: Number(v) })}>
+          <SelectTrigger size="sm" aria-label="Soundtrack" className="text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {soundtrack.directions.map((d, i) => <SelectItem key={i} value={String(i)}>{d.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      )}
+      {source === 'composed' && <button className={chip(false)} onClick={() => score.nextPiece()}><SkipForwardIcon className="size-3.5" /> Next piece</button>}
       {narrator.available && (
         <button className={chip(narrator.enabled)} aria-pressed={narrator.enabled} onClick={() => {
           narrator.enabled = !narrator.enabled;
@@ -128,7 +141,7 @@ function MediaBar({ media, view, host, calm, setCalm }: { media: Media | null; v
       <button className={chip(!calm)} aria-pressed={!calm} onClick={() => { setCalm(!calm); storage.set('detective-calm', calm ? 'off' : 'on'); }}><SparklesIcon className="size-3.5" /> {calm ? 'Calm screen' : 'Effects on'}</button>
       {host && <a className={chip(false)} href={`/games#host=${encodeURIComponent(host)}`} target="_blank"><LibraryIcon className="size-3.5" /> Saved games</a>}
       {host && view && ['reading', 'playing', 'final'].includes(view.status) && <Rejoin host={host} players={view.players} chip={chip(false)} />}
-      <span className="ml-auto truncate text-xs text-muted-foreground">{view?.musicDescription ?? ''}</span>
+      <span className="ml-auto truncate text-xs text-muted-foreground">{musicLine(source, soundtrack, view?.musicDescription ?? null)}</span>
     </aside>
   );
 }
@@ -170,7 +183,17 @@ export function TableApp() {
     n.say(lines);
     n.enabled = was;
   };
-  const props = { view: view!, host, act, readNow, onNewGame: (h: string) => setHost(h) };
+  const [previewing, setPreviewing] = useState<number | null>(null);
+  const music: MusicControls = {
+    previewing,
+    listen: async (i) => {
+      if (!media) return;
+      setPreviewing(i);
+      await media.score.preview(i);
+      setPreviewing((p) => (p === i ? null : p));
+    },
+  };
+  const props = { view: view!, host, act, readNow, onNewGame: (h: string) => setHost(h), music };
   const low = useLowFrameRate();
   const reduced = Boolean(useReducedMotion());
   const room = view?.room ?? null;
@@ -190,9 +213,10 @@ export function TableApp() {
         {view?.status === 'final' && <FinalWait {...props} />}
         {view?.status === 'reveal' && <Reveal {...props} />}
       </div>
-      <MediaBar media={media} view={view} host={host} calm={calm} setCalm={setCalm} />
+      <MediaBar media={media} view={view} host={host} act={act} calm={calm} setCalm={setCalm} />
     </WorldRoom>
   );
 }
 
-export type TableProps = { view: TableView; host: string | null; act: ReturnType<typeof hostAct>; readNow: (lines: string[]) => void; onNewGame: (host: string) => void };
+export type MusicControls = { previewing: number | null; listen: (i: number) => void };
+export type TableProps = { view: TableView; host: string | null; act: ReturnType<typeof hostAct>; readNow: (lines: string[]) => void; onNewGame: (host: string) => void; music?: MusicControls };
