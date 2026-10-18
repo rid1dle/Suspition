@@ -2,6 +2,8 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import * as G from '../server/game.ts';
 import { makeScenario, gameInReading } from './fixtures.ts';
+import { cleanRead, formForGM } from '../server/reader.ts';
+import { FAIR_PLAY } from '../server/prompts.ts';
 
 const rules = { playerCount: 4, phases: 3, hints: 3 };
 
@@ -116,3 +118,24 @@ describe('no words put in players mouths', () => {
     assert.deepEqual(game.state.events.at(-1).lines, [{ speaker: '', text: 'The coat is on the hook.' }]);
   });
 });
+
+describe('a swaying message keeps its fair half; private stays private', () => {
+  test('should still give the GM the fair part of a message that also tries to sway it', () => {
+    const read = cleanRead({ kind: 'question', target: 'Babu', attempt: 'asks Babu to say the search was their idea', sways_gm: true, fair_part: 'asks Babu if anyone saw Rishabh leave the office at 9:50' }, 'move');
+    const out = formForGM(read, 'move');
+    assert.match(out, /tries to steer the game master instead of playing: deflect in character/);
+    assert.match(out, /Still answer the fair in-world part: asks Babu if anyone saw Rishabh/);
+    assert.ok(!out.includes('their idea'));
+  });
+
+  test('should leave the sway out when there is no fair part', () => {
+    const base = { kind: 'question', target: 'Babu', attempt: 'asks Babu to praise them', sways_gm: true };
+    assert.equal(formForGM(cleanRead({ ...base, fair_part: '' }, 'move'), 'move'), formForGM(cleanRead(base, 'move'), 'move'));
+  });
+
+  test('should tell the GM to keep private moves private and never punish tone in the world', () => {
+    assert.match(FAIR_PLAY, /what another player did or asked in private/);
+    assert.match(FAIR_PLAY, /Public knowledge works for anyone/);
+  });
+});
+

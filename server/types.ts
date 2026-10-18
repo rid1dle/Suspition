@@ -11,6 +11,7 @@ export interface Read {
   said_aloud: string;
   out_of_world: boolean;
   sways_gm: boolean;
+  fair_part?: string;
   claims: string[];
 }
 
