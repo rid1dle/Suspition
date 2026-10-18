@@ -17,7 +17,7 @@ const nameKey = (t) => String(t ?? '').trim().toLowerCase().replace(/^the\s+/, '
 
 export const pathMetres = (a, b, acrossM) => Math.hypot(b.x - a.x, b.y - a.y) * (acrossM / 100) * WINDING;
 
-function metresText(m) {
+export function metresText(m) {
   const r = m < 100 ? Math.max(5, Math.round(m / 5) * 5) : Math.round(m / 10) * 10;
   if (r < 1000) return `${r} m`;
   const km = r < 10_000 ? Math.round(r / 100) / 10 : Math.round(r / 1000);

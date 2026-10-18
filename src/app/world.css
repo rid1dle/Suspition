@@ -83,11 +83,59 @@
 @media (prefers-reduced-motion: reduce) { .shimmer { animation: none; } }
 
 /* The map (drawn by src/lib/map.ts as HTML). */
-.map { position: relative; aspect-ratio: 16 / 10; width: 100%; background: var(--card); border-radius: 0.9rem; overflow: hidden; }
-.map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.map line { stroke: var(--border); stroke-width: 0.6; stroke-dasharray: 1.5 1.2; vector-effect: non-scaling-stroke; }
-.place { position: absolute; transform: translate(-50%, -50%); background: var(--background); border: 1px solid var(--border); border-radius: 0.6rem; padding: 5px 8px; text-align: center; max-width: 34%; }
-.place-name { font-family: var(--font-heading, Georgia), serif; font-size: 0.85rem; line-height: 1.2; }
+/* Terrain is quiet texture: low contrast shapes and marks under the places, never louder than the names. */
+.map { --ground: var(--card); --ink: color-mix(in oklab, var(--foreground) 30%, var(--ground)); --water: color-mix(in oklab, #3d84c6 32%, var(--ground)); --path: color-mix(in oklab, var(--foreground) 45%, var(--ground));
+  position: relative; aspect-ratio: 16 / 10; width: 100%; background: var(--ground); border-radius: 0.9rem; overflow: hidden; }
+.map[data-terrain='forest'], .map[data-terrain='river'] { --ground: color-mix(in oklab, #4f8a55 9%, var(--card)); }
+.map[data-terrain='hills'] { --ground: color-mix(in oklab, #8a8a4f 8%, var(--card)); }
+.map[data-terrain='coast'] { --ground: color-mix(in oklab, #c8b27a 9%, var(--card)); }
+.map[data-terrain='snow'] { --ground: color-mix(in oklab, #ffffff 10%, var(--card)); }
+.map[data-terrain='desert'] { --ground: color-mix(in oklab, #d9a75a 13%, var(--card)); }
+.map[data-terrain='village'] { --ground: color-mix(in oklab, #9a8a5a 7%, var(--card)); }
+.map svg.land { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map .ground { fill: var(--ground); }
+.map .water { fill: var(--water); stroke: none; }
+.map .river { fill: none; stroke: var(--water); stroke-width: 5; stroke-linecap: round; }
+.map .streets, .map .lane, .map .room-line, .map .wall, .map .contour { fill: none; stroke: var(--ink); stroke-opacity: 0.35; vector-effect: non-scaling-stroke; }
+.map .streets { stroke-width: 7; stroke-opacity: 0.18; }
+.map .lane { stroke-width: 6; stroke-opacity: 0.2; stroke-linecap: round; }
+.map .wall { stroke-width: 3; stroke-opacity: 0.4; }
+.map .room-line { stroke-width: 1.5; stroke-dasharray: 10 6; }
+.map .contour { stroke-width: 1; }
+.map .path { fill: none; stroke: var(--path); stroke-width: 2; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.map .path.trail { stroke-dasharray: 5 4; }
+.map .path.road { stroke-width: 3.5; }
+.map .path.stairs { stroke-dasharray: 2 3; stroke-width: 3; }
+.map .path.corridor { stroke-width: 5; stroke-opacity: 0.45; }
+.map .path.bridge { stroke-width: 3.5; stroke: color-mix(in oklab, var(--foreground) 60%, var(--ground)); }
+.map .path.water { stroke: color-mix(in oklab, #3d84c6 60%, var(--ground)); stroke-dasharray: 7 4; fill: none; }
+.map .path.near { stroke: var(--primary); stroke-opacity: 1; }
+.map .path.far { stroke-opacity: 0.35; }
+.map .marks { position: absolute; inset: 0; pointer-events: none; color: var(--ink); opacity: 0.55; }
+.map .mark { position: absolute; transform: translate(-50%, -50%); width: 16px; height: 16px; }
+.map .mark svg { fill: currentColor; fill-opacity: 0.18; }
+.map .mark svg, .map .landmark svg, .map .compass svg { display: block; width: 100%; height: 100%; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.map .landmark { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; color: color-mix(in oklab, var(--foreground) 60%, var(--ground)); }
+.map .landmark svg { width: 18px; height: 18px; fill: none; }
+.map .landmark span { font-size: 0.62rem; line-height: 1.1; padding: 0 4px; border-radius: 4px; background: var(--ground); white-space: nowrap; }
+.map .trip { position: absolute; transform: translate(-50%, -50%); font-size: 0.64rem; line-height: 1.2; padding: 1px 6px; border-radius: 999px; background: var(--background); border: 1px solid var(--border); color: var(--muted-foreground); white-space: nowrap; pointer-events: none; }
+.map .trip.near { border-color: var(--primary); color: var(--foreground); font-weight: 600; }
+.map .map-title { position: absolute; left: 8px; top: 8px; max-width: 55%; font-family: var(--font-display, var(--font-heading)), Georgia, serif; font-size: 0.85rem; padding: 2px 8px; border-radius: 6px; background: var(--background); border: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.map .compass { position: absolute; right: 8px; top: 8px; width: 26px; display: flex; flex-direction: column; align-items: center; font-size: 0.6rem; font-weight: 700; color: var(--muted-foreground); pointer-events: none; }
+.map .compass svg { width: 14px; height: 14px; fill: currentColor; }
+.map .scale { position: absolute; left: 8px; right: 8px; bottom: 6px; font-size: 0.6rem; color: var(--muted-foreground); pointer-events: none; }
+.map .scale i { display: block; height: 4px; border: 1.5px solid var(--muted-foreground); border-top: 0; }
+@media (min-width: 1024px) {
+  .map .trip { font-size: 0.8rem; padding: 2px 8px; }
+  .map .landmark span, .map .scale { font-size: 0.75rem; }
+  .map .landmark svg { width: 22px; height: 22px; }
+  .map .mark { width: 22px; height: 22px; }
+}
+.map-trips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.78rem; color: var(--muted-foreground); }
+.map-trips b { color: var(--foreground); font-weight: 600; }
+.place { position: absolute; transform: translate(-50%, -50%); background: var(--background); border: 1px solid var(--border); border-radius: 0.6rem; padding: 5px 8px; text-align: center; max-width: 34%; z-index: 1; }
+.place.here { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 35%, transparent); }
+.place-name { font-weight: 600; font-size: 0.85rem; line-height: 1.2; }
 .whos { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 4px; }
 .who { font-size: 0.72rem; padding: 1px 7px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; }
 .who.player { border-color: var(--primary); color: var(--primary); }
@@ -98,7 +146,7 @@
 @keyframes moved { 0% { box-shadow: 0 0 0 4px color-mix(in oklab, var(--primary) 60%, transparent); } 100% { box-shadow: 0 0 0 0 transparent; } }
 .map-key { margin-top: 6px; display: flex; gap: 8px; font-size: 0.8rem; color: var(--muted-foreground); }
 .map .room { font-size: 0.72rem; color: var(--muted-foreground); margin-top: 2px; }
-@media (max-width: 640px) { .map { aspect-ratio: 3 / 4; } .place-name { font-size: 0.78rem; } }
+@media (max-width: 640px) { .map { aspect-ratio: 3 / 4; } .place-name { font-size: 0.78rem; } .map .mark { width: 13px; height: 13px; } .map .map-title { font-size: 0.75rem; } }
 .map.editing { outline: 2px dashed var(--primary); outline-offset: 2px; }
 .place.editing { cursor: grab; touch-action: none; user-select: none; }
 .place.dragging { cursor: grabbing; z-index: 3; box-shadow: 0 6px 20px rgb(0 0 0 / 0.5); }
