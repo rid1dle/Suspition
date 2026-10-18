@@ -37,3 +37,19 @@ describe('round rewards never give the culprit away', () => {
     assert.equal(game.state.timelineExtra.length, before);
   });
 });
+
+describe('naming a culprit', () => {
+  test('should not treat a number in the text as a culprit name', () => {
+    const s = makeScenario(4);
+    assert.equal(G.namesCulprit(s, [], 'At 1 am the generator stopped. REWARD-1'), false);
+    assert.equal(G.namesCulprit(s, [], 'Character 1 left the gate open.'), true);
+  });
+
+  test('should catch a culprit named by their player name or a unique name word', () => {
+    const s = makeScenario(4);
+    s.players[0].character_name = 'Nikhil Rao';
+    assert.equal(G.namesCulprit(s, [], 'The call came from Rao.'), true);
+    assert.equal(G.namesCulprit(s, [{ id: 'p1', name: 'Himanshu' }], 'Himanshu was at the gate.'), true);
+    assert.equal(G.namesCulprit(s, [], 'Character 2 was at the gate.'), false);
+  });
+});

@@ -312,11 +312,21 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
   return errors;
 }
 
-// True when a text names a culprit, by character name or the player's own name (the same rule as mentions).
+// True when a text names a culprit: by full character or player name, or by a name word only they have.
+// Stricter than mentions: a lone number ("1" in "Character 1") never counts, so "At 1 am" stays safe.
 export function namesCulprit(scenario, players, text) {
   const culprits = scenario?.truth?.culprit_ids ?? [];
   if (!text || !culprits.length || !scenario?.players) return false;
-  return mentions({ scenario: { players: scenario.players, npcs: scenario.npcs ?? [] }, players: players ?? [] }, text).some((id) => culprits.includes(id));
+  const words = wordsOf(text);
+  const joined = ` ${words.join(' ')} `;
+  const people = [...scenario.players, ...(scenario.npcs ?? [])].map((c) => {
+    const names = [c.character_name ?? c.name, (players ?? []).find((p) => p.id === c.id)?.name].filter(Boolean);
+    return { id: c.id, full: names.map((n) => wordsOf(n).join(' ')).filter(Boolean), words: names.flatMap(nameWords).filter((w) => !/^\d+$/.test(w)) };
+  });
+  const owners = {};
+  for (const p of people) for (const w of new Set(p.words)) owners[w] = (owners[w] ?? 0) + 1;
+  return people.some((p) => culprits.includes(p.id)
+    && (p.full.some((f) => joined.includes(` ${f} `)) || p.words.some((w) => owners[w] === 1 && words.includes(w))));
 }
 
 export function mapOf(scenario, edits = {}) {
