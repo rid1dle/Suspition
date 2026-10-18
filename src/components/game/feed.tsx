@@ -6,7 +6,7 @@ import type { GameEvent } from '@/lib/views';
 import { Label, Muted } from './label';
 import { Novel, type Line } from './novel';
 
-const ICONS: Record<string, string> = { said: '🗣', forced: '🗣', clue: '🔎', timeline: '⏱', hint: '✦', qa: '?', note: '💬', right: '✓', wrong: '✗', ripple: '〰' };
+const ICONS: Record<string, string> = { said: '🗣', forced: '🗣', clue: '🔎', timeline: '⏱', hint: '✦', qa: '?', note: '💬', right: '✓', wrong: '✗', ripple: '〰', refused: '✋' };
 const TAB_NAMES: Record<string, string> = { clues: 'Clues', timeline: 'Timeline' };
 
 interface Item { kind: string; text: string; ask?: string; tab?: string; lines?: Line[] }

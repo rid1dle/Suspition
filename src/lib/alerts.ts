@@ -2,7 +2,7 @@
 import { feedItem } from './feed.ts';
 
 // Sounds the table plays for new public news. Only the most important one plays per update.
-const TABLE_SOUND = { right: 'good', wrong: 'bad', said: 'said', forced: 'said', clue: 'clue', timeline: 'clue', hint: 'hint', qa: 'news', event: 'news', ripple: 'soft', override: 'soft', note: 'soft' };
+const TABLE_SOUND = { right: 'good', wrong: 'bad', said: 'said', forced: 'said', clue: 'clue', timeline: 'clue', hint: 'hint', qa: 'news', event: 'news', ripple: 'soft', refused: 'soft', override: 'soft', note: 'soft' };
 const PRIORITY = ['phase', 'call', 'vote', 'good', 'bad', 'said', 'hint', 'clue', 'news', 'soft'];
 
 export function tableSound(prev, next) {

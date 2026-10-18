@@ -837,6 +837,13 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const [scored, penalty] = recordPlay(game, playerId, result.play, ask.read, 'private');
   const shown = (m) => ({ points: m.points, skill: m.skill, why: m.why });
   thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: shown(scored), ...(penalty ? { penalty: shown(penalty) } : {}), at: now });
+  // A move that would contradict the story does not happen: no clue, no move, no stir. The player is told why.
+  const why = refusedWhy(result);
+  if (why) {
+    thread.push({ from: 'system', text: `That can't happen: ${why}`, at: now });
+    logRefused(game, playerId, why, false, now);
+    return;
+  }
 
   const clueIds = new Set(openClues(game));
   for (const id of result.clues_found ?? []) {
@@ -863,6 +870,13 @@ export function openClues(game) {
   const st = game.state;
   const round = ['final', 'reveal'].includes(game.status) ? Infinity : (st?.phaseIndex ?? -1) + 1;
   return game.scenario.clues.filter((c) => !Number.isInteger(c.reveal_round) || c.reveal_round <= round).map((c) => c.id);
+}
+
+const refusedWhy = (result) => (result?.refused?.refused === true ? String(result.refused.why ?? '').trim().slice(0, 200) || 'It would break the story.' : '');
+
+function logRefused(game, playerId, why, outLoud, now) {
+  const st = game.state;
+  st.refused = [...(st.refused ?? []), { round: st.roundNumber ?? st.phaseIndex + 1, player_id: playerId, why, out_loud: outLoud, at: now }].slice(-100);
 }
 
 export function isLastPhase(game) {
@@ -1644,19 +1658,25 @@ export function addNote(game, text, now = Date.now()) {
   addEvent(game, `The room thinks: ${clean}`, 'note', now);
 }
 
-export function completePublicAsk(game, playerId, answer, now = Date.now(), read = null, words = null, ripple = '') {
+export function completePublicAsk(game, playerId, answer, now = Date.now(), read = null, words = null, ripple = '', refused = null) {
   const st = game.state;
   const q = st.publicPending[playerId];
   if (!q) return;
   delete st.publicPending[playerId];
   readPlayer(game, playerId, read, 'out loud', now);
   if (read?.play || words) recordPlay(game, playerId, read?.play, words, 'out loud');
-  addFacts(game, read?.facts, 'asked out loud', now);
+  const why = refusedWhy({ refused });
+  if (!why) addFacts(game, read?.facts, 'asked out loud', now);
   const name = game.players.find((p) => p.id === playerId)?.name;
   const clean = (t) => dropPuppeting(game, playerId, t, { others: true }).text;
   const lines = Array.isArray(answer) ? novelLines(game, answer, { unpuppet: clean, unpuppetSpeech: clean }) : null;
   const text = (lines ? linesText(lines) : clean(String(answer ?? '').trim())) || 'Nobody knows that yet.';
   st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text, ...(lines?.length ? { lines } : {}), ...(words ? { read: words } : {}) });
+  if (why) {
+    addEvent(game, `That can't happen: ${why}`, 'refused', now);
+    logRefused(game, playerId, why, true, now);
+    return;
+  }
   addRipple(game, playerId, clean(String(ripple ?? '')), now);
 }
 

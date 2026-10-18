@@ -425,10 +425,10 @@ export class App {
       try {
         const words = await this.gm.read(game, p.id, q, 'public');
         if (this.game !== game) return;
-        const { lines, answer, asker_read: read, ripple } = await this.gm.publicAnswer(game, q, words);
+        const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, words);
         if (this.game !== game) return;
         const drops = game.state.rippleDrops?.length ?? 0;
-        G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, words, ripple);
+        G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, words, ripple, refused);
         this.logRippleDrop(game, drops);
         this.countAnswer(game);
       } catch (err) {
