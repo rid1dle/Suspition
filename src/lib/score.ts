@@ -1,5 +1,6 @@
 // @ts-nocheck -- ported from public/panels.js (logic only; the HTML builders become React components)
 import { SKILL_LABELS } from './skill-labels.ts';
+import { PLAY_MAX } from './rules.ts';
 
 const signed = (n) => (n > 0 ? `+${n}` : `${n}`);
 
@@ -20,4 +21,4 @@ export function playLine(play) {
   return [signed(play.points ?? 0), play.skill && SKILL_LABELS[play.skill], play.why].filter(Boolean).join(' · ');
 }
 
-export const totalLine = (s) => `Case ${pointsOf(s)}/6 · Play ${signed(s?.play ?? 0)}`;
+export const totalLine = (s) => `Case ${pointsOf(s)}/6 · Play ${signed(s?.play ?? 0)}${s?.play_earned != null && s.play_earned > (s?.play ?? 0) ? ` (${s.play_earned} earned, ${PLAY_MAX} count)` : ''}`;

@@ -43,6 +43,8 @@ export function scoreMoves(play: Play | null | undefined, read: ReadFlags, opts:
   return real.points > 0 ? [real, penalty] : [penalty];
 }
 
+export const playEarned = (moves: Move[] | undefined | null): number => current(moves).reduce((sum, m) => sum + m.points, 0);
+
 export const playTotal = (moves: Move[] | undefined | null): number => clamp(current(moves).reduce((sum, m) => sum + m.points, 0), PLAY_MIN, PLAY_MAX);
 
 export function skillSplit(moves: Move[] | undefined | null): Record<string, number> {

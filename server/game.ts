@@ -1,7 +1,7 @@
 // @ts-nocheck -- legacy JS, typed file by file later
 import { randomBytes } from 'node:crypto';
 import { formForGM, quoteRaw } from './reader.ts';
-import { scoreMoves, playTotal, skillSplit, PLAY_MAX } from './skills.ts';
+import { scoreMoves, playTotal, playEarned, skillSplit, PLAY_MAX } from './skills.ts';
 import { rulesLines } from '../src/lib/rules.ts';
 import { LENGTHS, PLAN_SECTIONS } from './prompts.ts';
 import { roomTheme, guessRoom } from './room.ts';
@@ -889,6 +889,7 @@ export function applyScore(game, verdict, score) {
         comment: String(s.comment ?? ''),
         coaching: String(s.coaching ?? '').slice(0, 200),
         play: playTotal(game.state.play?.[p.id]),
+        play_earned: playEarned(game.state.play?.[p.id]),
         skills: skillSplit(game.state.play?.[p.id]),
       };
     }),
@@ -961,6 +962,10 @@ export function answerMoment(game, playerId, momentId, choice, now = Date.now(),
       m.saidInstead = own;
       if (read) m.readInstead = read;
       addEvent(game, `${name}, in their own words: "${own}"`, 'said', now, read ? { by: name, read } : {});
+      if (read) {
+        const culprit = game.scenario.players.find((c) => c.id === playerId)?.side === 'culprit';
+        recordPlay(game, playerId, read.sways_gm ? null : { points: 1, skill: culprit ? 'bluffing' : 'persuading', why: 'Said it in their own words, in character.' }, read, 'out loud');
+      }
       addFacts(game, [{ person: playerId, fact: `Said out loud: "${own}"` }], 'said', now);
     } else {
       addEvent(game, choice === 'quiet' ? `${name} chose to stay quiet.` : `${name} told it their own way.`, 'override', now);
@@ -972,12 +977,23 @@ export function answerMoment(game, playerId, momentId, choice, now = Date.now(),
   return m;
 }
 
+// A player who made a move this round is not charged for a moment they missed: they were busy playing.
+export function actedThisRound(game, playerId) {
+  const st = game.state;
+  const round = st.roundNumber ?? st.phaseIndex + 1;
+  const name = nameOf(game, playerId);
+  return (st.play?.[playerId] ?? []).some((m) => m.round === round)
+    || st.events.some((e) => e.kind === 'qa' && e.by === name && e.phase === st.phaseIndex);
+}
+
 export function closeOpenMoments(game, now = Date.now()) {
   const st = game.state;
   for (const m of st.moments ?? []) {
     if (!OPEN.includes(m.status)) continue;
     const name = nameOf(game, m.player_id);
-    if ((st.overridesLeft[m.player_id] ?? 0) > 0) {
+    if (actedThisRound(game, m.player_id)) {
+      m.status = 'missed';
+    } else if ((st.overridesLeft[m.player_id] ?? 0) > 0) {
       st.overridesLeft[m.player_id] -= 1;
       m.status = 'quiet';
       addEvent(game, `${name} stayed quiet. It cost an override.`, 'override', now);
@@ -1126,6 +1142,7 @@ export function shareClue(game, playerId, clueId, now = Date.now()) {
   const clue = game.scenario.clues.find((c) => c.id === clueId);
   const name = game.players.find((p) => p.id === playerId)?.name;
   st.shared.push({ clueId, by: playerId, at: now });
+  recordPlay(game, playerId, { points: 1, skill: 'teamwork', why: `Showed everyone ${clue.name}.` }, null, 'out loud');
   addEvent(game, `${name} shows a clue. ${clue.name}: ${clue.shows}`, 'clue', now, { by: name, name: clue.name });
   addFacts(game, mentions(game, `${clue.name} ${clue.shows}`).map((id) => ({ person: id, fact: `Clue, ${clue.name}: ${clue.shows}` })), 'clue', now);
 }
