@@ -40,6 +40,7 @@ export class App {
     if (this.game.state) {
       const st = this.game.state;
       st.positions ??= G.startPositions(this.game.scenario);
+      st.at ??= Object.fromEntries(this.game.players.map((p) => [p.id, st.positions[p.id]]));
       st.brief ??= { step: 0 };
       st.roundResults ??= [];
       st.timelineExtra ??= [];

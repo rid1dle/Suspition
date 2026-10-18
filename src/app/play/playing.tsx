@@ -98,7 +98,7 @@ function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void
         {timer && <span className={`font-mono tabular-nums ${timer.low ? 'text-destructive' : ''}`}>{timer.text}</span>}
       </div>
       <div className="flex justify-between text-xs text-muted-foreground">
-        <span>{view.questionsLeft} private question{view.questionsLeft === 1 ? '' : 's'} left</span>
+        <span>{view.questionsLeft} private question{view.questionsLeft === 1 ? '' : 's'} left{view.here ? ` · You are in: ${view.here}` : ''}</span>
         <span>Suspicion: {suspicionLabel(view.suspicion)}</span>
       </div>
       {hv && (

@@ -557,6 +557,7 @@ export function attachScenario(game, scenario, now = Date.now()) {
     revealed: Object.fromEntries(game.players.map((p) => [p.id, []])),
     ready: {},
     positions: startPositions(scenario),
+    at: Object.fromEntries(Object.entries(startPositions(scenario)).filter(([id]) => game.players.some((p) => p.id === id))),
     mapEdits: {},
     brief: { step: 0 },
     roundVote: null,
@@ -964,10 +965,23 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     logRefused(game, playerId, reason, false, now);
   }
 
+  // Where the character really is after this move: a secret trip moves them too, it just does not show on the map.
+  st.at ??= {};
+  const from = st.at[playerId] ?? st.positions[playerId];
+  const dest = game.scenario.locations.some((l) => l.id === result.player_location) ? result.player_location : from;
+  st.at[playerId] = dest;
   const clueIds = new Set(openClues(game));
+  let tripRewarded = false;
   for (const id of result.clues_found ?? []) {
-    if (clueIds.has(id) && !st.destroyed.includes(id) && !st.found[playerId].includes(id)) {
-      st.found[playerId].push(id);
+    const clue = game.scenario.clues.find((c) => c.id === id);
+    if (!clueIds.has(id) || st.destroyed.includes(id) || st.found[playerId].includes(id)) continue;
+    // A find somewhere else is the trip: the character is now where the clue is.
+    const there = placeFor(game, clue) ?? st.at[playerId];
+    if (there) st.at[playerId] = there;
+    st.found[playerId].push(id);
+    if (!tripRewarded && there && there !== from) {
+      tripRewarded = true;
+      recordPlay(game, playerId, { points: 1, skill: 'searching', why: `Went to the ${String(placeOf(game, playerId)).replace(/^the\s+/i, '')} and found ${clue.name}.` }, null, 'private');
     }
   }
   const own = game.scenario.players.find((p) => p.id === playerId);
@@ -1002,6 +1016,22 @@ const refusedWhy = (result) => (result?.refused?.refused === true ? String(resul
 function logRefused(game, playerId, why, outLoud, now) {
   const st = game.state;
   st.refused = [...(st.refused ?? []), { round: st.roundNumber ?? st.phaseIndex + 1, player_id: playerId, why, out_loud: outLoud, at: now }].slice(-100);
+}
+
+// The name of the place a player's character really is.
+export function placeOf(game, pid) {
+  const id = game.state?.at?.[pid] ?? game.state?.positions?.[pid];
+  return game.scenario.locations.find((l) => l.id === id)?.name ?? '';
+}
+
+// Where a clue is: its place, or where the person holding it is. Older worlds wrote free text: null.
+function placeFor(game, clue) {
+  const where = String(clue?.where ?? '').trim();
+  const sc = game.scenario;
+  if (sc.locations.some((l) => l.id === where)) return where;
+  if (sc.npcs.some((n) => n.id === where)) return game.state.positions[where] ?? null;
+  if (sc.players.some((p) => p.id === where)) return game.state.at?.[where] ?? game.state.positions[where] ?? null;
+  return null;
 }
 
 export function isLastPhase(game) {
@@ -1698,7 +1728,7 @@ export function briefingSteps(game) {
   const steps = [
     { kind: 'scene', title: sc.title, lines: [sc.setting_summary] },
     { kind: 'story', title: 'What just happened', lines: [sc.opening_scene, `The big question: ${caseQuestion(sc)}`] },
-    { kind: 'background', title: 'What everyone knows', lines: sc.background ?? [] },
+    { kind: 'background', title: 'What everyone knows', lines: [...(sc.how_we_talk ? [`How you talk: ${sc.how_we_talk}`] : []), ...(sc.background ?? [])] },
     { kind: 'map', title: 'The place', lines: ['This is the map. It shows every place and who is there.', 'Players are gold. People the GM plays are grey.'] },
   ];
   for (const c of sc.players) {
@@ -2269,6 +2299,7 @@ export function playerView(game, playerId, now = Date.now()) {
   view.playTotal = playTotal(st.play?.[playerId]);
   view.moments = (st.moments ?? []).filter((m) => m.player_id === playerId && OPEN.includes(m.status))
     .map((m) => ({ id: m.id, line: m.line, why: m.why, status: m.status, readyAt: m.readyAt }));
+  view.here = placeOf(game, playerId);
   view.offers = (st.offers ?? []).filter((o) => o.player_id === playerId && o.status === 'open').map((o) => ({ id: o.id, text: o.text, choice: o.choice }));
   view.overridesLeft = st.overridesLeft?.[playerId] ?? 0;
   view.submission = st.submissions[playerId] ?? null;
