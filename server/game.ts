@@ -522,6 +522,8 @@ export function attachScenario(game, scenario, now = Date.now()) {
     illustration: null,
     knowledge: [],
     moments: [],
+    canon: [],
+    continuity: { lastAt: 0, answers: 0, log: [] },
     unlocked: {},
     overridesLeft: Object.fromEntries(game.players.map((p) => [p.id, game.setup.overrides ?? 3])),
     submissions: {},
@@ -1670,6 +1672,7 @@ export function publicKnowledge(game) {
     news: game.state.events.filter((e) => !['opening', 'qa'].includes(e.kind)).slice(-20).map(eventForGM),
     asked_out_loud_before: game.state.events.filter((e) => e.kind === 'qa').slice(-15).map((e) => `${e.by} asked: ${e.read ? playerWords(e.read, e.q, 'public') : e.q} Answer: ${e.text}`),
     where_people_say_they_were: alibiTable(sc),
+    canon: (game.state.canon ?? []).filter((c) => c.public).map((c) => c.fact),
     shared_clues: game.state.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
       return `${c.name}: ${c.shows}`;
@@ -1689,7 +1692,7 @@ export function cleanSvg(svg) {
 export const playerWords = (read, text, mode = 'move') => (read ? formForGM(read, mode).replace(/\n/g, ' | ') : quoteRaw(text));
 
 // Own-words lines go to the GM as the reader's form; host notes are player-written, so they are quoted.
-function eventForGM(e) {
+export function eventForGM(e) {
   if (e.kind === 'said' && e.read) return `${e.by} said out loud in their own words: ${playerWords(e.read, '', 'said')}`;
   if (e.kind === 'note') return `The room thinks: ${quoteRaw(e.text.replace(/^The room thinks: /, ''))}`;
   return e.text;
@@ -1725,6 +1728,7 @@ export function snapshotForGM(game) {
     moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.readInstead ? playerWords(m.readInstead, m.saidInstead, 'said') : m.saidInstead } : {}) })),
     overrides_left: st.overridesLeft,
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
+    canon: (st.canon ?? []).map((c) => ({ fact: c.fact, round: c.round })),
     shared_clues: st.shared.map((x) => x.clueId),
     clues_open_now: open,
     clues_later: game.scenario.clues.filter((c) => !open.includes(c.id)).map((c) => ({ id: c.id, round: c.reveal_round })),

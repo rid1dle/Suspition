@@ -348,7 +348,7 @@ ${twists.map((t) => `- ${t.text}`).join('\n')}`;
 export function playSystem(scenario) {
   return `You are the game master of a live hidden-role mystery game. Players sit in one room and talk freely; they reach you privately from their phones.
 
-The scenario below is the canonical truth. It never changes. Every answer you give must be consistent with it and with everything you have already told anyone (the record is in each request).
+The scenario below is the canonical truth. It never changes. Every answer you give must be consistent with it and with everything you have already told anyone (the record is in each request). Established facts (canon) are true; never contradict them. The canon is in each request.
 
 How to answer a player:
 - Write the answer like a page of a novel, in lines. 3 to 8 lines, each under 15 words.
@@ -441,7 +441,7 @@ export const PUBLIC_ANSWER_SCHEMA = obj({ lines: { type: 'array', items: obj({ s
 
 export function publicSystem(publicView, people = []) {
   return `You answer questions asked out loud in a mystery game, for everyone in the room to hear.
-You only know what is below. Answer from it. Never answer only "Nobody knows that yet": when something is not known, say so in a few words and add one concrete next step (a person to ask, a place to search, or a clue to look at again). If the same thing was asked before (see asked_out_loud_before), say it is still unknown and point somewhere new. Never send the room to the same person twice for one question ("only Nikhil can say"): the second time, point to a place, a document or another person. Never invent clues, secrets or facts about who did it. You may add harmless everyday detail about the world (the weather, how far a town is, what a room looks like) if it fits. Stay consistent with asked_out_loud_before.
+You only know what is below. Answer from it. Never answer only "Nobody knows that yet": when something is not known, say so in a few words and add one concrete next step (a person to ask, a place to search, or a clue to look at again). If the same thing was asked before (see asked_out_loud_before), say it is still unknown and point somewhere new. Never send the room to the same person twice for one question ("only Nikhil can say"): the second time, point to a place, a document or another person. Never invent clues, secrets or facts about who did it. You may add harmless everyday detail about the world (the weather, how far a town is, what a room looks like) if it fits. Stay consistent with asked_out_loud_before. Established facts (canon) are true; never contradict them.
 Write the answer as lines, like a page of a novel, 1 to 5 lines. A line with an empty speaker is narration: what happens or what someone does, in a few plain words. A line with a speaker is only the words that GM character says out loud (speaker is their id or name), with no quote marks and no "X says". Only GM characters speak: never write a line for a human player.
 asker_read.facts: each new fact this answer makes public about a specific person (person is their name; fact is one short line). Empty if none.
 ripple: one short line (under 20 words) the whole room notices because of this move, when it would plausibly be seen or heard, or changes how a GM character behaves: a reaction, a sound, something moved, a door now locked. Aim for one in every two or three moves; leave it empty when nothing would show. Never reveal what a player secretly did unless they were clearly seen, never say who did it, never put words in a player's mouth.
@@ -553,6 +553,29 @@ ${PLAIN_STYLE}
 THE MYSTERY:
 ${JSON.stringify(scenario)}`;
 }
+
+export const CONTINUITY_SCHEMA = obj({
+  problems: { type: 'array', items: obj({ what: str, kind: { type: 'string', enum: ['contradiction', 'truth', 'ignored', 'broken'] } }) },
+  canon_add: { type: 'array', items: obj({ fact: str, about: strArr, public: { type: 'boolean' } }) },
+  corrections: { type: 'array', items: obj({ to: str, speaker: str, text: str }) },
+  patches: { type: 'array', items: obj({ path: str, value: str }) },
+  solvable: { type: 'boolean' },
+  missing: strArr,
+});
+
+export const CONTINUITY_RULES = `You keep a mystery whole while it is played. Read what was said since the last check against the truth, the plan and the established facts. List every contradiction, every answer that contradicts the truth, every fact players established that the plan ignores, and every player action that broke the case. Fix them: add facts to canon so later answers agree; let a GM character correct a mistake in the story; patch only the future parts of the plan so the case stays solvable. Never change who did it, how or why, never undo what a player found, never reveal a secret, never speak for a player.
+
+What to return:
+- problems: each problem in a few plain words. kind: contradiction (two answers disagree), truth (an answer disagrees with the truth), ignored (players settled something the plan ignores), broken (a player action broke the case, like an essential clue destroyed).
+- canon_add: facts that are now settled, one short line each, so later answers agree. about: ids of the people it is about. public: true only if the whole room heard it.
+- corrections: a GM character fixes their own mistake inside the story ("I had the time wrong, it was 11:40."). to is "table" (said in the room) or a player id (a whisper). speaker is a GM character id, never a player. text is only their words, under 25 words.
+- patches: path uses dots and list positions from 0; value is always a string. Only these future fields are used; anything else is ignored:
+  - phases.N.planned_beat, question, options (a JSON list), answer_index, reward, wrong_nudge, only for rounds still to come
+  - clues.N.where, clues.N.reveal_round, clues.N.shows, only for clues nobody has found
+  - hint_ladder.N.text, only for hints not given yet
+  - npcs.N.knows, npcs.N.lies
+  - path "clues.+" adds one backup clue when an essential clue was destroyed; value is JSON {"replaces": the destroyed clue id, "name", "where", "shows", "does_not_prove", "reveal_round"}
+- solvable: can the group still work out the culprit, the method and the motive from clues they can still find? missing: what is missing, if anything.`;
 
 export const AUDIT_SCHEMA = obj({
   players: {

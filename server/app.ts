@@ -6,9 +6,12 @@ import { QUESTIONS, pickQuestions } from './questions.ts';
 import { usernameFor, newProfile, addAnswer, aboutForGM, recordGame, profileView } from './profiles.ts';
 import { resolveStyle, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 import { roundPicturePrompt } from './prompts.ts';
+import { applyContinuity, continuityState, CHECK_AFTER_ANSWERS } from './continuity.ts';
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
+// At a round change the next round waits this long for a running continuity check, so its fixes reach the round.
+export const CONTINUITY_GRACE_MS = 20_000;
 
 export class App {
   constructor({ gm, store, clock = () => Date.now(), log = () => {}, archive = null, people = new MemoryPeople(), library = null }) {
@@ -51,6 +54,7 @@ export class App {
       st.persona ??= {};
       st.facts ??= [];
       st.play ??= {};
+      continuityState(this.game);
       G.backfillFacts(this.game);
       if (this.game.setup) this.game.setup.replays ??= G.MAX_REPLAYS;
       st.overridesLeft ??= Object.fromEntries(this.game.players.map((p) => [p.id, this.game.setup?.overrides ?? 3]));
@@ -416,6 +420,7 @@ export class App {
         const drops = game.state.rippleDrops?.length ?? 0;
         G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, words, ripple);
         this.logRippleDrop(game, drops);
+        this.countAnswer(game);
       } catch (err) {
         if (this.game !== game) return;
         G.failPublicAsk(game, p.id, 'The GM could not read that. Try saying that again.');
@@ -485,6 +490,7 @@ export class App {
         const drops = game.state.rippleDrops?.length ?? 0;
         G.completeAsk(game, p.id, result, this.clock());
         this.logRippleDrop(game, drops);
+        this.countAnswer(game);
       } catch (err) {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
@@ -561,7 +567,11 @@ export class App {
     return this.background('phase', async () => {
       try {
         await Promise.allSettled([...this.asks.values()]);
-        const result = G.goesToFinal(game) ? {} : await this.gm.phase(game);
+        const final = G.goesToFinal(game);
+        const check = this.checkContinuity(game, final ? 'final' : 'round');
+        const result = final ? {} : await this.gm.phase(game);
+        if (this.game !== game) return;
+        await this.waitBriefly(check, CONTINUITY_GRACE_MS);
         if (this.game !== game) return;
         G.completePhase(game, result, this.clock());
         this.writeSeats(game);
@@ -576,6 +586,50 @@ export class App {
         if (this.game === game) await this.changed();
       }
     });
+  }
+
+  countAnswer(game) {
+    const c = continuityState(game);
+    c.answers += 1;
+    if (c.answers >= CHECK_AFTER_ANSWERS) this.checkContinuity(game, 'answers');
+  }
+
+  async waitBriefly(task, ms) {
+    if (!task) return;
+    let timer;
+    await Promise.race([task, new Promise((r) => (timer = setTimeout(r, ms)))]);
+    clearTimeout(timer);
+  }
+
+  // The GM reads what was said since the last check and keeps the story whole: canon, in-story corrections, future patches.
+  // One runs at a time; a failed or slow one changes nothing and the next one catches up.
+  checkContinuity(game, reason) {
+    if (typeof this.gm.continuity !== 'function' || !game.state || !['playing', 'final'].includes(game.status)) return null;
+    if (this.continuityTask) return this.continuityTask;
+    const c = continuityState(game);
+    const startedAt = this.clock();
+    c.answers = 0;
+    const task = this.background(`continuity ${reason}`, async () => {
+      try {
+        const result = await this.gm.continuity(game, reason);
+        if (this.game !== game) return;
+        const out = applyContinuity(game, result, this.clock());
+        c.lastAt = startedAt;
+        const problems = Array.isArray(result?.problems) ? result.problems : [];
+        const kinds = {};
+        for (const p of problems) kinds[p?.kind] = (kinds[p?.kind] ?? 0) + 1;
+        c.log = [...c.log, { at: this.clock(), reason, problems: problems.length, kinds, ...out, skipped: out.skipped.length, solvable: result?.solvable !== false }].slice(-40);
+        const kindText = Object.entries(kinds).map(([k, n]) => `${k} ${n}`).join(', ');
+        this.log(`gm continuity (${reason}): ${problems.length} problems${kindText ? ` (${kindText})` : ''}, ${out.canon} canon, ${out.corrections} corrections, ${out.applied} patches, ${out.skipped.length} skipped${result?.solvable === false ? `, not solvable (${(result.missing ?? []).length} missing)` : ''}`);
+        await this.changed();
+      } catch (err) {
+        this.log(`gm continuity (${reason}) skipped: ${err.message}`);
+      } finally {
+        this.continuityTask = null;
+      }
+    });
+    this.continuityTask = task;
+    return task;
   }
 
   async submit(tok, input) {

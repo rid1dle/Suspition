@@ -79,6 +79,7 @@ export class FakeGM {
     this.phaseResult = emptyPhase;
     this.fail = {};
     this.gate = null;
+    this.checks = [];
   }
   async step(name, value) {
     this.calls.push(name);
@@ -106,6 +107,13 @@ export class FakeGM {
   publicAnswer(game, question, read) {
     this.lastPublic = { question, read };
     return this.step('public', { answer: 'PUBLIC ANSWER' });
+  }
+  // The continuity check keeps its own record, so call lists of the main GM stay as they were.
+  async continuity(game, reason) {
+    (this.checks ??= []).push(reason);
+    if (this.continuityGate) await this.continuityGate;
+    if (this.continuityFail) throw new Error('fake continuity failure');
+    return structuredClone(this.continuityResult ?? { problems: [], canon_add: [], corrections: [], patches: [], solvable: true, missing: [] });
   }
   illustrate() {
     return this.step('illustrate', this.svg ?? { svg: '<svg viewBox="0 0 10 10"><rect width="10" height="10"/></svg>' });

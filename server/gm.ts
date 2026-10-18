@@ -3,7 +3,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt } from './prompts.ts';
+import { SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, pickCulprits, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA } from './prompts.ts';
+import { continuityPrompt } from './continuity.ts';
 import { storyIssues, issueCounts, applyStoryPatches } from './story.ts';
 import { validateScenario, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore } from './game.ts';
 import { TopLevelTracker } from './progress.ts';
@@ -159,6 +160,8 @@ export class GM {
     this.readLimiter = new Limiter(maxParallel);
     // Pictures take a minute or two; they get their own slot so answers never queue behind them.
     this.pictureLimiter = new Limiter(1);
+    // The continuity check runs in the background, one at a time, and never makes an answer wait.
+    this.continuityLimiter = new Limiter(1);
     this.log = log;
   }
 
@@ -328,6 +331,16 @@ export class GM {
       model: this.playModel,
       timeoutMs: 300_000,
     }, this.pictureLimiter);
+  }
+
+  continuity(game) {
+    return this.call('continuity', {
+      system: playSystem(game.scenario),
+      prompt: continuityPrompt(game),
+      schema: CONTINUITY_SCHEMA,
+      model: this.playModel,
+      timeoutMs: 180_000,
+    }, this.continuityLimiter);
   }
 
   score(game, verdict) {
