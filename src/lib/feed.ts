@@ -2,7 +2,7 @@
 import { esc } from './text.ts';
 
 // These kinds already show elsewhere: the round heading, the goal card, the vote card, the calling banner.
-const SHOWN_ELSEWHERE = new Set(['opening', 'phase', 'goal', 'vote', 'moment', 'recap']);
+const SHOWN_ELSEWHERE = new Set(['opening', 'phase', 'goal', 'vote', 'moment', 'recap', 'seat']);
 const ICONS = { said: '&#128483;', forced: '&#128483;', clue: '&#128270;', timeline: '&#9201;', hint: '&#10022;', qa: '?', note: '&#128172;' };
 
 export function feedItem(e) {

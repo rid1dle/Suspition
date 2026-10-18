@@ -16,6 +16,7 @@ import { countdown, suspicionLabel } from '@/lib/phone';
 import { cn } from '@/lib/utils';
 import { ConfirmButton } from './setup';
 import { TableMap } from './table-map';
+import { SeatBanner, type SeatView } from '@/components/game/hot-seat';
 import type { TableProps } from './table-app';
 
 type Side = 'map' | 'timeline' | 'alibis' | 'clues' | 'people';
@@ -105,6 +106,7 @@ export function Playing(props: TableProps) {
   const nextLabel = vote ? 'Close the vote' : view.round && !view.round.done && view.round.question ? 'Start the vote' : last ? 'Go to the final vote' : 'Next round';
   const hv = view.hintVote as { proposer: string; yes: number; no: number; need: number } | null;
   const va = view.voteAsk as { proposer: string; yes: number; need: number } | null;
+  const seat = view.seat as SeatView | null;
   const sendNote = async () => { if (note.trim() && await act('note', { text: note })) setNote(''); };
 
   return (
@@ -123,6 +125,7 @@ export function Playing(props: TableProps) {
         {timer && <div className={cn('font-mono text-4xl tabular-nums', timer.low && 'animate-pulse text-destructive')}>{timer.text}</div>}
         {host && (
           <div className="flex gap-2">
+            {seat && !seat.status && seat.waiting > 0 && !vote && <Button variant="secondary" onClick={() => act('seatnow')}>Hot seat now</Button>}
             <Button variant="ghost" onClick={() => act('extend')}>+5 min</Button>
             <ConfirmButton label={nextLabel} variant="default" onConfirm={() => act('next')} />
             <ConfirmButton label="End game" confirm="Tap again to end it" className="text-destructive" onConfirm={async () => { const r = await act('new'); if (r?.host) props.onNewGame(String(r.host)); }} />
@@ -144,6 +147,7 @@ export function Playing(props: TableProps) {
               </motion.div>
             )}
           </AnimatePresence>
+          {seat?.status && <SeatBanner seat={seat} now={now} />}
           {va && <div className="rounded-xl bg-card p-4"><b>{va.proposer}</b> wants to vote now. {va.yes} of {va.need} ready. Everyone has to say yes on their phone.</div>}
           {hv && <div className="rounded-xl bg-card p-4"><b>{hv.proposer}</b> wants a hint. Vote on your phone: {hv.yes} yes, {hv.no} no. Needs {hv.need}.</div>}
           <section className={cn('flex flex-col gap-5 rounded-2xl bg-card p-6 transition', vote && 'ring-2 ring-primary')}>

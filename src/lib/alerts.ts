@@ -39,6 +39,11 @@ export function phoneAlerts(prev, next) {
   }
   const momentIds = new Set((prev.moments ?? []).map((m) => m.id));
   if ((next.moments ?? []).some((m) => !momentIds.has(m.id))) out.push({ sound: 'call', text: 'Get ready. The story turns to you soon.', tab: null });
+  const role = next.seat?.mine?.role;
+  if (role !== prev.seat?.mine?.role || next.seat?.name !== prev.seat?.name) {
+    if (role === 'seated') out.push({ sound: 'call', text: "You're in the hot seat. Read your whisper.", tab: 'story' });
+    else if (role === 'asker') out.push({ sound: 'call', text: `You have a question for ${next.seat.name}.`, tab: 'story' });
+  }
   if (next.round?.vote && !prev.round?.vote) out.push({ sound: 'vote', text: 'Vote now on the round question.', tab: 'story' });
   if (next.hintVote && !prev.hintVote && next.hintVote.proposer !== next.me?.name) out.push({ sound: 'vote', text: `${next.hintVote.proposer} wants a hint. Vote yes or no.`, tab: null });
   return out;

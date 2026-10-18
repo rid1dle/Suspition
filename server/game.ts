@@ -1039,6 +1039,26 @@ function closeSeats(game) {
   return st.seats.list.filter((s) => s.status === 'waiting').map((s) => s.pid);
 }
 
+const activeSeat = (game) => game.state?.seats?.list.find((s) => s.status === 'getready' || s.status === 'live') ?? null;
+
+// What every screen may see of the hot seat: who, and the timer. Never a question or a whisper.
+function seatPublic(game) {
+  const seats = game.state?.seats;
+  if (!seats || game.status !== 'playing') return null;
+  const s = activeSeat(game);
+  const waiting = seats.list.filter((x) => x.status === 'waiting').length;
+  return s ? { name: nameOf(game, s.pid), status: s.status, liveAt: s.liveAt, endsAt: s.endsAt, waiting } : { waiting };
+}
+
+// One phone's own part: the seated player gets the whisper, each asker only their own question.
+function seatMine(game, playerId) {
+  const s = activeSeat(game);
+  if (!s) return null;
+  if (s.pid === playerId) return { role: 'seated', whisper: s.whisper };
+  const a = s.askers.find((x) => x.pid === playerId);
+  return a ? { role: 'asker', question: a.question, followup: a.followup } : { role: 'listener' };
+}
+
 const OPEN = ['getready', 'called'];
 const nameOf = (game, pid) => game.players.find((p) => p.id === pid)?.name ?? 'Someone';
 
@@ -1578,6 +1598,7 @@ function publicCore(game, now) {
       need: Math.floor(game.players.length / 2) + 1,
       endsAt: vote.endsAt,
     },
+    seat: seatPublic(game),
     voteAsk: ask && {
       proposer: nameOf(game, ask.by),
       yes: Object.values(ask.votes).filter(Boolean).length,
@@ -1729,6 +1750,7 @@ export function playerView(game, playerId, now = Date.now()) {
   });
   view.myVote = st.hintVote ? st.hintVote.votes[playerId] ?? null : null;
   view.myVoteAsk = st.voteAsk ? st.voteAsk.votes[playerId] ?? null : null;
+  if (view.seat?.status) view.seat = { ...view.seat, mine: seatMine(game, playerId) };
   view.voteAskBlocked = st.voteAskBlocked?.[playerId] === roundNumber(game);
   view.myRoundVote = st.roundVote ? st.roundVote.votes[playerId] ?? null : null;
   view.publicPending = st.publicPending?.[playerId] ?? null;

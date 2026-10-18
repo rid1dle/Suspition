@@ -12,6 +12,7 @@ import { Novel } from '@/components/game/novel';
 import { PeopleList } from '@/components/game/people';
 import { MapView } from '@/components/game/map';
 import { ReminderCard } from '@/components/game/reminder';
+import { SeatCard, type SeatView } from '@/components/game/hot-seat';
 import { PlayChip, PlayLine } from '@/components/game/score';
 import { Timeline, Alibis, SharedClues, Recap, ScenePicture, Facts } from '@/components/game/panels';
 import { useDraft } from '@/lib/live';
@@ -46,6 +47,7 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
     <Tabs value={tab} onValueChange={(t) => go(t as Tab)} className="mx-auto max-w-md gap-0 pb-28">
       <TopBar view={view} onOpenCard={() => go('card')} />
       <main className="flex flex-col gap-5 px-4 pt-4">
+        <SeatNow seat={view.seat as SeatView | null} />
         <Moment view={view} now={Date.now()} />
         <AnimatePresence mode="wait">
           <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
@@ -116,6 +118,11 @@ function TopBar({ view, onOpenCard }: { view: PlayerView; onOpenCard: () => void
       </AnimatePresence>
     </header>
   );
+}
+
+function SeatNow({ seat }: { seat: SeatView | null }) {
+  const now = useNow();
+  return <SeatCard seat={seat} now={now} />;
 }
 
 function Moment({ view, now }: { view: PlayerView; now: number }) {

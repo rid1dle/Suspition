@@ -15,3 +15,60 @@ describe('hook-first card on the phone', () => {
     assert.match(out, /Unlocks after your first hot seat/);
   });
 });
+
+import { createElement as h } from 'react';
+import * as G from '../server/game.ts';
+import { gameInReading } from './fixtures.ts';
+import { Playing as PhonePlaying } from '../src/app/play/playing';
+import { Playing as TablePlaying } from '../src/app/table/playing';
+
+describe('hot seats on screen', () => {
+  const live = () => {
+    const game = gameInReading(4, 1_000);
+    game.setup.roundStyle = 'hotseats';
+    G.startPlay(game, 1_000);
+    const seat = game.state.seats.list[0];
+    G.applySeatWriting(game, game.state.seats.round, { seats: [{ player_id: seat.pid, whisper: ['SECRET WHISPER LINE'], askers: seat.askers.map((a, i) => ({ player_id: a.pid, question: `QUESTION NUMBER ${i}`, followup: '' })) }] });
+    G.seatNow(game, 2_000);
+    return { game, seat };
+  };
+  const phone = (game, pid) => renderToStaticMarkup(h(PhonePlaying, { view: G.playerView(game, pid, 2_500), dots: new Set(), clearDot: () => {} }));
+  const table = (game) => renderToStaticMarkup(h(TablePlaying, { view: G.tableView(game, 2_500), host: 'h', act: async () => null, readNow: () => {}, onNewGame: () => {} } as never));
+
+  test('should show the table who is up with a timer, and no question or whisper', () => {
+    const { game, seat } = live();
+    const html = table(game);
+    assert.match(html, new RegExp(`Hot seat[\\s\\S]*${game.players.find((p) => p.id === seat.pid).name}`));
+    assert.ok(!html.includes('QUESTION NUMBER') && !html.includes('SECRET WHISPER LINE'));
+  });
+
+  test('should show the seated phone its whisper during get-ready', () => {
+    const { game, seat } = live();
+    assert.match(phone(game, seat.pid), /You(?:'|&#x27;)re up[\s\S]*SECRET WHISPER LINE/);
+  });
+
+  test('should show each asker only their own question', () => {
+    const { game, seat } = live();
+    seat.askers.forEach((a, i) => {
+      const html = phone(game, a.pid);
+      assert.ok(html.includes(`QUESTION NUMBER ${i}`));
+      assert.ok(seat.askers.every((b, j) => j === i || !html.includes(`QUESTION NUMBER ${j}`)));
+      assert.ok(!html.includes('SECRET WHISPER LINE'));
+    });
+  });
+
+  test('should never put a whisper or question in a listener view', () => {
+    const { game, seat } = live();
+    const listener = game.players.find((p) => p.id !== seat.pid && !seat.askers.some((a) => a.pid === p.id));
+    if (!listener) return;
+    const json = JSON.stringify(G.playerView(game, listener.id, 2_500));
+    assert.ok(!json.includes('SECRET WHISPER LINE') && !json.includes('QUESTION NUMBER'));
+  });
+
+  test('should give the host a button to start the next hot seat', () => {
+    const game = gameInReading(4, 1_000);
+    game.setup.roundStyle = 'hotseats';
+    G.startPlay(game, 1_000);
+    assert.match(table(game), /Hot seat now/);
+  });
+});
