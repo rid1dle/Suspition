@@ -99,4 +99,14 @@ describe('the briefing explains moving', () => {
     const { briefingSteps } = await import('../server/game.ts');
     assert.ok(briefingSteps(t.app.game).at(-1).lines.includes('To look somewhere, go there: tap a place on your map. Everyone sees where you go, not why.'));
   });
+  test('should keep the character where they went after a confirmed move when the GM names no new place', async () => {
+    const t = await playing();
+    t.gm.readResult = move('Ballroom');
+    await t.app.ask(t.tokens[1], { kind: 'chat', text: 'I go to the ballroom and look at the desk.' });
+    for (let i = 0; i < 20 && !t.app.game.state.moveConfirm?.p2; i += 1) await tick();
+    await t.app.confirmMove(t.tokens[1], true);
+    await t.app.idle();
+    assert.equal(t.app.game.state.at.p2, 'l1');
+    assert.equal(t.view(1).here, 'Ballroom');
+  });
 });

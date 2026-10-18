@@ -1005,7 +1005,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   // Where the character really is after this move: a secret trip moves them too, it just does not show on the map.
   st.at ??= {};
   const from = ask.from ?? st.at[playerId] ?? st.positions[playerId];
-  const dest = game.scenario.locations.some((l) => l.id === result.player_location) ? result.player_location : from;
+  // A confirmed move already put them somewhere new; with no new place from the GM they stay there.
+  const dest = game.scenario.locations.some((l) => l.id === result.player_location) ? result.player_location : st.at[playerId] ?? from;
   st.at[playerId] = dest;
   const clueIds = new Set(openClues(game));
   let tripRewarded = false;
