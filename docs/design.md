@@ -156,3 +156,7 @@ terminal, because the host plays too.
 - The winner is decided in code from the culprit votes, not by the GM.
 - The "lock someone up" vote is left out of v1.
 - Notes are kept on each phone only.
+
+## What comes next (2026-10-18)
+
+Everything left to finish, and the chat-first redesign that follows it (talk freely, act a few times a round, meetings borrowed lightly from Among Us, the chat as the main screen), is in `docs/superpowers/specs/2026-10-18-chat-first-redesign.md`. It is a draft waiting for the creator's yes.
