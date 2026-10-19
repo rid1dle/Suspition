@@ -144,11 +144,12 @@ export function Recap({ recap }: { recap: { lines?: string[]; open?: string[] } 
   );
 }
 
-export function Results({ results }: { results: { kind?: string; phaseIndex: number; question: string; correct: boolean | null; pickedText: string | null }[] | null | undefined }) {
+// Rounds as they were played (a second try has its own number). Only a quiz has a right answer to mark.
+export function Results({ results }: { results: { kind?: string; phaseIndex: number; round?: number; question: string; correct: boolean | null; pickedText: string | null }[] | null | undefined }) {
   if (!results?.length) return null;
   return (
     <div className="flex flex-col gap-1 text-sm">
-      {results.map((r, i) => <div key={i}><b>Round {r.phaseIndex + 1}:</b> {r.question} {r.kind === 'spotlight' ? '' : r.correct ? '✓' : '✗'} {r.pickedText ?? (r.kind === 'spotlight' ? 'the room was split' : 'no agreement')}</div>)}
+      {results.map((r, i) => <div key={i}><b>Round {r.round ?? r.phaseIndex + 1}:</b> {r.question} {r.correct === true ? '✓' : r.correct === false ? '✗' : ''} {r.pickedText ?? (r.kind === 'spotlight' || r.kind === 'choice' ? 'the room was split' : 'no agreement')}</div>)}
     </div>
   );
 }

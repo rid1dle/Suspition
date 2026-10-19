@@ -9,6 +9,7 @@ import { FakeGM, emptyAsk, gameInReading } from './fixtures.ts';
 import { mapHtml } from '../src/lib/map.ts';
 import { askLine, introLines } from '../src/lib/chat.ts';
 import { Novel } from '../src/components/game/novel';
+import { Results } from '../src/components/game/panels';
 import { Playing as PhonePlaying } from '../src/app/play/playing';
 import { Playing as TablePlaying } from '../src/app/table/playing';
 
@@ -99,4 +100,17 @@ describe('ui audit: layout', () => {
     const html = renderToStaticMarkup(h(TablePlaying, { view: G.tableView(game, 2_000), host: 'h', act: async () => null, readNow: () => {}, onNewGame: () => {} } as never));
     assert.ok(html.indexOf('data-room-feed') > html.indexOf('Edit map'));
   });
+
+describe('ui audit: the rounds list', () => {
+  test('should number rounds as played and mark only a quiz right or wrong', () => {
+    const html = renderToStaticMarkup(h(Results, { results: [
+      { phaseIndex: 0, round: 1, question: 'Q1', correct: false, pickedText: 'A' },
+      { phaseIndex: 0, round: 2, question: 'Q1', correct: true, pickedText: 'B' },
+      { kind: 'choice', phaseIndex: 1, round: 3, question: 'Break the door?', correct: null, pickedText: 'Wait' },
+      { kind: 'spotlight', phaseIndex: 2, round: 4, question: 'Who?', correct: null, pickedText: null },
+    ] }));
+    const text = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    assert.match(text, /Round 1: Q1 ✗ A Round 2: Q1 ✓ B Round 3: Break the door\? Wait Round 4: Who\? the room was split/);
+  });
+});
 });
