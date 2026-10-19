@@ -160,4 +160,11 @@ terminal, because the host plays too.
 
 ## What comes next (2026-10-18)
 
-Everything left to finish, and the chat-first redesign that follows it (talk freely, act a few times a round, meetings borrowed lightly from Among Us, the chat as the main screen), is in `docs/superpowers/specs/2026-10-18-chat-first-redesign.md`. It is a draft waiting for the creator's yes.
+The list from that day was built on 2026-10-19 while the creator was away (they approved it all up front). Each part has its own spec:
+
+- **The chat-first phone, talk and act, meetings:** `docs/superpowers/specs/2026-10-18-chat-first-redesign.md` (decisions at the end). Talking in private is free; acts (search, take, hide, follow) are counted per round; anyone can call one meeting a game.
+- **A story that moves with the room:** `docs/superpowers/specs/2026-10-19-moving-story-design.md`. Code adds or cuts rounds from public signals only, each round is named and voted as it starts, everyone sees a brief before a vote, turning the room earns points, and each game has a story type said at the end.
+- **The living map:** `docs/superpowers/specs/2026-10-19-living-map-design.md`. Terrain, landmarks, paths with walking times; moves are announced with their time.
+- **The UI audit:** `docs/superpowers/specs/2026-10-19-ui-audit.md`, every control on the table and phone with its verdict.
+- **The soundtrack:** `docs/superpowers/specs/2026-10-18-soundtrack-design.md` and its plan.
+- **The story playtest:** `scripts/story-playtest.ts`, twenty made-up people in two games of ten; its report goes to the creator.
