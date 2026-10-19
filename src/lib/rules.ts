@@ -19,3 +19,6 @@ export function rulesLines({ rounds, questions, overrides, hints }: { rounds: nu
     `Points: 1 for the right culprit, up to 2 for how, up to 2 for why, 1 for your own goal. Plus up to ${PLAY_MAX} play points each round for good moves.`,
   ];
 }
+
+// Measured on the real GM (2026-10-19): about 11 minutes for 4 players and 16 for 10, almost all of it the GM thinking.
+export const worldMinutes = (players: number) => Math.round(11 + (Math.max(players, 3) - 4) * (5 / 6));

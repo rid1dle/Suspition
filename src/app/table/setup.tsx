@@ -1,5 +1,6 @@
 'use client';
 
+import { worldMinutes } from '@/lib/rules';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
 import { ShuffleIcon } from 'lucide-react';
@@ -186,7 +187,7 @@ export function Generating(props: TableProps) {
     <main className="mx-auto flex max-w-3xl flex-col gap-6 px-6 pt-8">
       <Header {...props} title="Making your mystery" />
       <section className="flex flex-col gap-5 rounded-2xl bg-card p-8">
-        <Muted>The GM is writing it now. It takes a few minutes. Nothing secret shows here.</Muted>
+        <Muted>The GM is writing it now. For {view.players.length} players that takes about {worldMinutes(view.players.length)} minutes. Nothing secret shows here.</Muted>
         {view.progress && <PlanSteps progress={view.progress} now={now} />}
       </section>
       <section className="flex flex-col gap-2"><Label>Players here</Label><Players view={view} /></section>
