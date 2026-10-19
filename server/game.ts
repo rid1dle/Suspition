@@ -839,6 +839,19 @@ export function saidOutLoud(game, playerId) {
   return [...spoken, ...asked].map((t) => String(t).toLowerCase());
 }
 
+// Everything a player put into play in their own words: moves, spoken lines, questions out loud. Never their card.
+export function saidInPlay(game, playerId, extra = []) {
+  const st = game.state ?? {};
+  return [
+    ...(st.threads?.[playerId] ?? []).filter((m) => m.from === 'you').flatMap((m) => [m.text, m.read?.said_aloud]),
+    ...(st.moments ?? []).filter((m) => m.player_id === playerId && ['said', 'own'].includes(m.status)).map((m) => (m.status === 'said' ? m.line : m.saidInstead)),
+    ...saidOutLoud(game, playerId),
+    ...extra,
+  ].map((t) => String(t ?? '').trim()).filter(Boolean);
+}
+
+const TOLD_YOU = /\b(?:you|you've|you have|you had)\s+(?:already\s+)?(?:told|said|mentioned|claimed|swore|admitted|promised|confessed|insisted)\b(?:\s+(?:to\s+)?(?:us|me|everyone|them|him|her))?|\bas you (?:said|say|told us|told me)\b/i;
+
 const ACT_VERBS = new Set(['went', 'goes', 'go', 'walked', 'walks', 'ran', 'runs', 'rushed', 'rushes', 'entered', 'enters', 'left', 'leaves', 'took', 'takes', 'hid', 'hides', 'grabbed', 'grabs', 'opened', 'opens', 'locked', 'locks', 'unlocked', 'followed', 'follows', 'slipped', 'slips', 'sneaked', 'sneaks', 'snuck', 'picked', 'picks', 'came', 'comes', 'returned', 'returns', 'climbed', 'climbs', 'carried', 'carries', 'dropped', 'drops', 'stole', 'steals', 'burned', 'burns', 'broke', 'breaks', 'pushed', 'pushes', 'jumped', 'jumps', 'moved', 'moves', 'stood', 'stands', 'sat', 'sits', 'waited', 'waits', 'stayed', 'stays', 'touched', 'touches', 'searched', 'searches', 'hurried', 'hurries']);
 const GESTURES = new Set(['flinches', 'flinched', 'flinch', 'smiles', 'smiled', 'frowns', 'frowned', 'shrugs', 'shrugged', 'nods', 'nodded', 'blushes', 'blushed', 'sighs', 'sighed', 'pales', 'paled', 'trembles', 'trembled', 'freezes', 'froze', 'stiffens', 'stiffened', 'glares', 'glared', 'winces', 'winced', 'gasps', 'gasped', 'laughs', 'laughed', 'cries', 'cried', 'stares', 'stared', 'looks', 'looked', 'turns', 'turned', 'shakes', 'shook', 'grins', 'grinned', 'swallows', 'swallowed']);
 const SAW = new Set(['saw', 'seen', 'watched', 'spotted', 'noticed']);
@@ -958,6 +971,20 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
     });
     return last;
   };
+  // "You told us...", "as you said...": words put in the mouth of the player addressed, unless they really said them in play.
+  const toldYou = (sentence) => {
+    if (sentence.trim().endsWith('?')) return false;
+    const m = TOLD_YOU.exec(sentence);
+    if (!m) return false;
+    const content = wordsOf(sentence.slice(m.index + m[0].length)).filter((w) => w.length >= 4 && !STOP.has(w)).map(stem);
+    if (!content.length) return false;
+    const who = to ?? actorId;
+    const ids = who ? [who] : (sc?.players ?? []).map((p) => p.id);
+    return !ids.some((pid) => {
+      const known = new Set(wordsOf(saidInPlay(game, pid, backing[pid] ?? []).join(' ')).map(stem));
+      return content.filter((w) => known.has(w)).length / content.length >= 0.5;
+    });
+  };
   let previous = null;
   const pronounActs = (sentence) => {
     const words = wordsOf(sentence);
@@ -971,7 +998,7 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
   const kept = sentences.filter((sentence) => {
     const pronoun = pronounActs(sentence);
     previous = lastNamed(sentence) ?? previous;
-    if (pronoun || reports(sentence) || acts(sentence)) return false;
+    if (pronoun || reports(sentence) || acts(sentence) || toldYou(sentence)) return false;
     const words = wordsOf(sentence);
     const lead = leadOf(words);
     if (reportOnly || actorId === null || !lead || !lead.player || lead.id === actorId) return true;
