@@ -747,8 +747,40 @@ function setJob(game, result) {
   game.state.job = objective ? { round: game.state.roundNumber, objective, tips } : null;
 }
 
+// What the recap may draw on: what everyone has seen or heard, and for a player alone also their own chat and finds.
+// A line most of whose words appear nowhere in it is something nobody was told, so it is dropped.
+function knownWords(game) {
+  const sc = game.scenario;
+  const st = game.state;
+  const solo = game.players.length === 1 ? game.players[0].id : null;
+  const shared = new Set((st.shared ?? []).map((x) => x.clueId));
+  const texts = [
+    sc.opening_scene, ...(sc.background ?? []),
+    ...(st.events ?? []).map((e) => `${e.text ?? ''} ${(e.lines ?? []).map((l) => l.text).join(' ')}`),
+    ...(sc.public_timeline ?? []).filter((t) => Number(t.reveal_round ?? 0) <= st.phaseIndex + 2).map((t) => `${t.time ?? ''} ${t.event}`),
+    ...(st.timelineExtra ?? []).map((t) => t.event),
+    ...(st.canon ?? []).filter((c) => c.public || solo).map((c) => c.fact),
+    ...(sc.clues ?? []).filter((c) => shared.has(c.id) || (solo && st.found?.[solo]?.includes(c.id))).map((c) => `${c.name} ${c.shows}`),
+    ...[...sc.players, ...sc.npcs].flatMap((c) => [c.public_info, c.alibi_statement, c.character_name ?? c.name, c.role_title]),
+    ...(solo ? (st.threads?.[solo] ?? []).map((m) => m.text) : []),
+  ];
+  return new Set(texts.flatMap((t) => wordsOf(t)).map(recapStem));
+}
+
+// "stopped" and "stops" are one word; "watch" is inside "wristwatch"; telling verbs carry no fact.
+const recapStem = (w) => w.replace(/(ing|ed|es|s)$/, '').replace(/([b-df-hj-np-tv-z])\1$/, '$1');
+const TELLING = new Set(['says', 'said', 'tells', 'told', 'thinks', 'think', 'seems', 'now', 'been', 'heard', 'knows']);
+const RECAP_KNOWN = 0.7;
+export const recapCheck = (game, lines) => { const words = knownWords(game); return lines.filter((t) => knownLine(words, t)); };
+function knownLine(words, line) {
+  const key = [...new Set(wordsOf(line).filter((w) => w.length >= 4 && !STOP.has(w) && !TELLING.has(w)).map(recapStem))];
+  const known = (w) => words.has(w) || (w.length >= 5 && [...words].some((k) => k.length > w.length && k.includes(w)));
+  return !key.length || key.filter(known).length / key.length >= RECAP_KNOWN;
+}
+
 function setRecap(game, result, now) {
-  const lines = (result.recap ?? []).map((t) => dropPuppeting(game, null, String(t ?? '').trim()).text).filter(Boolean).slice(0, 4);
+  const words = knownWords(game);
+  const lines = (result.recap ?? []).map((t) => dropPuppeting(game, null, String(t ?? '').trim()).text).filter((t) => t && knownLine(words, t)).slice(0, 4);
   const open = (result.open_questions ?? []).map((t) => String(t ?? '').trim()).filter(Boolean).slice(0, 3);
   if (!lines.length) return;
   game.state.recap = { round: game.state.roundNumber, lines, open };

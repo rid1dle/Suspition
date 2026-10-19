@@ -560,7 +560,7 @@ ${FAIR_PLAY}
 
 Also write, for everyone:
 - job: the group's job for the coming round, starting with a verb, under 15 words, built on what players actually found and asked, leading toward this round's question. job_tips: 2 or 3 pointers under 10 words, written the way a player would type them, naming people, places or clues, never the answer.
-- recap: 2 to 4 short lines on where things stand now, using only public facts (news, shared clues, the timeline, what was said out loud). open_questions: 2 or 3 short questions the group still needs to answer.
+- recap: 2 to 4 short lines on where things stand now, using only public facts (news, shared clues, the timeline, what was said out loud). Every recap line must come from something players have already seen or been told, in words close to how they heard it; never from the truth, a GM character's sheet, or one player's private chat. open_questions: 2 or 3 short questions the group still needs to answer.
 - goal_steps_done: any player's goal_steps (on their card) that this round change completed in the story, as player_id and step position from 0. Usually empty.
 - public_facts: each new fact about a specific person that became public since the last round change (in your public_event, news, round results, shared clues or things said out loud). person_id is the player or GM character id; fact is one short plain line. Never a secret that is not public yet.
 - round_name: a fresh name for the coming round, 2 to 5 words, from what actually happened (not the plan). Never a culprit's name. Empty keeps the planned name.
