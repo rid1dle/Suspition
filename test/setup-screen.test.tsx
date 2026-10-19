@@ -38,3 +38,42 @@ describe('the setup screen, simpler', () => {
     for (const note of Object.values(DIFFICULTY_NOTES)) assert.doesNotMatch(note, /killer|murder/i);
   });
 });
+
+describe('the setup screen shows only choices that can change this game', () => {
+  const rows = (out: string) => out.replace(/<[^>]+>/g, '|').split('|').map((t) => t.trim()).filter(Boolean);
+
+  test('should hide the culprit count when only one culprit is possible', () => {
+    assert.ok(!rows(html(4)).includes('How many culprits?'));
+    assert.ok(rows(html(6)).includes('How many culprits?'));
+  });
+
+  test('should hide overrides playing alone, where nobody hears a moment but the GM', () => {
+    assert.ok(!rows(html(1)).includes('Overrides per player'));
+    assert.ok(rows(html(2)).includes('Overrides per player'));
+  });
+
+  test('should call them hints, not group hints, playing alone', () => {
+    assert.ok(rows(html(1)).includes('Hints'));
+    assert.ok(!rows(html(1)).includes('Group hints'));
+  });
+
+  test('should never offer zero or background-only GM characters under 3 players: they carry the story', () => {
+    for (const n of [1, 2]) {
+      const out = html(n);
+      assert.ok(!rows(out).includes('Background only'), `${n} players`);
+      const people = out.split('People the GM plays')[1].split('Test game')[0];
+      assert.doesNotMatch(people, />0</, `${n} players`);
+    }
+    assert.ok(rows(html(3)).includes('Background only'));
+  });
+
+  test('should keep a small game from starting with no GM characters or background-only ones', () => {
+    for (const n of [1, 2]) {
+      const game = G.createGame(1_000);
+      for (let i = 0; i < n; i += 1) G.addPlayer(game, { name: `P${i}` });
+      const setup = G.applySetup(game, { tone: 'tense', length: 'short', hints: 2, npcs: 0, npcRole: 'background' });
+      assert.equal(setup.npcs, 1);
+      assert.equal(setup.npcRole, 'mixed');
+    }
+  });
+});

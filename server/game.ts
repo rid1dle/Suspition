@@ -113,14 +113,19 @@ export function applySetup(game, input = {}) {
   if (!Number.isInteger(hints) || hints < 1 || hints > 5) fail('Hints must be between 1 and 5.');
   const overrides = input.overrides === undefined ? 3 : Number(input.overrides);
   if (!Number.isInteger(overrides) || overrides < 0 || overrides > 5) fail('Overrides must be between 0 and 5.');
-  const npcs = input.npcs === undefined ? 3 : Number(input.npcs);
+  let npcs = input.npcs === undefined ? 3 : Number(input.npcs);
   if (!Number.isInteger(npcs) || npcs < 0 || npcs > 6) fail('GM characters must be between 0 and 6.');
   // A round is never played again: a wrong answer already turns the story, and the room gets a round more if it falls behind.
   const replays = 0;
   // Hot seats need others to question you: under 3 players the rounds are classic.
   const roundStyle = input.roundStyle === 'hotseats' && game.players.length >= 3 ? 'hotseats' : 'classic';
-  const npcRole = input.npcRole ?? 'mixed';
+  let npcRole = input.npcRole ?? 'mixed';
   if (!NPC_ROLES.includes(npcRole)) fail('Pick what the GM characters do.');
+  // Under 3 players the GM characters carry the story: at least one, and they matter to the case.
+  if (game.players.length < 3) {
+    npcs = Math.max(1, npcs);
+    npcRole = 'mixed';
+  }
   const culprits = [undefined, null, '', 'gm'].includes(input.culprits) ? 'gm' : Number(input.culprits);
   if (culprits !== 'gm' && ![1, 2].includes(culprits)) fail('Pick 1 or 2 culprits, or let the GM decide.');
   const culpritWho = [undefined, null, ''].includes(input.culpritWho) ? 'gm' : input.culpritWho;

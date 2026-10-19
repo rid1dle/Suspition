@@ -142,16 +142,20 @@ export function Setup(props: TableProps) {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const n = view.players.length;
   const enough = n >= 1;
+  // Only choices that can change this group's game are shown; anything else is sent as its one possible value.
+  const small = n < 3;
+  const npcs = small ? Math.max(1, form.npcs) : form.npcs;
+  const npcRole = small ? 'mixed' : form.npcRole;
   // A choice the group no longer allows (someone left, no GM characters) goes back to the GM.
-  const npcOk = form.npcs >= 1 && form.npcRole !== 'background';
+  const npcOk = npcs >= 1 && npcRole !== 'background';
   const who = form.culpritWho === 'npc' && !npcOk ? 'gm' : form.culpritWho;
-  const twoOk = who === 'npc' ? form.npcs >= 2 : n >= 6;
+  const twoOk = who === 'npc' ? npcs >= 2 : n >= 6;
   const culprits = form.culprits === 2 && !twoOk ? 'gm' : form.culprits;
   // Hot seats need others to question you.
   const roundStyle = n < 3 ? 'classic' : form.roundStyle;
   const start = (
     <div className="flex flex-col gap-2 border-t border-border pt-4">
-      <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', { ...form, culprits, culpritWho: who, roundStyle })}>Make our mystery</Button>
+      <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', { ...form, npcs, npcRole, culprits, culpritWho: who, roundStyle })}>Make our mystery</Button>
       <Muted className="text-xs">{!enough ? 'Need 1 player or more (0 now).' : n === 1 ? '1 player. You get a character.' : `${n} players. Each one gets a character.`}</Muted>
     </div>
   );
@@ -186,9 +190,11 @@ export function Setup(props: TableProps) {
                   <Chips small options={[['gm', 'Let the GM decide'], ['start', 'From the start'], ['later', 'They find out later']] as ['gm' | 'start' | 'later', ReactNode][]} value={form.culpritKnows} onPick={(v) => set('culpritKnows', v)} />
                 </Row>
               )}
-              <Row label="How many culprits?" note="The room sees this choice. With Let the GM decide, nobody knows how many until the final vote.">
-                <Chips small options={([['gm', 'Let the GM decide'], [1, '1'], ...(twoOk ? [[2, '2']] : [])] as ['gm' | 1 | 2, ReactNode][])} value={culprits} onPick={(v) => set('culprits', v)} />
-              </Row>
+              {twoOk && (
+                <Row label="How many culprits?" note="The room sees this choice. With Let the GM decide, nobody knows how many until the final vote.">
+                  <Chips small options={[['gm', 'Let the GM decide'], [1, '1'], [2, '2']] as ['gm' | 1 | 2, ReactNode][]} value={culprits} onPick={(v) => set('culprits', v)} />
+                </Row>
+              )}
             </Group>
             <details data-more-options className="group rounded-2xl bg-card p-6 [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex cursor-pointer list-none items-center justify-between font-heading text-2xl">More options<span className="text-sm font-sans text-muted-foreground group-open:hidden">Art, rounds, hints, GM characters</span></summary>
@@ -201,14 +207,16 @@ export function Setup(props: TableProps) {
                     <Chips small options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle} onPick={(v) => set('roundStyle', v)} />
                   </Row>
                 )}
-                <Row label="Group hints"><Chips small options={[1, 2, 3, 4, 5].map((k) => [k, k] as [number, ReactNode])} value={form.hints} onPick={(v) => set('hints', v)} /></Row>
-                <Row label="Overrides per player" note="Lets a player stay quiet or say a moment their way.">
-                  <Chips small options={[0, 1, 2, 3, 4, 5].map((k) => [k, k] as [number, ReactNode])} value={form.overrides} onPick={(v) => set('overrides', v)} />
-                </Row>
-                <Row label="People the GM plays" note="Fewer is easier to follow. Background only means the story is all about the players.">
+                <Row label={n === 1 ? 'Hints' : 'Group hints'}><Chips small options={[1, 2, 3, 4, 5].map((k) => [k, k] as [number, ReactNode])} value={form.hints} onPick={(v) => set('hints', v)} /></Row>
+                {n !== 1 && (
+                  <Row label="Overrides per player" note="Lets a player stay quiet or say a moment their way.">
+                    <Chips small options={[0, 1, 2, 3, 4, 5].map((k) => [k, k] as [number, ReactNode])} value={form.overrides} onPick={(v) => set('overrides', v)} />
+                  </Row>
+                )}
+                <Row label="People the GM plays" note={small ? 'In a small game they carry the story with you.' : 'Fewer is easier to follow. Background only means the story is all about the players.'}>
                   <div className="flex flex-wrap items-center gap-3">
-                    <Chips small options={[0, 1, 2, 3, 4, 5, 6].map((k) => [k, k] as [number, ReactNode])} value={form.npcs} onPick={(v) => set('npcs', v)} />
-                    <Chips small options={[['mixed', 'Some matter to the case'], ['background', 'Background only']]} value={form.npcRole} onPick={(v) => set('npcRole', v)} />
+                    <Chips small options={(small ? [1, 2, 3, 4, 5, 6] : [0, 1, 2, 3, 4, 5, 6]).map((k) => [k, k] as [number, ReactNode])} value={npcs} onPick={(v) => set('npcs', v)} />
+                    {!small && <Chips small options={[['mixed', 'Some matter to the case'], ['background', 'Background only']]} value={npcRole} onPick={(v) => set('npcRole', v)} />}
                   </div>
                 </Row>
                 <Row label="Test game" note="A test game is saved but never teaches the game about anyone.">

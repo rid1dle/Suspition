@@ -109,8 +109,7 @@ describe('the setup screen asks how many culprits', () => {
 
   test('should offer two culprits only with 6 players or more', async () => {
     assert.match(await setupHtml(6), />2<\/button>/);
-    const small = (await setupHtml(4)).split('How many culprits?')[1].split('Round style')[0];
-    assert.doesNotMatch(small, />2<\/button>/);
+    assert.doesNotMatch(await setupHtml(4), /How many culprits\?/, 'with only one culprit possible, the choice is not shown');
   });
 });
 
