@@ -115,8 +115,6 @@ export function applySetup(game, input = {}) {
   const replays = input.replays === undefined ? 2 : Number(input.replays);
   if (!Number.isInteger(replays) || replays < 0 || replays > MAX_REPLAYS) fail(`Replays must be between 0 and ${MAX_REPLAYS}.`);
   const roundStyle = input.roundStyle === 'hotseats' ? 'hotseats' : 'classic';
-  const questions = input.questions === undefined ? (roundStyle === 'hotseats' ? 2 : LENGTHS[input.length].questions) : Number(input.questions);
-  if (!Number.isInteger(questions) || questions < 1 || questions > 6) fail('Private questions must be between 1 and 6.');
   const npcRole = input.npcRole ?? 'mixed';
   if (!NPC_ROLES.includes(npcRole)) fail('Pick what the GM characters do.');
   const culprits = [undefined, null, '', 'gm'].includes(input.culprits) ? 'gm' : Number(input.culprits);
@@ -132,7 +130,6 @@ export function applySetup(game, input = {}) {
     npcRole,
     culprits,
     replays,
-    questions,
     roundStyle,
     difficulty: difficultyOf(input.difficulty),
     notes: String(input.notes ?? '').trim().slice(0, 500),
@@ -593,7 +590,6 @@ export function attachScenario(game, scenario, now = Date.now()) {
     phaseIndex: -1,
     basePhases: scenario.phases.length,
     phaseEndsAt: null,
-    questionsPerPhase: game.setup.questions ?? length.questions,
     phaseMinutes: length.minutes,
     hintsLeft: game.setup.hints,
     hintCursor: 0,
@@ -602,7 +598,6 @@ export function attachScenario(game, scenario, now = Date.now()) {
     suspicion: 20,
     events: [{ at: now, phase: null, text: scenario.opening_scene, kind: 'opening' }],
     threads: Object.fromEntries(game.players.map((p) => [p.id, []])),
-    questionsLeft: Object.fromEntries(game.players.map((p) => [p.id, 0])),
     pending: {},
     found: Object.fromEntries(game.players.map((p) => [p.id, []])),
     destroyed: [],
@@ -639,7 +634,6 @@ function enterPhase(game, index, now) {
   const st = game.state;
   st.phaseIndex = index;
   st.phaseEndsAt = now + st.phaseMinutes * 60_000;
-  for (const p of game.players) st.questionsLeft[p.id] = st.questionsPerPhase;
 }
 
 export function startPlay(game, now = Date.now()) {
@@ -697,25 +691,20 @@ export function beginAsk(game, playerId, { kind, text }) {
   if (!clean) fail('Write what you want to do.');
   const st = game.state;
   if (st.pending[playerId]) fail('The GM is still answering your last message.', 409);
-  // An act is held for the message until the reader says whether it is one; with none left it can still be talk.
-  const spent = st.questionsLeft[playerId] >= 1;
-  if (spent) st.questionsLeft[playerId] -= 1;
-  st.pending[playerId] = { kind, text: clean, spent };
+  // Chat first: talking and acting are both free. spent marks an act until the reader says whether it is one.
+  st.pending[playerId] = { kind, text: clean, spent: true };
   return { kind, text: clean };
 }
 
-// Talk is free: asking a person, asking about yourself, saying something. An act (searching, taking, hiding,
-// following, a secret action) uses one of the round's acts. With none left, or during a meeting, it is answered as talk.
+// Talk (asking a person, asking about yourself, saying something) and acts (searching, taking, hiding, following,
+// a secret action) are both free. During a meeting an act waits and the message is answered as talk.
 export function settleAct(game, playerId, read) {
   const st = game.state;
   const ask = st.pending[playerId];
   if (!ask) return null;
   const wants = !['self', 'say'].includes(read?.kind) && (read?.kind === 'action' || read?.acts !== false);
-  const held = wants && st.meeting ? 'meeting' : wants && !ask.spent ? 'noActs' : null;
-  if (ask.spent && (!wants || held)) {
-    st.questionsLeft[playerId] += 1;
-    ask.spent = false;
-  }
+  const held = wants && st.meeting ? 'meeting' : null;
+  if (!wants || held) ask.spent = false;
   if (held) ask.held = held;
   return ask;
 }
@@ -725,7 +714,6 @@ export function failAsk(game, playerId) {
   const ask = st.pending[playerId];
   if (!ask) return;
   delete st.pending[playerId];
-  if (ask.spent) st.questionsLeft[playerId] += 1;
 }
 
 export const MEETING_MS = 3 * 60_000;
@@ -1112,7 +1100,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const text = lines.length ? linesText(lines) : String(result.answer ?? '').trim();
   const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
   readPlayer(game, playerId, result.player_read, 'private', now);
-  // An act the game held back (a meeting, no acts left) never costs the player a point.
+  // An act the game held back for a meeting never costs the player a point.
   const play = ask.held && result.play ? { ...result.play, points: Math.max(0, Number(result.play.points) || 0) } : result.play;
   const [scored, penalty] = recordPlay(game, playerId, play, ask.read, 'private');
   const shown = (m) => ({ points: m.points, skill: m.skill, why: m.why });
@@ -1124,7 +1112,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     logRefused(game, playerId, why, false, now);
     return;
   }
-  if (ask.held) thread.push({ from: 'system', text: ask.held === 'meeting' ? 'A meeting is on: no acts until it ends. You only talked.' : 'No acts left this round, so nothing was found or moved. Talking is still free.', at: now });
+  if (ask.held) thread.push({ from: 'system', text: 'A meeting is on: no acts until it ends. You only talked.', at: now });
   // Talk changes nothing in the world: no find, no move, no stir, nothing destroyed.
   // A player who said Not now stays where they are, whatever the answer says.
   if (ask.stayed) result = { ...result, player_location: '', move_is_public: false };
@@ -2863,9 +2851,8 @@ export function playerView(game, playerId, now = Date.now()) {
     hidden_known: card.hidden_facts.filter((h) => revealed.includes(h.id)).map((h) => h.fact),
     hidden_unknown: card.hidden_facts.filter((h) => !revealed.includes(h.id)).length,
   };
-  view.rules = rulesLines({ rounds: game.scenario.phases.length, questions: st.questionsPerPhase, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0 });
+  view.rules = rulesLines({ rounds: game.scenario.phases.length, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0 });
   view.thread = st.threads[playerId].map(({ read, ...m }) => m);
-  view.questionsLeft = st.questionsLeft[playerId];
   view.canCallMeeting = game.status === 'playing' && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;
   view.clues = st.found[playerId].map((id) => {

@@ -40,7 +40,7 @@ Each turn you see your own phone screen and pick ONE action:
 - vote: vote in the round vote (choice: the option number, starting at 0).
 - moment: answer the moment you are called for (moment: said, own or quiet; text: your own words if own).
 - wait: do nothing this turn.
-Talking in private is free (asking someone something, asking about yourself). Acts (search, look closely, take, hide, follow) use one of acts_left; with none left you can still talk. Unused fields: empty string or 0.`;
+Talking and acting in private are both free (ask someone something, ask about yourself, search, look closely, take, hide, follow). Unused fields: empty string or 0.`;
 }
 
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o?.[k] !== undefined).map((k) => [k, o[k]]));
@@ -71,7 +71,6 @@ export function botPrompt(view) {
     my_chat_with_gm: (view.thread ?? []).slice(-10).map((m) => `${m.from}: ${m.text}`),
     my_clues: (view.clues ?? []).map((c) => ({ id: c.id, name: c.name, shows: c.shows })),
     shared_clues: (view.sharedClues ?? []).map((c) => c.name),
-    acts_left: view.questionsLeft,
     my_moments: view.moments ?? [],
     my_vote: view.myRoundVote,
   };

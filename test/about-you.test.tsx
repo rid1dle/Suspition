@@ -27,9 +27,9 @@ describe('learning about yourself is fair play', () => {
   });
 
   test('should explain the rules in plain words, including that asking about yourself is free of penalty', () => {
-    const lines = rulesLines({ rounds: 4, questions: 6, overrides: 2, hints: 3 });
+    const lines = rulesLines({ rounds: 4, overrides: 2, hints: 3 });
     const all = lines.join(' ');
-    assert.match(all, /6 acts each round/);
+    assert.match(all, /Talk and act as much as you like/);
     assert.match(all, /Ask about your own character, your past or your goal/);
     assert.match(all, /2 overrides/);
     assert.match(all, /up to 3 play points each round/);
@@ -37,7 +37,7 @@ describe('learning about yourself is fair play', () => {
   });
 
   test('should show how to play and what the game knows about you on your card', () => {
-    const out = text(<CardFlip card={card} caseQuestion="Who did it?" overridesLeft={1} overridesTotal={2} rules={rulesLines({ rounds: 4, questions: 6, overrides: 2, hints: 3 })} profile={profile} />);
+    const out = text(<CardFlip card={card} caseQuestion="Who did it?" overridesLeft={1} overridesTotal={2} rules={rulesLines({ rounds: 4, overrides: 2, hints: 3 })} profile={profile} />);
     assert.match(out, /How to play/);
     assert.match(out, /Ask about your own character/);
     assert.match(out, /What the game knows about you/);

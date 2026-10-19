@@ -268,8 +268,6 @@ describe('spotlight vote and round style', () => {
 
   test('should default the setup form to hot seats and keep classic as an option', () => {
     assert.equal(setupGame({ roundStyle: 'hotseats' }).setup.roundStyle, 'hotseats');
-    assert.equal(setupGame({ roundStyle: 'hotseats' }).setup.questions, 2);
-    assert.equal(setupGame({ roundStyle: 'hotseats', questions: 4 }).setup.questions, 4);
     assert.equal(setupGame({}).setup.roundStyle, 'classic');
   });
 

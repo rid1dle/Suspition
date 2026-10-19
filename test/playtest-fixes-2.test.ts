@@ -39,7 +39,7 @@ describe('fixes from the story playtest, game 2', () => {
 
   test('should never take points for an act the game held back', () => {
     const game = playing();
-    game.state.questionsLeft.p2 = 0;
+    G.callMeeting(game, 'p1', '', 1_500);
     G.beginAsk(game, 'p2', { kind: 'chat', text: 'I take the ledger.' });
     G.settleAct(game, 'p2', { kind: 'action', acts: true });
     G.completeAsk(game, 'p2', { ...emptyAsk, play: { points: -1, skill: 'breaking', why: 'Tried to act.' } }, 2_000);
@@ -47,7 +47,7 @@ describe('fixes from the story playtest, game 2', () => {
   });
 
   test('should tell the GM a held act waits, and is never the player choosing not to', () => {
-    const p = askPrompt({ snapshot: {}, player: { id: 'p1', character_name: 'Ana' }, kind: 'chat', text: 'x', talk: true, noActs: true });
+    const p = askPrompt({ snapshot: {}, player: { id: 'p1', character_name: 'Ana' }, kind: 'chat', text: 'x', talk: true, held: 'meeting' });
     assert.match(p, /Never write that the character chose not to do it/);
   });
 });

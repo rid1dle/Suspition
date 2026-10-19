@@ -11,9 +11,9 @@ import { BEATS } from '../src/lib/soundtrack/clean.ts';
 import { ROLES, VARIATIONS, PULSES, GROOVES, STINGER_STYLES, STINGER_KINDS } from '../src/lib/soundtrack/types.ts';
 
 export const LENGTHS = {
-  short: { phases: 3, minutes: 10, questions: 3 },
-  standard: { phases: 4, minutes: 15, questions: 3 },
-  long: { phases: 5, minutes: 20, questions: 4 },
+  short: { phases: 3, minutes: 10 },
+  standard: { phases: 4, minutes: 15 },
+  long: { phases: 5, minutes: 20 },
 };
 
 const str = { type: 'string' };
@@ -433,8 +433,8 @@ SCENARIO (secret, never quote it wholesale):
 ${JSON.stringify(scenario)}`;
 }
 
-export function askPrompt({ snapshot, player, kind, text, read, short = false, here = '', trip = '', talk = false, noActs = false }) {
-  const talkRule = talk ? `This is talk, not an act. Answer only with what people say and how they react; a GM character shares what their sheet lets them say. Leave clues_found empty, destroy nothing, move nobody, no public_event.${noActs ? ' The player has no acts left this round, so their character cannot search, take or check anything now; if they tried, the people there can still talk, and the act has to wait for the next round. Never write that the character chose not to do it: say plainly that it has to wait.' : ''}\n\n` : '';
+export function askPrompt({ snapshot, player, kind, text, read, short = false, here = '', trip = '', talk = false, held = null }) {
+  const talkRule = talk ? `This is talk, not an act. Answer only with what people say and how they react; a GM character shares what their sheet lets them say. Leave clues_found empty, destroy nothing, move nobody, no public_event.${held === 'meeting' ? ' A meeting is on, so their character cannot search, take or check anything now; if they tried, the people there can still talk, and the act has to wait until the meeting ends. Never write that the character chose not to do it: say plainly that it has to wait.' : ''}\n\n` : '';
   return `${talkRule}${short ? 'Reply in at most 2 short lines (each under 30 words), and end with something this player can do or say in the room next (show a clue to someone, ask someone out loud).\n\n' : ''}Game state:
 ${JSON.stringify(snapshot)}
 

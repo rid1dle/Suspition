@@ -115,8 +115,7 @@ function JoinCard({ view }: { view: TableProps['view'] }) {
 
 export function Setup(props: TableProps) {
   const { view, host, act } = props;
-  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, replays: 2, questions: 2, testGame: false, notes: '' });
-  const [picked, setPicked] = useState(false);
+  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, replays: 2, testGame: false, notes: '' });
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const enough = view.players.length >= 3;
   // Two culprits need 6 players: if someone leaves, the choice goes back to the GM.
@@ -140,7 +139,7 @@ export function Setup(props: TableProps) {
             </Field>
             <Field label="Mood"><Chips options={TONES} value={form.tone} onPick={(v) => set('tone', v)} /></Field>
             <Field label="How long?"><Chips options={LENGTHS.map(([v, l, d]) => [v, <span key={v}>{l} <span className="opacity-70">{d}</span></span>] as [string, ReactNode])} value={form.length}
-              onPick={(v) => { set('length', v); if (!picked) set('questions', form.roundStyle === 'hotseats' ? 2 : v === 'long' ? 4 : 3); }} /></Field>
+              onPick={(v) => set('length', v)} /></Field>
             <Field label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
               <Chips options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
             </Field>
@@ -149,10 +148,7 @@ export function Setup(props: TableProps) {
             </Field>
             <Field label="Round style" note={form.roundStyle === 'hotseats' ? 'Players take turns in the hot seat, point at suspects, and vote who the room looks at.' : 'Each round ends with a group quiz; a wrong answer replays the round.'}>
               <Chips options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle}
-                onPick={(v) => { set('roundStyle', v); if (!picked) set('questions', v === 'hotseats' ? 2 : form.length === 'long' ? 4 : 3); }} />
-            </Field>
-            <Field label="Private questions per round" note="Questions asked out loud are always free.">
-              <Chips options={[1, 2, 3, 4, 5, 6].map((n) => [n, n] as [number, ReactNode])} value={form.questions} onPick={(v) => { setPicked(true); set('questions', v); }} />
+                onPick={(v) => set('roundStyle', v)} />
             </Field>
             {form.roundStyle === 'classic' && (
               <Field label="Got a round wrong? Play it again" note="A round you vote wrong is played again, with a clearer job.">

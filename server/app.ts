@@ -67,7 +67,7 @@ export class App {
       st.overridesLeft ??= Object.fromEntries(this.game.players.map((p) => [p.id, this.game.setup?.overrides ?? 3]));
       for (const pid of Object.keys(this.game.state.pending ?? {})) {
         G.failAsk(this.game, pid);
-        this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. You did not lose an act. Ask again.', at: this.clock() });
+        this.game.state.threads[pid]?.push({ from: 'system', text: 'The game restarted before the GM answered. Ask again.', at: this.clock() });
       }
       this.game.state.pending = {};
       this.game.state.moveConfirm = {};
@@ -542,7 +542,7 @@ export class App {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
         this.log(`read ${p.id} failed: ${err.message}`);
-        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not read that. Try saying that again. You did not lose an act.', at: this.clock() });
+        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not read that. Try saying that again.', at: this.clock() });
         await this.changed();
         return;
       }
@@ -559,7 +559,7 @@ export class App {
       if (this.game !== game || !game.state.pending[p.id]) return;
       const settled = G.settleAct(game, p.id, read);
       try {
-        const result = await this.gm.answer(game, p.id, { ...ask, read, talk: !settled.spent, noActs: settled.held === 'noActs' });
+        const result = await this.gm.answer(game, p.id, { ...ask, read, talk: !settled.spent, held: settled.held ?? null });
         if (this.game !== game) return;
         const drops = game.state.rippleDrops?.length ?? 0;
         G.completeAsk(game, p.id, result, this.clock());
@@ -569,7 +569,7 @@ export class App {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
         this.log(`ask ${p.id} failed: ${err.message}`);
-        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not answer. You did not lose an act. Try again.', at: this.clock() });
+        game.state.threads[p.id].push({ from: 'system', text: 'The GM could not answer. Try again.', at: this.clock() });
       } finally {
         if (this.game === game) await this.changed();
       }

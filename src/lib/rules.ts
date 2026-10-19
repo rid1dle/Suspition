@@ -3,12 +3,11 @@ export const PLAY_MAX = 3;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 // The rules in plain words, for the card on every phone. The same numbers the game plays by.
-export function rulesLines({ rounds, questions, overrides, hints }: { rounds: number; questions: number; overrides: number; hints: number }): string[] {
+export function rulesLines({ rounds, overrides, hints }: { rounds: number; overrides: number; hints: number }): string[] {
   return [
     `There are ${plural(rounds, 'round')}. Each round has one question the group answers together.`,
     'Ask out loud: free. Everyone hears the answer.',
-    'Talk in private as much as you like: ask people things, ask about yourself. Only you see the answer.',
-    `Acts are what you do: search, take, hide, follow. You have ${plural(questions, 'act')} each round. Going somewhere on the map is free.`,
+    'Talk and act as much as you like: ask anyone, search, take, hide, follow. Going somewhere on the map is free too. Only you see the answer.',
     'Anyone can call one meeting a game: everyone stops and talks it out for 3 minutes.',
     'Ask about your own character, your past or your goal any time. That is part of the game.',
     'Play only your own character. Saying what others think or do, or talking to the GM about the game instead of playing, costs a play point.',

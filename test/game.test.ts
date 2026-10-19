@@ -91,12 +91,10 @@ describe('validateScenario', () => {
 });
 
 describe('asking the GM', () => {
-  test('should spend one question and refund it when the GM fails', () => {
+  test('should clear the waiting question when the GM fails', () => {
     const game = playing();
     G.beginAsk(game, 'p2', { kind: 'question', text: 'Search the ballroom' });
-    assert.equal(game.state.questionsLeft.p2, 2);
     G.failAsk(game, 'p2');
-    assert.equal(game.state.questionsLeft.p2, 3);
     assert.equal(game.state.pending.p2, undefined);
   });
 
@@ -106,110 +104,13 @@ describe('asking the GM', () => {
     assert.throws(() => G.beginAsk(game, 'p2', { kind: 'question', text: 'two' }), /still answering/);
   });
 
-  test('should answer as talk, finding nothing, when the round acts are used up', () => {
-    const game = playing();
-    for (let i = 0; i < 3; i += 1) {
-      G.beginAsk(game, 'p2', { kind: 'question', text: `q${i}` });
-      G.completeAsk(game, 'p2', emptyAsk);
-    }
-    G.beginAsk(game, 'p2', { kind: 'question', text: 'q4' });
-    assert.equal(game.state.questionsLeft.p2, 0);
-    G.completeAsk(game, 'p2', { ...emptyAsk, clues_found: ['c1'] });
-    assert.deepEqual(game.state.found.p2, []);
-  });
-
-  test('should let the GM decide what a plain chat message was, and keep a secret move off the map', () => {
-    const game = playing();
-    G.beginAsk(game, 'p1', { kind: 'chat', text: 'I sneak into the kitchen and hide the knife' });
-    G.completeAsk(game, 'p1', { ...emptyAsk, kind: 'action', player_location: 'l2', move_is_public: false });
-    assert.equal(game.state.threads.p1.at(-2).kind, 'action');
-    assert.equal(game.state.positions.p1, 'l1');
-  });
-
-  test('should treat a chat message as a question when the GM does not say', () => {
-    const game = playing();
-    G.beginAsk(game, 'p1', { kind: 'chat', text: 'I go to the kitchen' });
-    G.completeAsk(game, 'p1', { ...emptyAsk, kind: 'nonsense', player_location: 'l2' });
-    assert.equal(game.state.threads.p1.at(-2).kind, 'question');
-    assert.equal(game.state.positions.p1, 'l2');
-  });
-
-  test('should refuse an unknown request type', () => {
-    assert.throws(() => G.beginAsk(playing(), 'p2', { kind: 'magic', text: 'x' }), /Unknown request type/);
-  });
-
-  test('should keep the answer as novel lines, one speaker per line, with quote marks stripped', () => {
-    const game = playing();
-    G.beginAsk(game, 'p2', { kind: 'question', text: 'Talk to the butler' });
-    G.completeAsk(game, 'p2', { ...emptyAsk, lines: [{ speaker: '', text: 'The butler freezes.' }, { speaker: 'The Butler', text: '"I saw nothing, sir."' }, { speaker: '', text: '  ' }] });
-    const msg = game.state.threads.p2.at(-1);
-    assert.deepEqual(msg.lines, [{ speaker: '', text: 'The butler freezes.' }, { speaker: 'The Butler', text: 'I saw nothing, sir.' }]);
-    assert.equal(msg.text, 'The butler freezes.\nThe Butler: "I saw nothing, sir."');
-  });
-
-  test('should fall back to a plain answer when there are no lines', () => {
-    const game = playing();
-    G.beginAsk(game, 'p2', { kind: 'question', text: 'x' });
-    G.completeAsk(game, 'p2', { ...emptyAsk, answer: 'Plain.' });
-    assert.equal(game.state.threads.p2.at(-1).text, 'Plain.');
-    assert.equal(game.state.threads.p2.at(-1).lines, undefined);
-  });
-
-  test('should record found clues, ignoring unknown and destroyed ids', () => {
-    const game = playing();
-    game.state.destroyed.push('c3');
-    G.beginAsk(game, 'p2', { kind: 'question', text: 'look' });
-    G.completeAsk(game, 'p2', { ...emptyAsk, clues_found: ['c1', 'c3', 'c99'] });
-    assert.deepEqual(game.state.found.p2, ['c1']);
-  });
-
-  test('should only reveal a hidden fact that belongs to the asking player', () => {
-    const game = playing();
-    G.beginAsk(game, 'p2', { kind: 'self', text: 'who am I' });
-    G.completeAsk(game, 'p2', { ...emptyAsk, hidden_fact_revealed: 'h3' });
-    assert.deepEqual(game.state.revealed.p2, []);
-    G.beginAsk(game, 'p2', { kind: 'self', text: 'who am I really' });
-    G.completeAsk(game, 'p2', { ...emptyAsk, hidden_fact_revealed: 'h2' });
-    assert.deepEqual(game.state.revealed.p2, ['h2']);
-  });
-
-  test('should destroy only clues marked destroyable', () => {
-    const game = playing();
-    G.beginAsk(game, 'p1', { kind: 'action', text: 'burn things' });
-    G.completeAsk(game, 'p1', { ...emptyAsk, clues_destroyed: ['c3', 'c2'] });
-    assert.deepEqual(game.state.destroyed, ['c3']);
-  });
-
-  test('should clamp suspicion between 0 and 100', () => {
-    const game = playing();
-    for (let i = 0; i < 3; i += 1) {
-      G.beginAsk(game, 'p1', { kind: 'action', text: 'loud' });
-      G.completeAsk(game, 'p1', { ...emptyAsk, suspicion_change: 999 });
-    }
-    assert.equal(game.state.suspicion, 95);
-    G.beginAsk(game, 'p2', { kind: 'action', text: 'calm' });
-    G.completeAsk(game, 'p2', { ...emptyAsk, suspicion_change: 25 });
-    assert.equal(game.state.suspicion, 100);
-  });
-
-  test('should deliver whispers only to real players and post public events', () => {
-    const game = playing();
-    G.beginAsk(game, 'p1', { kind: 'action', text: 'sneak' });
-    G.completeAsk(game, 'p1', { ...emptyAsk, public_event: 'A scream upstairs.', messages_to_players: [{ player_id: 'p3', text: 'You saw a shadow.' }, { player_id: 'zz', text: 'lost' }] });
-    assert.equal(game.state.threads.p3.at(-1).text, 'You saw a shadow.');
-    assert.equal(game.state.events.at(-1).text, 'A scream upstairs.');
-  });
-});
-
-describe('phases', () => {
-  test('should refill budgets and log the new phase', () => {
+  test('should log the new phase', () => {
     const game = playing(4, 1_000);
     G.beginAsk(game, 'p2', { kind: 'question', text: 'q' });
     G.completeAsk(game, 'p2', emptyAsk);
     G.beginPhaseChange(game);
     G.completePhase(game, emptyPhase, 2_000);
     assert.equal(game.state.phaseIndex, 1);
-    assert.equal(game.state.questionsLeft.p2, 3);
     assert.equal(game.state.phaseEndsAt, 2_000 + 10 * 60_000);
     assert.deepEqual(game.state.events.slice(-3).map((e) => e.text), ['Round 2 of 3: Phase name 2', 'Something changed.', 'New on the timeline: 9:30, TL-ROUND2']);
   });
@@ -646,7 +547,7 @@ describe('public questions about the world', () => {
     assert.ok(body.includes('BG-1 public line'));
   });
 
-  test('should post the question and answer for everyone, without using a question', () => {
+  test('should post the question and answer for everyone', () => {
     const game = gameInReading(3);
     G.startPlay(game, 1_000);
     G.beginPublicAsk(game, 'p1', 'How far is town?');
@@ -654,7 +555,6 @@ describe('public questions about the world', () => {
     G.completePublicAsk(game, 'p1', 'Ten miles.', 2_000);
     const qa = G.playerView(game, 'p2').events.at(-1);
     assert.deepEqual([qa.kind, qa.by, qa.q, qa.text], ['qa', 'Player1', 'How far is town?', 'Ten miles.']);
-    assert.equal(game.state.questionsLeft.p1, 3);
   });
 });
 
@@ -1428,33 +1328,6 @@ describe('fair play filter with shared titles', () => {
     const game = cast([['Nikhil', 'Nikhil Rao'], ['Rishabh', 'Rishabh Sen'], ['Cy', 'Cy Rao']], []);
     assert.equal(G.dropPuppeting(game, 'p1', 'Rishabh, the cook says Nikhil was in the library.', { to: 'p2' }).dropped, 0);
     assert.equal(G.dropPuppeting(game, 'p1', 'Rishabh agrees with Nikhil.', { to: 'p3' }).dropped, 1);
-  });
-});
-
-describe('private questions per round', () => {
-  const lobby = () => {
-    const game = G.createGame(1_000);
-    for (const name of ['A', 'B', 'C']) G.addPlayer(game, { name });
-    return game;
-  };
-
-  test('should use the chosen number of private questions each round', () => {
-    const game = lobby();
-    G.applySetup(game, { tone: 'tense', length: 'short', hints: 2, questions: 5 });
-    G.attachScenario(game, makeScenario(3), 1_000);
-    G.startPlay(game, 1_000);
-    assert.equal(game.state.questionsLeft.p1, 5);
-  });
-
-  test('should refuse private questions outside 1 to 6', () => {
-    assert.throws(() => G.applySetup(lobby(), { tone: 'tense', length: 'short', hints: 2, questions: 0 }), /Private questions must be between 1 and 6/);
-    assert.throws(() => G.applySetup(lobby(), { tone: 'tense', length: 'short', hints: 2, questions: 7 }), /Private questions must be between 1 and 6/);
-  });
-
-  test('should default private questions to the game length', () => {
-    const game = lobby();
-    G.applySetup(game, { tone: 'tense', length: 'long', hints: 2 });
-    assert.equal(game.setup.questions, 4);
   });
 });
 

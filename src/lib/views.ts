@@ -101,7 +101,6 @@ export interface PlayerView extends PublicView {
   me: { id: string; name: string };
   card?: CardView;
   thread?: ThreadEntry[];
-  questionsLeft?: number;
   pending?: { kind: string; text: string } | null;
   clues?: { id: string; name: string; shows: string; destroyed: boolean }[];
   myRoundVote?: number | null;

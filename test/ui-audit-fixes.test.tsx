@@ -74,7 +74,7 @@ describe('ui audit: a declined move', () => {
     await app.idle();
     assert.equal(G.currentPlace(app.game, 'p2'), 'l2');
     assert.equal(app.game.state.positions.p2, 'l2');
-    assert.equal(app.game.state.questionsLeft.p2, 3, 'staying is talk: no act used');
+    assert.equal(gm.lastAsk.talk, true, 'staying is talk');
   });
 });
 

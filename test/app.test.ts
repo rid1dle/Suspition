@@ -123,14 +123,13 @@ describe('App', () => {
     assert.deepEqual(ctx.app.playerView(ctx.tokens[2]).thread, []);
   });
 
-  test('should refund the question and say so when the GM fails to answer', async () => {
+  test('should clear the question and say so when the GM fails to answer', async () => {
     const ctx = await setupApp();
     await toPlaying(ctx);
     ctx.gm.fail.answer = true;
     await ctx.app.ask(ctx.tokens[0], { kind: 'question', text: 'Hello?' });
     await ctx.app.idle();
     const view = ctx.app.playerView(ctx.tokens[0]);
-    assert.equal(view.questionsLeft, 3);
     assert.equal(view.pending, null);
     assert.match(view.thread.at(-1).text, /could not answer/);
   });
@@ -301,15 +300,14 @@ describe('App under failure', () => {
     await assert.rejects(() => ctx.app.submit(ctx.tokens[1], { culprit_ids: ['p1'] }), /already checking/);
   });
 
-  test('should refund a question that was waiting when the server restarted', async () => {
+  test('should clear a question that was waiting when the server restarted', async () => {
     const ctx = await setupApp();
     await toPlaying(ctx);
     ctx.gm.gate = new Promise(() => {});
     await ctx.app.ask(ctx.tokens[0], { kind: 'question', text: 'q' });
-    assert.equal(ctx.app.game.state.questionsLeft.p1, 2);
     const restarted = await new App({ gm: new FakeGM(), store: ctx.app.store }).init();
     const view = restarted.playerView(ctx.tokens[0]);
-    assert.equal(view.questionsLeft, 3);
+    assert.equal(view.pending, null);
     assert.match(view.thread.at(-1).text, /restarted before the GM answered/);
   });
 
@@ -326,7 +324,6 @@ describe('App under failure', () => {
     await ctx.app.idle();
     assert.equal(ctx.app.game.state.threads.p1.length, 2);
     assert.equal(ctx.app.game.state.phaseIndex, 1);
-    assert.equal(ctx.app.game.state.questionsLeft.p1, 3);
   });
 });
 
@@ -458,14 +455,13 @@ describe('App: the wall between players and the GM', () => {
     assert.equal(game.state.threads.p1[0].read.attempt, 'P tries something');
   });
 
-  test('should refund the question and say try again when the reader fails', async () => {
+  test('should clear the question and say try again when the reader fails', async () => {
     const ctx = await setupApp();
     await toPlaying(ctx);
     ctx.gm.fail.read = true;
     await ctx.app.ask(ctx.tokens[0], { kind: 'chat', text: 'Hello?' });
     await ctx.app.idle();
     const view = ctx.app.playerView(ctx.tokens[0]);
-    assert.equal(view.questionsLeft, 3);
     assert.equal(view.pending, null);
     assert.match(view.thread.at(-1).text, /Try saying that again/);
     assert.equal(view.thread.at(-1).from, 'system');

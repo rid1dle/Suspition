@@ -23,13 +23,12 @@ async function playing() {
 }
 
 describe('going places', () => {
-  test('should move a character tapped onto a place and tell everyone, without spending a question', async () => {
+  test('should move a character tapped onto a place and tell everyone', async () => {
     const t = await playing();
     await t.app.go(t.tokens[1], 'l1');
     assert.equal(t.app.game.state.at.p2, 'l1');
     assert.equal(t.app.game.state.positions.p2, 'l1');
     assert.deepEqual(t.events(), ['Ben goes to the Ballroom.']);
-    assert.equal(t.view(1).questionsLeft, 3);
     await assert.rejects(() => t.app.go(t.tokens[1], 'l1'), /already in the Ballroom/);
   });
 

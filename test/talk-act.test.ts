@@ -16,30 +16,28 @@ async function playing() {
   const app = await new App({ gm, store: new MemoryStore(), clock: () => now }).init();
   const tokens = [];
   for (const name of ['Ana', 'Ben', 'Cal']) tokens.push(await app.join({ name }));
-  await app.setup(app.game.hostToken, { tone: 'tense', length: 'short', hints: 2, roundStyle: 'classic', questions: 3 });
+  await app.setup(app.game.hostToken, { tone: 'tense', length: 'short', hints: 2, roundStyle: 'classic' });
   await app.idle();
   await app.start(app.game.hostToken);
   await app.idle();
   return { app, gm, tokens, st: () => app.game.state, later: (ms) => { now += ms; } };
 }
 
-describe('talk is free, acts are counted', () => {
-  test('should answer talk without spending an act and tell the GM it is only talk', async () => {
+describe('talk and acts are both free', () => {
+  test('should answer talk and tell the GM it is only talk', async () => {
     const t = await playing();
     t.gm.readResult = read();
     await t.app.ask(t.tokens[1], { kind: 'chat', text: 'Butler, where were you at nine?' });
     await t.app.idle();
-    assert.equal(t.st().questionsLeft.p2, 3);
     assert.equal(t.gm.lastAsk.talk, true);
     assert.equal(t.st().threads.p2.at(-1).from, 'gm');
   });
 
-  test('should spend an act on a move that changes the world', async () => {
+  test('should treat a move that changes the world as an act', async () => {
     const t = await playing();
     t.gm.readResult = read({ acts: true, attempt: 'P searches the desk' });
     await t.app.ask(t.tokens[1], { kind: 'chat', text: 'I search the desk.' });
     await t.app.idle();
-    assert.equal(t.st().questionsLeft.p2, 2);
     assert.equal(t.gm.lastAsk.talk, false);
   });
 
@@ -48,24 +46,11 @@ describe('talk is free, acts are counted', () => {
     t.gm.readResult = read({ kind: 'action' });
     await t.app.ask(t.tokens[1], { kind: 'chat', text: 'Secretly, I wipe the glass.' });
     await t.app.idle();
-    assert.equal(t.st().questionsLeft.p2, 2);
+    assert.equal(t.gm.lastAsk.talk, false);
     t.gm.readResult = read({ kind: 'self', acts: true });
     await t.app.ask(t.tokens[1], { kind: 'chat', text: 'What do I remember about tonight?' });
     await t.app.idle();
-    assert.equal(t.st().questionsLeft.p2, 2);
-  });
-
-  test('should keep talking when no acts are left, finding nothing, and say why', async () => {
-    const t = await playing();
-    t.st().questionsLeft.p2 = 0;
-    t.gm.readResult = read({ acts: true, attempt: 'P searches the desk' });
-    t.gm.askResult = { ...emptyAsk, clues_found: ['c1'] };
-    await t.app.ask(t.tokens[1], { kind: 'chat', text: 'I search the desk.' });
-    await t.app.idle();
-    assert.deepEqual(t.st().found.p2, []);
-    assert.equal(t.st().questionsLeft.p2, 0);
-    assert.equal(t.gm.lastAsk.noActs, true);
-    assert.match(t.st().threads.p2.at(-1).text, /No acts left this round, so nothing was found or moved\. Talking is still free\./);
+    assert.equal(t.gm.lastAsk.talk, true);
   });
 
   test('should ignore clues, stirs, moves and destroyed things in a talk answer', async () => {
@@ -81,28 +66,20 @@ describe('talk is free, acts are counted', () => {
     assert.ok(!t.st().events.slice(events).some((e) => /crash/.test(e.text)));
   });
 
-  test('should give the act back when the GM cannot answer', async () => {
+  test('should say try again when the GM cannot answer', async () => {
     const t = await playing();
     t.gm.readResult = read({ acts: true });
     t.gm.fail.answer = true;
     await t.app.ask(t.tokens[1], { kind: 'chat', text: 'I search the desk.' });
     await t.app.idle();
-    assert.equal(t.st().questionsLeft.p2, 3);
-    assert.match(t.st().threads.p2.at(-1).text, /You did not lose an act\./);
-  });
-
-  test('should not refuse a private message when no acts are left', () => {
-    const game = gameInReading(3, 1_000);
-    G.startPlay(game, 1_000);
-    game.state.questionsLeft.p2 = 0;
-    assert.doesNotThrow(() => G.beginAsk(game, 'p2', { kind: 'chat', text: 'Hello there.' }));
+    assert.match(t.st().threads.p2.at(-1).text, /The GM could not answer\. Try again\./);
   });
 
   test('should tell the GM what talk may not do', () => {
-    const prompt = askPrompt({ snapshot: {}, player: { id: 'p1', character_name: 'Ana' }, kind: 'chat', text: 'hi', talk: true, noActs: true });
+    const prompt = askPrompt({ snapshot: {}, player: { id: 'p1', character_name: 'Ana' }, kind: 'chat', text: 'hi', talk: true, held: 'meeting' });
     assert.match(prompt, /This is talk, not an act\./);
     assert.match(prompt, /clues_found empty/);
-    assert.match(prompt, /no acts left this round/);
+    assert.match(prompt, /the act has to wait until the meeting ends/);
     assert.doesNotMatch(askPrompt({ snapshot: {}, player: { id: 'p1', character_name: 'Ana' }, kind: 'chat', text: 'hi', talk: false }), /This is talk/);
   });
 
@@ -114,9 +91,9 @@ describe('talk is free, acts are counted', () => {
   });
 
   test('should explain talk and acts in the rules', () => {
-    const all = rulesLines({ rounds: 3, questions: 2, overrides: 1, hints: 2 }).join(' ');
-    assert.match(all, /Talk in private as much as you like/);
-    assert.match(all, /2 acts each round/);
+    const all = rulesLines({ rounds: 3, overrides: 1, hints: 2 }).join(' ');
+    assert.match(all, /Talk and act as much as you like/);
+    assert.doesNotMatch(all, /acts each round/);
   });
 });
 
@@ -145,7 +122,7 @@ describe('meetings', () => {
     t.gm.readResult = read({ acts: true });
     await t.app.ask(t.tokens[0], { kind: 'chat', text: 'I search the desk.' });
     await t.app.idle();
-    assert.equal(t.st().questionsLeft.p1, 3);
+    assert.equal(t.gm.lastAsk.held, 'meeting');
     assert.match(t.st().threads.p1.at(-1).text, /A meeting is on: no acts until it ends\./);
     await assert.rejects(t.app.go(t.tokens[0], 'l2'), /A meeting is on\. Stay with the room until it ends\./);
   });

@@ -137,3 +137,11 @@ Make them feel like the room's events in the chat, with a small icon and the pla
 - **Pinned above the chat:** whatever needs you now: a meeting, your hot seat, your moment, a move to confirm, a question for you, the vote and its brief.
 - **Drawers instead of tabs:** Me (the card), Goals, Clues (with things that matter, shared clues and notes), Map (with going), People, Case file (recap, timeline, alibis, the place).
 - **Start from your story:** the first time a phone opens a game it shows the backstory and hook, then "Introduce yourself to the room" with first lines to tap.
+
+### Later decision (2026-10-19): no limit on acts either
+
+The creator asked for chat first and RP first with no private limit at all. Acts are now free too: talk and acts both cost nothing, and the setup choice "Private questions per round" is gone.
+
+- The reader still marks `acts`, because an act is what can find, move or destroy something; talk still finds nothing.
+- What still keeps one player from solving it all at once: one message in flight at a time, clues open round by round, and the GM decides what each act finds.
+- A meeting still holds acts until it ends.

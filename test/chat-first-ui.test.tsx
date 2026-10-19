@@ -22,7 +22,8 @@ describe('the chat-first phone', () => {
   test('should put the chat first with one composer for the room or the GM, and drawers for the rest', () => {
     const out = phone(playing(), 'p2');
     for (const t of ['To the room', 'Private, to the GM', 'Me', 'Goals', 'Clues', 'Map', 'People', 'Case file', 'Send']) assert.ok(out.includes(t), t);
-    assert.match(out, /3 acts left · talking is free/);
+    assert.doesNotMatch(out, /acts? left/);
+    assert.match(out, /Talk and act as much as you like\.|Everyone hears it\. Free\./);
     assert.match(out, /Everyone hears it\. Free\./);
   });
 

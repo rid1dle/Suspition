@@ -24,15 +24,15 @@ describe('story playtest bots', () => {
     assert.match(sys, /push the story your own way/);
     assert.match(sys, /- go: walk to a place/);
     assert.match(sys, /- meeting: call everyone together/);
-    assert.match(sys, /Talking in private is free/);
+    assert.match(sys, /Talking and acting in private are both free/);
     for (const a of ['go', 'meeting']) assert.ok(BOT_SCHEMA.properties.action.enum.includes(a));
   });
 
-  test('should show a bot its acts, where it is and the places it can go', () => {
+  test('should show a bot where it is and the places it can go', () => {
     const game = gameInReading(3);
     G.startPlay(game, 1_000);
     const prompt = botPrompt(G.playerView(game, 'p1', 2_000));
-    assert.match(prompt, /"acts_left":3/);
+    assert.doesNotMatch(prompt, /acts_left/);
     assert.match(prompt, /"places":\["Ballroom","Kitchen"\]/);
     assert.match(prompt, /"you_are_in":"Ballroom"/);
   });

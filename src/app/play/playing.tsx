@@ -99,7 +99,6 @@ function TopBar({ view, onOpenCard, dots, onDrawer }: { view: PlayerView; onOpen
   }, [now, view]);
   const hv = view.hintVote as { proposer: string; yes: number; need: number } | null;
   const va = view.voteAsk as { proposer: string; yes: number; need: number } | null;
-  const left = view.questionsLeft ?? 0;
   return (
     <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 flex flex-col gap-2 border-b border-border bg-background px-4 pt-3 pb-2">
       <CallBanner text={callFor(view as Parameters<typeof callFor>[0])} onShow={() => window.scrollTo({ top: 0 })} />
@@ -108,7 +107,7 @@ function TopBar({ view, onOpenCard, dots, onDrawer }: { view: PlayerView; onOpen
         {timer && <span className={`font-mono tabular-nums ${timer.low ? 'text-destructive' : ''}`}>{timer.text}</span>}
       </div>
       <div className="flex flex-wrap justify-between gap-x-3 text-xs text-muted-foreground">
-        <span>{left} act{left === 1 ? '' : 's'} left · talking is free{view.here ? ` · You are in: ${view.here}` : ''}</span>
+        <span>{view.here ? `You are in: ${view.here}` : ''}</span>
         <span>Suspicion: {suspicionLabel(view.suspicion)}</span>
       </div>
       <div className="-mx-1 flex gap-1 overflow-x-auto">
@@ -309,12 +308,11 @@ function PrivateLine({ item, latest, fade }: { item: ChatItem; latest: boolean; 
   );
 }
 
-// One box for everything you say: to the room (everyone hears, free) or in private to the GM (talk is free, acts are counted).
+// One box for everything you say: to the room (everyone hears) or in private to the GM. Both are free.
 function Composer({ view, text, setText, mode, setMode, box, barRef, onIdea }: {
   view: PlayerView; text: string; setText: (t: string) => void; mode: Mode; setMode: (m: Mode) => void; box: React.RefObject<HTMLTextAreaElement | null>;
   barRef: React.RefObject<HTMLDivElement | null>; onIdea: (t: string) => void;
 }) {
-  const left = view.questionsLeft ?? 0;
   const busy = mode === 'room' ? Boolean(view.publicPending) : Boolean(view.pending) || Boolean(view.round?.vote) || view.transitioning;
   const ideas = [...(view.thread ?? [])].reverse().find((m) => m.from === 'gm')?.ideas ?? [];
   const chips: [string, string][] = mode === 'private' ? (ideas.length ? ideas.map((t) => [t, t] as [string, string]) : STARTERS) : [];
@@ -343,7 +341,7 @@ function Composer({ view, text, setText, mode, setMode, box, barRef, onIdea }: {
             placeholder={mode === 'room' ? 'Say something to everyone. "Lata, when did the music stop?"' : 'Talk to someone, or do something. "I search the desk."'} />
           <Button className="self-end" disabled={!text.trim() || busy} onClick={send}>{busy ? '…' : 'Send'}</Button>
         </div>
-        <Muted className="text-xs">{mode === 'room' ? 'Everyone hears it. Free.' : `Talk is free. Search, take, hide or follow uses 1 act (${left} left).`}</Muted>
+        <Muted className="text-xs">{mode === 'room' ? 'Everyone hears it. Free.' : 'Only you see the answer. Talk and act as much as you like.'}</Muted>
       </div>
     </div>
   );
