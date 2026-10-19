@@ -193,7 +193,8 @@ export class GM {
         schema: SCENARIO_SCHEMA,
         model: this.setupModel,
         effort: this.setupEffort,
-        timeoutMs: 900_000,
+        // A bigger group is a bigger world: 15 minutes for up to 6 players, 90 s more for each one after.
+        timeoutMs: 900_000 + 90_000 * Math.max(0, game.players.length - 6),
       });
       onProgress({ kind: 'checking' });
       resolveStoryIds(scenario);

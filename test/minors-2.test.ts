@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import * as G from '../server/game.ts';
 import { applyContinuity, continuityPrompt, CANON_MAX } from '../server/continuity.ts';
 import { gameInReading } from './fixtures.ts';
+import { tmpdir } from 'node:os';
+import { GM } from '../server/gm.ts';
+import { createGame, addPlayer, applySetup } from '../server/game.ts';
+import { SCENARIO_SCHEMA } from '../server/prompts.ts';
 
 const empty = { problems: [], canon_add: [], corrections: [], patches: [], offers: [], extra_rounds: [], solvable: true, missing: [] };
 const playing = () => {
@@ -36,5 +40,24 @@ describe('older minors', () => {
     game.state.roundNumber = 3;
     const prompt = continuityPrompt(game);
     assert.match(prompt, /"reveal_round_now":1/);
+  });
+});
+
+
+describe('big groups', () => {
+  test('should give a ten-player world more time to be written than a four-player one', async () => {
+    const timeouts = {};
+    for (const n of [4, 10]) {
+      const g = createGame();
+      for (let i = 0; i < n; i += 1) addPlayer(g, { name: `P${i}` });
+      applySetup(g, { tone: 'tense', length: 'short', hints: 2 });
+      const run = async (opts) => {
+        if (opts.schema === SCENARIO_SCHEMA) { timeouts[n] = opts.timeoutMs; throw new Error('stop'); }
+        return {};
+      };
+      await new GM({ workDir: tmpdir(), run }).generate(g).catch(() => {});
+    }
+    assert.equal(timeouts[4], 900_000);
+    assert.ok(timeouts[10] >= 1_200_000, String(timeouts[10]));
   });
 });
