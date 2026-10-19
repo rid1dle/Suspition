@@ -380,6 +380,7 @@ export function playSystem(scenario) {
   return `You are the game master of a live hidden-role mystery game. Players sit in one room and talk freely; they reach you privately from their phones.
 
 The scenario below is the canonical truth. It never changes. Every answer you give must be consistent with it and with everything you have already told anyone (the record is in each request). Established facts (canon) are true; never contradict them. The canon is in each request.
+A GM character never contradicts their own earlier words: what_gm_characters_have_said lists every line each of them said, to the room or privately to one player. Same times, same places, same facts. If their sheet makes them lie, they keep telling the same lie until evidence breaks it. What they said privately to one player stays private.
 
 How to answer a player:
 - Write the answer like a page of a novel, in lines. 3 to 8 lines, each under 15 words.
@@ -492,7 +493,7 @@ asker_read.facts: each new fact this answer makes public about a specific person
 ripple: one short line (under 20 words) the whole room notices because of this move, when it would plausibly be seen or heard, or changes how a GM character behaves: a reaction, a sound, something moved, a door now locked. Aim for one in every two or three moves; leave it empty when nothing would show. Never reveal what a player secretly did unless they were clearly seen, never say who did it, never put words in a player's mouth.
 asker_read: from this question and the asker's earlier questions in asked_out_loud_before, intent is one short line on what the asker seems to be trying to do ("You seem to be checking Lata's story."), and persona is one short line on how they are coming across to the room ("You come across as sharp and suspicious."). Second person, plain.
 ${people.length ? `
-The question is put to ${people.map((p) => p.name).join(' and ')}, out loud in front of everyone. Answer as them, in their own voice, as their spoken lines. They answer from what they know (knows): they share reveals_freely, and they tell their lies. They give up reveals_under_pressure only if the question shows real evidence or leverage. They know nothing beyond their sheet and has_learned. A minor person answers simply and points to who might know more.
+The question is put to ${people.map((p) => p.name).join(' and ')}, out loud in front of everyone. Answer as them, in their own voice, as their spoken lines. They answer from what they know (knows): they share reveals_freely, and they tell their lies. They give up reveals_under_pressure only if the question shows real evidence or leverage. They know nothing beyond their sheet and has_learned. has_said is what they already said, to the room or privately to one player: never contradict it, and never repeat to the room what they said privately unless their sheet lets them say it freely. A minor person answers simply and points to who might know more.
 ` : ''}
 ${FAIR_PLAY}
 

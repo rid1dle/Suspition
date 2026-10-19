@@ -1111,6 +1111,32 @@ export function openClues(game) {
   return game.scenario.clues.filter((c) => !Number.isInteger(c.reveal_round) || c.reveal_round <= round).map((c) => c.id);
 }
 
+// Facts only a player's own card holds, until the room has heard them in public.
+function privateCardFacts(game) {
+  const sc = game.scenario;
+  const st = game.state;
+  const heard = [
+    sc.opening_scene, sc.setting_summary, ...(sc.background ?? []),
+    ...sc.players.map((p) => p.public_info), ...sc.npcs.map((n) => n.public_info),
+    ...(st?.events ?? []).flatMap((e) => [e.text, e.q, ...(e.lines ?? []).map((l) => l.text)]),
+    ...(st?.facts ?? []).map((f) => f.fact),
+    ...(st?.canon ?? []).filter((c) => c.public).map((c) => c.fact),
+  ].flatMap(sentences);
+  const secret = sc.players.flatMap((p) => [
+    ...sentences(p.private_info), ...sentences(p.backstory), ...sentences(p.starting_knowledge),
+    ...(p.hidden_facts ?? []).filter((h) => !(st?.revealed?.[p.id] ?? []).includes(h.id)).map((h) => h.fact),
+  ]);
+  return secret.filter((f) => !heard.some((h) => retells(h, f)));
+}
+
+// A line the whole room hears never carries what only one player's card says.
+export function leaksPrivateCard(game, text) {
+  if (!String(text ?? '').trim()) return false;
+  return privateCardFacts(game).some((f) => retells(text, f));
+}
+
+const withoutPrivateCards = (game, text) => sentences(text).filter((s) => !leaksPrivateCard(game, s)).join(' ');
+
 // The refusal line is read by the player (or the room): it never speaks for a player or names the culprit.
 const cleanWhy = (game, why) => {
   const text = dropPuppeting(game, null, why, { others: true }).text;
@@ -1374,8 +1400,8 @@ export function completePhase(game, result, now = Date.now()) {
   planRound(game, next, result, replay);
   addEvent(game, phaseLine(game, next, replay), 'phase', now);
   const because = sayable(game)(result.because, 200);
-  if (because) addEvent(game, dropPuppeting(game, null, because).text, 'because', now);
-  addEvent(game, dropPuppeting(game, null, result.public_event).text, 'event', now);
+  if (because && !leaksPrivateCard(game, because)) addEvent(game, dropPuppeting(game, null, because).text, 'because', now);
+  addEvent(game, withoutPrivateCards(game, dropPuppeting(game, null, result.public_event).text), 'event', now);
   setRecap(game, result, now);
   addFacts(game, result.public_facts, 'round change', now);
   for (const g of result.goal_steps_done ?? []) markGoalSteps(game, g?.player_id, [g?.step]);
@@ -1891,7 +1917,7 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   const everyone = game.players.every((p) => vote.votes[p.id] !== undefined);
   if (!everyone && !force && vote.endsAt > now) return null;
   const q = roundQuestion(game, vote.phaseIndex);
-  if (namesCulprit(game.scenario, game.players, q.reward)) q.reward = '';
+  if (namesCulprit(game.scenario, game.players, q.reward) || leaksPrivateCard(game, q.reward)) q.reward = '';
   if (namesCulprit(game.scenario, game.players, q.nudge)) q.nudge = '';
   const counts = q.options.map((_, i) => Object.values(vote.votes).filter((v) => v === i).length);
   const top = Math.max(...counts);
@@ -1927,7 +1953,7 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
 function postRoundReward(game, now) {
   const st = game.state;
   const q = roundQuestion(game, st.phaseIndex);
-  if (!q?.reward || namesCulprit(game.scenario, game.players, q.reward)) return;
+  if (!q?.reward || namesCulprit(game.scenario, game.players, q.reward) || leaksPrivateCard(game, q.reward)) return;
   addEvent(game, q.reward, 'event', now);
   st.timelineExtra.push({ order: q.rewardOrder, time: q.rewardTime, event: q.reward });
 }
@@ -2223,9 +2249,47 @@ export function addFacts(game, items, source, now = Date.now()) {
   }
 }
 
+// Every line each GM character has said, to the room or to one player, the newest last. They never contradict it.
+export const GM_SAID_KEPT = 15;
+export function gmCharacterSaid(game) {
+  const st = game.state;
+  const out = Object.fromEntries(game.scenario.npcs.map((n) => [n.name, []]));
+  const round = (e) => (e.round ?? (Number.isInteger(e.phase) ? e.phase + 1 : null));
+  const quoted = (text) => /^(.+?): "(.*)"$/.exec(String(text ?? ''));
+  const items = [];
+  for (const e of st?.events ?? []) {
+    for (const l of e.lines ?? []) items.push({ at: e.at, who: l.speaker, round: round(e), to: 'the room', text: l.text });
+    const q = e.kind === 'ripple' && quoted(e.text);
+    if (q) items.push({ at: e.at, who: q[1], round: round(e), to: 'the room', text: q[2] });
+  }
+  for (const [pid, msgs] of Object.entries(st?.threads ?? {})) {
+    const to = `${game.players.find((p) => p.id === pid)?.name ?? pid}, privately`;
+    for (const m of msgs) {
+      for (const l of m.lines ?? []) items.push({ at: m.at, who: l.speaker, round: null, to, text: l.text });
+      const q = m.from === 'whisper' && quoted(m.text);
+      if (q) items.push({ at: m.at, who: q[1], round: null, to, text: q[2] });
+    }
+  }
+  for (const it of items.sort((a, b) => a.at - b.at)) {
+    if (!out[it.who]) continue;
+    out[it.who].push({ round: it.round ?? roundAt(game, it.at), to: it.to, text: it.text });
+  }
+  for (const k of Object.keys(out)) out[k] = out[k].slice(-GM_SAID_KEPT);
+  return out;
+}
+
+// The round a moment in time belongs to, from the round headings on the table.
+function roundAt(game, at) {
+  const heads = (game.state?.events ?? []).filter((e) => e.kind === 'phase' && /^Round \d+/.test(e.text) && e.at <= at);
+  const m = /^Round (\d+)/.exec(heads.at(-1)?.text ?? '');
+  return m ? Number(m[1]) : 1;
+}
+
 export function peopleAsked(game, text) {
   const words = wordsOf(text);
-  return game.scenario.npcs.filter((n) => nameWords(n.name).some((w) => words.includes(w))).map((n) => ({
+  const asked = game.scenario.npcs.filter((n) => nameWords(n.name).some((w) => words.includes(w)));
+  const said = asked.length ? gmCharacterSaid(game) : {};
+  return asked.map((n) => ({
     name: n.name,
     role: n.role_title,
     importance: n.importance ?? 'important',
@@ -2235,6 +2299,7 @@ export function peopleAsked(game, text) {
     reveals_under_pressure: gatedSheet(game, n.reveals_under_pressure),
     says_they_were: n.alibi ?? [],
     has_learned: (game.state.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => k.fact),
+    has_said: said[n.name] ?? [],
   }));
 }
 
@@ -2310,6 +2375,7 @@ export function snapshotForGM(game) {
     round_results: st.roundResults,
     moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.readInstead ? playerWords(m.readInstead, m.saidInstead, 'said') : m.saidInstead } : {}) })),
     overrides_left: st.overridesLeft,
+    what_gm_characters_have_said: gmCharacterSaid(game),
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     canon: (st.canon ?? []).map((c) => ({ fact: c.fact, round: c.round })),
     goal_steps_done_so_far: Object.fromEntries(game.players.map((p) => [p.id, st.goalSteps?.[p.id] ?? []])),
