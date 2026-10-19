@@ -39,6 +39,7 @@ What was rejected and what was accepted, one line each. Add new verdicts the sam
 - Options that cannot change a 1 or 2 player game (round style, overrides alone, background-only GM characters, the culprit count when only one is possible) are hidden, not shown.
 - "Play the round again" was cut: a wrong answer already turns the story.
 - Group words for a player alone were rejected: "Get a hint", "Answer the round question now", no meeting button.
+- One or two players play with no clock: a round ends when they answer it ("When you know, answer"), or "Move on" when it has no question. The GM says in the chat when they have seen enough to answer.
 
 **Reading**
 - Everything in the world font over a dotted grid was "much more noisy to read". Accepted: character fonts on titles only, text on solid cards.
@@ -52,6 +53,11 @@ What was rejected and what was accepted, one line each. Add new verdicts the sam
 - Whatever needs you now (a move to confirm, a vote, a meeting, your hot seat, your moment) sits in a tray right above the composer, not at the top of the page where the chat scrolls it away.
 - Drawers in the top bar (Me, Goals, Clues, Map, People, Case file) instead of tabs of big panels.
 - No limits shown as counters: talking and acting are free.
+- Asking about the world, its powers and rules, or "what do I do now?" never costs a point. A "-1 Breaking the rules" on a world question was rejected: the GM answers like a guide, with what you know and 2 or 3 things to try.
+- A player alone with an empty chat at the start "doesn't know how to even start". Every player's chat opens with a first lead: where they are, one thing happening near them, and what to try first.
+- Every person in People (and on the card, under "Your people") says who they are to you, for every group size.
+- A wrong round answer is the room's theory, not a mistake: no red cross and no "Not quite". The GM folds it into the story when nothing anyone has seen says otherwise, or leads them back with a story line, a clue and a new round.
+- "Where we are now" only says what the players have seen or been told; a recap line nobody heard is dropped.
 - The room's buttons (meeting, hint, vote early) sit in the bottom bar above the message box, never at the top of the chat where they scroll away.
 - After your final answer the phone shows who has picked and who is still picking, not an empty screen.
 - A culprit's phone looks exactly like an innocent's, in layout and in words.
@@ -63,7 +69,7 @@ What was rejected and what was accepted, one line each. Add new verdicts the sam
 - The room feed sits beside the map, not at the bottom under the cards.
 - Alibis are statements, not table cells: each person's own words first ("I was at dinner at seven, then back at my dispensary..."), the short where-and-when grid under them as "In short".
 - Music is never a setup chore: "I don't want to set the sound myself every game". The GM picks the direction that fits the world and says why in one line; "Change" folds the list away.
-- Map time chips that overlapped place names were cut on old worlds; crowded places spread apart on screen.
+- The drawn map, with a time on every path, landmark names and a title box, was "crowded: it has the details but nothing is coming out". Accepted: tidy place cards on a grid near where the GM put them, the people inside each, soft paths, no times on the map; zoom, fit and drag (wheel and pinch too) on the big screen and the phone. On the phone a tap on a place shows who is there, how far it is from you, and Go there.
 
 **Words**
 - Plain labels, one reading per action ("Show everyone", "Tap again to end it").
