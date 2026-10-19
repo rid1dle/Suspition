@@ -303,3 +303,120 @@ describe('the setup screen for small groups and who did it', () => {
     assert.doesNotMatch(out, /Hot seats/);
   });
 });
+
+describe('review fixes: a culprit who does not know never learns it by accident', () => {
+  const hiddenGame = (players = 2, phases = 4) => {
+    const game = gameInReading(players, 1_000, { phases });
+    game.setup.replays = 0;
+    const card = game.scenario.players[0];
+    card.unaware = true;
+    card.guilt_reveal = 'It comes back to you: you took the glove in your sleep.';
+    game.scenario.awaken_round = 3;
+    G.startPlay(game, 1_000);
+    return game;
+  };
+
+  test('should never let the story check patch their own card', async () => {
+    const { applyStoryPatches } = await import('../server/story.ts');
+    const s = makeScenario(3);
+    s.players[0].unaware = true;
+    const before = s.players[0].private_info;
+    applyStoryPatches(s, [{ path: 'players.0.private_info', value: 'You took the glove at nine.' }, { path: 'players.1.private_info', value: 'NEW' }], { playerCount: 3, phases: 3, hints: 3 });
+    assert.equal(s.players[0].private_info, before);
+    assert.equal(s.players[1].private_info, 'NEW');
+    const { storyCheckPrompt } = await import('../server/prompts.ts');
+    assert.match(storyCheckPrompt(s, []), /The one exception is a culprit marked unaware/);
+  });
+
+  test('should drop the night entries of the moments they acted, and tell the writer their nights are what they believe', () => {
+    const s = makeScenario(2);
+    s.players[0].unaware = true;
+    s.truth.timeline = [{ time: '9pm', event: 'It happened', character_ids: ['p1'], location_id: 'l1' }];
+    G.applyAudit(s, { players: [{ player_id: 'p1', night: [{ time: '9pm', where: 'Ballroom', doing: 'Takes the glove' }, { time: '8pm', where: 'Kitchen', doing: 'Eats' }] }] });
+    assert.deepEqual(s.players[0].night.map((n) => n.time), ['8pm']);
+    const g = lobby(2);
+    G.applySetup(g, base);
+    assert.match(generationPrompt(g, [], ['p1'], '', { who: 'player', unaware: ['p1'] }), /Their side stays culprit/);
+    assert.match(generationPrompt(g, [], ['p1'], '', { who: 'player', unaware: ['p1'] }), /their nights are what they remember/);
+  });
+
+  test('should wake them when the GM reveals one of their hidden facts early', () => {
+    const game = hiddenGame();
+    G.beginAsk(game, 'p1', { kind: 'self', text: 'Why can I not remember nine?' });
+    G.completeAsk(game, 'p1', { answer: 'You remember.', clues_found: [], suspicion_change: 0, public_event: '', hidden_fact_revealed: 'h1', clues_destroyed: [], messages_to_players: [] }, 2_000);
+    assert.equal(G.knowsGuilt(game, 'p1'), true);
+    assert.equal(G.playerView(game, 'p1', 2_500).card.side, 'culprit');
+  });
+
+  test('should tell a player alone that they now know, without telling them to hide', () => {
+    const game = hiddenGame(1, 4);
+    game.scenario.awaken_round = null;
+    G.beginAsk(game, 'p1', { kind: 'self', text: 'Why can I not remember nine?' });
+    G.completeAsk(game, 'p1', { answer: 'You remember.', clues_found: [], suspicion_change: 0, public_event: '', hidden_fact_revealed: 'h1', clues_destroyed: [], messages_to_players: [] }, 2_000);
+    const told = game.state.threads.p1.find((m) => /It comes back to you/.test(m.text));
+    assert.match(told.text, /Now you know what happened\. At the end, name who did it\./);
+    assert.doesNotMatch(told.text, /Do not get named/);
+  });
+
+  test('should tell the hot seat writer which seated culprit does not know', async () => {
+    const { seatsPrompt } = await import('../server/prompts.ts');
+    const game = hiddenGame(4, 4);
+    game.state.seats = { list: [{ pid: 'p1', askers: [] }] };
+    const prompt = seatsPrompt(game);
+    assert.match(prompt, /"knows_guilt":false/);
+    assert.match(prompt, /A seat with knows_guilt false is whispered as an innocent/);
+  });
+
+  test('should count a culprit who does not know as part of the room, so the last round can still help them', () => {
+    const game = hiddenGame(1, 3);
+    game.scenario.awaken_round = null;
+    game.state.found.p1.push('c1');
+    assert.ok(!G.caseGaps(game).some((g) => g.id === 'p1'));
+    G.completePhase(game, structuredClone(emptyPhase), 2_000);
+    G.completePhase(game, structuredClone(emptyPhase), 3_000);
+    assert.deepEqual(G.caseGaps(game), []);
+  });
+
+  test('should keep their crime out of round lines after it comes back to them', () => {
+    const game = hiddenGame(2, 4);
+    game.scenario.players[0].hidden_facts = [{ id: 'h1', fact: 'You carried the glass bell out of the vault at midnight.' }];
+    G.completePhase(game, structuredClone(emptyPhase), 2_000);
+    G.completePhase(game, structuredClone(emptyPhase), 3_000);
+    assert.equal(G.knowsGuilt(game, 'p1'), true);
+    G.completePhase(game, { ...structuredClone(emptyPhase), public_event: 'Thunder. You carried the glass bell out of the vault at midnight.' }, 4_000);
+    assert.doesNotMatch(game.state.events.filter((e) => e.kind === 'event').at(-1).text, /glass bell/);
+  });
+
+  test('should tell the continuity check who has woken', async () => {
+    const { continuityPrompt } = await import('../server/continuity.ts');
+    const game = hiddenGame();
+    game.state.awakened = { p1: 3 };
+    assert.match(continuityPrompt(game), /"awakened_players":\["p1"\]/);
+  });
+});
+
+describe('review fixes: rules for small games', () => {
+  test('should not offer meetings or say culprits vote, playing alone', async () => {
+    const { rulesLines } = await import('../src/lib/rules.ts');
+    const solo = rulesLines({ rounds: 3, overrides: 2, hints: 2, players: 1 }).join(' ');
+    assert.doesNotMatch(solo, /meeting/);
+    assert.doesNotMatch(solo, /Culprits vote too/);
+    assert.match(solo, /At the end, you name who did it, how and why\./);
+    const pair = rulesLines({ rounds: 3, overrides: 2, hints: 2, players: 2 }).join(' ');
+    assert.match(pair, /A culprit who knows does not count/);
+    const group = rulesLines({ rounds: 3, overrides: 2, hints: 2, players: 4 }).join(' ');
+    assert.match(group, /Culprits vote too/);
+  });
+
+  test('should not say culprits vote on the phone when playing alone', async () => {
+    const React = (await import('react')).default;
+    const { renderToStaticMarkup } = await import('react-dom/server');
+    const { Final } = await import('../src/app/play/endgame.tsx');
+    const game = gameInReading(1);
+    G.startPlay(game, 1_000);
+    game.status = 'final';
+    const html = renderToStaticMarkup(React.createElement(Final, { view: G.playerView(game, 'p1', 2_000) }));
+    assert.doesNotMatch(html, /Culprits too/);
+    assert.match(html, /Name who did it\./);
+  });
+});

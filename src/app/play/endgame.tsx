@@ -44,7 +44,7 @@ export function Final({ view }: { view: PlayerView }) {
       <div>
         <h1 className="font-display text-4xl">Who did it?</h1>
         {count > 0 && <p className="font-semibold">{findLine(count)}</p>}
-        <Muted>Everyone picks. Culprits too. Most votes decides who wins.</Muted>
+        <Muted>{view.players.length === 1 ? 'Name who did it.' : view.players.length === 2 ? 'You both pick. A culprit who knows does not count.' : 'Everyone picks. Culprits too. Most votes decides who wins.'}</Muted>
       </div>
       <div className="grid grid-cols-2 gap-2">
         {people.map((c, i) => {

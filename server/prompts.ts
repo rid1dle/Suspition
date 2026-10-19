@@ -382,7 +382,7 @@ function culpritLine(setup, culprits, team, plan, players) {
   }
   const fixed = [1, 2].includes(setup.culprits) ? 'The host fixed the count: GM characters may help, but are never culprits. ' : '';
   const pair = team ? 'Exactly two culprits among the player characters, who do not know about each other at the start.' : culprits.length > 1 ? 'Decide whether the two culprits know about each other and say so in their private_info.' : fixed ? '' : 'GM characters may be accomplices, never the only culprit.';
-  const hidden = (plan.unaware ?? []).map((id) => ` ${id} is a culprit who does not know it: they were not themselves when they did it (asleep, drugged, a lost memory, under someone's control, or a power they do not know they have, if the setting allows one). Their private_info, starting_knowledge, side_explanation and goal are what they believe, an innocent's view. What they really did goes only in their hidden_facts, each one findable through clues, and the clues lead to them like to any culprit. guilt_reveal is 2 or 3 sentences, second person, of it coming back to them.`).join('');
+  const hidden = (plan.unaware ?? []).map((id) => ` ${id} is a culprit who does not know it: they were not themselves when they did it (asleep, drugged, a lost memory, under someone's control, or a power they do not know they have, if the setting allows one). Their private_info, starting_knowledge, side_explanation and goal are what they believe, an innocent's view. Their side stays culprit. What they really did goes only in their hidden_facts, each one findable through clues, and the clues lead to them like to any culprit; their nights are what they remember, never where they were while they did it. guilt_reveal is 2 or 3 sentences, second person, of it coming back to them.`).join('');
   return `${head} exactly ${culprits.join(' and ')}. ${fixed}${pair}${hidden}${solo}`;
 }
 
@@ -567,6 +567,8 @@ export function seatsPrompt(game) {
   const seats = (st.seats?.list ?? []).map((s) => ({
     player_id: s.pid,
     character: card(s.pid)?.character_name,
+    // A culprit who does not know it is whispered as an innocent until the game tells them.
+    knows_guilt: card(s.pid)?.side === 'culprit' && !(card(s.pid)?.unaware && !st.awakened?.[s.pid]),
     askers: s.askers.map((a) => ({ player_id: a.pid, character: card(a.pid)?.character_name, knows: askerKnows(card(a.pid) ?? {}) })),
   }));
   return `Write this round's hot seats for a mystery played out loud in one room. A hot seat puts one player on the spot for 90 seconds while up to 3 others each ask them one question out loud.
@@ -574,7 +576,7 @@ Round ${i + 1} of ${n}. ${i < n - 2
     ? "Side secrets only: questions, whispers and follow-ups may touch each player's private secrets, but nothing that points at the culprit, the method or the motive."
     : 'The case is closing: questions and follow-ups may now point at the culprit, the method and the motive.'}
 For each seat:
-- whisper: up to 3 short lines, 12 words or fewer each, for the seated player only, from their own card's truth: what is safe to admit, what to lie about, who to deflect onto. A culprit gets a believable lie. Someone innocent chooses to guard a side secret or come clean.
+- whisper: up to 3 short lines, 12 words or fewer each, for the seated player only, from their own card's truth: what is safe to admit, what to lie about, who to deflect onto. A culprit gets a believable lie. A seat with knows_guilt false is whispered as an innocent: they do not know what they did. Someone innocent chooses to guard a side secret or come clean.
 - askers: for each listed asker, one question of 15 words or fewer that their own character could ask from what they know, pointing at something real in the case.
 - followup: only when that asker's own card truly contradicts a likely lie, one line that starts with "If" ("If Priya says she was in the library, tell her: the library was locked at nine."). Otherwise empty.
 Use only facts each asker knows (below) and public facts. Never write what anyone feels or answers.
@@ -623,7 +625,7 @@ export function storyCheckPrompt(scenario, issues = [], unpatched = []) {
 5. No single clue, hint, card line or public line points at the culprit alone, by name or by a role, an initial or a trait only they have.
 6. Head counts, objects and times agree everywhere.
 7. Every red herring is convincing and ruled out by a different, later clue. The refutation makes it impossible, not just less likely. Its target has no witness at the crime time, and something points at them before anything clears them.
-8. Every fact about what a player character did, said or where they were is on that player's own card.
+8. Every fact about what a player character did, said or where they were is on that player's own card. The one exception is a culprit marked unaware: what they did stays in their hidden_facts, never on their card.
 9. No clue or witness carries a mark of something that happens later, or of a place they were not at.
 10. Every suspect's motive can be learned in play: from a clue, a card or a GM character's sheet.
 11. Every player's goal can be reached: the thing or person it needs exists and can be found.

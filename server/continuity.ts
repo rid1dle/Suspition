@@ -163,6 +163,7 @@ export function continuityPrompt(game) {
     hints_not_given: sc.hint_ladder.map((h, index) => ({ index, text: h.text })).filter((h) => h.index >= (st.hintCursor ?? 0)),
     gm_characters: sc.npcs.map((n, index) => ({ index, id: n.id, name: n.name, knows: n.knows, lies: n.lies })),
     key_deductions: sc.key_deductions,
+    awakened_players: Object.keys(st.awakened ?? {}),
   };
   const said = {
     in_the_room: st.events.filter((e) => e.at > since && e.kind !== 'opening').map((e) => (e.kind === 'qa' ? `${e.by} asked out loud: ${e.read ? playerWords(e.read, e.q, 'public') : e.q} Answer: ${e.text}` : eventForGM(e))),

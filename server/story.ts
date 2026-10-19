@@ -265,6 +265,8 @@ const inPlace = (scenario) => ({
 
 // The consistency check's patches, to the allowed fields only.
 export function applyStoryPatches(scenario, patches, rules) {
-  const allowed = (path) => STORY_PATHS.some((re) => re.test(path));
+  // A culprit who does not know it keeps an innocent's card: no check may write their crime onto it.
+  const unaware = (path) => { const m = /^players\.(\d+)\./.exec(path); return Boolean(m && scenario.players?.[Number(m[1])]?.unaware); };
+  const allowed = (path) => STORY_PATHS.some((re) => re.test(path)) && !unaware(path);
   return guardedPatches(inPlace(scenario), patches, (p) => applyPatches(scenario, [p], allowed), () => structuralCount(scenario, rules));
 }

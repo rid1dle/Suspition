@@ -205,7 +205,9 @@ export function applyAudit(scenario, audit) {
       p.reminders = reminders;
       changes += 1;
     }
-    const night = cleanSlots(entry.night, ['time', 'where', 'doing']);
+    // A culprit who does not know it remembers no night where they were doing it.
+    const acting = (scenario.truth?.timeline ?? []).filter((t) => (t?.character_ids ?? []).includes(p.id)).map((t) => t.time);
+    const night = cleanSlots(entry.night, ['time', 'where', 'doing']).filter((n) => !p.unaware || !acting.some((t) => sameTime(t, n.time)));
     if (night.length && !p.night?.length) {
       p.night = night;
       changes += 1;
@@ -836,7 +838,8 @@ function caseNeeds(game) {
   ].filter((n) => n.clues.length);
 }
 
-const innocentIds = (game) => game.scenario.players.map((p) => p.id).filter((id) => !(game.scenario.truth?.culprit_ids ?? []).includes(id));
+// The room: every player except a culprit who knows. One who does not know searches like anyone else.
+const innocentIds = (game) => game.scenario.players.map((p) => p.id).filter((id) => !knowsGuilt(game, id));
 
 // What the room can use: shared clues and clues an innocent player holds. A culprit keeping one to themselves never counts.
 const foundByRoom = (game) => new Set([...innocentIds(game).flatMap((id) => game.state.found?.[id] ?? []), ...game.state.shared.map((x) => x.clueId)]);
@@ -1175,6 +1178,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const fact = result.hidden_fact_revealed;
   if (fact && own.hidden_facts.some((h) => h.id === fact) && !st.revealed[playerId].includes(fact)) {
     st.revealed[playerId].push(fact);
+    // A culprit who learns one of their hidden facts has found out: the card turns now, not at the planned round.
+    if (own.side === 'culprit' && own.unaware && !st.awakened?.[playerId]) awakenOne(game, own, now);
   }
   destroy(game, result.clues_destroyed);
   learn(game, result.learned, playerId, now);
@@ -1205,7 +1210,8 @@ function privateCardFacts(game) {
   ].flatMap(sentences);
   const secret = sc.players.flatMap((p) => [
     ...sentences(p.private_info), ...sentences(p.backstory), ...sentences(p.starting_knowledge),
-    ...(p.hidden_facts ?? []).filter((h) => !(st?.revealed?.[p.id] ?? []).includes(h.id)).map((h) => h.fact),
+    // Revealed to its player is still private: only the room hearing it makes it public.
+    ...(p.hidden_facts ?? []).map((h) => h.fact),
   ]);
   return secret.filter((f) => !heard.some((h) => retells(h, f)));
 }
@@ -1306,10 +1312,16 @@ function awaken(game, now) {
   for (const card of game.scenario.players) {
     if (card.side !== 'culprit' || !card.unaware || st.awakened?.[card.id]) continue;
     if (st.phaseIndex + 1 < at && !isLastPhase(game)) continue;
-    (st.awakened ??= {})[card.id] = roundNumber(game);
-    for (const h of card.hidden_facts ?? []) if (!st.revealed[card.id].includes(h.id)) st.revealed[card.id].push(h.id);
-    whisper(game, [{ player_id: card.id, text: `${String(card.guilt_reveal ?? '').trim()} You are one of the culprits now. Do not get named at the final vote.`.trim() }], now);
+    awakenOne(game, card, now);
   }
+}
+
+function awakenOne(game, card, now) {
+  const st = game.state;
+  (st.awakened ??= {})[card.id] = roundNumber(game);
+  for (const h of card.hidden_facts ?? []) if (!st.revealed[card.id].includes(h.id)) st.revealed[card.id].push(h.id);
+  const next = game.players.length === 1 ? 'Now you know what happened. At the end, name who did it.' : 'You are one of the culprits now. Do not get named at the final vote.';
+  whisper(game, [{ player_id: card.id, text: `${String(card.guilt_reveal ?? '').trim()} ${next}`.trim() }], now);
 }
 
 export function isLastPhase(game) {
@@ -2898,7 +2910,7 @@ export function playerView(game, playerId, now = Date.now()) {
     hidden_known: card.hidden_facts.filter((h) => revealed.includes(h.id)).map((h) => h.fact),
     hidden_unknown: card.hidden_facts.filter((h) => !revealed.includes(h.id)).length,
   };
-  view.rules = rulesLines({ rounds: game.scenario.phases.length, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0 });
+  view.rules = rulesLines({ rounds: game.scenario.phases.length, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0, players: game.players.length });
   view.thread = st.threads[playerId].map(({ read, ...m }) => m);
   view.canCallMeeting = game.status === 'playing' && game.players.length >= 2 && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;
