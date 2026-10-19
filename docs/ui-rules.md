@@ -69,7 +69,7 @@ What was rejected and what was accepted, one line each. Add new verdicts the sam
 - The room feed sits beside the map, not at the bottom under the cards.
 - Alibis are statements, not table cells: each person's own words first ("I was at dinner at seven, then back at my dispensary..."), the short where-and-when grid under them as "In short".
 - Music is never a setup chore: "I don't want to set the sound myself every game". The GM picks the direction that fits the world and says why in one line; "Change" folds the list away.
-- The drawn map, with a time on every path, landmark names and a title box, was "crowded: it has the details but nothing is coming out". Accepted: tidy place cards on a grid near where the GM put them, the people inside each, soft paths, no times on the map; zoom, fit and drag (wheel and pinch too) on the big screen and the phone. On the phone a tap on a place shows who is there, how far it is from you, and Go there.
+- The map must feel like a map, not a diagram: a grid of place cards was "not good, doesn't feel like a map". Accepted: the GM draws each world's map once (top-down, in the world's art style, no words) to fixed spots; Leaflet shows it with map zoom, drag and pinch; names, people and distances sit on top and tidy themselves by zoom (less detail, then a pin); the phone opens on you; tapping a place lights the way there with the walk time and Go there; the big screen has a Bigger map view. Distances stay visible on the paths.
 
 **Words**
 - Plain labels, one reading per action ("Show everyone", "Tap again to end it").
