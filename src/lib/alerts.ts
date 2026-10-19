@@ -11,7 +11,8 @@ export function tableSound(prev, next) {
   const sounds = new Set();
   for (const e of fresh) {
     if (e.kind === 'phase') sounds.add('phase');
-    else if (e.kind === 'moment') sounds.add('call');
+    else if (e.kind === 'moment' || e.kind === 'meeting') sounds.add('call');
+    else if (e.kind === 'move') sounds.add('soft');
     else if (e.kind === 'vote') sounds.add('vote');
     else {
       const it = feedItem(e);
@@ -48,6 +49,12 @@ export function phoneAlerts(prev, next) {
     if (role === 'seated') out.push({ sound: 'call', text: "You're in the hot seat. Read your whisper.", tab: 'story' });
     else if (role === 'asker') out.push({ sound: 'call', text: `You have a question for ${next.seat.name}.`, tab: 'story' });
   }
+  // Things that need this player now ring like a call, with a buzz.
+  if (next.meeting && !prev.meeting) out.push({ sound: 'call', text: `Meeting! ${next.meeting.by} calls everyone together.`, tab: null });
+  if (next.moveConfirm && !prev.moveConfirm) out.push({ sound: 'call', text: `Go to the ${String(next.moveConfirm.place).replace(/^the\s+/i, '')}? Answer Go or Not now.`, tab: null });
+  if ((next.offers ?? []).some((o) => !(prev.offers ?? []).some((p) => p.id === o.id))) out.push({ sound: 'call', text: 'The story needs an answer from you.', tab: null });
+  if (next.phase?.number && prev.phase?.number && next.phase.number !== prev.phase.number) out.push({ sound: 'phase', text: `Round ${next.phase.number}: ${next.phase.name}.`, tab: null });
+  if (next.voteAsk && !prev.voteAsk && next.voteAsk.proposer !== next.me?.name) out.push({ sound: 'vote', text: `${next.voteAsk.proposer} wants to vote now. Yes or Not yet?`, tab: null });
   if (next.round?.vote && !prev.round?.vote) out.push({ sound: 'vote', text: 'Vote now on the round question.', tab: 'story' });
   if (next.hintVote && !prev.hintVote && next.hintVote.proposer !== next.me?.name) out.push({ sound: 'vote', text: `${next.hintVote.proposer} wants a hint. Vote yes or no.`, tab: null });
   return out;
