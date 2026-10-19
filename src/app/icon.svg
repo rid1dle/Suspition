@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Suspition</title>
+  <rect width="64" height="64" rx="14" fill="#141217"/>
+  <line x1="38" y1="38" x2="53" y2="53" stroke="#e0a85a" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="27" cy="27" r="16" fill="#1d1a21" stroke="#e0a85a" stroke-width="6"/>
+  <circle cx="27" cy="23.5" r="4.5" fill="#f1ebe3"/>
+  <path d="M24.6 25.5h4.8l1.6 9.5h-8z" fill="#f1ebe3"/>
+</svg>
