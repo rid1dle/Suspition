@@ -9,11 +9,17 @@ import { ProfilePanel } from '@/components/game/lobby';
 
 const SIDES: Record<string, string> = { investigator: 'Detective', culprit: 'Culprit', wildcard: 'Wildcard' };
 
+// The three layers of a character (public, private, unknown to them) each keep one colour: a tint and the label.
+export const LAYER = {
+  public: { tint: 'bg-layer-public/10', label: 'text-layer-public' },
+  private: { tint: 'bg-primary/10', label: 'text-primary' },
+  hidden: { tint: 'bg-layer-hidden/10', label: 'text-layer-hidden' },
+};
+
 function Section({ title, children, tone = 'private' }: { title: string; children: React.ReactNode; tone?: 'private' | 'public' | 'hidden' }) {
-  const border = tone === 'public' ? 'border-l-sky-400/70' : tone === 'hidden' ? 'border-l-violet-400/70' : 'border-l-primary';
   return (
-    <section className={`flex flex-col gap-2 rounded-xl border-l-4 bg-card p-4 ${border}`}>
-      <Label>{title}</Label>
+    <section className={`flex flex-col gap-2 rounded-xl p-4 ${LAYER[tone].tint}`}>
+      <Label className={LAYER[tone].label}>{title}</Label>
       {children}
     </section>
   );

@@ -19,7 +19,7 @@ export function PlayChip({ play }: { play: Play }) {
   const label = (SKILL_LABELS as Record<string, string>)[play.skill ?? ''] ?? '';
   return (
     <motion.span initial={{ opacity: 0, y: 8, scale: 0.9 }} animate={{ opacity: [0, 1, 1, 0], y: [8, 0, -6, -22] }} transition={{ duration: 2.4, times: [0, 0.15, 0.75, 1] }}
-      className={`pointer-events-none inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${play.points > 0 ? 'bg-primary text-primary-foreground' : 'bg-destructive text-white'}`}>
+      className={`pointer-events-none inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${play.points > 0 ? 'bg-primary text-primary-foreground' : 'bg-destructive text-background'}`}>
       {signed(play.points)} {label}
     </motion.span>
   );

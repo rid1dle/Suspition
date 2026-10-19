@@ -22,7 +22,7 @@ export function Feed({ events, fresh = 0, onGo }: { events: GameEvent[]; fresh?:
     const isFresh = left-- > 0;
     return (
       <li key={`${it.kind}-${i}-${it.text.slice(0, 20)}`} data-kind={it.kind} className={`flex gap-3 rounded-lg px-2 py-1.5 ${isFresh ? 'bg-primary/10' : ''}`}>
-        <span className={`w-5 shrink-0 text-center ${it.kind === 'right' ? 'text-emerald-400' : it.kind === 'wrong' ? 'text-destructive' : 'text-muted-foreground'}`}>{ICONS[it.kind] ?? '·'}</span>
+        <span className={`w-5 shrink-0 text-center ${it.kind === 'right' ? 'text-correct' : it.kind === 'wrong' ? 'text-destructive' : 'text-muted-foreground'}`}>{ICONS[it.kind] ?? '·'}</span>
         <div className={`min-w-0 ${it.kind === 'ripple' ? 'italic text-muted-foreground' : ''}`}>
           {it.ask && <Muted className="text-xs">{it.ask}</Muted>}
           {it.lines?.length ? <Novel lines={it.lines} /> : it.text}

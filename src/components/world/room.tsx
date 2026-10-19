@@ -30,6 +30,10 @@ export function roomStyle(room: Room | null): CSSProperties {
     '--border': `color-mix(in oklab, ${c.text} 12%, transparent)`,
     '--input': `color-mix(in oklab, ${c.text} 16%, transparent)`,
     '--ring': c.accent,
+    // Meaning colours keep their hue but lean toward the world's text colour, so they read in every palette.
+    '--correct': `color-mix(in oklab, #36d097 70%, ${c.text})`,
+    '--layer-public': `color-mix(in oklab, #3abaf4 65%, ${c.text})`,
+    '--layer-hidden': `color-mix(in oklab, #a58af6 70%, ${c.text})`,
   } as CSSProperties;
 }
 

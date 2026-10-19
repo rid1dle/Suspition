@@ -123,7 +123,7 @@ export function Playing(props: TableProps) {
       <header className="sticky top-0 z-30 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border bg-background/85 px-6 py-3 backdrop-blur">
         <div className="min-w-0 flex-1">
           <div className="text-xs text-muted-foreground">{view.title}</div>
-          <div className="truncate font-heading text-xl">{view.phase ? `Round ${view.phase.number} of ${view.phase.count} · ${view.phase.name}` : ''}</div>
+          <div className="truncate font-heading text-xl">{view.phase ? `Round ${view.phase.number} of ${view.phase.count}${view.phase.name !== view.title ? ` · ${view.phase.name}` : ''}` : ''}</div>
         </div>
         <div className="flex items-center gap-1 text-sm" title="Group hints left. Ask for one on your phone.">
           <span className="text-muted-foreground">Hints</span>

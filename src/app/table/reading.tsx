@@ -34,8 +34,6 @@ export function Reading(props: TableProps) {
               {host && b ? <BriefPager view={view as never} at={b.step} onGo={(i) => go(Math.max(0, Math.min(b.steps.length - 1, i)))} /> : <BriefStep view={view as never} />}
           </section>
           {host && b && <Button variant="ghost" className="self-start" onClick={() => step && readNow([`${step.title}.`, ...step.lines])}>Read this card out loud again</Button>}
-        </div>
-        <aside className="flex flex-col gap-4">
           <MusicPicker soundtrack={view.soundtrack ?? null} host={Boolean(host)} previewing={music?.previewing ?? null} onListen={(i) => music?.listen(i)} onPick={(index) => act('music', { index })} />
           <section className="flex flex-col gap-3 rounded-2xl bg-card p-5">
             <Label>Read your card on your phone. Then tap "Done".</Label>
@@ -47,8 +45,13 @@ export function Reading(props: TableProps) {
             </div>
             {host && <Button onClick={() => act('start')}>Start round 1</Button>}
           </section>
+        </div>
+        <aside className="flex flex-col gap-4">
           <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Timeline so far</Label><Timeline timeline={view.timeline} /><Muted className="text-xs">More times show up as the rounds go on.</Muted></section>
-          <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Alibis: where people say they were</Label><Alibis alibis={view.alibis} /></section>
+          <details className="rounded-2xl bg-card p-5 [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer list-none text-sm font-medium">Alibis: where people say they were</summary>
+            <div className="mt-3"><Alibis alibis={view.alibis} /></div>
+          </details>
           <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Questions about the world</Label>
             {view.events.some((e) => e.kind === 'qa') ? <News events={view.events.filter((e) => e.kind === 'qa')} /> : <Muted>Ask on your phone. Everyone sees the answer.</Muted>}
           </section>

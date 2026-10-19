@@ -29,8 +29,8 @@ export function FinalWait(props: TableProps) {
         </section>
         <div className="flex flex-col gap-4">
           <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Timeline</Label><Timeline timeline={view.timeline} /></section>
-          <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Rounds</Label>{view.roundResults?.length ? <Results results={view.roundResults} /> : <Muted>No round votes.</Muted>}</section>
-          <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Shared clues</Label><SharedClues clues={view.sharedClues} /></section>
+          {view.roundResults?.length > 0 && <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Rounds</Label><Results results={view.roundResults} /></section>}
+          {view.sharedClues?.length > 0 && <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Shared clues</Label><SharedClues clues={view.sharedClues} /></section>}
         </div>
       </div>
     </main>
@@ -62,7 +62,7 @@ export function Reveal(props: TableProps) {
   return (
     <main ref={root} className="mx-auto flex max-w-7xl flex-col gap-6 px-6 pt-8">
       <Header {...props} title="The answer" sub={view.title} />
-      <div data-verdict className={`rounded-2xl p-6 text-2xl ${win ? 'bg-primary text-primary-foreground' : 'bg-destructive text-white'}`}>
+      <div data-verdict className={`rounded-2xl p-6 text-2xl ${win ? 'bg-primary text-primary-foreground' : 'bg-destructive text-background'}`}>
         <b>{win ? 'The detectives win.' : 'The culprits got away.'}</b> {r.verdict.correct_player_ids.length} of {view.players.length} picked <b>{r.truth.culprit_ids.map(nameOf).join(' and ')}</b>.
       </div>
       <div className="grid gap-6 lg:grid-cols-[minmax(320px,1.4fr)_minmax(280px,1fr)]">
@@ -70,18 +70,25 @@ export function Reveal(props: TableProps) {
           <div className="flex items-center justify-between"><Label>What really happened</Label><Button size="sm" variant="ghost" onClick={() => readNow([r.reveal_story, r.story_shape].filter(Boolean))}>Read it out</Button></div>
           <p className="text-xl leading-relaxed whitespace-pre-wrap">{r.reveal_story}</p>
           <StoryShape line={r.story_shape} />
-          <Label className="mt-3">Timeline</Label>
-          <Timeline timeline={r.truth.timeline} />
+          {/* The whole night is long: it folds, so the story and the cards lead. */}
+          <details className="mt-3 [&_summary::-webkit-details-marker]:hidden">
+            <summary className="cursor-pointer list-none text-sm font-medium text-primary">The night, step by step</summary>
+            <div className="mt-3"><Timeline timeline={r.truth.timeline} /></div>
+          </details>
         </section>
         <div className="flex flex-col gap-4">
-          <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Rounds</Label>{view.roundResults?.length ? <Results results={view.roundResults} /> : <Muted>No round votes.</Muted>}</section>
-          <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>How people found out</Label>
-            {r.learned?.length ? r.learned.map((k: { who: string; fact: string; round: number; how: string }, i: number) => <div key={i} className="text-sm"><b>{k.who}</b> learned: {k.fact} <span className="text-muted-foreground">(round {k.round}, {k.how})</span></div>) : <Muted>The GM people learned nothing new.</Muted>}
-          </section>
-          <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Twists</Label>
-            {r.twists.map((t: { name: string; description: string }, i: number) => <div key={i} className="text-sm"><b>{t.name}</b>: {t.description}</div>)}
-            {r.false_hint && <div className="text-sm"><b>The fake hint:</b> {r.false_hint}</div>}
-          </section>
+          {view.roundResults?.length > 0 && <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Rounds</Label><Results results={view.roundResults} /></section>}
+          {r.learned?.length > 0 && (
+            <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>How people found out</Label>
+              {r.learned.map((k: { who: string; fact: string; round: number; how: string }, i: number) => <div key={i} className="text-sm"><b>{k.who}</b> learned: {k.fact} <span className="text-muted-foreground">(round {k.round}, {k.how})</span></div>)}
+            </section>
+          )}
+          {(r.twists.length > 0 || r.false_hint) && (
+            <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Twists</Label>
+              {r.twists.map((t: { name: string; description: string }, i: number) => <div key={i} className="text-sm"><b>{t.name}</b>: {t.description}</div>)}
+              {r.false_hint && <div className="text-sm"><b>The fake hint:</b> {r.false_hint}</div>}
+            </section>
+          )}
         </div>
       </div>
       <h2 className="mt-4 font-heading text-3xl">Everyone's cards</h2>
@@ -93,10 +100,10 @@ export function Reveal(props: TableProps) {
             <div key={c.id} data-card className={`flex flex-col gap-3 rounded-2xl bg-card p-5 ${best ? 'ring-2 ring-primary' : ''}`}>
               <div className="flex items-start justify-between gap-2">
                 <div><b className="font-heading text-xl">{c.name}</b> <span className="text-muted-foreground">({c.player})</span><div className="text-sm text-muted-foreground">{c.role}</div></div>
-                <span className={`rounded-full px-2 py-0.5 text-xs ${c.side === 'culprit' ? 'bg-destructive text-white' : 'bg-muted'}`}>{SIDES[c.side] ?? c.side}</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs ${c.side === 'culprit' ? 'bg-destructive text-background' : 'bg-muted'}`}>{SIDES[c.side] ?? c.side}</span>
               </div>
-              <div className="rounded-lg border-l-4 border-l-primary bg-muted/40 p-3 text-sm"><Label>Secret</Label>{c.private_info}<div className="mt-1"><b>Goal:</b> {c.goal}</div></div>
-              <div className="rounded-lg border-l-4 border-l-violet-400/70 bg-muted/40 p-3 text-sm"><Label>They never knew</Label>{c.hidden_facts.map((f: string, i: number) => <div key={i}>{f}</div>)}</div>
+              <div className="rounded-lg bg-primary/10 p-3 text-sm"><Label className="text-primary">Secret</Label>{c.private_info}<div className="mt-1"><b>Goal:</b> {c.goal}</div></div>
+              {c.hidden_facts.length > 0 && <div className="rounded-lg bg-layer-hidden/10 p-3 text-sm"><Label className="text-layer-hidden">They never knew</Label>{c.hidden_facts.map((f: string, i: number) => <div key={i}>{f}</div>)}</div>}
               <div className="text-sm"><b>Picked:</b> {c.submission ? c.submission.culprit_ids.map(nameOf).join(', ') : <span className="text-muted-foreground">nobody</span>}</div>
               <div className="text-sm"><b>{totalLine(s)}</b>{best && <b className="text-primary"> · Best play</b>} · Culprit {s.culprit_correct ? '✓' : '✗'} · How {s.method_score ?? 0}/2 · Why {s.motive_score ?? 0}/2 · Goal {s.goal_achieved ? '✓' : '✗'}</div>
               <Muted className="text-xs">{s.goal_outcome} {s.comment}</Muted>

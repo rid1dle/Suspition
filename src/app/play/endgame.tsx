@@ -102,8 +102,8 @@ export function Reveal({ view }: { view: PlayerView }) {
         {mine.coaching && <p className="text-sm"><b>Tip:</b> {mine.coaching}</p>}
       </section>
       {card && (
-        <section className="flex flex-col gap-2 rounded-2xl border-l-4 border-l-violet-400/70 bg-card p-5">
-          <Label>What you never knew</Label>
+        <section className="flex flex-col gap-2 rounded-2xl bg-layer-hidden/10 p-5">
+          <Label className="text-layer-hidden">What you never knew</Label>
           {card.hidden_facts.map((f: string, i: number) => <p key={i}>{f}</p>)}
         </section>
       )}

@@ -4,7 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Meaning colours: right answers and the public and hidden layers of a card. Each world mixes them into its own palette. */
 :root {
+  --correct: #36d097;
+  --layer-public: #3abaf4;
+  --layer-hidden: #a58af6;
   --muted: oklch(0.97 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
@@ -48,6 +52,9 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-correct: var(--correct);
+  --color-layer-public: var(--layer-public);
+  --color-layer-hidden: var(--layer-hidden);
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);

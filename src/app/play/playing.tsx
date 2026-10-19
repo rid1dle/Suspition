@@ -283,7 +283,7 @@ function ChatLine({ item, latest, onGo }: { item: ChatItem; latest: boolean; onG
       </motion.div>
     );
   }
-  const tone = item.tone === 'right' ? 'text-emerald-400' : item.tone === 'wrong' ? 'text-destructive' : 'text-muted-foreground';
+  const tone = item.tone === 'right' ? 'text-correct' : item.tone === 'wrong' ? 'text-destructive' : 'text-muted-foreground';
   const loud = ['because', 'meeting', 'event', 'vote-result'].includes(item.kind);
   return (
     <motion.div {...fade} data-kind={item.kind} className={`flex gap-2 px-1 text-sm ${loud ? 'font-medium' : ''} ${item.kind === 'ripple' ? 'italic text-muted-foreground' : ''}`}>
@@ -298,7 +298,7 @@ const WHO: Record<string, string> = { you: 'You · only the GM sees', gm: 'GM ·
 function PrivateLine({ item, latest, fade }: { item: ChatItem; latest: boolean; fade: object }) {
   const m = item.entry;
   const mine = item.kind === 'you';
-  const tint = mine ? 'self-end bg-primary/15' : item.kind === 'whisper' ? 'bg-violet-500/15' : item.kind === 'system' ? 'bg-destructive/15' : 'bg-card';
+  const tint = mine ? 'self-end bg-primary/15' : item.kind === 'whisper' ? 'bg-layer-hidden/15' : item.kind === 'system' ? 'bg-destructive/15' : 'bg-card';
   return (
     <motion.div {...fade} className={`relative flex max-w-[88%] flex-col gap-1 rounded-2xl p-3 ${tint}`}>
       <Label>{WHO[item.kind] ?? 'GM'}</Label>
