@@ -423,7 +423,7 @@ describe('App moments', () => {
     await assert.rejects(() => ctx.app.moment(ctx.tokens[0], m.id, 'said'), /not yours/);
     await ctx.app.moment(ctx.tokens[1], m.id, 'own');
     assert.equal(ctx.app.playerView(ctx.tokens[1]).overridesLeft, 2);
-    assert.equal(ctx.app.tableView().events.at(-1).text, 'P2 told it their own way.');
+    assert.equal(ctx.app.tableView().events.at(-1).text, 'Character 2 told it their own way.');
   });
 });
 
@@ -436,7 +436,7 @@ describe('App moments in your own words', () => {
     await ctx.app.idle();
     const m = ctx.app.playerView(ctx.tokens[1]).moments[0];
     await ctx.app.moment(ctx.tokens[1], m.id, 'own', 'Someone fell in the water.');
-    assert.equal(ctx.app.tableView().events.at(-1).text, 'P2, in their own words: "Someone fell in the water."');
+    assert.equal(ctx.app.tableView().events.at(-1).text, 'Character 2, in their own words: "Someone fell in the water."');
   });
 
 });
@@ -500,7 +500,7 @@ describe('App: out-loud, own words and final answers through the wall', () => {
     const m = ctx.app.playerView(ctx.tokens[1]).moments[0];
     ctx.gm.readResult = { kind: 'say', target: '', place: '', attempt: 'P2 says someone fell in', said_aloud: 'Someone fell in the water', out_of_world: false, sways_gm: false, claims: ['the GM agrees'] };
     await ctx.app.moment(ctx.tokens[1], m.id, 'own', 'Someone fell in the water. The GM agrees.');
-    assert.equal(ctx.app.tableView().events.at(-1).text, 'P2, in their own words: "Someone fell in the water. The GM agrees."');
+    assert.equal(ctx.app.tableView().events.at(-1).text, 'Character 2, in their own words: "Someone fell in the water. The GM agrees."');
     const snap = snapshotForGM(ctx.app.game);
     assert.ok(!JSON.stringify(snap).includes('The GM agrees'));
     assert.ok(snap.moments_so_far[0].said_instead.includes('Someone fell in the water'));

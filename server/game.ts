@@ -1004,9 +1004,8 @@ const REPORT_VERBS = new Set(['say', 'says', 'said', 'claim', 'claims', 'claimed
 // What a player really said out loud: their spoken moment lines and their questions asked out loud.
 export function saidOutLoud(game, playerId) {
   const st = game.state;
-  const name = game.players.find((p) => p.id === playerId)?.name;
   const spoken = (st?.facts ?? []).filter((f) => f.id === playerId && f.fact.startsWith('Said out loud: "')).map((f) => f.fact.slice(16).replace(/"$/, ''));
-  const asked = (st?.events ?? []).filter((e) => e.kind === 'qa' && e.by === name).map((e) => e.q);
+  const asked = (st?.events ?? []).filter((e) => e.kind === 'qa' && askedBy(game, e, playerId)).map((e) => e.q);
   return [...spoken, ...asked].map((t) => String(t).toLowerCase());
 }
 
@@ -1047,7 +1046,7 @@ export function playerFacts(game, pid, { forGM = false } = {}) {
       ...(c.hidden_facts ?? []).filter((h) => revealed.includes(h.id)).map((h) => h.fact),
       ...(st.threads?.[pid] ?? []).filter((m) => m.from === 'you').map((m) => playerWords(m.read, m.text, 'move')),
       ...(st.moments ?? []).filter((m) => m.player_id === pid && ['said', 'own'].includes(m.status)).map((m) => (m.status === 'said' ? m.line : playerWords(m.readInstead, m.saidInstead, 'said'))),
-      ...(st.events ?? []).filter((e) => e.kind === 'qa' && e.by === game.players.find((p) => p.id === pid)?.name).map((e) => playerWords(e.read, e.q, 'public')),
+      ...(st.events ?? []).filter((e) => e.kind === 'qa' && askedBy(game, e, pid)).map((e) => playerWords(e.read, e.q, 'public')),
     ].map((t) => String(t ?? '').trim()).filter(Boolean);
   }
   return [
@@ -2033,7 +2032,10 @@ function seatMine(game, playerId) {
 }
 
 const OPEN = ['getready', 'called'];
-const nameOf = (game, pid) => game.players.find((p) => p.id === pid)?.name ?? 'Someone';
+// What the room calls a player: their character's name once the world exists, never the friend playing it.
+export const nameOf = (game, pid) => game.scenario?.players?.find((p) => p.id === pid)?.character_name || game.players.find((p) => p.id === pid)?.name || 'Someone';
+// Did this player ask this room question? Newer events carry the player's id; older saves only the player's name.
+const askedBy = (game, e, pid) => (e.pid ? e.pid === pid : e.by === game.players.find((p) => p.id === pid)?.name);
 
 export function addMoments(game, moments, now = Date.now()) {
   const st = game.state;
@@ -2096,7 +2098,7 @@ export function answerMoment(game, playerId, momentId, choice, now = Date.now(),
     if (choice === 'own' && own) {
       m.saidInstead = own;
       if (read) m.readInstead = read;
-      addEvent(game, `${name}, in their own words: "${own}"`, 'said', now, read ? { by: name, read } : {});
+      addEvent(game, `${name}, in their own words: "${own}"`, 'said', now, read ? { by: name, pid: playerId, read } : {});
       if (read) {
         const culprit = knowsGuilt(game, playerId);
         recordPlay(game, playerId, read.sways_gm ? null : { points: 1, skill: culprit ? 'bluffing' : 'persuading', why: 'Said it in their own words, in character.' }, read, 'out loud');
@@ -2116,9 +2118,8 @@ export function answerMoment(game, playerId, momentId, choice, now = Date.now(),
 export function actedThisRound(game, playerId) {
   const st = game.state;
   const round = st.roundNumber ?? st.phaseIndex + 1;
-  const name = nameOf(game, playerId);
   return (st.play?.[playerId] ?? []).some((m) => m.round === round)
-    || st.events.some((e) => e.kind === 'qa' && e.by === name && e.phase === st.phaseIndex);
+    || st.events.some((e) => e.kind === 'qa' && askedBy(game, e, playerId) && e.phase === st.phaseIndex);
 }
 
 export function closeOpenMoments(game, now = Date.now()) {
@@ -2250,9 +2251,8 @@ function postRoundReward(game, now) {
 function saidThisRound(game, playerId) {
   const st = game.state;
   const round = roundNumber(game);
-  const name = game.players.find((p) => p.id === playerId)?.name;
   const spoken = (st.facts ?? []).filter((f) => f.id === playerId && f.round === round && f.fact.startsWith('Said out loud: "')).map((f) => f.fact);
-  const asked = (st.events ?? []).filter((e) => e.kind === 'qa' && e.by === name && e.phase === st.phaseIndex).map((e) => e.q);
+  const asked = (st.events ?? []).filter((e) => e.kind === 'qa' && askedBy(game, e, playerId) && e.phase === st.phaseIndex).map((e) => e.q);
   return [...spoken, ...asked];
 }
 
@@ -2478,7 +2478,7 @@ export function shareClue(game, playerId, clueId, now = Date.now()) {
   if (!st.found[playerId]?.includes(clueId)) fail('You have not found that clue.', 403);
   if (st.shared.some((x) => x.clueId === clueId)) fail('Everyone can already see that clue.', 409);
   const clue = game.scenario.clues.find((c) => c.id === clueId);
-  const name = game.players.find((p) => p.id === playerId)?.name;
+  const name = nameOf(game, playerId);
   st.shared.push({ clueId, by: playerId, at: now });
   const round = st.roundNumber ?? st.phaseIndex + 1;
   if ((st.shareRewarded ??= {})[playerId] !== round) {
@@ -2550,12 +2550,12 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   if (read?.play || words) recordPlay(game, playerId, read?.play, words, 'out loud');
   const why = refusedWhy({ refused }) && cleanWhy(game, refusedWhy({ refused }));
   if (!why) addFacts(game, read?.facts, 'asked out loud', now);
-  const name = game.players.find((p) => p.id === playerId)?.name;
+  const name = nameOf(game, playerId);
   // The asker's own question backs what their character does in the answer.
   const clean = (t) => (leaksLaterClue(game, t) ? '' : dropPuppeting(game, playerId, t, { others: true, backing: { [playerId]: [q] } }).text);
   const lines = Array.isArray(answer) ? novelLines(game, answer, { unpuppet: clean, unpuppetSpeech: clean }) : null;
   const text = (lines ? linesText(lines) : clean(String(answer ?? '').trim())) || 'Nobody knows that yet.';
-  st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, q, text, ...(lines?.length ? { lines } : {}), ...(words ? { read: words } : {}) });
+  st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, pid: playerId, q, text, ...(lines?.length ? { lines } : {}), ...(words ? { read: words } : {}) });
   if (why) {
     addEvent(game, `That can't happen: ${why}`, 'refused', now);
     logRefused(game, playerId, why, true, now);
@@ -2606,7 +2606,7 @@ export function backfillFacts(game) {
   for (const e of game.state.events ?? []) {
     if (!['said', 'forced'].includes(e.kind)) continue;
     const m = SAID.map((re) => re.exec(e.text)).find(Boolean);
-    const player = m && game.players.find((p) => p.name === m[1]);
+    const player = m && game.players.find((p) => p.name === m[1] || nameOf(game, p.id) === m[1]);
     if (player) addFacts(game, [{ person: player.id, fact: `Said out loud: "${m[2]}"` }], 'said', e.at);
   }
 }
@@ -2858,7 +2858,7 @@ function publicCore(game, now) {
     roundResults: st?.roundResults ?? [],
     sharedClues: st ? st.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
-      return { id: x.clueId, name: c.name, shows: c.shows, by: x.check ? 'a check' : game.players.find((p) => p.id === x.by)?.name };
+      return { id: x.clueId, name: c.name, shows: c.shows, by: x.check ? 'a check' : nameOf(game, x.by) };
     }) : [],
     illustration: st?.illustration ?? null,
     calling: st ? (st.moments ?? []).filter((m) => m.status === 'called').map((m) => game.players.find((p) => p.id === m.player_id)?.name) : [],
@@ -3090,6 +3090,7 @@ export function playerView(game, playerId, now = Date.now()) {
   view.thread = st.threads[playerId].map(({ read, ...m }) => m);
   view.canCallMeeting = game.status === 'playing' && game.players.length >= 2 && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;
+  if (view.meeting) view.meeting = { ...view.meeting, mine: st.meeting.by === playerId };
   view.clues = st.found[playerId].map((id) => {
     const c = game.scenario.clues.find((x) => x.id === id);
     return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id) };

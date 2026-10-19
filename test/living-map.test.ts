@@ -33,7 +33,7 @@ describe('moves know the walking time', () => {
   test('should add the walking time to the move announcement', async () => {
     const t = await playing();
     await t.app.go(t.tokens[1], 'l1');
-    assert.deepEqual(t.events(), ['Ben goes to the Ballroom (4 min walk).']);
+    assert.deepEqual(t.events(), ['Character 2 goes to the Ballroom (4 min walk).']);
   });
 
   test('should add it before the reason for a move the player confirmed', async () => {
@@ -43,20 +43,20 @@ describe('moves know the walking time', () => {
     await tick();
     await t.app.confirmMove(t.tokens[1], true);
     await t.app.idle();
-    assert.deepEqual(t.events(), ['Ben goes to the Ballroom (4 min walk) to check something.']);
+    assert.deepEqual(t.events(), ['Character 2 goes to the Ballroom (4 min walk) to check something.']);
   });
 
   test('should time a move from where the map shows you, not a secret trip', async () => {
     const t = await playing();
     t.app.game.state.at.p2 = 'l1';
     await t.app.go(t.tokens[1], 'l2');
-    assert.deepEqual(t.events(), ['Ben goes to the Kitchen.']);
+    assert.deepEqual(t.events(), ['Character 2 goes to the Kitchen.']);
   });
 
   test('should keep the old announcement for a world without geography', async () => {
     const t = await playing({ geography: null });
     await t.app.go(t.tokens[1], 'l1');
-    assert.deepEqual(t.events(), ['Ben goes to the Ballroom.']);
+    assert.deepEqual(t.events(), ['Character 2 goes to the Ballroom.']);
     assert.equal(walkBetween(t.app.game.scenario, 'l2', 'l1'), '');
   });
 

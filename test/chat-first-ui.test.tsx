@@ -52,7 +52,7 @@ describe('the chat-first phone', () => {
     G.callMeeting(game, 'p2', 'The ledger burned!', 1_500);
     const out = phone(game, 'p3');
     assert.match(out, /Meeting · \d+:\d\d/);
-    assert.match(out, /Player2 called everyone together: "The ledger burned!"/);
+    assert.match(out, /Character 2 called everyone together: "The ledger burned!"/);
     assert.ok(!out.includes('Call a meeting · once a game'));
     assert.match(phone(game, 'p2'), /End the meeting/);
     assert.ok(!out.includes('End the meeting'));
@@ -61,7 +61,7 @@ describe('the chat-first phone', () => {
   test('should show the meeting on the table with an end button for the host', () => {
     const game = playing();
     G.callMeeting(game, 'p2', 'The ledger burned!', 1_500);
-    assert.match(table(game), /Meeting[\s\S]*Player2 called everyone together: "The ledger burned!"[\s\S]*End the meeting/);
+    assert.match(table(game), /Meeting[\s\S]*Character 2 called everyone together: "The ledger burned!"[\s\S]*End the meeting/);
     assert.ok(!table(game, null).includes('End the meeting'));
   });
 

@@ -143,12 +143,12 @@ function TopBar({ view, onOpenCard, dots, onDrawer }: { view: PlayerView; onOpen
 function Pinned({ view }: { view: PlayerView }) {
   const now = useNow();
   const vote = view.round?.vote;
-  const meeting = view.meeting as { by: string; reason: string; endsAt: number } | null;
+  const meeting = view.meeting as { by: string; reason: string; endsAt: number; mine?: boolean } | null;
   const any = meeting || view.seat || view.moments?.[0] || view.moveConfirm || view.offers?.[0] || vote;
   if (!any) return null;
   return (
     <div data-tray className="flex max-h-[45dvh] flex-col gap-3 overflow-y-auto">
-      {meeting && <MeetingCard meeting={meeting} mine={meeting.by === view.me.name} now={now} />}
+      {meeting && <MeetingCard meeting={meeting} mine={Boolean(meeting.mine)} now={now} />}
       <SeatCard seat={view.seat as SeatView | null} now={now} />
       <Moment view={view} now={now} />
       {view.moveConfirm && <GoConfirm place={view.moveConfirm.place} onAnswer={(yes) => act('move', { token: tokenOf(), yes })} />}

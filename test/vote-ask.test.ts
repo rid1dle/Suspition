@@ -91,7 +91,7 @@ describe('asking the group to vote now', () => {
     G.askVote(game, 'p1', 2_000);
     G.answerVoteAsk(game, 'p2', true, 3_000);
     const ask = G.tableView(game, 3_500).voteAsk;
-    assert.deepEqual({ proposer: ask.proposer, yes: ask.yes, need: ask.need }, { proposer: game.players[0].name, yes: 2, need: 3 });
+    assert.deepEqual({ proposer: ask.proposer, yes: ask.yes, need: ask.need }, { proposer: game.scenario.players[0].character_name, yes: 2, need: 3 });
     assert.equal(G.playerView(game, 'p2', 3_500).myVoteAsk, true);
     assert.equal(G.playerView(game, 'p3', 3_500).myVoteAsk, null);
   });
@@ -130,6 +130,6 @@ describe('vote requests on screen', () => {
     const game = playing(3);
     G.askVote(game, 'p1', 2_000);
     const html = renderToStaticMarkup(h(TablePlaying, { view: G.tableView(game, 3_000), host: null, act: async () => null, readNow: () => {}, onNewGame: () => {} } as never));
-    assert.match(html, new RegExp(`${game.players[0].name}[^<]*</b> wants to vote now`));
+    assert.match(html, new RegExp(`${game.scenario.players[0].character_name}[^<]*</b> wants to vote now`));
   });
 });

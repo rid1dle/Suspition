@@ -527,8 +527,8 @@ describe('sharing clues', () => {
   test('should put a found clue on every screen and in the news', () => {
     const game = found();
     G.shareClue(game, 'p2', 'c1', 2_000);
-    assert.deepEqual(G.playerView(game, 'p3').sharedClues, [{ id: 'c1', name: 'Torn glove', shows: 'CLUE-1-SHOWS', by: 'Player2' }]);
-    assert.match(game.state.events.at(-1).text, /Player2 shows a clue. Torn glove: CLUE-1-SHOWS/);
+    assert.deepEqual(G.playerView(game, 'p3').sharedClues, [{ id: 'c1', name: 'Torn glove', shows: 'CLUE-1-SHOWS', by: 'Character 2' }]);
+    assert.match(game.state.events.at(-1).text, /Character 2 shows a clue. Torn glove: CLUE-1-SHOWS/);
   });
 
   test('should refuse a clue you never found, or one already shared', () => {
@@ -555,7 +555,7 @@ describe('public questions about the world', () => {
     assert.throws(() => G.beginPublicAsk(game, 'p1', 'again'), /Wait for the answer/);
     G.completePublicAsk(game, 'p1', 'Ten miles.', 2_000);
     const qa = G.playerView(game, 'p2').events.at(-1);
-    assert.deepEqual([qa.kind, qa.by, qa.q, qa.text], ['qa', 'Player1', 'How far is town?', 'Ten miles.']);
+    assert.deepEqual([qa.kind, qa.by, qa.q, qa.text], ['qa', 'Character 1', 'How far is town?', 'Ten miles.']);
   });
 });
 
@@ -643,7 +643,7 @@ describe('moments and overrides', () => {
     assert.equal(G.tickMoments(game, 2_000 + G.MOMENT_READY_MS), true);
     assert.equal(m.status, 'called');
     assert.deepEqual(G.tableView(game).calling, ['B']);
-    assert.equal(game.state.events.at(-1).text, 'B, the story turns to you.');
+    assert.equal(game.state.events.at(-1).text, 'Character 2, the story turns to you.');
     const game2 = playing();
     const m2 = momentFor(game2);
     G.readyMoment(game2, 'p2', m2.id, 2_500);
@@ -654,7 +654,7 @@ describe('moments and overrides', () => {
     const game = playing();
     const m = momentFor(game);
     G.answerMoment(game, 'p2', m.id, 'said', 3_000);
-    assert.equal(game.state.events.at(-1).text, 'B said: "I saw a light."');
+    assert.equal(game.state.events.at(-1).text, 'Character 2 said: "I saw a light."');
     assert.equal(game.state.overridesLeft.p2, 2);
   });
 
@@ -662,7 +662,7 @@ describe('moments and overrides', () => {
     const game = playing(1);
     const m = momentFor(game);
     G.answerMoment(game, 'p2', m.id, 'quiet', 3_000);
-    assert.equal(game.state.events.at(-1).text, 'B chose to stay quiet.');
+    assert.equal(game.state.events.at(-1).text, 'Character 2 chose to stay quiet.');
     assert.equal(game.state.overridesLeft.p2, 0);
     assert.ok(!JSON.stringify(G.tableView(game)).includes('I saw a light'));
   });
@@ -674,7 +674,7 @@ describe('moments and overrides', () => {
     G.beginPhaseChange(game);
     G.completePhase(game, emptyPhase, 4_000);
     assert.equal(m.status, 'forced');
-    assert.ok(game.state.events.some((e) => e.kind === 'forced' && e.text === 'B could not keep it in: "I saw a light."'));
+    assert.ok(game.state.events.some((e) => e.kind === 'forced' && e.text === 'Character 2 could not keep it in: "I saw a light."'));
   });
 
   test('should spend an override when a moment is ignored until the round ends', () => {
@@ -745,7 +745,7 @@ describe('saying a moment in your own words', () => {
   test('should post the words the player typed and spend one override', () => {
     const { game, m } = called();
     G.answerMoment(game, 'p2', m.id, 'own', 3_000, { text: '"Something glowed out there."' });
-    assert.deepEqual(game.state.events.at(-1), { at: 3_000, phase: 1, kind: 'said', text: 'Player2, in their own words: "Something glowed out there."' });
+    assert.deepEqual(game.state.events.at(-1), { at: 3_000, phase: 1, kind: 'said', text: 'Character 2, in their own words: "Something glowed out there."' });
     assert.equal(game.state.overridesLeft.p2, 1);
     assert.ok(!JSON.stringify(G.tableView(game)).includes('I saw a light'));
   });
@@ -794,7 +794,7 @@ describe('the group goal and personal goals', () => {
     G.beginAsk(game, 'p2', { kind: 'question', text: 'look' });
     G.completeAsk(game, 'p2', { ...emptyAsk, clues_found: ['c1'] });
     G.shareClue(game, 'p2', 'c1', 2_000);
-    assert.equal(game.state.events.at(-1).by, 'Player2');
+    assert.equal(game.state.events.at(-1).by, 'Character 2');
     assert.equal(game.state.events.at(-1).name, 'Torn glove');
   });
 });
@@ -989,7 +989,7 @@ describe('asking a GM character out loud', () => {
     const game = gameInReading(3);
     G.beginPublicAsk(game, 'p1', 'How far is town?');
     G.completePublicAsk(game, 'p1', 'Two hours.', 2_000);
-    assert.deepEqual(G.publicKnowledge(game).asked_out_loud_before, ['Player1 asked: How far is town? Answer: Two hours.']);
+    assert.deepEqual(G.publicKnowledge(game).asked_out_loud_before, ['Character 1 asked: How far is town? Answer: Two hours.']);
   });
 
   test('should keep the GM ideas for what the player could try next', () => {
@@ -1125,7 +1125,7 @@ describe('keeping the GM in step with the players and the room', () => {
     const game = gameInReading(3);
     G.beginPublicAsk(game, 'p1', 'Cold?');
     G.completePublicAsk(game, 'p1', 'Yes.', 2_000);
-    assert.ok(G.snapshotForGM(game).public_events.includes('Player1 asked out loud: Cold? Answer: Yes.'));
+    assert.ok(G.snapshotForGM(game).public_events.includes('Character 1 asked out loud: Cold? Answer: Yes.'));
   });
 });
 

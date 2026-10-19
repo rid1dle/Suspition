@@ -223,7 +223,7 @@ describe('point at someone', () => {
     const game = playingHot();
     G.point(game, 'p1', 'p2', 5_000);
     const pt = G.tableView(game, 5_000).point;
-    assert.equal(pt.current.from, game.players[0].name);
+    assert.equal(pt.current.from, game.scenario.players[0].character_name);
     assert.equal(pt.current.to, game.scenario.players[1].character_name);
     assert.equal(pt.current.endsAt, 5_000 + G.POINT_DEFEND_MS);
     assert.equal(game.state.play?.p1?.length ?? 0, 0);
@@ -246,7 +246,7 @@ describe('point at someone', () => {
     G.point(game, 'p3', 'p4', 5_200);
     assert.throws(() => G.point(game, 'p4', 'p5', 5_300), /waiting/);
     G.tickPoints(game, 5_000 + G.POINT_DEFEND_MS);
-    assert.equal(G.tableView(game, 25_001).point.current.from, game.players[1].name);
+    assert.equal(G.tableView(game, 25_001).point.current.from, game.scenario.players[1].character_name);
   });
 });
 

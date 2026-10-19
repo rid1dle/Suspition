@@ -38,7 +38,7 @@ describe('hot seats on screen', () => {
   test('should show the table who is up with a timer, and no question or whisper', () => {
     const { game, seat } = live();
     const html = table(game);
-    assert.match(html, new RegExp(`Hot seat[\\s\\S]*${game.players.find((p) => p.id === seat.pid).name}`));
+    assert.match(html, new RegExp(`Hot seat[\\s\\S]*${game.scenario.players.find((p) => p.id === seat.pid).character_name}`));
     assert.ok(!html.includes('QUESTION NUMBER') && !html.includes('SECRET WHISPER LINE'));
   });
 
@@ -80,7 +80,7 @@ describe('point on screen', () => {
     G.startPlay(game, 1_000);
     G.point(game, 'p1', 'p2', 5_000);
     const html = renderToStaticMarkup(h(TablePlaying, { view: G.tableView(game, 5_000), host: null, act: async () => null, readNow: () => {}, onNewGame: () => {} } as never));
-    assert.match(html, new RegExp(`${game.players[0].name} suspects ${game.scenario.players[1].character_name}!`));
+    assert.match(html, new RegExp(`${game.scenario.players[0].character_name} suspects ${game.scenario.players[1].character_name}!`));
   });
 
   test('should let a phone point at someone from the People tab', () => {

@@ -28,7 +28,7 @@ describe('going places', () => {
     await t.app.go(t.tokens[1], 'l1');
     assert.equal(t.app.game.state.at.p2, 'l1');
     assert.equal(t.app.game.state.positions.p2, 'l1');
-    assert.deepEqual(t.events(), ['Ben goes to the Ballroom.']);
+    assert.deepEqual(t.events(), ['Character 2 goes to the Ballroom.']);
     await assert.rejects(() => t.app.go(t.tokens[1], 'l1'), /already in the Ballroom/);
   });
 
@@ -41,7 +41,7 @@ describe('going places', () => {
     assert.ok(!t.gm.calls.includes('answer'));
     await t.app.confirmMove(t.tokens[1], true);
     await t.app.idle();
-    assert.deepEqual(t.events(), ['Ben goes to the Ballroom to check something.']);
+    assert.deepEqual(t.events(), ['Character 2 goes to the Ballroom to check something.']);
     assert.equal(t.view(1).moveConfirm, null);
     assert.ok(t.gm.calls.includes('answer'));
   });
@@ -67,7 +67,7 @@ describe('going places', () => {
     assert.deepEqual(t.view(1).moveConfirm, { place: 'Ballroom', from: 'out loud' });
     await t.app.confirmMove(t.tokens[1], true);
     await t.app.idle();
-    assert.deepEqual(t.events(), ['Ben goes to the Ballroom to check something.']);
+    assert.deepEqual(t.events(), ['Character 2 goes to the Ballroom to check something.']);
     assert.ok(t.gm.calls.includes('public'));
   });
 

@@ -104,12 +104,12 @@ describe('meetings', () => {
     const ends = t.st().phaseEndsAt;
     await t.app.callMeeting(t.tokens[1], 'Someone burned the ledger!');
     const m = t.app.playerView(t.tokens[0]).meeting;
-    assert.equal(m.by, 'Ben');
+    assert.equal(m.by, 'Character 2');
     assert.equal(m.reason, 'Someone burned the ledger!');
     assert.equal(m.endsAt, 5_000 + G.MEETING_MS);
     assert.equal(t.st().phaseEndsAt, ends + G.MEETING_MS, 'the round clock waits for the meeting');
     const texts = t.st().events.map((e) => e.text);
-    assert.ok(texts.includes('Meeting! Ben calls everyone together: "Someone burned the ledger!"'));
+    assert.ok(texts.includes('Meeting! Character 2 calls everyone together: "Someone burned the ledger!"'));
     assert.ok(texts.includes('Where we are now. The glove was found. Still open: Who wore it?'));
     assert.equal(t.app.playerView(t.tokens[1]).canCallMeeting, false);
     assert.equal(t.app.playerView(t.tokens[0]).canCallMeeting, false, 'not while one is on');
