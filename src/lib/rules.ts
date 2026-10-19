@@ -8,12 +8,14 @@ export function rulesLines({ rounds, overrides, hints, players = 3 }: { rounds: 
     : players === 2 ? 'At the end, you both name who did it, how and why. A culprit who knows does not count: the other player decides.'
     : 'At the end, everyone names who did it, how and why. Culprits vote too.';
   return [
-    `There are ${plural(rounds, 'round')}. Each round has one question the group answers together.`,
+    players === 1 ? `There are ${plural(rounds, 'round')}. Each round has one question. Answer it when you think you know. There is no clock.`
+      : players === 2 ? `There are ${plural(rounds, 'round')}. Each round has one question. Answer it together when you both think you know. There is no clock.`
+      : `There are ${plural(rounds, 'round')}. Each round has one question the group answers together.`,
     'Ask out loud: free. Everyone hears the answer.',
     'Talk and act as much as you like: ask anyone, search, take, hide, follow. Going somewhere on the map is free too. Only you see the answer.',
     ...(players >= 2 ? ['Anyone can call one meeting a game: everyone stops and talks it out for 3 minutes.'] : []),
     'Ask about your own character, your past or your goal any time. That is part of the game.',
-    'Play only your own character. Saying what others think or do, or talking to the GM about the game instead of playing, costs a play point.',
+    'Play only your own character. Saying what others think or do costs a play point. Asking the GM for help or about the world is always free.',
     `You have ${plural(overrides, 'override')}: use one to stay quiet or to say a moment your own way.`,
     `The group has ${plural(hints, 'hint')}: anyone can ask for one, the group votes.`,
     'Anyone can ask to vote early on the round question. Everyone has to agree. Ask twice with no takers and you wait for the next round.',

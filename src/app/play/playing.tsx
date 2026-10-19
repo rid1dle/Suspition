@@ -228,6 +228,8 @@ function RoomButtons({ view }: { view: PlayerView }) {
   const canVote = view.round?.question && !view.round.done && !vote;
   // Playing alone there is no group to ask: the buttons just do it.
   const solo = view.players.length === 1;
+  // One or two players have no clock: a round with no question ends when they choose to move on.
+  const canMoveOn = view.players.length < 3 && !view.round?.question && !view.transitioning;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -237,7 +239,8 @@ function RoomButtons({ view }: { view: PlayerView }) {
         </button>
         {canVote && (view.voteAskBlocked
           ? <span className="text-xs">Nobody took your last two requests. You can ask for the vote again next round.</span>
-          : <button className="hover:text-foreground disabled:opacity-50" disabled={Boolean(view.voteAsk) || view.transitioning} onClick={() => act('voteask', { token: tokenOf() })}>{solo ? 'Answer the round question now' : 'Ask to vote now · everyone has to agree'}</button>)}
+          : <button className={`hover:text-foreground disabled:opacity-50 ${view.round?.ready ? 'font-medium text-primary' : ''}`} disabled={Boolean(view.voteAsk) || view.transitioning} onClick={() => act('voteask', { token: tokenOf() })}>{solo ? 'Answer the round question now' : view.players.length === 2 ? 'Answer now · you both have to agree' : 'Ask to vote now · everyone has to agree'}</button>)}
+        {canMoveOn && <button className="hover:text-foreground disabled:opacity-50" disabled={Boolean(view.voteAsk)} onClick={() => act('voteask', { token: tokenOf() })}>{solo ? 'Move on to the next round' : 'Move on · you both have to agree'}</button>}
       </div>
       {reason !== null && (
         <div className="flex flex-col gap-2 rounded-xl bg-card p-3">

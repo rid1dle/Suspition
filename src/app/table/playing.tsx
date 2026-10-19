@@ -132,7 +132,7 @@ export function Playing(props: TableProps) {
         {host && (
           <div className="flex gap-2">
             {seat && !seat.status && seat.waiting > 0 && !vote && <Button variant="secondary" onClick={() => act('seatnow')}>Hot seat now</Button>}
-            <Button variant="ghost" onClick={() => act('extend')}>+5 min</Button>
+            {timer && <Button variant="ghost" onClick={() => act('extend')}>+5 min</Button>}
             <ConfirmButton label={nextLabel} variant="default" onConfirm={() => act('next')} />
             <ConfirmButton label="End game" confirm="Tap again to end it" className="text-destructive" onConfirm={async () => { const r = await act('new'); if (r?.host) props.onNewGame(String(r.host)); }} />
           </div>

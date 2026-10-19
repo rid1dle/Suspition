@@ -78,7 +78,7 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
       )}
 
       <div className="flex flex-col gap-3">
-        <CaseBox question={caseQuestion} label="The group's goal" />
+        <CaseBox question={caseQuestion} label={card.case_label ?? "The group's goal"} />
         {card.watch && (
           <Section title="Stop it" tone="hidden">
             <p className="text-lg font-medium">{card.watch.threat}</p>

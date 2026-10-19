@@ -21,7 +21,7 @@ export interface CastPlayer { id: string; player: string; name: string; role: st
 export interface CastNpc { id: string; name: string; role: string; info: string; icon?: string; minor?: boolean }
 export interface Cast { players: CastPlayer[]; npcs: CastNpc[]; locations: { id: string; name: string; [key: string]: unknown }[] }
 
-export interface Round { objective: string; tips: string[]; question: string | null; options: string[]; done: boolean; vote: { endsAt: number; voted: number; of: number } | null }
+export interface Round { objective: string; tips: string[]; question: string | null; options: string[]; done: boolean; who?: 'solo' | 'duo' | 'group'; ready?: boolean; vote: { endsAt: number; voted: number; of: number } | null }
 export interface VoteBriefView { lines: string[]; open: string[]; people: { name: string; line: string }[] }
 export interface Phase { index: number; number: number; count: number; name: string; endsAt: number | null }
 export interface GameEvent { at: number; phase: number | null; kind: string; text: string; by?: string; q?: string; lines?: { speaker: string; text: string }[] }
@@ -58,6 +58,7 @@ export interface Play { points: number; skill: string | null; why: string }
 export interface ThreadEntry { from: 'you' | 'gm' | 'whisper' | 'system'; text: string; kind?: string; lines?: { speaker: string; text: string }[]; ideas?: string[]; play?: Play; penalty?: Play; at: number }
 
 export interface CardView {
+  case_label?: string;
   people?: { name: string; line: string }[];
   watch?: { threat: string; stake: string } | null;
   watched?: boolean;

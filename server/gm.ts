@@ -302,7 +302,7 @@ export class GM {
     const walk = walkBetween(game.scenario, from, currentPlace(game, playerId));
     const fromName = String(game.scenario.locations.find((l) => l.id === from)?.name ?? '').replace(/^the\s+/i, '');
     return this.call(`ask ${playerId}`, {
-      system: playSystem(game.scenario),
+      system: playSystem(game.scenario, game.players.length),
       prompt: askPrompt({ snapshot: snapshotForGM(game), player, ...ask, short: game.setup?.roundStyle === 'hotseats', here: placeOf(game, playerId), trip: walk ? `from the ${fromName}, ${walk}` : '' }),
       schema: ASK_SCHEMA,
       model: this.playModel,
@@ -311,7 +311,7 @@ export class GM {
 
   phase(game) {
     return this.call('phase', {
-      system: playSystem(game.scenario),
+      system: playSystem(game.scenario, game.players.length),
       prompt: phasePrompt({
         snapshot: snapshotForGM(game),
         nextPhase: nextPhaseInfo(game),
@@ -333,7 +333,7 @@ export class GM {
 
   seats(game) {
     return this.call('seats', {
-      system: playSystem(game.scenario),
+      system: playSystem(game.scenario, game.players.length),
       prompt: seatsPrompt(game),
       schema: SEATS_SCHEMA,
       model: this.playModel,
@@ -364,7 +364,7 @@ export class GM {
 
   continuity(game) {
     return this.call('continuity', {
-      system: playSystem(game.scenario),
+      system: playSystem(game.scenario, game.players.length),
       prompt: continuityPrompt(game),
       schema: CONTINUITY_SCHEMA,
       model: this.playModel,
@@ -374,7 +374,7 @@ export class GM {
 
   score(game, verdict) {
     return this.call('score', {
-      system: playSystem(game.scenario),
+      system: playSystem(game.scenario, game.players.length),
       prompt: scorePrompt({ snapshot: snapshotForGM(game), submissions: forScore(game), verdict }),
       schema: SCORE_SCHEMA,
       model: this.setupModel,

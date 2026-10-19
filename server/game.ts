@@ -707,10 +707,13 @@ export function markReady(game, playerId) {
   game.state.ready[playerId] = true;
 }
 
+// One or two players play at their own pace: no clock, a round ends when they answer it (or move on).
+export const untimed = (game) => (game.players?.length ?? 0) < 3;
+
 function enterPhase(game, index, now) {
   const st = game.state;
   st.phaseIndex = index;
-  st.phaseEndsAt = now + st.phaseMinutes * 60_000;
+  st.phaseEndsAt = untimed(game) ? null : now + st.phaseMinutes * 60_000;
 }
 
 export function startPlay(game, now = Date.now()) {
@@ -754,6 +757,7 @@ function setRecap(game, result, now) {
 
 export function extendPhase(game, now = Date.now()) {
   if (game.status !== 'playing') fail('No phase is running.', 409);
+  if (untimed(game)) return;
   game.state.phaseEndsAt = Math.max(game.state.phaseEndsAt, now) + EXTEND_MS;
 }
 
@@ -1185,6 +1189,12 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const [scored, penalty] = recordPlay(game, playerId, play, ask.read, 'private');
   const shown = (m) => ({ points: m.points, skill: m.skill, why: m.why });
   thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: shown(scored), ...(penalty ? { penalty: shown(penalty) } : {}), at: now });
+  // The GM says when this player has seen enough to answer the round: told once a round, and the round card shows it.
+  st.ready ??= {};
+  if (result.round_ready === true && needsRoundVote(game) && st.ready[playerId] !== roundNumber(game)) {
+    st.ready[playerId] = roundNumber(game);
+    thread.push({ from: 'system', text: 'You can answer this round now, whenever you are ready.', at: now });
+  }
   // A move that would contradict the story does not happen: no clue, no move, no stir. The player is told why.
   const why = refusedWhy(result) && cleanWhy(game, refusedWhy(result));
   if (why) {
@@ -1647,10 +1657,12 @@ export function askVote(game, playerId, now = Date.now()) {
   const st = game.state;
   if (st.transitioning) fail('The round is changing.', 409);
   if (st.roundVote) fail('A vote is open now.', 409);
-  if (!needsRoundVote(game)) fail('This round has no question to vote on.', 409);
+  // With no clock and no question, nothing would ever end the round: the players move on when they agree.
+  const moveOn = !needsRoundVote(game) && untimed(game) && !resultsThisRound(game).length;
+  if (!needsRoundVote(game) && !moveOn) fail('This round has no question to vote on.', 409);
   if (st.voteAsk) fail('Someone already asked. Say yes or no on your phone.', 409);
   if (st.voteAskBlocked?.[playerId] === roundNumber(game)) fail('Nobody took your last two requests. You can ask again next round.', 409);
-  st.voteAsk = { by: playerId, votes: { [playerId]: true }, at: now, endsAt: now + VOTE_ASK_MS };
+  st.voteAsk = { by: playerId, votes: { [playerId]: true }, at: now, endsAt: now + VOTE_ASK_MS, ...(moveOn ? { moveOn: true } : {}) };
   if (game.players.length > 1) addEvent(game, `${nameOf(game, playerId)} wants to vote now. Everyone else has to say yes.`, 'voteask', now);
   return resolveVoteAsk(game, now);
 }
@@ -1669,6 +1681,10 @@ export function resolveVoteAsk(game, now = Date.now()) {
   const answers = Object.entries(ask.votes);
   if (game.players.every((p) => ask.votes[p.id] === true)) {
     st.voteAsk = null;
+    if (ask.moveOn) {
+      st.phaseEndsAt = now;
+      return 'moveon';
+    }
     beginRoundVote(game, now);
     return 'started';
   }
@@ -2071,10 +2087,15 @@ export function roundQuestion(game, index) {
     return { kind: 'choice', question: String(ph.choice_question), options: ph.choice_options.map(String), answer: -1, reward: '', rewardTime: '', rewardOrder: 0, nudge: '' };
   }
   if (game.setup?.roundStyle === 'hotseats' || ph?.vote_kind === 'spotlight') {
-    // Looking at one of 1 or 2 players tells nobody anything.
-    if (!ph || game.players.length < 3) return null;
+    // Looking at one of 1 or 2 players tells nobody anything: they get the planned question instead.
+    if (!ph) return null;
+    if (game.players.length < 3) return plannedQuestion(ph);
     return { kind: 'spotlight', question: SPOTLIGHT_QUESTION, options: game.scenario.players.map((p) => p.character_name), answer: -1, reward: String(ph.reward ?? ''), rewardTime: String(ph.reward_time ?? ''), rewardOrder: Number(ph.reward_order) || 0, nudge: '' };
   }
+  return plannedQuestion(ph);
+}
+
+function plannedQuestion(ph) {
   const options = (ph?.options ?? []).map((o) => String(o ?? '').trim()).filter(Boolean).slice(0, 4);
   const answer = Number(ph?.answer_index);
   if (!ph?.question || options.length < 2 || !Number.isInteger(answer) || answer < 0 || answer >= options.length) return null;
@@ -2135,7 +2156,7 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   const result = { phaseIndex: vote.phaseIndex, round: roundNumber(game), question: q.question, picked, pickedText: picked === null ? null : q.options[picked], correct, counts };
   st.roundResults.push(result);
   st.roundVote = null;
-  const said = picked === null ? 'The group could not agree.' : `The group picked: ${q.options[picked]}.`;
+  const said = picked === null ? 'The group could not agree.' : `${game.players.length === 1 ? 'You' : 'The group'} picked: ${q.options[picked]}.`;
   if (correct) {
     addEvent(game, `${said} That is right!${q.reward ? ` ${q.reward}` : ''}`, 'round', now);
     if (q.reward) st.timelineExtra.push({ order: q.rewardOrder, time: q.rewardTime, event: q.reward });
@@ -2666,6 +2687,7 @@ export function snapshotForGM(game) {
     clues_kept: keptClues(game),
     where_everyone_is: st.positions,
     round_results: st.roundResults,
+    round_question: (() => { const q = st.phaseIndex >= 0 ? roundQuestion(game, st.phaseIndex) : null; return q && !resultsThisRound(game).length ? { question: q.question, options: q.options, answer: q.options[q.answer] ?? null } : null; })(),
     moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.readInstead ? playerWords(m.readInstead, m.saidInstead, 'said') : m.saidInstead } : {}) })),
     overrides_left: st.overridesLeft,
     what_gm_characters_have_said: gmCharacterSaid(game),
@@ -2715,6 +2737,7 @@ function roundView(game, now) {
     question: q?.question ?? null,
     options: q?.options ?? [],
     done: resultsThisRound(game).length > 0,
+    who: game.players.length === 1 ? 'solo' : game.players.length === 2 ? 'duo' : 'group',
     vote: vote ? { endsAt: vote.endsAt, voted: Object.keys(vote.votes).length, of: game.players.length } : null,
   };
 }
@@ -2978,6 +3001,7 @@ export function playerView(game, playerId, now = Date.now()) {
     hook: card.hook ?? '',
     intro_line: card.intro_line ?? '',
     people: Object.entries(tiesFor(game, playerId)).map(([id, line]) => ({ name: [...game.scenario.players.map((p) => [p.id, p.character_name]), ...game.scenario.npcs.map((n) => [n.id, n.name])].find(([x]) => x === id)?.[1] ?? '', line })),
+    case_label: game.players.length === 1 ? 'Your case' : game.players.length === 2 ? 'Your case, together' : "The group's goal",
     distrusts: game.scenario.players.find((p) => p.id === card.distrusts)?.character_name ?? '',
     distrust_why: card.distrusts ? card.distrust_why ?? '' : '',
     locked,
@@ -2994,6 +3018,7 @@ export function playerView(game, playerId, now = Date.now()) {
   };
   view.rules = rulesLines({ rounds: game.scenario.phases.length, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0, players: game.players.length });
   view.ties = tiesFor(game, playerId);
+  if (view.round) view.round = { ...view.round, ready: st.ready?.[playerId] === roundNumber(game) };
   view.thread = st.threads[playerId].map(({ read, ...m }) => m);
   view.canCallMeeting = game.status === 'playing' && game.players.length >= 2 && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;

@@ -43,7 +43,8 @@ export function RoundCard({ round, voting = false, myVote = null, countdown = ''
     </div>
   ) : null;
   if (!round.question) return <div>{job}</div>;
-  const head = vote ? `Vote now${countdown ? ` · ${countdown}` : ''}` : round.done ? 'Done' : job ? 'At the end, answer together' : "This round's goal";
+  const later = round.who === 'solo' ? 'When you know, answer' : round.who === 'duo' ? 'When you both know, answer' : 'At the end, answer together';
+  const head = vote ? `Vote now${countdown ? ` · ${countdown}` : ''}` : round.done ? 'Done' : job ? later : "This round's goal";
   return (
     <div className="flex flex-col gap-2">
       {job}

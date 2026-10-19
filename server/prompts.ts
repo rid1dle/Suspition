@@ -188,6 +188,7 @@ export const ASK_SCHEMA = obj({
   play: play(-1, 2),
   refused: obj({ refused: { type: 'boolean' }, why: str }),
   goal_steps_done: { type: 'array', items: { type: 'integer' } },
+  round_ready: { type: 'boolean' },
   claims_answer: { type: 'array', items: obj({ claim: str, granted: { type: 'boolean' }, why: str }) },
 });
 
@@ -446,8 +447,13 @@ ${twists.map((t) => `- ${t.text}`).join('\n')}${storyType ? `
 Story type: ${storyType}. Build the truth, the motives and the turns in this shape. It is secret: never name the type in any text players see.` : ''}`;
 }
 
-export function playSystem(scenario) {
-  return `You are the game master of a live hidden-role mystery game. Players sit in one room and talk freely; they reach you privately from their phones.
+const PLAYERS_LINE = {
+  1: `One person plays alone. This is a role-play over chat between you and them: there is no room and no group, so never write "the room", "the group" or "everyone"; speak to them. Keep the scene alive: GM characters talk with them, react, ask them things back and pull them into the story. End each answer with something in front of them to react to.`,
+  2: `Two people play together, from their phones. Speak of "the two of you", never "the room" or "the group". Keep both of them in the story.`,
+};
+
+export function playSystem(scenario, players = 3) {
+  return `You are the game master of a live hidden-role mystery game. Players sit in one room and talk freely; they reach you privately from their phones.${PLAYERS_LINE[players] ? `\n${PLAYERS_LINE[players]}` : ''}
 
 The scenario below is the canonical truth. It never changes. Every answer you give must be consistent with it and with everything you have already told anyone (the record is in each request). Established facts (canon) are true; never contradict them. The canon is in each request.
 A GM character never contradicts their own earlier words: what_gm_characters_have_said lists every line each of them said, to the room or privately to one player. Same times, same places, same facts. If their sheet makes them lie, they keep telling the same lie until evidence breaks it. What they said privately to one player stays private.
@@ -485,6 +491,7 @@ How to answer a player:
 - "action" requests: a secret action. Decide plausibly what happens. Covert actions by a careful player can succeed; sloppy or loud ones raise suspicion. Destroying evidence: only clues with can_be_destroyed true and not in clues_kept (the last evidence the case rests on: an attempt on one fails in the story), and list them in clues_destroyed. If someone would plausibly witness it, add a public_event (without naming the actor unless they were clearly seen) or a message to that witness's player.
 - suspicion_change: 0 for ordinary questions, positive for aggressive or careless moves (culprit actions especially), negative only if someone convincingly calms things down.
 - public_event is the ripple: one short line (under 20 words) the whole room notices because of this move, when it would plausibly be seen or heard, or changes how a GM character behaves: a reaction, a sound, something moved, a door now locked. Aim for one in every two or three moves; leave it empty when nothing would show. Never reveal what a player secretly did unless they were clearly seen, never say who did it, never put words in a player's mouth.
+- round_ready: true when this player has now seen what they need to answer this round's question (round_question in the state), from clues, testimony or what they were told. False otherwise, and false when the round has no question.
 - goal_steps_done: the positions (from 0) of the asker's own goal_steps (on their card) that this move just completed in the story. Only when it really happened; usually empty. goal_steps_done_so_far shows what is already done. A goal can always be reached: when the asker moves toward it at their goal_where (on their card), what the goal needs is there for them.
 - messages_to_players: private notes to other players caused by this action (they were followed, an NPC tells them someone was asking about them). Use player ids. Usually empty.
 - Help and world questions: a player who asks how the world works (its powers, rules, places, people), what is going on, or what to do next ("I'm stuck", "how do I progress?") gets a real answer, like a friendly guide. Answer in narration lines (speaker ""), plain and short: what they know so far in one or two lines, then 2 or 3 concrete things to try next, naming people, places or things. Put those same steps in ideas. Explain the world freely from what is public or on their card. Never give away the culprit, a secret or a clue they have not found; if they ask who did it, say that is theirs to find and point to a lead.
