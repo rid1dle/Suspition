@@ -74,7 +74,6 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
       <TopBar view={view} onOpenCard={() => open('card')} dots={dots} onDrawer={open} />
       <main className="flex flex-1 flex-col gap-3 px-4 pt-3" style={{ paddingBottom: room + 16 }}>
         <RoundStrip view={view} onIdea={(t) => write(t, 'private')} />
-        <RoomButtons view={view} />
         <Stream view={view} onGo={(d) => open(d)} />
       </main>
       <Composer view={view} text={text} setText={setText} mode={mode} setMode={setMode} box={box} barRef={bottom} onIdea={(t) => write(t, mode, false)} />
@@ -231,7 +230,7 @@ function RoomButtons({ view }: { view: PlayerView }) {
   const solo = view.players.length === 1;
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
         {view.canCallMeeting && reason === null && <button className="hover:text-foreground" onClick={() => setReason('')}>📣 Call a meeting · once a game</button>}
         <button className="hover:text-foreground disabled:opacity-50" disabled={view.hintsLeft < 1 || Boolean(view.hintVote)} onClick={() => act('hint', { token: tokenOf() })}>
           {view.hintsLeft < 1 ? (solo ? 'No hints left' : 'No group hints left') : solo ? `Get a hint · ${view.hintsLeft} left` : `Ask the group for a hint · ${view.hintsLeft} left`}
@@ -324,9 +323,10 @@ function Composer({ view, text, setText, mode, setMode, box, barRef, onIdea }: {
     if (ok) setText('');
   };
   return (
-    <div ref={barRef} className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background pb-[env(safe-area-inset-bottom,0px)]">
+    <div ref={barRef} data-composer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background pb-[env(safe-area-inset-bottom,0px)]">
       <div className="mx-auto flex max-w-md flex-col gap-2 px-3 pt-2 pb-3">
         <Pinned view={view} />
+        <RoomButtons view={view} />
         <div className="flex gap-1 overflow-x-auto">
           {chips.map(([l, t]) => <button key={l} onClick={() => setText(t)} className="shrink-0 rounded-full border border-border px-3 py-1 text-xs">{l}</button>)}
           {names.map((n) => <button key={n} onClick={() => onIdea(n)} className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs">{n}</button>)}

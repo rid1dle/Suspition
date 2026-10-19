@@ -19,8 +19,8 @@ import { TableMap } from './table-map';
 import { SeatBanner, PointBanner, type SeatView } from '@/components/game/hot-seat';
 import type { TableProps } from './table-app';
 
-type Side = 'map' | 'timeline' | 'alibis' | 'clues' | 'people';
-const SIDES: [Side, string][] = [['map', 'Map'], ['timeline', 'Timeline'], ['alibis', 'Alibis'], ['clues', 'Clues'], ['people', 'People']];
+type Side = 'map' | 'things' | 'timeline' | 'alibis' | 'clues' | 'people';
+const SIDES: [Side, string][] = [['map', 'Map'], ['things', 'Things'], ['timeline', 'Timeline'], ['alibis', 'Alibis'], ['clues', 'Clues'], ['people', 'People']];
 
 function useNow(ms = 500) {
   const [now, setNow] = useState(Date.now());
@@ -79,17 +79,15 @@ function RoundTitle({ view }: { view: TableProps['view'] }) {
   );
 }
 
-function WhoIs({ view }: { view: TableProps['view'] }) {
-  const now = useNow(1000);
+// Who plays whom, for the People tab: one line each.
+function WhoList({ view }: { view: TableProps['view'] }) {
   const lines = whoisLines(view.cast) as string[];
   if (!lines.length) return null;
-  const line = lines[Math.floor(now / 20_000) % lines.length];
   return (
-    <AnimatePresence mode="wait">
-      <motion.p key={line} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} className="text-sm">
-        <span className="mr-2 text-xs tracking-widest text-muted-foreground uppercase">Who's who</span>{line}
-      </motion.p>
-    </AnimatePresence>
+    <section className="flex flex-col gap-1 rounded-2xl bg-card p-4 text-sm">
+      <Label>Who plays who</Label>
+      {lines.map((l) => <p key={l}>{l}</p>)}
+    </section>
   );
 }
 
@@ -106,7 +104,7 @@ export function Playing(props: TableProps) {
     setFresh(n - seenNews.current);
     seenNews.current = n;
   }, [view.events]);
-  const counts: Record<string, number> = { timeline: view.timeline?.length ?? 0, clues: view.sharedClues?.length ?? 0, people: (view.people ?? []).reduce((n: number, p: { facts: unknown[] }) => n + p.facts.length, 0) };
+  const counts: Record<string, number> = { things: view.keyObjects?.length ?? 0, timeline: view.timeline?.length ?? 0, clues: view.sharedClues?.length ?? 0, people: (view.people ?? []).reduce((n: number, p: { facts: unknown[] }) => n + p.facts.length, 0) };
   for (const [t, n] of Object.entries(counts)) if (side === t || seen.current[t] === undefined) seen.current[t] = n;
   const timer = view.phase?.endsAt ? countdown(view.phase.endsAt, now) : null;
   const vote = view.round?.vote;
@@ -147,7 +145,8 @@ export function Playing(props: TableProps) {
         </p>
       )}
       <div className="grid gap-6 px-6 pt-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(340px,1fr)]">
-        <div className="flex min-w-0 flex-col gap-5">
+        {/* Right now: what the room needs this moment. Everything to look things up in sits on the right. */}
+        <div data-now className="flex min-w-0 flex-col gap-5">
           <AnimatePresence>
             {view.calling?.length > 0 && (
               <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }} className="rounded-2xl bg-primary p-5 text-xl text-primary-foreground shadow-xl">
@@ -180,8 +179,6 @@ export function Playing(props: TableProps) {
             )}
           </section>
           <Recap recap={view.recap} />
-          <KeyObjects objects={view.keyObjects ?? []} />
-          <WhoIs view={view} />
           {host && (
             <div className="flex gap-2">
               <Input value={note} maxLength={200} onChange={(e) => setNote(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && sendNote()}
@@ -190,10 +187,10 @@ export function Playing(props: TableProps) {
             </div>
           )}
         </div>
-        <div className="flex min-w-0 flex-col gap-6">
+        <div data-reference className="flex min-w-0 flex-col gap-6">
         <Tabs value={side} onValueChange={(t) => setSide(t as Side)} className="min-w-0 gap-4">
           <TabsList variant="line" className="h-auto group-data-horizontal/tabs:h-auto w-full justify-start gap-1 rounded-none border-b border-border p-0">
-            {SIDES.map(([t, l]) => {
+            {SIDES.filter(([t]) => t !== 'things' || counts.things > 0).map(([t, l]) => {
               const n = counts[t] ?? 0;
               const isNew = n > (seen.current[t] ?? 0);
               return (
@@ -205,10 +202,11 @@ export function Playing(props: TableProps) {
             })}
           </TabsList>
           {side === 'map' && <TableMap view={view} host={host} act={act} />}
+          {side === 'things' && <KeyObjects objects={view.keyObjects ?? []} />}
           {side === 'timeline' && <Timeline timeline={view.timeline} />}
           {side === 'alibis' && <><Muted className="text-xs">Where each person says they were</Muted><Alibis alibis={view.alibis} /></>}
           {side === 'clues' && <SharedClues clues={view.sharedClues} />}
-          {side === 'people' && <><ScenePicture svg={view.illustration} /><PeopleList people={view.people} openAll /></>}
+          {side === 'people' && <><WhoList view={view} /><ScenePicture svg={view.illustration} /><PeopleList people={view.people} openAll /></>}
         </Tabs>
         <section data-room-feed className="flex flex-col gap-2 rounded-2xl bg-card p-5">
           <Label>The room</Label>

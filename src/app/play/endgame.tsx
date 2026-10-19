@@ -27,7 +27,12 @@ export function Final({ view }: { view: PlayerView }) {
     return (
       <main className="mx-auto flex max-w-md flex-col gap-4 px-5 pt-12">
         <h1 className="font-display text-3xl">Your answer is in.</h1>
-        <Muted>Waiting for {view.players.length - view.submitted.length} more. {view.scoring ? 'The GM is checking the answers…' : ''}</Muted>
+        <Muted>{view.scoring ? 'The GM is checking the answers…' : `Waiting for ${view.players.length - view.submitted.length} more.`}</Muted>
+        {view.players.length > 1 && !view.scoring && (
+          <ul className="flex flex-col gap-1 text-lg">
+            {view.players.map((p) => <li key={p.id} className={view.submitted.includes(p.id) ? '' : 'text-muted-foreground'}>{view.submitted.includes(p.id) ? '✓' : '…'} {p.name}{p.id === view.me.id ? ' (you)' : ''}</li>)}
+          </ul>
+        )}
       </main>
     );
   }
