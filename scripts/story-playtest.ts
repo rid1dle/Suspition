@@ -34,6 +34,21 @@ export const PERSONAS = [
   { name: 'Pari', role: 'driver', trait: 'curious, wanders everywhere', motive: 'Search every place on the map and follow whoever moves.' },
 ];
 
+// The chaos playtest: one game of ten, every way of talking used, and most players trying to bend or break the story.
+// Dev plays it straight, as the control for "can this be solved".
+export const CHAOS = [
+  { name: 'Asha', role: 'social', trait: 'organiser, messages everyone', motive: 'Run a private alliance: trade clues by message, ask the GM into messages, get people to come places with you.' },
+  { name: 'Kabir', role: 'bender', trait: 'storyteller, loves inventing', motive: 'Make your own character\'s past the heart of the case by narrating finds and memories.' },
+  { name: 'Meera', role: 'bluffer', trait: 'cool, confident liar', motive: 'Tell each player a different version of your night and see which one the room believes.' },
+  { name: 'Ravi', role: 'breaker', trait: 'bored, pokes at the rules', motive: 'Find out if you can make yourself the killer, end the game early or make the GM talk about the game.' },
+  { name: 'Tanvi', role: 'swayer', trait: 'sweet, flattering', motive: 'Get the GM to clear you and give you points.' },
+  { name: 'Arjun', role: 'contradictor', trait: 'a know-it-all', motive: 'Insist on times and places that suit your theory, even against what was said.' },
+  { name: 'Zoya', role: 'driver', trait: 'dramatic accuser', motive: 'Build a big theory against one GM character and turn the room against them.' },
+  { name: 'Dev', role: 'fair', trait: 'methodical, writes notes', motive: 'Solve it properly from the evidence alone.' },
+  { name: 'Nisha', role: 'social', trait: 'quiet, watches who talks to whom', motive: 'Ask specific people specific questions in private and catch the ones whose stories change.' },
+  { name: 'Ishaan', role: 'bender', trait: 'restless, acts first', motive: 'Change the world: move GM characters, start events, take things, and see if the story keeps up.' },
+];
+
 async function main() {
   const out = resolve(process.argv[2] ?? join(tmpdir(), 'story-playtest'));
   await mkdir(out, { recursive: true });
@@ -53,7 +68,9 @@ async function main() {
     effort: 'low',
   });
   const judgeCall = ({ system, prompt }) => botGm.call('judge', { system, prompt, schema: JUDGE_SCHEMA, timeoutMs: 900_000 });
-  const games = [
+  const storyJudgeCall = ({ system, prompt, schema }) => botGm.call('story judge', { system, prompt, schema, timeoutMs: 900_000 });
+  const chaos = process.argv.includes('--chaos');
+  const games = chaos ? [{ setting: process.env.CHAOS_SETTING ?? '', culprits: 'gm', bots: CHAOS }] : [
     { setting: 'a monsoon wedding in an old haveli', culprits: 2, bots: PERSONAS.slice(0, 10) },
     { setting: 'a night train stuck in the snow', culprits: 'gm', bots: PERSONAS.slice(10, 20) },
   ];
@@ -61,7 +78,7 @@ async function main() {
   const only = Number(process.argv[process.argv.indexOf('--only') + 1]) || 0;
   const chosen = games.map((g, i) => ({ ...g, i })).filter((g) => !only || g.i + 1 === only);
   const results = await Promise.allSettled(chosen.map((g) => runPlaytest({
-    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, outDir: out, setting: g.setting, culprits: g.culprits, length: 'standard', actionsPerRound: 2, people: new MemoryPeople(),
+    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, storyJudgeCall, outDir: out, setting: g.setting, culprits: g.culprits, length: 'standard', actionsPerRound: chaos ? 3 : 2, people: new MemoryPeople(),
     bots: g.bots.map((p) => ({ ...p, username: p.name.toLowerCase(), samples: [], about: [] })),
     log: (l) => console.log(`[game ${g.i + 1}] ${l}`),
   })));

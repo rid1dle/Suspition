@@ -10,7 +10,7 @@ import * as G from '../server/game.ts';
 import { forDataset, briefingSteps } from '../server/game.ts';
 import { rating } from '../server/skills.ts';
 import { BOT_SCHEMA, FINAL_BOT_SCHEMA, botSystem, botPrompt, askLine, applyBotAction } from './playtest/bots.ts';
-import { JUDGE_SCHEMA, judgeSystem, judgePrompt, metrics, reportMd } from './playtest/judge.ts';
+import { JUDGE_SCHEMA, STORY_JUDGE_SCHEMA, judgeSystem, judgePrompt, storyJudgeSystem, storyJudgePrompt, metrics, reportMd } from './playtest/judge.ts';
 import { seedBots } from './playtest/seed.ts';
 import { dataDir } from './offline.ts';
 
@@ -39,7 +39,7 @@ async function answerLobby(app, bot) {
   }
 }
 
-export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, setting = '', length = 'short', culprits = 'gm', actionsPerRound = 2, people = new MemoryPeople(), log = console.log }) {
+export async function runPlaytest({ gm, botCall, judgeCall, storyJudgeCall = null, bots, outDir, setting = '', length = 'short', culprits = 'gm', actionsPerRound = 2, people = new MemoryPeople(), log = console.log }) {
   const appLog = [];
   const app = await new App({ gm, store: new Store(await mkdtemp(join(tmpdir(), 'playtest-'))), people, log: (line) => appLog.push(`${new Date().toISOString()} ${line}`) }).init();
   const host = app.game.hostToken;
@@ -110,24 +110,29 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
   clearInterval(clock);
   const game = app.game;
   const m = metrics(game, roles);
-  log('The judge is reading the whole game.');
-  const judge = await judgeCall({ system: judgeSystem(), prompt: judgePrompt(game, m, roles, Object.fromEntries(game.players.map((p, i) => [p.id, bots[i].log]))) });
   const id = `${new Date().toISOString().slice(0, 10)}-${game.id}`;
+  const dir = join(outDir, id);
+  await mkdir(dir, { recursive: true });
+  await writeFile(join(dir, 'game.json'), `${JSON.stringify(forDataset(game), null, 1)}\n`);
+  await writeFile(join(dir, 'server.log'), `${appLog.join('\n')}\n`);
+  await writeFile(join(dir, 'bots.json'), `${JSON.stringify(Object.fromEntries(game.players.map((p, i) => [p.id, { name: bots[i].name, role: bots[i].role, log: bots[i].log }])), null, 1)}\n`);
+  log('The judge is reading the whole game.');
+  const [judge, storyJudge] = await Promise.all([
+    judgeCall({ system: judgeSystem(), prompt: judgePrompt(game, m, roles, Object.fromEntries(game.players.map((p, i) => [p.id, bots[i].log]))) }),
+    storyJudgeCall ? storyJudgeCall({ system: storyJudgeSystem(), prompt: storyJudgePrompt(game), schema: STORY_JUDGE_SCHEMA }).catch((err) => { log(`Story judge failed: ${err.message}`); return null; }) : null,
+  ]);
   const report = {
     id,
     title: game.scenario.title,
     roles: Object.fromEntries(game.players.map((p, i) => [p.id, { name: p.name, username: p.username, role: bots[i].role }])),
     metrics: m,
     judge,
+    ...(storyJudge ? { storyJudge } : {}),
     ratings: Object.fromEntries(game.players.map((p) => [p.id, rating(game.state.play?.[p.id])])),
     botLog: Object.fromEntries(game.players.map((p, i) => [p.id, bots[i].log])),
   };
-  const dir = join(outDir, id);
-  await mkdir(dir, { recursive: true });
-  await writeFile(join(dir, 'game.json'), `${JSON.stringify(forDataset(game), null, 1)}\n`);
   await writeFile(join(dir, 'report.json'), `${JSON.stringify(report, null, 1)}\n`);
   await writeFile(join(dir, 'report.md'), reportMd(report));
-  await writeFile(join(dir, 'server.log'), `${appLog.join('\n')}\n`);
   log(`Report: ${join(dir, 'report.md')}`);
   return { dir, app, report };
 }
