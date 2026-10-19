@@ -52,9 +52,14 @@ What was rejected and what was accepted, one line each. Add new verdicts the sam
 - Whatever needs you now (a move to confirm, a vote, a meeting, your hot seat, your moment) sits in a tray right above the composer, not at the top of the page where the chat scrolls it away.
 - Drawers in the top bar (Me, Goals, Clues, Map, People, Case file) instead of tabs of big panels.
 - No limits shown as counters: talking and acting are free.
+- The room's buttons (meeting, hint, vote early) sit in the bottom bar above the message box, never at the top of the chat where they scroll away.
+- After your final answer the phone shows who has picked and who is still picking, not an empty screen.
 - A culprit's phone looks exactly like an innocent's, in layout and in words.
 
 **The table**
+- During play the left column is only what the room needs right now (banners, the round card with the big question and the vote, the recap, Tell the GM). Reference lives in tabs on the right: Map, Things, Timeline, Alibis, Clues, People (with who plays who). A long left column of everything was sent back.
+- The briefing keeps "Start round 1" at the top of its column, seen at once; long reference (alibis, the whole night on the reveal) folds.
+- A panel with nothing in it is hidden, not shown empty ("No round votes" was rejected).
 - The room feed sits beside the map, not at the bottom under the cards.
 - Map time chips that overlapped place names were cut on old worlds; crowded places spread apart on screen.
 
