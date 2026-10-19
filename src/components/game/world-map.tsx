@@ -8,11 +8,11 @@ type Place = { id: string; name: string; icon: string; info: string; x: number; 
 type Path = { from: string; to: string; kind: string; x1: number; y1: number; x2: number; y2: number; near: boolean | null };
 type Layout = { width: number; height: number; places: Place[]; paths: Path[]; here: string | null; terrain: string | null; hasMinor: boolean };
 
-const layout = layoutMap as (view: unknown, opts: { me?: string | null; before?: Record<string, string> | null }) => Layout | null;
+const layout = layoutMap as (view: unknown, opts: { me?: string | null; before?: Record<string, string> | null; aspect?: number }) => Layout | null;
 const MIN = 0.35;
 const MAX = 2.5;
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
-const DASH: Record<string, string | undefined> = { trail: '6 6', stairs: '2 5', water: '8 5' };
+const DASH: Record<string, string | undefined> = { stairs: '3 5', water: '8 5' };
 
 // A soft curve between two places, bent a little so lines that share a row do not sit on top of each other.
 function curve(p: Path) {
@@ -24,12 +24,12 @@ function curve(p: Path) {
 
 // The world's map, the same on the big screen and the phone: places and the people in them, paths between.
 // Zoom with the buttons, the wheel or a pinch; drag to look around. With onSelect, tapping a place picks it.
-export function WorldMap({ view, me = null, before = null, selected = null, onSelect, className = '' }: {
+export function WorldMap({ view, me = null, before = null, selected = null, onSelect, className = '', tall = false }: {
   view: Record<string, unknown>; me?: string | null; before?: Record<string, string> | null; selected?: string | null;
-  onSelect?: (id: string) => void; className?: string;
+  onSelect?: (id: string) => void; className?: string; tall?: boolean;
 }) {
   // className sizes the map itself (its height); the key sits under it.
-  const plan = layout(view, { me, before });
+  const plan = layout(view, { me, before, aspect: tall ? 0.75 : 1.6 });
   const box = useRef<HTMLDivElement>(null);
   const [cam, setCam] = useState({ s: 1, x: 0, y: 0 });
   const [fitted, setFitted] = useState(false);
@@ -124,7 +124,8 @@ export function WorldMap({ view, me = null, before = null, selected = null, onSe
   return (
     <div className="flex flex-col gap-2">
       <div ref={box} data-world-map data-terrain={plan.terrain ?? undefined}
-        className={`world-map relative min-h-64 touch-none select-none overflow-hidden rounded-xl border border-border bg-card ${className || 'h-[420px]'}`}
+        className={`world-map relative min-h-64 touch-none select-none overflow-hidden rounded-xl border border-border bg-card ${className}`}
+        style={className ? undefined : { aspectRatio: `${width} / ${height}`, maxHeight: '64vh' }}
         onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={up}>
         <div className="absolute left-0 top-0 origin-top-left" style={{ width, height, transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.s})` }}>
           <svg className="absolute inset-0" width={width} height={height} aria-hidden="true">
@@ -140,7 +141,7 @@ export function WorldMap({ view, me = null, before = null, selected = null, onSe
               style={{ left: p.x, top: p.y, width: CARD_W }}>
               <span className="flex max-w-full items-center gap-1.5 text-[0.95rem] font-semibold leading-tight">
                 {p.icon && <span aria-hidden="true">{p.icon}</span>}
-                <span className="truncate">{p.name}</span>
+                <span className="line-clamp-2">{p.name}</span>
               </span>
               {p.people.length > 0 && (
                 <span className="flex flex-wrap justify-center gap-1">

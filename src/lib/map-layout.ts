@@ -5,14 +5,15 @@
 import { tripTime, pathMetres } from './geography.ts';
 import { shortName } from './map.ts';
 
-export const CELL_W = 220;
-export const CELL_H = 140;
-export const CARD_W = 176;
+export const CELL_W = 200;
+export const CELL_H = 130;
+export const CARD_W = 172;
 const PAD = 40;
 
-function cellsFor(places) {
+// aspect: the screen's width over its height, so a phone gets a tall plan and the big screen a wide one.
+function cellsFor(places, aspect) {
   const n = places.length;
-  const cols = Math.min(5, Math.max(1, Math.round(Math.sqrt(n * 1.6))));
+  const cols = Math.min(5, Math.max(1, Math.round(Math.sqrt(n * aspect * (CELL_H / CELL_W)))));
   const rows = Math.ceil(n / cols) + 1;
   const free = new Set();
   for (let r = 0; r < rows; r += 1) for (let c = 0; c < cols; c += 1) free.add(`${c},${r}`);
@@ -43,14 +44,14 @@ const clamp01 = (v) => Math.min(1, Math.max(0, (Number(v) || 0) / 100));
 const offset = (w) => (w.fx - Math.round(w.fx)) ** 2 + (w.fy - Math.round(w.fy)) ** 2;
 
 // view: a public or player view (map, cast). me: the player's own id on a phone.
-export function layoutMap(view, { me = null, before = null } = {}) {
+export function layoutMap(view, { me = null, before = null, aspect = 1.6 } = {}) {
   const map = view?.map;
   if (!map?.places?.length) return null;
   const people = [
     ...(view.cast?.players ?? []).map((c) => ({ ...c, kind: 'player' })),
     ...(view.cast?.npcs ?? []).map((c) => ({ ...c, kind: 'npc' })),
   ];
-  const { at, cols, rows } = cellsFor(map.places);
+  const { at, cols, rows } = cellsFor(map.places, aspect);
   const here = me ? map.places.find((p) => p.name === view.here)?.id ?? map.positions?.[me] ?? null : null;
   const places = map.places.map((p) => {
     const cell = at[p.id];

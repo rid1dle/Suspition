@@ -69,7 +69,7 @@ export function TableMap({ view, host, act }: Pick<TableProps, 'view' | 'host' |
         {host && <Button size="sm" variant={editing ? 'default' : 'ghost'} onClick={() => setEditing((e) => !e)}>{editing ? 'Done' : 'Edit map'}</Button>}
       </div>
       {editing && <Muted className="text-xs">Drag places to move them. Type where each place is in your room.</Muted>}
-      {editing ? <div ref={box} /> : <WorldMap view={view} before={moved} className="h-[min(62vh,620px)]" />}
+      {editing ? <div ref={box} /> : <WorldMap view={view} before={moved} />}
     </div>
   );
 }

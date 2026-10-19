@@ -29,7 +29,7 @@ export function BriefStep({ view, me = null, at }: { view: BriefView; me?: strin
       </div>
     );
   } else if (step.kind === 'map') {
-    body = <>{step.lines.map((l, i) => <p key={i}>{l}</p>)}<WorldMap view={view} me={me} className="h-[360px]" /></>;
+    body = <>{step.lines.map((l, i) => <p key={i}>{l}</p>)}<WorldMap view={view} me={me} tall={Boolean(me)} /></>;
   } else if (step.kind === 'scene') {
     body = <><ScenePicture svg={view.illustration} />{step.lines.map((l, i) => <p key={i} className="text-lg leading-relaxed">{l}</p>)}</>;
   } else if (step.kind === 'story') {
