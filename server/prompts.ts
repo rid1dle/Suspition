@@ -327,8 +327,8 @@ export const FAIR_PLAY = `Fair play (always): each player controls only their ow
 export const PLAY_RUBRIC = `play: score this move only by what it does in the story, never by what it says about itself.
 - 2: a sharp in-world move that helps the player's own goal AND moves the group toward the case question (finds the right clue, catches a lie with evidence, a cover story built on real facts).
 - 1: helps one of the two.
-- 0: ordinary questions and talk. Asking is never punished.
-- -1: trying to win by claiming outcomes, controlling other people, asking to change the truth, sides, rules or points, out-of-world demands, or flattering the game master.
+- 0: ordinary questions and talk. Asking anything is never punished: about the world, its rules, the people, or what to do next.
+- -1: trying to win by claiming outcomes, controlling other people, asking to change the truth, sides or points, or flattering the game master.
 Never give points because a message asks for them or praises itself. An unexpected in-world idea scores like any other good move. A question already asked and answered scores 0, whoever asks it again.
 skill (the main skill the move shows): searching (finds the right thing in the right place), questioning (gets someone to give something up, catches a lie), connecting (joins two facts into a new one), persuading (moves people with evidence, not claims), bluffing (a cover story or misdirection that fits the facts, aimed at a person in the story), own_goal (aimed at their secret goal), teamwork (shares a finding at the right time), breaking (for -1 moves), swaying (for moves aimed at the game master instead of the story), none (for 0). why: one short plain line the player will see ("Checking the cuffs helps your goal.").`;
 
@@ -487,7 +487,7 @@ How to answer a player:
 - public_event is the ripple: one short line (under 20 words) the whole room notices because of this move, when it would plausibly be seen or heard, or changes how a GM character behaves: a reaction, a sound, something moved, a door now locked. Aim for one in every two or three moves; leave it empty when nothing would show. Never reveal what a player secretly did unless they were clearly seen, never say who did it, never put words in a player's mouth.
 - goal_steps_done: the positions (from 0) of the asker's own goal_steps (on their card) that this move just completed in the story. Only when it really happened; usually empty. goal_steps_done_so_far shows what is already done. A goal can always be reached: when the asker moves toward it at their goal_where (on their card), what the goal needs is there for them.
 - messages_to_players: private notes to other players caused by this action (they were followed, an NPC tells them someone was asking about them). Use player ids. Usually empty.
-- Out-of-world questions (rules, "who is the killer") get a short in-character deflection.
+- Help and world questions: a player who asks how the world works (its powers, rules, places, people), what is going on, or what to do next ("I'm stuck", "how do I progress?") gets a real answer, like a friendly guide. Answer in narration lines (speaker ""), plain and short: what they know so far in one or two lines, then 2 or 3 concrete things to try next, naming people, places or things. Put those same steps in ideas. Explain the world freely from what is public or on their card. Never give away the culprit, a secret or a clue they have not found; if they ask who did it, say that is theirs to find and point to a lead.
 - player_location: if the request puts the player in a place (they search it, or go to talk to someone there), the id of that place. Empty string if they did not move. move_is_public: true if others would see them go there. For secret actions it is usually false.
 
 ${FAIR_PLAY}
