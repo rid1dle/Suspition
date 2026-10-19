@@ -35,6 +35,8 @@ export function Reading(props: TableProps) {
           </section>
           {host && b && <Button variant="ghost" className="self-start" onClick={() => step && readNow([`${step.title}.`, ...step.lines])}>Read this card out loud again</Button>}
           <MusicPicker soundtrack={view.soundtrack ?? null} host={Boolean(host)} previewing={music?.previewing ?? null} onListen={(i) => music?.listen(i)} onPick={(index) => act('music', { index })} />
+        </div>
+        <aside className="flex flex-col gap-4">
           <section className="flex flex-col gap-3 rounded-2xl bg-card p-5">
             <Label>Read your card on your phone. Then tap "Done".</Label>
             <div className="flex flex-wrap gap-2">
@@ -45,8 +47,6 @@ export function Reading(props: TableProps) {
             </div>
             {host && <Button onClick={() => act('start')}>Start round 1</Button>}
           </section>
-        </div>
-        <aside className="flex flex-col gap-4">
           <section className="flex flex-col gap-2 rounded-2xl bg-card p-5"><Label>Timeline so far</Label><Timeline timeline={view.timeline} /><Muted className="text-xs">More times show up as the rounds go on.</Muted></section>
           <details className="rounded-2xl bg-card p-5 [&_summary::-webkit-details-marker]:hidden">
             <summary className="cursor-pointer list-none text-sm font-medium">Alibis: where people say they were</summary>

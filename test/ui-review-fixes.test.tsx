@@ -60,10 +60,10 @@ describe('screens show nothing empty and use their space', () => {
     assert.doesNotMatch(html, /No round votes|No clues shared yet/);
   });
 
-  test('should keep the start button with the briefing, and fold the alibis', async () => {
+  test('should put the start button first in its column, where it is seen at once, and fold the alibis', async () => {
     const src = readFileSync('src/app/table/reading.tsx', 'utf8');
-    const left = src.split('<aside')[0];
-    assert.match(left, /Start round 1/);
+    const aside = src.split('<aside')[1];
+    assert.ok(aside.indexOf('Start round 1') < aside.indexOf('Timeline so far'), 'start comes before the timeline');
     assert.match(src, /<details[^>]*>\s*<summary[^>]*>[^<]*Alibis/);
   });
 
