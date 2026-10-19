@@ -3,7 +3,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA, pickStoryType } from './prompts.ts';
+import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA } from './prompts.ts';
+import { theoryPrompt } from './theory.ts';
 import { continuityPrompt } from './continuity.ts';
 import { storyIssues, issueCounts, applyStoryPatches } from './story.ts';
 import { validateScenario, resolveStoryIds, placeOf, currentPlace, walkBetween, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore } from './game.ts';
@@ -305,6 +306,16 @@ export class GM {
       system: playSystem(game.scenario, game.players.length),
       prompt: askPrompt({ snapshot: snapshotForGM(game), player, ...ask, short: game.setup?.roundStyle === 'hotseats', here: placeOf(game, playerId), trip: walk ? `from the ${fromName}, ${walk}` : '' }),
       schema: ASK_SCHEMA,
+      model: this.playModel,
+    });
+  }
+
+  // Fold the room's wrong answer into the story, or lead them back (server/theory.ts holds the line).
+  theory(game) {
+    return this.call('theory', {
+      system: playSystem(game.scenario, game.players.length),
+      prompt: theoryPrompt(game),
+      schema: THEORY_SCHEMA,
       model: this.playModel,
     });
   }

@@ -833,7 +833,7 @@ export function tickMeeting(game, now = Date.now()) {
   return true;
 }
 
-function addEvent(game, text, kind, now, extra = {}) {
+export function addEvent(game, text, kind, now, extra = {}) {
   const clean = String(text ?? '').trim();
   if (clean) game.state.events.push({ at: now, phase: game.state.phaseIndex, kind, text: clean, ...extra });
 }
@@ -1423,7 +1423,7 @@ export const EXTRA_ROUNDS = 2;
 export const roundCap = (game) => (game.state.basePhases ?? game.scenario.phases.length - (game.state.addedRounds ?? 0)) + EXTRA_ROUNDS;
 
 // A new round goes before the last one, so the last stays the closing round, and never into the round being played.
-export function addRound(game, round, now = Date.now()) {
+export function addRound(game, round, now = Date.now(), { next = false } = {}) {
   const st = game.state;
   const sc = game.scenario;
   const name = String(round?.name ?? '').trim().slice(0, 60);
@@ -1444,7 +1444,8 @@ export function addRound(game, round, now = Date.now()) {
   }
   // During a round change the next round is already being prepared, and the final vote never gains a round.
   if (st.transitioning && isLastPhase(game)) return false;
-  const at = Math.max(st.phaseIndex + (st.transitioning ? 2 : 1), sc.phases.length - 1);
+  const soonest = st.phaseIndex + (st.transitioning ? 2 : 1);
+  const at = next ? soonest : Math.max(soonest, sc.phases.length - 1);
   sc.phases.splice(at, 0, ph);
   for (const c of sc.clues ?? []) if (Number.isInteger(c.reveal_round) && c.reveal_round >= at + 1) c.reveal_round += 1;
   for (const t of sc.public_timeline ?? []) if (Number(t.reveal_round) >= at + 1) t.reveal_round = Number(t.reveal_round) + 1;
@@ -1466,7 +1467,7 @@ export function paceStory(game, now = Date.now()) {
   const found = new Set(Object.values(st.found ?? {}).flat());
   const share = opened.length ? opened.filter((id) => found.has(id)).length / opened.length : null;
   const last = resultsThisRound(game).at(-1);
-  const missed = Boolean(last && !['spotlight', 'choice'].includes(last.kind) && last.correct === false);
+  const missed = Boolean(last && !['spotlight', 'choice'].includes(last.kind) && last.correct === false && !last.roundAdded);
   const unsolvable = st.continuity?.log?.at(-1)?.solvable === false;
   const next = st.phaseIndex + 1;
   if (next === sc.phases.length - 1 && (missed || (share !== null && share < 0.5) || unsolvable)) {
@@ -2162,8 +2163,13 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
     if (q.reward) st.timelineExtra.push({ order: q.rewardOrder, time: q.rewardTime, event: q.reward });
     addFacts(game, mentions(game, q.reward).map((id) => ({ person: id, fact: q.reward })), 'round', now);
     st.suspicion = clamp(st.suspicion + 10, 0, 100);
+  } else if (picked !== null) {
+    // A wrong pick is the room's reading of the case. The GM decides, before the next round, whether the story
+    // takes it in or leads them back (server/theory.ts); until then it is only what they picked.
+    result.theory = 'open';
+    addEvent(game, said, 'round', now);
   } else {
-    addEvent(game, `${said} Not quite. ${q.nudge}`, 'round', now);
+    addEvent(game, `${said}${q.nudge ? ` ${q.nudge}` : ''}`, 'round', now);
     st.suspicion = clamp(st.suspicion - 10, 0, 100);
   }
   return result;
@@ -2826,7 +2832,7 @@ function publicCore(game, now) {
     events: (st?.events ?? []).map(({ read, ...e }) => e),
     ready: st ? game.players.filter((p) => st.ready[p.id]).map((p) => p.id) : [],
     submitted: st ? game.players.filter((p) => st.submissions[p.id]).map((p) => p.id) : [],
-    transitioning: st?.transitioning ?? false,
+    transitioning: Boolean(st?.transitioning || st?.theorizing),
     scoring: st?.scoring ?? false,
     progress: game.status === 'generating' && game.progress ? {
       attempt: game.progress.attempt,

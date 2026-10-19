@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import * as G from '../server/game.ts';
 import { makeScenario, gameInReading, emptyAsk, emptyPhase } from './fixtures.ts';
+import { applyTheory } from '../server/theory.ts';
 
 const playing = (n = 4, now = 1_000) => {
   const game = gameInReading(n, now);
@@ -427,7 +428,9 @@ describe('round goals and votes', () => {
     const before = game.state.suspicion;
     G.beginRoundVote(game, 2_000);
     for (const p of ['p1', 'p2', 'p3']) G.voteRound(game, p, 2, 2_000);
-    assert.match(game.state.events.at(-1).text, /Not quite. NUDGE-1/);
+    assert.equal(game.state.events.at(-1).text, 'The group picked: C.');
+    applyTheory(game, null, 2_500);
+    assert.match(game.state.events.at(-1).text, /Something does not fit yet. NUDGE-1/);
     assert.equal(game.state.suspicion, before - 10);
     assert.ok(!G.tableView(game).timeline.some((t) => t.event === 'REWARD-1'));
   });

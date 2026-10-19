@@ -214,6 +214,26 @@ export const PHASE_SCHEMA = obj({
   checks: { type: 'array', items: obj({ clue_id: str, line: str }) },
 });
 
+export const THEORY_SCHEMA = obj({
+  known_facts: { type: 'array', items: obj({ fact: str, agrees: { type: 'boolean' } }) },
+  mode: { type: 'string', enum: ['fold', 'lead'] },
+  patches: { type: 'array', items: obj({ path: str, value: str }) },
+  canon_add: { type: 'array', items: obj({ fact: str, about: strArr, public: { type: 'boolean' } }) },
+  line: str,
+  lead_clue_id: str,
+  lead_round: obj({ name: str, objective: str, question: str, options: strArr, answer_index: { type: 'integer', minimum: 0, maximum: 3 } }),
+});
+
+export const THEORY_RULES = `A player's answer is their reading of the case, not a mistake. The room answered a round question and their answer is not the one the story planned. Decide what the story does with it.
+
+- fold: make their answer true. Only when it fits everything any player has already seen, heard or been told (KNOWN below) and the case stays whole and solvable. Change only hidden things, through patches: steps of the truth timeline and whereabouts nobody has heard about, clues nobody has found, what GM characters know or lie about, and rounds still to come. Change as little as you can, and change everything that must agree with it, so no plot hole opens.
+- lead: keep the truth. Use it when their answer clashes with anything KNOWN, would need a change to who did it, how or why, or would leave a hole. Then help them find what really happened: lead_clue_id is a clue nobody has found that shows the real answer; lead_round is a short new round right after this one (name 2 to 5 words, objective starting with a verb under 15 words pointing where to look, and a question with 2 to 4 options and answer_index, the same question or a sharper one).
+Never change who did it, how or why. Never change a fact a player has seen or been told, a found clue, or a player's card.
+- known_facts: the 3 to 6 things players already know that come closest to their answer, each with agrees: true when it fits their answer. If any disagrees, the mode is lead.
+- patches: fold only. Each is {path, value}: truth.timeline.N.time|event|location_id, truth.whereabouts.N.time|location_id|doing, clues.N.where|shows|reveal_round, npcs.N.knows|lies, phases.N.planned_beat|question|options|answer_index|reward for rounds to come. value is a string (JSON for lists).
+- canon_add: fold only. The new facts, plain and short, that later answers must agree with.
+- line: one story line, under 25 words, that everyone sees now. Fold: show their answer fitting ("The clerk nods. The side door was open at midnight."). Lead: something that makes them look again, never saying they are wrong and never giving the answer ("The Captain frowns at the plate. It does not match her log."). Never name a culprit.`;
+
 export const SCORE_SCHEMA = obj({
   reveal_story: str,
   players: {
@@ -522,7 +542,7 @@ export function phasePrompt({ snapshot, nextPhase, lastRound }) {
 Game state:
 ${JSON.stringify(snapshot)}
 
-${lastRound?.kind === 'choice' ? `The room chose "${lastRound.pickedText ?? 'nothing (they were split)'}" when asked "${lastRound.question}". Make that choice matter now: the coming round follows from it, for better or worse.\n\n` : ''}${lastRound && lastRound.kind !== 'choice' ? (lastRound.kind === 'spotlight' ? (lastRound.pickedText ? `In the spotlight vote the room looked at ${lastRound.pickedText}, and one line about them is now public. The room now suspects ${lastRound.pickedText}. Make the coming round play off that choice: they have to answer for it, a false lead can grow before it breaks, and the culprit gains a little cover. Never tell the room whether the choice was right.\n\n` : 'In the spotlight vote the room was split. Build on that.\n\n') : `Last round's question was "${lastRound.question}". The group ${lastRound.correct ? 'got it right, so the reward is now public' : 'got it wrong, so the culprit gains a little cover and the story follows the wrong turn for a while'}. Build on that.\n\n`) : ''}Move the world on. ${nextPhase.again ? `The group got this round wrong, so the same round is played again as a second try. Help them understand what they missed without giving the answer: the public_event and the job should point them at the right people, places and clues.
+${lastRound?.kind === 'choice' ? `The room chose "${lastRound.pickedText ?? 'nothing (they were split)'}" when asked "${lastRound.question}". Make that choice matter now: the coming round follows from it, for better or worse.\n\n` : ''}${lastRound && lastRound.kind !== 'choice' ? (lastRound.kind === 'spotlight' ? (lastRound.pickedText ? `In the spotlight vote the room looked at ${lastRound.pickedText}, and one line about them is now public. The room now suspects ${lastRound.pickedText}. Make the coming round play off that choice: they have to answer for it, a false lead can grow before it breaks, and the culprit gains a little cover. Never tell the room whether the choice was right.\n\n` : 'In the spotlight vote the room was split. Build on that.\n\n') : `Last round's question was "${lastRound.question}". ${lastRound.theory === 'folded' ? `The group answered "${lastRound.pickedText}" and the story took it in: it is true now (see canon). Build on it.` : lastRound.theory === 'led' ? `The group answered "${lastRound.pickedText}", which did not fit the truth. Lead them back: this round, put within reach a clue or testimony that shows what really happened, without saying it, and never call their answer wrong. The culprit gains a little cover meanwhile.` : lastRound.correct ? 'The group got it right, so the reward is now public. Build on that.' : 'The group could not agree, so the culprit gains a little cover. Build on that.'}\n\n`) : ''}Move the world on. ${nextPhase.again ? `The group got this round wrong, so the same round is played again as a second try. Help them understand what they missed without giving the answer: the public_event and the job should point them at the right people, places and clues.
 
 ` : ''}Story stage for this round: ${nextPhase.stage ? `${nextPhase.stage.name} (${nextPhase.stage.aim})` : 'middle'}. Pace the story to this stage. The truth and the culprits never change; if the group is far from where this stage needs them (see round_results, where_we_are and the room's notes in public_events), bring what they need into reach through a GM character or an event that fits.
 

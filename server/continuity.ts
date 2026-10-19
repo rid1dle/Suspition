@@ -17,7 +17,7 @@ export function continuityState(game) {
 const foundClues = (game) => new Set([...Object.values(game.state.found ?? {}).flat(), ...(game.state.shared ?? []).map((x) => x.clueId)]);
 
 // Patches during play may only touch what is still to come: later rounds, unfound clues, unused hints, GM characters' knowledge.
-function futurePath(game, path) {
+export function futurePath(game, path) {
   const st = game.state;
   let m = /^phases\.(\d+)\.(planned_beat|question|options|answer_index|reward|wrong_nudge)$/.exec(path);
   // During a round change the next round's opening is already being written, so it is not "future" any more.
@@ -82,7 +82,7 @@ function patchPlan(game, patches, now) {
   return guardedPatches(target, patches, apply, () => structural(game));
 }
 
-function addCanon(game, items, now) {
+export function addCanon(game, items, now) {
   const st = game.state;
   const ids = new Set([...game.scenario.players, ...game.scenario.npcs].map((c) => c.id));
   let added = 0;

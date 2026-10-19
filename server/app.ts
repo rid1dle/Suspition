@@ -9,6 +9,7 @@ import { usernameFor, newProfile, addAnswer, aboutForGM, recordGame, profileView
 import { resolveStyle, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 import { roundPicturePrompt } from './prompts.ts';
 import { applyContinuity, continuityState, CHECK_AFTER_ANSWERS } from './continuity.ts';
+import { pendingTheory, applyTheory } from './theory.ts';
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
@@ -74,11 +75,13 @@ export class App {
       this.game.state.pending = {};
       this.game.state.moveConfirm = {};
       this.game.state.transitioning = false;
+      this.game.state.theorizing = false;
       this.game.state.scoring = false;
     }
     for (const p of this.game.players) if (p.username) this.profiles.set(p.username, (await this.people.load(p.username)) ?? newProfile(p.username, p.name, this.clock()));
     await this.changed();
     this.drawRound(this.game);
+    if (this.game.status === 'playing' && pendingTheory(this.game)) this.advance();
     const music = this.game.state?.soundtrack?.status;
     if (['reading', 'playing'].includes(this.game.status) && (!music || music === 'writing')) this.composeMusic(this.game);
     return this;
@@ -418,6 +421,24 @@ export class App {
     await this.changed();
   }
 
+  // The GM decides what the room's wrong answer does to the story, then the round moves on.
+  theorize(game) {
+    game.state.theorizing = true;
+    this.notify();
+    return this.background('theory', async () => {
+      let verdict = null;
+      try {
+        verdict = typeof this.gm.theory === 'function' ? await this.gm.theory(game) : null;
+      } catch (err) {
+        this.log(`theory failed: ${err.message}`);
+      }
+      if (this.game !== game) return;
+      applyTheory(game, verdict, this.clock());
+      await this.changed();
+      await this.advance();
+    });
+  }
+
   async voteRound(tok, choice) {
     const p = G.playerByToken(this.game, tok);
     const result = G.voteRound(this.game, p.id, choice, this.clock());
@@ -693,6 +714,7 @@ export class App {
   advance() {
     const game = this.game;
     const st = game.state;
+    if (st.theorizing) return null;
     if (st.roundVote) {
       G.resolveRoundVote(game, this.clock(), true);
     } else if (G.needsRoundVote(game)) {
@@ -700,6 +722,7 @@ export class App {
       this.notify();
       return null;
     }
+    if (pendingTheory(game)) return this.theorize(game);
     // A move nobody confirmed is Not now: the round change never waits on it.
     for (const answer of [...this.confirms.values()]) answer(false);
     G.paceStory(game, this.clock());
