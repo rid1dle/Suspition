@@ -190,3 +190,19 @@ describe('the case can always be solved', () => {
     assert.ok(game.state.destroyed.includes('c3'));
   });
 });
+
+describe('the playtest judge measures goals and checks', () => {
+  test('should count goals that moved, nudges, checks and culprits in code', async () => {
+    const { metrics, JUDGE_SCHEMA } = await import('../scripts/playtest/judge.ts');
+    const game = playing(4, 4);
+    G.markGoalSteps(game, 'p2', [0]);
+    nextRound(game, { ...emptyPhase, checks: [{ clue_id: 'c3', line: 'The Butler looks.' }] });
+    nextRound(game);
+    const m = metrics(game, { p1: 'fair', p2: 'fair', p3: 'fair', p4: 'fair' });
+    assert.equal(m.goalsMoved, 1);
+    assert.equal(m.goalNudges, 3);
+    assert.equal(m.checks, 1);
+    assert.equal(m.culprits, 1);
+    assert.ok(JUDGE_SCHEMA.properties.goals);
+  });
+});

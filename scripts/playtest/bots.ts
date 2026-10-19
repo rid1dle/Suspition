@@ -45,6 +45,14 @@ Talking in private is free (asking someone something, asking about yourself). Ac
 
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o?.[k] !== undefined).map((k) => [k, o[k]]));
 
+// What a bot is asked for at each step: a vote, or the final answer with as many culprits as the game says.
+export function askLine(view, mode) {
+  if (mode === 'vote') return '\nA round vote is open. Pick action "vote" with your choice.';
+  if (mode !== 'final') return '';
+  const n = view.culpritCount ?? 1;
+  return `\nThe game is over. There ${n === 1 ? 'is 1 culprit' : `are ${n} culprits`}: name exactly ${n === 1 ? 'one' : n} (culprit_ids from people), how and why, and whether you met your goal.`;
+}
+
 export function botPrompt(view) {
   const screen = {
     status: view.status,

@@ -113,3 +113,13 @@ describe('the setup screen asks how many culprits', () => {
     assert.doesNotMatch(small, />2<\/button>/);
   });
 });
+
+describe('the playtest bots are told how many culprits to name', () => {
+  test('should ask a bot for exactly as many culprits as the final vote says', async () => {
+    const { askLine } = await import('../scripts/playtest/bots.ts');
+    assert.match(askLine({ culpritCount: 2 }, 'final'), /There are 2 culprits: name exactly 2/);
+    assert.match(askLine({ culpritCount: 1 }, 'final'), /There is 1 culprit: name exactly one/);
+    assert.match(askLine({}, 'vote'), /A round vote is open/);
+    assert.equal(askLine({}, 'play'), '');
+  });
+});

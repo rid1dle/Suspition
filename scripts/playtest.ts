@@ -9,7 +9,7 @@ import { Store, MemoryPeople } from '../server/store.ts';
 import * as G from '../server/game.ts';
 import { forDataset, briefingSteps } from '../server/game.ts';
 import { rating } from '../server/skills.ts';
-import { BOT_SCHEMA, FINAL_BOT_SCHEMA, botSystem, botPrompt, applyBotAction } from './playtest/bots.ts';
+import { BOT_SCHEMA, FINAL_BOT_SCHEMA, botSystem, botPrompt, askLine, applyBotAction } from './playtest/bots.ts';
 import { JUDGE_SCHEMA, judgeSystem, judgePrompt, metrics, reportMd } from './playtest/judge.ts';
 import { seedBots } from './playtest/seed.ts';
 import { dataDir } from './offline.ts';
@@ -39,7 +39,7 @@ async function answerLobby(app, bot) {
   }
 }
 
-export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, setting = '', length = 'short', actionsPerRound = 2, people = new MemoryPeople(), log = console.log }) {
+export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, setting = '', length = 'short', culprits = 'gm', actionsPerRound = 2, people = new MemoryPeople(), log = console.log }) {
   const appLog = [];
   const app = await new App({ gm, store: new Store(await mkdtemp(join(tmpdir(), 'playtest-'))), people, log: (line) => appLog.push(`${new Date().toISOString()} ${line}`) }).init();
   const host = app.game.hostToken;
@@ -52,7 +52,7 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
   log(`Bots: ${bots.map((b) => `${b.name} (${b.role})`).join(', ')}`);
 
   log('The GM is writing the world. This takes a few minutes.');
-  await app.setup(host, { setting, tone: 'tense', length, hints: 2, overrides: 2, npcs: 2, npcRole: 'background' });
+  await app.setup(host, { setting, tone: 'tense', length, hints: 2, overrides: 2, npcs: 2, npcRole: 'background', culprits });
   await app.idle();
   if (app.game.status !== 'reading') throw new Error(`The world could not be written: ${app.game.error ?? app.game.status}`);
   log(`World ready: ${app.game.scenario.players.length} players, ${app.game.scenario.phases.length} rounds.`);
@@ -169,7 +169,7 @@ async function main() {
   });
   const botCall = ({ bot, view, mode }) => gm.call(`bot ${bot.username}`, {
     system: botSystem(bot),
-    prompt: `${botPrompt(view)}${mode === 'vote' ? '\nA round vote is open. Pick action "vote" with your choice.' : ''}${mode === 'final' ? `\nThe game is over. There ${view.culpritCount === 1 ? 'is 1 culprit' : `are ${view.culpritCount} culprits`}: name exactly that many (culprit_ids from people), how and why, and whether you met your goal.` : ''}`,
+    prompt: `${botPrompt(view)}${askLine(view, mode)}`,
     schema: mode === 'final' ? FINAL_BOT_SCHEMA : BOT_SCHEMA,
     effort: 'low',
   });

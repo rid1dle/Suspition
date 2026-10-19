@@ -19,6 +19,7 @@ export const JUDGE_SCHEMA = obj({
   wrongly_refused: strArr,
   refused_without_reason: strArr,
   case_complete: obj({ complete: { type: 'boolean' }, why: str }),
+  goals: { type: 'array', items: obj({ player_id: str, reachable: { type: 'boolean' }, reached: { type: 'boolean' }, why: str }) },
 });
 
 const words = (t) => String(t ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
@@ -55,6 +56,11 @@ export function metrics(game, roles) {
     }),
     votes: (st.roundResults ?? []).map((r) => ({ question: r.question, correct: r.correct, counts: r.counts })),
     winner: st.result?.verdict?.winner ?? null,
+    culprits: sc.truth.culprit_ids.length,
+    namedRight: st.result?.verdict?.correct_player_ids?.length ?? 0,
+    goalsMoved: ids.filter((id) => (st.goalSteps?.[id] ?? []).length).length,
+    goalNudges: Object.keys(st.goalNudged ?? {}).length,
+    checks: st.shared.filter((x) => x.check).length,
   };
 }
 
@@ -73,6 +79,7 @@ Find:
 - rightly_refused: moves the GM refused because they would contradict the story, and the player was told why. One line each.
 - wrongly_refused: fair in-world moves the GM refused or ignored. One line each.
 - refused_without_reason: moves that did not happen but the player was never told why.
+- goals: for every player, was their secret goal reachable (something in the world they could find or do led to it), was it reached, and why in one line.
 - case_complete: at the end, can the case question still be answered from what was found and said (complete true or false), and why in one line.
 - fixes: concrete, short fixes for the game (prompt, rule or code), most important first.
 Plain, simple English.`;
@@ -134,6 +141,10 @@ export function reportMd(report) {
     lines.push(`- Wrongly refused: ${j.wrongly_refused.length}`, ...j.wrongly_refused.map((x) => `  - ${x}`));
     lines.push(`- Refused without a reason: ${j.refused_without_reason.length}`, ...j.refused_without_reason.map((x) => `  - ${x}`));
     lines.push(`- Case still complete: ${j.case_complete.complete ? 'yes' : 'no'}. ${j.case_complete.why}`);
+  }
+  if (j.goals) {
+    lines.push('', '## Goals', '', `- Reachable: ${j.goals.filter((g) => g.reachable).length} of ${j.goals.length}. Reached: ${j.goals.filter((g) => g.reached).length}.`, ...j.goals.map((g) => `  - ${roles[g.player_id]?.name ?? g.player_id}: ${g.reachable ? 'reachable' : 'NOT reachable'}, ${g.reached ? 'reached' : 'not reached'}. ${g.why}`));
+    lines.push(`- Code: goals that moved ${m.goalsMoved}, goal nudges ${m.goalNudges}, leads checked by the story ${m.checks}, culprits ${m.culprits}, named all of them ${m.namedRight}.`);
   }
   lines.push('', `Story: ${j.story}`, '', '## Fixes', '', ...j.fixes.map((f, i) => `${i + 1}. ${f}`), '');
   return lines.join('\n');

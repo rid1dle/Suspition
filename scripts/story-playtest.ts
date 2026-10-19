@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { GM } from '../server/gm.ts';
 import { MemoryPeople } from '../server/store.ts';
-import { BOT_SCHEMA, FINAL_BOT_SCHEMA, botSystem, botPrompt } from './playtest/bots.ts';
+import { BOT_SCHEMA, FINAL_BOT_SCHEMA, botSystem, botPrompt, askLine } from './playtest/bots.ts';
 import { JUDGE_SCHEMA } from './playtest/judge.ts';
 import { runPlaytest } from './playtest.ts';
 
@@ -48,20 +48,20 @@ async function main() {
   const botGm = makeGm('bots', 8);
   const botCall = ({ bot, view, mode }) => botGm.call(`bot ${bot.username}`, {
     system: botSystem(bot),
-    prompt: `${botPrompt(view)}${mode === 'vote' ? '\nA round vote is open. Pick action "vote" with your choice.' : ''}${mode === 'final' ? '\nThe game is over. Name who did it (culprit_ids from people), how and why, and whether you met your goal.' : ''}`,
+    prompt: `${botPrompt(view)}${askLine(view, mode)}`,
     schema: mode === 'final' ? FINAL_BOT_SCHEMA : BOT_SCHEMA,
     effort: 'low',
   });
   const judgeCall = ({ system, prompt }) => botGm.call('judge', { system, prompt, schema: JUDGE_SCHEMA, timeoutMs: 900_000 });
   const games = [
-    { setting: 'a monsoon wedding in an old haveli', bots: PERSONAS.slice(0, 10) },
-    { setting: 'a night train stuck in the snow', bots: PERSONAS.slice(10, 20) },
+    { setting: 'a monsoon wedding in an old haveli', culprits: 2, bots: PERSONAS.slice(0, 10) },
+    { setting: 'a night train stuck in the snow', culprits: 'gm', bots: PERSONAS.slice(10, 20) },
   ];
   // --only 2 runs just the second game (to rerun one that failed).
   const only = Number(process.argv[process.argv.indexOf('--only') + 1]) || 0;
   const chosen = games.map((g, i) => ({ ...g, i })).filter((g) => !only || g.i + 1 === only);
   const results = await Promise.allSettled(chosen.map((g) => runPlaytest({
-    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, outDir: out, setting: g.setting, length: 'standard', actionsPerRound: 2, people: new MemoryPeople(),
+    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, outDir: out, setting: g.setting, culprits: g.culprits, length: 'standard', actionsPerRound: 2, people: new MemoryPeople(),
     bots: g.bots.map((p) => ({ ...p, username: p.name.toLowerCase(), samples: [], about: [] })),
     log: (l) => console.log(`[game ${g.i + 1}] ${l}`),
   })));
