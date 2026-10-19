@@ -1308,7 +1308,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   }
   destroy(game, result.clues_destroyed);
   learn(game, result.learned, playerId, now);
-  if (result.player_location && (kind !== 'action' || result.move_is_public)) move(game, playerId, result.player_location);
+  // A move in plain sight goes on the map and the room is told; only a secret act keeps the trip off it.
+  if ((kind !== 'action' || result.move_is_public) && st.at[playerId] !== st.positions[playerId]) walkInSight(game, playerId, st.at[playerId], now);
   st.suspicion = clamp(st.suspicion + clamp(Number(result.suspicion_change) || 0, -10, 25), 0, 100);
   const loud = (result.clues_destroyed ?? []).length > 0 || Number(result.suspicion_change) >= 10;
   addRipple(game, playerId, unpuppet(result.public_event, null, { others: true }), now, { hideActor: !result.move_is_public, loud });
@@ -1390,12 +1391,18 @@ export function goTo(game, pid, locId, now = Date.now(), purpose = '') {
   const name = String(loc.name).replace(/^the\s+/i, '');
   if (currentPlace(game, pid) === locId) fail(`You are already in the ${name}.`, 409);
   if (game.state.meeting) fail('A meeting is on. Stay with the room until it ends.', 409);
+  walkInSight(game, pid, locId, now, purpose);
+}
+
+function walkInSight(game, pid, locId, now, purpose = '') {
+  const loc = game.scenario.locations.find((l) => l.id === locId);
+  if (!loc) return;
   // Timed from where the map shows them: the room never learns of a secret trip.
   const walk = walkBetween(game.scenario, game.state.positions?.[pid], locId);
   game.state.at ??= {};
   game.state.at[pid] = locId;
   game.state.positions[pid] = locId;
-  addEvent(game, `${nameOf(game, pid)} goes to the ${name}${walk ? ` (${walk})` : ''}${purpose ? ` ${purpose}` : ''}.`, 'move', now);
+  addEvent(game, `${nameOf(game, pid)} goes to the ${String(loc.name).replace(/^the\s+/i, '')}${walk ? ` (${walk})` : ''}${purpose ? ` ${purpose}` : ''}.`, 'move', now);
 }
 
 // The name of the place a player's character really is.
