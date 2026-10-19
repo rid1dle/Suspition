@@ -43,7 +43,7 @@ export function Final({ view }: { view: PlayerView }) {
     <main className="mx-auto flex max-w-md flex-col gap-5 px-5 pt-8 pb-16">
       <div>
         <h1 className="font-display text-4xl">Who did it?</h1>
-        {count && <p className="font-semibold">{findLine(count)}</p>}
+        {count > 0 && <p className="font-semibold">{findLine(count)}</p>}
         <Muted>Everyone picks. Culprits too. Most votes decides who wins.</Muted>
       </div>
       <div className="grid grid-cols-2 gap-2">

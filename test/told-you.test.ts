@@ -69,3 +69,12 @@ describe('a GM character never puts words in a player\'s mouth', () => {
     assert.match(FAIR_PLAY, /never says "you told us" or "you said" to a player unless that player really said it in play/);
   });
 });
+
+describe('review fixes: told-you lines', () => {
+  test('should keep a line that only supposes the player said something', () => {
+    const game = playing();
+    for (const line of ['If you told her, she would run.', 'Whatever you said to him, he is angry now.']) {
+      assert.equal(G.dropPuppeting(game, 'p2', line, { others: true }).dropped, 0, line);
+    }
+  });
+});

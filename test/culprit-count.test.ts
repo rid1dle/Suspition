@@ -123,3 +123,37 @@ describe('the playtest bots are told how many culprits to name', () => {
     assert.equal(askLine({}, 'play'), '');
   });
 });
+
+describe('review fixes: the host count holds', () => {
+  test('should refuse a world that adds a GM character as a culprit when the host fixed the count', async () => {
+    const { makeScenario } = await import('./fixtures.ts');
+    const s = makeScenario(6);
+    s.truth.culprit_ids = ['p1', 'n1'];
+    const rules = { playerCount: 6, phases: 3, hints: 3, culprits: ['p1'] };
+    assert.ok(G.validateScenario(s, { ...rules, exact: true }).some((e) => /Exactly 1 culprit/.test(e)));
+    assert.ok(!G.validateScenario(s, rules).some((e) => /Exactly 1 culprit/.test(e)));
+  });
+
+  test('should tell the world writer GM characters are never culprits when the host fixed the count', async () => {
+    const { generationPrompt } = await import('../server/prompts.ts');
+    const game = lobby(6);
+    G.applySetup(game, { ...base, culprits: 1 });
+    assert.match(generationPrompt(game, [], ['p2']), /The host fixed the count: GM characters may help, but are never culprits\./);
+  });
+
+  test('should say on the setup screen that only Let the GM decide keeps the count secret', async () => {
+    const { Setup } = await import('../src/app/table/setup.tsx');
+    const view = { status: 'lobby', players: Array.from({ length: 6 }, (_, i) => ({ id: `p${i + 1}`, name: `P${i + 1}` })), surprise: null };
+    const html = renderToStaticMarkup(React.createElement(Setup, { view, host: true, act: async () => null, onNewGame: () => {} }));
+    assert.match(html, /The room sees this choice\. With Let the GM decide, nobody knows how many until the final vote\./);
+  });
+
+  test('should show no stray number on the phone when the count is unknown', () => {
+    const game = gameInReading(4);
+    G.startPlay(game, 1_000);
+    game.status = 'final';
+    const view = { ...G.playerView(game, 'p2', 2_000), culpritCount: null };
+    const html = renderToStaticMarkup(React.createElement(Final, { view }));
+    assert.doesNotMatch(html, /<\/h1>0/);
+  });
+});

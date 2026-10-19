@@ -123,16 +123,13 @@ describe('the case can always be solved', () => {
     assert.deepEqual(G.caseGaps(game), []);
   });
 
-  test('should show every gap at the start of the last round, so the final vote can be solved', () => {
+  test('should close every gap at the start of the last round, so the final vote can be solved', () => {
     const game = playing();
     nextRound(game, emptyPhase, 5_000);
-    assert.equal(game.state.shared.length, 0);
+    assert.ok(G.caseGaps(game).length > 0);
     nextRound(game, emptyPhase, 6_000);
     assert.equal(game.state.phaseIndex, 2);
-    assert.deepEqual(game.state.shared.map((x) => x.clueId).sort(), ['c1', 'c3']);
     assert.deepEqual(G.caseGaps(game), []);
-    const shown = game.state.events.filter((e) => e.kind === 'clue');
-    assert.match(shown[0].text, /Someone finally checks\. (Torn glove|Note): CLUE-/);
   });
 
   test('should open a clue the plan kept for a later round when the last round needs it', () => {
@@ -140,7 +137,7 @@ describe('the case can always be solved', () => {
     game.scenario.clues.find((c) => c.id === 'c1').reveal_round = 9;
     nextRound(game);
     nextRound(game);
-    assert.ok(game.state.shared.some((x) => x.clueId === 'c1'));
+    assert.ok(Object.values(game.state.found).flat().includes('c1'));
     assert.ok(G.openClues(game).includes('c1'));
   });
 
@@ -209,5 +206,56 @@ describe('the playtest judge measures goals and checks', () => {
     assert.equal(m.checks, 1);
     assert.equal(m.culprits, 1);
     assert.ok(JUDGE_SCHEMA.properties.goals);
+  });
+});
+
+describe('review fixes: the case floor never gives the answer away', () => {
+  test('should not count a clue only a culprit holds as found', () => {
+    const game = playing();
+    game.state.found.p1.push('c1');
+    assert.ok(G.caseGaps(game).some((g) => g.needs === 'culprit' && g.id === 'p1'));
+    game.state.found.p2.push('c1');
+    assert.ok(!G.caseGaps(game).some((g) => g.id === 'p1'));
+  });
+
+  test('should hand a missing clue privately to an innocent player, not show it to the room', () => {
+    const game = playing();
+    nextRound(game);
+    const before = game.state.events.filter((e) => e.kind === 'clue').length;
+    nextRound(game);
+    assert.equal(game.state.events.filter((e) => e.kind === 'clue').length, before);
+    assert.equal(game.state.shared.length, 0);
+    const holders = ['p2', 'p3', 'p4'].filter((id) => game.state.found[id].includes('c1'));
+    assert.equal(holders.length, 1);
+    assert.ok(!game.state.found.p1.includes('c1'));
+    assert.match(game.state.threads[holders[0]].at(-1).text, /You come across something: Torn glove\. CLUE-1-SHOWS Show it to the room if it matters\./);
+    assert.deepEqual(G.caseGaps(game), []);
+  });
+
+  test('should give two missing clues to two different players', () => {
+    const game = playing();
+    nextRound(game);
+    nextRound(game);
+    const got = ['p2', 'p3', 'p4'].filter((id) => game.state.found[id].length);
+    assert.equal(got.length, 2);
+  });
+
+  test('should skip a gap whose clues are all destroyed', () => {
+    const game = playing();
+    game.state.destroyed.push('c1');
+    nextRound(game);
+    nextRound(game);
+    assert.ok(!Object.values(game.state.found).flat().includes('c1'));
+  });
+
+  test('should tell the GM which clues cannot be destroyed now', () => {
+    const game = playing();
+    assert.deepEqual(G.snapshotForGM(game).clues_kept, ['c1']);
+  });
+
+  test('should not nudge a goal the round change just moved', () => {
+    const game = playing(4, 3);
+    nextRound(game, { ...emptyPhase, goal_steps_done: [{ player_id: 'p4', step: 0 }] });
+    assert.equal(game.state.threads.p4.filter((m) => /Your goal is still open/.test(m.text)).length, 0);
   });
 });

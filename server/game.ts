@@ -326,7 +326,7 @@ export function alibiTable(scenario) {
 }
 export const NPC_ROLES = ['mixed', 'background'];
 
-export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole = 'mixed', culprits }) {
+export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole = 'mixed', culprits, exact = false }) {
   const errors = [];
   if (!s || typeof s !== 'object') return ['Scenario is not an object.'];
   const ids = (list) => (Array.isArray(list) ? list.map((x) => x?.id) : []);
@@ -368,6 +368,8 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
   if (culprits && [...named].filter((id) => got.includes(id)).sort().join() !== [...culprits].sort().join()) {
     errors.push(`The culprits among the players must be exactly ${culprits.join(' and ')}.`);
   }
+  // The host fixed the count: a GM character added as a culprit would change what the final vote asks for.
+  if (exact && culprits && named.length !== culprits.length) errors.push(`Exactly ${culprits.length} culprit${culprits.length === 1 ? '' : 's'}: ${culprits.join(' and ')}. GM characters are never culprits in this game.`);
   for (const id of named) {
     const npc = (s.npcs ?? []).find((n) => n.id === id);
     if (npc && (isMinor(npc) || npcRole === 'background')) errors.push(`${id} is a background GM character and cannot be a culprit.`);
@@ -824,15 +826,24 @@ function caseNeeds(game) {
   ].filter((n) => n.clues.length);
 }
 
-const foundByAnyone = (game) => new Set([...Object.values(game.state.found ?? {}).flat(), ...game.state.shared.map((x) => x.clueId)]);
+const innocentIds = (game) => game.scenario.players.map((p) => p.id).filter((id) => !(game.scenario.truth?.culprit_ids ?? []).includes(id));
+
+// What the room can use: shared clues and clues an innocent player holds. A culprit keeping one to themselves never counts.
+const foundByRoom = (game) => new Set([...innocentIds(game).flatMap((id) => game.state.found?.[id] ?? []), ...game.state.shared.map((x) => x.clueId)]);
 
 // What the room could not yet solve: a culprit nothing found points at, a deduction nobody holds a clue for.
 export function caseGaps(game) {
-  const found = foundByAnyone(game);
+  const found = foundByRoom(game);
   return caseNeeds(game).filter((n) => !n.clues.some((id) => found.has(id)));
 }
 
 // A clue is never destroyed when it is the last one left that points at a culprit or settles a deduction.
+export function keptClues(game) {
+  const destroyable = new Set(game.scenario.clues.filter((c) => c.can_be_destroyed).map((c) => c.id));
+  const alive = (n) => n.clues.filter((c) => !game.state.destroyed.includes(c));
+  return [...new Set(caseNeeds(game).map(alive).filter((a) => a.length === 1).map((a) => a[0]))].filter((id) => destroyable.has(id)).sort();
+}
+
 export function destroy(game, clueIds) {
   const destroyable = new Set(game.scenario.clues.filter((c) => c.can_be_destroyed).map((c) => c.id));
   const needs = caseNeeds(game);
@@ -878,6 +889,7 @@ export function saidInPlay(game, playerId, extra = []) {
   ].map((t) => String(t ?? '').trim()).filter(Boolean);
 }
 
+const SUPPOSING = /\b(?:if|whatever|unless|whether|when)\s+(?:\w+\s+)?$/i;
 const TOLD_YOU = /\b(?:you|you've|you have|you had)\s+(?:already\s+)?(?:told|said|mentioned|claimed|swore|admitted|promised|confessed|insisted)\b(?:\s+(?:to\s+)?(?:us|me|everyone|them|him|her))?|\bas you (?:said|say|told us|told me)\b/i;
 
 const ACT_VERBS = new Set(['went', 'goes', 'go', 'walked', 'walks', 'ran', 'runs', 'rushed', 'rushes', 'entered', 'enters', 'left', 'leaves', 'took', 'takes', 'hid', 'hides', 'grabbed', 'grabs', 'opened', 'opens', 'locked', 'locks', 'unlocked', 'followed', 'follows', 'slipped', 'slips', 'sneaked', 'sneaks', 'snuck', 'picked', 'picks', 'came', 'comes', 'returned', 'returns', 'climbed', 'climbs', 'carried', 'carries', 'dropped', 'drops', 'stole', 'steals', 'burned', 'burns', 'broke', 'breaks', 'pushed', 'pushes', 'jumped', 'jumps', 'moved', 'moves', 'stood', 'stands', 'sat', 'sits', 'waited', 'waits', 'stayed', 'stays', 'touched', 'touches', 'searched', 'searches', 'hurried', 'hurries']);
@@ -1003,7 +1015,7 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
   const toldYou = (sentence) => {
     if (sentence.trim().endsWith('?')) return false;
     const m = TOLD_YOU.exec(sentence);
-    if (!m) return false;
+    if (!m || SUPPOSING.test(sentence.slice(0, m.index))) return false;
     const content = wordsOf(sentence.slice(m.index + m[0].length)).filter((w) => w.length >= 4 && !STOP.has(w)).map(stem);
     if (!content.length) return false;
     const who = to ?? actorId;
@@ -1445,7 +1457,7 @@ export function completePhase(game, result, now = Date.now()) {
     return;
   }
   const next = replay ? st.phaseIndex : st.phaseIndex + 1;
-  const stuck = goalsStuck(game);
+  const stuckBefore = goalsStuck(game);
   destroy(game, result.clues_destroyed);
   for (const p of result.positions ?? []) move(game, p?.character_id, p?.location_id);
   learn(game, result.learned, 'round change', now);
@@ -1468,6 +1480,8 @@ export function completePhase(game, result, now = Date.now()) {
   announceRound(game, next, now, replay);
   addMoments(game, result.moments, now);
   whisper(game, result.messages_to_players, now);
+  // A step the round change just completed is not stuck.
+  const stuck = stuckBefore.filter((g) => !(st.goalSteps?.[g.player_id] ?? []).length);
   nudgeStuckGoals(game, stuck, result.messages_to_players, now);
   applyChecks(game, result.checks, now);
   if (isLastPhase(game)) surfaceGaps(game, now);
@@ -2166,10 +2180,15 @@ const CHECK_LINE = 'Someone finally checks.';
 const MAX_CHECKS = 2;
 
 // A clue the story turns up for everyone, not found by a player: a GM character's check, or the game keeping the case solvable.
+// A clue the game needs found now opens now; openClues counts rounds by position, not by replays.
+function openNow(game, clue) {
+  const round = game.state.phaseIndex + 1;
+  if (!(Number(clue.reveal_round) <= round)) clue.reveal_round = round;
+}
+
 function publishClue(game, clueId, line, now) {
   const clue = game.scenario.clues.find((c) => c.id === clueId);
-  const round = roundNumber(game);
-  if (!(Number(clue.reveal_round) <= round)) clue.reveal_round = round;
+  openNow(game, clue);
   game.state.shared.push({ clueId, by: null, check: true, at: now });
   addEvent(game, `${line} ${clue.name}: ${clue.shows}`, 'clue', now, { name: clue.name });
   addFacts(game, mentions(game, `${clue.name} ${clue.shows}`).map((id) => ({ person: id, fact: `Clue, ${clue.name}: ${clue.shows}` })), 'clue', now);
@@ -2193,13 +2212,24 @@ function applyChecks(game, checks, now) {
   }
 }
 
-// At the start of the last round, the room gets whatever it still needs to solve the case.
+// At the start of the last round, what the case still needs reaches an innocent player as their own find.
+// Never shown to the room: clues that point only at culprits, shown at once, would name them and their number.
 function surfaceGaps(game, now) {
-  for (let gap = caseGaps(game)[0]; gap; gap = caseGaps(game)[0]) {
-    const alive = gap.clues.filter((id) => !game.state.destroyed.includes(id));
-    const clue = game.scenario.clues.filter((c) => (alive.length ? alive : gap.clues).includes(c.id)).sort((a, b) => (Number(a.reveal_round) || 1) - (Number(b.reveal_round) || 1))[0];
-    if (!clue) return;
-    publishClue(game, clue.id, CHECK_LINE, now);
+  const st = game.state;
+  const given = new Set();
+  const skipped = new Set();
+  for (let gap = caseGaps(game).find((g) => !skipped.has(g.id)); gap; gap = caseGaps(game).find((g) => !skipped.has(g.id))) {
+    const clue = game.scenario.clues.filter((c) => gap.clues.includes(c.id) && !st.destroyed.includes(c.id)).sort((a, b) => (Number(a.reveal_round) || 1) - (Number(b.reveal_round) || 1))[0];
+    const pool = innocentIds(game).filter((id) => st.found[id]);
+    const to = pool.sort((a, b) => Number(given.has(a)) - Number(given.has(b)) || st.found[a].length - st.found[b].length)[0];
+    if (!clue || !to) {
+      skipped.add(gap.id);
+      continue;
+    }
+    openNow(game, clue);
+    st.found[to].push(clue.id);
+    given.add(to);
+    whisper(game, [{ player_id: to, text: `You come across something: ${clue.name}. ${clue.shows} Show it to the room if it matters.` }], now);
   }
 }
 
@@ -2510,6 +2540,7 @@ export function snapshotForGM(game) {
     play_by_player: Object.fromEntries(game.players.map((p) => [p.id, skillSplit(st.play?.[p.id])])),
     suspicion: st.suspicion,
     destroyed_clues: st.destroyed,
+    clues_kept: keptClues(game),
     where_everyone_is: st.positions,
     round_results: st.roundResults,
     moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.readInstead ? playerWords(m.readInstead, m.saidInstead, 'said') : m.saidInstead } : {}) })),

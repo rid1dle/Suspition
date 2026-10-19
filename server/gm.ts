@@ -180,7 +180,7 @@ export class GM {
     const wanted = game.setup.culprits ?? 'gm';
     const twists = pickTwists(game.players.length, this.random, { culprits: wanted });
     const culprits = pickCulprits(game.players.length, twists, this.random, wanted);
-    const rules = { playerCount: game.players.length, phases: LENGTHS[game.setup.length].phases, hints: game.setup.hints, npcs: game.setup.npcs, npcRole: game.setup.npcRole, culprits };
+    const rules = { playerCount: game.players.length, phases: LENGTHS[game.setup.length].phases, hints: game.setup.hints, npcs: game.setup.npcs, npcRole: game.setup.npcRole, culprits, exact: [1, 2].includes(wanted) };
     const storyType = pickStoryType(this.random);
     this.log(`gm twists: ${twists.map((t) => t.id).join(', ')}`);
     let prompt = generationPrompt(game, twists, culprits, storyType);

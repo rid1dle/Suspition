@@ -82,6 +82,8 @@ The first try failed: a ten-player world took more than the 15 minutes the write
   - Every player must have a goal, with `goal_where`: the place or GM character where it can be reached. The story check flags a goal with no place or fewer than 2 steps. A culprit whose goal is only not to be named may leave it empty.
   - Past half way, a player whose goal has not moved gets one private way in: from the round GM, or a plain line from the game ("Your goal is still open: ... Try the Kitchen.").
   - A GM character can check a lead the room kept raising (`checks` on the round change): the clue it finds is shown to everyone.
-  - At the start of the last round, the game shows any clue the case still needs: one for each culprit nothing found points at, and one for each culprit, method or motive deduction nobody holds a clue for.
+  - At the start of the last round, any clue the case still needs reaches an innocent player privately, as their own find: one for each culprit nothing points at yet, and one for each culprit, method or motive deduction nobody can use yet. It is never shown to the room at once (clues that point only at culprits, shown together, would name them and how many). A clue only a culprit holds does not count as found.
+  - When the host fixes the count, the world can have no GM character as an extra culprit. The room sees a fixed count at setup, as in Among Us; only "Let the GM decide" keeps it secret.
+  - The GM is told which clues are the last evidence (`clues_kept`), so it never narrates one destroyed.
   - The last clue a culprit or a deduction rests on can never be destroyed.
 - **"You told us":** a GM line saying a player told them something ("you told us", "you said", "as you said") is dropped unless that player's own words in play back it. A player's card is not something they said.

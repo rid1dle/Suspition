@@ -119,6 +119,8 @@ export function Setup(props: TableProps) {
   const [picked, setPicked] = useState(false);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const enough = view.players.length >= 3;
+  // Two culprits need 6 players: if someone leaves, the choice goes back to the GM.
+  const culprits = form.culprits === 2 && view.players.length < 6 ? 'gm' : form.culprits;
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 pt-8">
       <Header {...props} title="Suspition" sub="A mystery game for this room" />
@@ -142,8 +144,8 @@ export function Setup(props: TableProps) {
             <Field label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
               <Chips options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
             </Field>
-            <Field label="How many culprits?" note="Nobody is told how many until the final vote. Two need 6 players or more.">
-              <Chips options={([['gm', 'Let the GM decide'], [1, '1'], ...(view.players.length >= 6 ? [[2, '2']] : [])] as ['gm' | 1 | 2, ReactNode][])} value={form.culprits} onPick={(v) => set('culprits', v)} />
+            <Field label="How many culprits?" note="The room sees this choice. With Let the GM decide, nobody knows how many until the final vote. Two need 6 players or more.">
+              <Chips options={([['gm', 'Let the GM decide'], [1, '1'], ...(view.players.length >= 6 ? [[2, '2']] : [])] as ['gm' | 1 | 2, ReactNode][])} value={culprits} onPick={(v) => set('culprits', v)} />
             </Field>
             <Field label="Round style" note={form.roundStyle === 'hotseats' ? 'Players take turns in the hot seat, point at suspects, and vote who the room looks at.' : 'Each round ends with a group quiz; a wrong answer replays the round.'}>
               <Chips options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle}
@@ -173,7 +175,7 @@ export function Setup(props: TableProps) {
             <Field label="Anything the GM should know?">
               <Textarea value={form.notes} maxLength={500} placeholder="Jokes, things you like, things to avoid" onChange={(e) => set('notes', e.target.value)} className="min-h-20" />
             </Field>
-            <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', form)}>Make our mystery</Button>
+            <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', { ...form, culprits })}>Make our mystery</Button>
             <Muted className="text-xs">{enough ? `${view.players.length} players. Each one gets a character.` : `Need 3 players or more (${view.players.length} now).`}</Muted>
           </section>
         )}
