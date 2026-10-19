@@ -65,13 +65,14 @@ function useMedia(view: TableView | null) {
     if (!m || !view) return;
     m.score.setTheme(view.music, view.setup?.tone);
     m.score.setSoundtrack(view.soundtrack ?? null);
+    m.score.warm();
     m.score.setRound(view.phase?.index ?? 0);
     m.sfx.setSet(view.room?.soundSet);
     m.score.setIntensity(intensityFor(view));
     const cues = cuesBetween(last.current, view) as string[];
     for (const cue of cues) m.score.cue(cue);
     const sound = tableSound(last.current, view);
-    if (sound && !(m.score.playing && ['phase', 'hint', 'vote'].includes(sound) && cues.includes(sound))) m.sfx.play(sound);
+    if (sound && !(cues.includes(sound) && m.score.handles(sound))) m.sfx.play(sound);
     m.narrator.say(narrationFor(last.current, view));
     last.current = view;
   }, [view]);

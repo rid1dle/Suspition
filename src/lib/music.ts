@@ -311,6 +311,12 @@ export class Score {
     }
   }
 
+  // True when the music itself sounds this cue, so the table can skip the matching sound effect.
+  handles(kind) {
+    if (this.composed && this.player?.playing) return kind in STINGER_FOR;
+    return this.score.playing && SCORE_CUES.includes(kind);
+  }
+
   cue(kind) {
     if (!this.playing) return;
     const t = this.ctx.currentTime + 0.05;
@@ -351,6 +357,8 @@ export class Score {
 const PREVIEW_MS = 10_000;
 const PREVIEW_X = 0.55;
 const STINGER_FOR = { phase: 'round', seat: 'seat', vote: 'vote', final: 'vote', reveal: 'reveal', hint: 'hint' };
+// The cues the simple Score really sounds (Score.cue ignores the rest).
+const SCORE_CUES = ['phase', 'hint', 'final', 'reveal'];
 
 const ready = (s) => (s?.status === 'ready' && s.directions?.length ? s : null);
 const gameKey = (s) => s.directions.map((d) => `${d.name}/${d.tempo}/${d.root}/${d.lead}`).join('|');
@@ -410,7 +418,13 @@ export class Music {
     return this.player;
   }
 
+  // Fetch the player's code early, so a click can unlock audio at once.
+  warm() {
+    if (this.canCompose()) this.ensurePlayer().warm().catch(() => {});
+  }
+
   async start() {
+    if (this.canCompose()) this.ensurePlayer().unlock();
     this.on = true;
     this.previewing = null;
     if (!this.composed || !this.player?.playing) await this.score.start();
@@ -476,8 +490,10 @@ export class Music {
     });
   }
 
-  begin(d, round, x) {
+  // A fresh start or a preview takes its tension at once; game updates ease in.
+  begin(d, round, x, snap = false) {
     const p = this.player;
+    let fresh = false;
     if (this.composed && p.playing) {
       p.setDirection(d);
       p.setRound(round);
@@ -485,8 +501,9 @@ export class Music {
       p.play(d, round);
       this.composed = true;
       this.score.stop();
+      fresh = true;
     }
-    p.setIntensity(x);
+    p.setIntensity(x, snap || fresh);
   }
 
   fallBack() {
@@ -499,6 +516,7 @@ export class Music {
     const s = ready(this.soundtrack);
     const d = s?.directions[index];
     if (!d || this.failedKey === gameKey(s)) return;
+    this.ensurePlayer().unlock();
     if (this.previewing == null) this.previewWasOn = this.on;
     this.previewing = index;
     const t = (this.token += 1);
@@ -512,7 +530,7 @@ export class Music {
       return;
     }
     if (t !== this.token) return;
-    this.begin(d, 0, PREVIEW_X);
+    this.begin(d, 0, PREVIEW_X, true);
     await this.sleep(PREVIEW_MS);
     if (t !== this.token) return;
     this.previewing = null;
@@ -527,6 +545,12 @@ export class Music {
 
   nextPiece() {
     if (this.composed) this.player.nextPiece();
+  }
+
+  // True when the music itself sounds this cue, so the table can skip the matching sound effect.
+  handles(kind) {
+    if (this.composed && this.player?.playing) return kind in STINGER_FOR;
+    return this.score.playing && SCORE_CUES.includes(kind);
   }
 
   cue(kind) {

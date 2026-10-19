@@ -45,6 +45,10 @@ class FakePlayer {
   intensity: number | null = null;
   stops = 0;
   pieces = 0;
+  unlocks = 0;
+  warms = 0;
+  async warm() { this.warms += 1; }
+  unlock() { this.unlocks += 1; }
   load(ids: string[]) {
     const d = deferred();
     this.loads.push({ ids, d });
@@ -53,7 +57,8 @@ class FakePlayer {
   play(d: Direction, round: number) { this.plays.push([d, round]); this.playing = true; }
   setDirection(d: Direction) { this.switches.push(d); }
   setRound(i: number) { this.rounds.push(i); }
-  setIntensity(x: number) { this.intensity = x; }
+  snapped: number[] = [];
+  setIntensity(x: number, now = false) { this.intensity = x; if (now) this.snapped.push(x); }
   stinger(kind: string) { this.stingers.push(kind); }
   nextPiece() { this.pieces += 1; }
   setVolume() {}
@@ -150,6 +155,22 @@ describe('Music', () => {
     assert.equal(music.playing, false);
   });
 
+  test('should bring the preview tension and a fresh start in at once, not eased', async () => {
+    const { music, player } = setup();
+    music.setSoundtrack(ready(0));
+    music.setIntensity(0.4);
+    await music.start();
+    player.loads[0].d.resolve();
+    await flush();
+    assert.deepEqual(player.snapped, [0.4], 'a fresh start matches the tension right away');
+    music.preview(1);
+    player.loads[1].d.resolve();
+    await flush();
+    assert.deepEqual(player.snapped, [0.4, 0.55]);
+    music.setIntensity(0.5);
+    assert.deepEqual(player.snapped, [0.4, 0.55], 'game updates still ease');
+  });
+
   test('should go back to the chosen direction after a preview while the music plays', async () => {
     const { music, player, wake } = setup();
     music.setSoundtrack(ready(0));
@@ -179,6 +200,21 @@ describe('Music', () => {
     await flush();
     for (const cue of ['phase', 'seat', 'vote', 'final', 'reveal', 'hint']) music.cue(cue);
     assert.deepEqual(player.stingers, ['round', 'seat', 'vote', 'vote', 'reveal', 'hint']);
+  });
+
+  test('should only claim the cues the playing engine really sounds, so the table still plays the vote alert on simple music', async () => {
+    const { music, player } = setup();
+    assert.equal(music.handles('phase'), false, 'silent while off');
+    music.setSoundtrack(ready());
+    await music.start();
+    assert.equal(music.handles('vote'), false, 'the simple music has no vote sound');
+    assert.equal(music.handles('seat'), false);
+    assert.equal(music.handles('phase'), true);
+    assert.equal(music.handles('hint'), true);
+    player.loads[0].d.resolve();
+    await flush();
+    for (const cue of ['phase', 'seat', 'vote', 'hint']) assert.equal(music.handles(cue), true, cue);
+    assert.equal(music.handles('call'), false);
   });
 
   test('should send cues to the simple music while it plays', async () => {
@@ -222,6 +258,21 @@ describe('Music', () => {
     player.loads[0].d.resolve();
     await flush();
     assert.equal(music.source, 'composed');
+  });
+
+  test('should warm the player for a ready soundtrack and unlock audio first thing in a click', async () => {
+    const { music, player, made } = setup();
+    music.warm();
+    assert.equal(made(), 0, 'nothing to warm without a soundtrack');
+    music.setSoundtrack(ready());
+    music.warm();
+    assert.equal(player.warms, 1);
+    assert.equal(player.loads.length, 0, 'warming loads no samples');
+    const started = music.start();
+    assert.equal(player.unlocks, 1, 'unlocked before any wait');
+    await started;
+    music.preview(1);
+    assert.equal(player.unlocks, 2);
   });
 
   test('should not load anything while the music is off', async () => {

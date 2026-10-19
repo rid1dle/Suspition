@@ -19,11 +19,13 @@ const KIT_NOTE = 'C4';
 const KIT_RELEASE: Record<KitId, number> = { kick: 0.3, snare: 0.3, shaker: 0.2, woodblock: 0.2, triangle: 1, cymbal: 1.5, timpani_roll: 1.5 };
 
 export interface PlayerLike {
+  warm(): Promise<void>;
+  unlock(): void;
   load(ids: (InstrumentId | KitId)[]): Promise<void>;
   play(d: Direction, roundIndex: number): void;
   setRound(i: number): void;
   setDirection(d: Direction): void;
-  setIntensity(x: number): void;
+  setIntensity(x: number, now?: boolean): void;
   stinger(kind: StingerKind | 'hint'): void;
   nextPiece(): void;
   setVolume(v: number): void;
@@ -61,11 +63,28 @@ export class SoundtrackPlayer implements PlayerLike {
   private volume = 0.6;
   private ducked = false;
   playing = false;
+  private importTone: () => Promise<ToneLib>;
 
+  constructor({ importTone = () => import('tone') }: { importTone?: () => Promise<ToneLib> } = {}) {
+    this.importTone = importTone;
+  }
+
+  // Fetch the Tone code ahead of the first click, so unlock() can run inside that click.
+  async warm(): Promise<void> {
+    this.tone ??= await this.importTone();
+  }
+
+  // Browsers (Safari most of all) only start audio inside a click: call this first thing in one.
+  unlock() {
+    this.tone?.start().catch(() => {});
+  }
+
+  // Samples load and decode even while audio is still locked; the music starts once it unlocks.
   async load(ids: (InstrumentId | KitId)[]): Promise<void> {
     const work = (async () => {
-      const Tone = (this.tone ??= await import('tone'));
-      await Tone.start();
+      await this.warm();
+      const Tone = this.tone!;
+      this.unlock();
       this.build(Tone);
       await Promise.all(ids.filter((id) => id !== 'pad').map((id) => this.loadOne(Tone, id)));
     })();
@@ -192,8 +211,9 @@ export class SoundtrackPlayer implements PlayerLike {
     this.change = true;
   }
 
-  setIntensity(x: number) {
+  setIntensity(x: number, now = false) {
     this.target = Math.max(0, Math.min(1, x));
+    if (now) this.x = this.target;
   }
 
   stinger(kind: StingerKind | 'hint') {

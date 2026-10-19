@@ -8,7 +8,8 @@ const CENTER = 57;
 const MAJOR_MODES = new Set(['major', 'lydian']);
 const GROOVE_STANDINS: KitId[] = ['woodblock', 'snare', 'kick', 'shaker', 'triangle'];
 
-const LAYERS: [Part, number][] = [['drone', 0], ['pad', 0.15], ['melody', 0.25], ['bass', 0.3], ['chords', 0.4], ['pulse', 0.45], ['groove', 0.55], ['counter', 0.8]];
+// The theme comes in early (the reading step sits near 0.17) so every direction is heard for what it is.
+const LAYERS: [Part, number][] = [['drone', 0], ['pad', 0.1], ['melody', 0.15], ['bass', 0.3], ['chords', 0.4], ['pulse', 0.45], ['groove', 0.55], ['counter', 0.8]];
 
 const key = (d: Pick<Direction, 'root' | 'mode'>) => ({ root: d.root, mode: d.mode });
 const rangeOf = (id: InstrumentId) => INSTRUMENTS[id].range;
@@ -195,7 +196,8 @@ function melody(d: Direction, theme: ThemeNote[], plan: RoundPlan, bar: number, 
   const lift = part === 'counter' ? 2 : 0;
   const range = rangeOf(instrument);
   const raw = theme.map((n) => themePitch(d, { ...n, degree: n.degree + lift }, plan.shift));
-  const off = lineOffset(raw.filter((_, i) => !theme[i].rest), range);
+  // The octave is set by the unvaried theme, so high and dark keep the octave they move to.
+  const off = lineOffset(d.theme.filter((n) => !n.rest).map((n) => themePitch(d, { ...n, degree: n.degree + lift }, plan.shift)), range);
   const start = bar * BAR;
   const out: NoteEvent[] = [];
   for (let phrase = Math.floor(start / length); phrase * length < start + BAR; phrase += 1) {

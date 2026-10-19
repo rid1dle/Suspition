@@ -18,6 +18,22 @@ describe('the music lab fixture', () => {
     for (const d of FIXTURE.directions) assert.equal(d.rounds.length, 4);
   });
 
+  test("should play the lead's melody in a 10 s preview of each fixture direction", () => {
+    for (const d of FIXTURE.directions) {
+      const bars = Math.ceil((10 * d.tempo) / 60 / 4);
+      const melody = Array.from({ length: bars }, (_, bar) => arrangeBar(d, 0, bar, 0.55, null).events).flat().filter((e) => e.part === 'melody' && e.instrument === d.lead);
+      assert.ok(melody.length >= 3, `${d.name}: ${melody.length} melody notes`);
+    }
+  });
+
+  test('should play the theme while the table reads, not just a pad', () => {
+    const reading = 0.25;
+    for (const d of FIXTURE.directions) {
+      const parts = new Set(arrangeBar(d, 0, 0, reading, null).events.map((e) => e.part));
+      assert.ok(parts.has('melody'), d.name);
+    }
+  });
+
   test('should play every round and stinger of the fixture inside the instruments', () => {
     for (const d of FIXTURE.directions) {
       const notes = [0, 1, 2, 3].flatMap((round) => [0, 1, 2, 3, 4, 5, 6, 7].flatMap((bar) => arrangeBar(d, round, bar, 1, null).events));

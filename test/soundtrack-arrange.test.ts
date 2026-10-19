@@ -11,7 +11,7 @@ const plan = (extra: Partial<RoundPlan> = {}): RoundPlan => ({ mood: '', chords:
 const RAW: Partial<Direction>[] = [
   { name: 'Candle and Cello', line: 'Slow cellos and a ticking clock.', tempo: 70, root: 'D', mode: 'minor', lead: 'cellos', harmony: 'violins', bass: 'basses', texture: 'harp', kit: ['kick', 'shaker'],
     theme: [{ degree: 0, beats: 1 }, { degree: 1, beats: 1 }, { degree: 2, beats: 2 }, { degree: 4, beats: 1 }, { degree: 3, beats: 1 }, { degree: 2, beats: 2 }],
-    rounds: [plan(), plan({ variation: 'dark', pulse: 'arp_updown', groove: 'ticking', low: 0.4, high: 0.8 }), plan({ variation: 'broken', shift: 2, pulse: 'ostinato', groove: 'march', low: 0.6, high: 1 })],
+    rounds: [plan({ low: 0.1, high: 0.4 }), plan({ variation: 'dark', pulse: 'arp_updown', groove: 'ticking', low: 0.4, high: 0.8 }), plan({ variation: 'broken', shift: 2, pulse: 'ostinato', groove: 'march', low: 0.6, high: 1 })],
     stingers: { round: 'swell', seat: 'hit', vote: 'rise', reveal: 'fall' } },
   { name: 'Music Box', line: 'A small music box and a harp.', tempo: 96, root: 'F', mode: 'lydian', lead: 'glockenspiel', harmony: 'pad', bass: 'piano', texture: 'marimba', kit: ['triangle'],
     theme: [{ degree: 4, beats: 0.5 }, { degree: 7, beats: 0.5 }, { degree: 9, beats: 1 }, { degree: 14, beats: 2 }, { degree: -3, beats: 2 }, { degree: 0, beats: 2 }],
@@ -90,7 +90,9 @@ describe('layers by tension', () => {
 
   test('should add layers as the tension rises and drop pulse and groove when they are none', () => {
     const p = plan();
-    assert.deepEqual([...layersFor(0.1, p)].sort(), ['drone']);
+    assert.deepEqual([...layersFor(0.05, p)].sort(), ['drone']);
+    assert.deepEqual([...layersFor(0.1, p)].sort(), ['drone', 'pad']);
+    assert.deepEqual([...layersFor(0.15, p)].sort(), ['drone', 'melody', 'pad']);
     assert.deepEqual([...layersFor(0.35, p)].sort(), ['bass', 'drone', 'melody', 'pad']);
     assert.deepEqual([...layersFor(0.6, p)].sort(), ['bass', 'chords', 'drone', 'groove', 'melody', 'pad', 'pulse']);
     assert.deepEqual([...layersFor(0.9, p)].sort(), ['bass', 'chords', 'counter', 'drone', 'groove', 'melody', 'pad', 'pulse']);
@@ -145,10 +147,24 @@ describe('arrangeBar', () => {
     assert.deepEqual(melody(0, 0.7).map((e) => e.at), [0, 1, 2]);
   });
 
+  test('should keep the octave a variation moves to, so high and dark sound different from plain', () => {
+    const tune = (variation: 'plain' | 'high' | 'dark') => arrangeBar(CELLO, 0, 0, 0.7, null, variation).events.filter((e) => e.part === 'melody').map((e) => e.midi);
+    const plain = tune('plain');
+    assert.ok(plain.length >= 3);
+    assert.deepEqual(tune('high'), plain.map((m) => m + 12));
+    assert.deepEqual(tune('dark'), plain.map((m) => m - 12));
+  });
+
+  test('should still fold a variation into the range when it would leave it', () => {
+    const top = INSTRUMENTS.cellos.range[1];
+    const high = arrangeBar({ ...CELLO, theme: CELLO.theme.map((n) => ({ ...n, degree: n.degree + 14 })) }, 0, 0, 0.7, null, 'high').events.filter((e) => e.part === 'melody');
+    assert.ok(high.every((e) => e.midi <= top));
+  });
+
   test('should raise the velocity with the tension', () => {
     const loud = (x: number) => Math.max(...arrangeBar(CELLO, 0, 0, x, null).events.filter((e) => e.part === 'drone').map((e) => e.velocity));
     assert.ok(loud(1) > loud(0));
-    assert.ok(loud(0) >= 0.3 && loud(1) <= 0.9);
+    assert.ok(loud(0) >= 0.3 * 0.8 && loud(1) <= 0.9 * 0.8, "drone plays at 0.8 of the bar velocity, which runs 0.3 to 0.9");
   });
 
   test('should repeat the last round plan for a round past the end', () => {
