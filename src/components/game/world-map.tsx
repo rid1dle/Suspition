@@ -1,168 +1,124 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { layoutMap, CARD_W } from '@/lib/map-layout';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type * as Leaflet from 'leaflet';
+import { mapPlan, plainMapSvg, placeLabelHtml, routeFrom, MAP_W, MAP_H } from '@/lib/map-layout';
 
+type Spot = { x: number; y: number };
 type Person = { id: string; name: string; label: string; kind: string; minor: boolean; me: boolean; moved: boolean };
-type Place = { id: string; name: string; icon: string; info: string; x: number; y: number; here: boolean; people: Person[] };
-type Path = { from: string; to: string; kind: string; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; label: string; lx?: number; ly?: number; near: boolean | null };
-type Layout = { width: number; height: number; places: Place[]; paths: Path[]; here: string | null; terrain: string | null; hasMinor: boolean };
+type Place = { id: string; name: string; icon: string; room: string; x: number; y: number; h: number; here: boolean; people: Person[] };
+type Path = { from: string; to: string; kind: string; m: number; points: Spot[]; label: string; lx?: number; ly?: number; near: boolean | null };
+type Plan = { width: number; height: number; places: Place[]; paths: Path[]; here: string | null; art: string | null; terrain: string | null; hasMinor: boolean };
 
-const layout = layoutMap as (view: unknown, opts: { me?: string | null; before?: Record<string, string> | null; aspect?: number }) => Layout | null;
-const MIN = 0.35;
-const MAX = 2.5;
-const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
-const DASH: Record<string, string | undefined> = { stairs: '3 5', water: '8 5' };
+const plan = mapPlan as (view: unknown, opts: { me?: string | null; before?: Record<string, string> | null }) => Plan | null;
+const route = routeFrom as (view: unknown, from: string | null, to: string | null) => { metres: number; steps: string[] } | null;
+// Leaflet's flat map: y grows upward, so a spot drawn at y from the top sits at MAP_H - y.
+const at = (L: typeof Leaflet, p: Spot) => L.latLng(MAP_H - p.y, p.x);
 
-// A soft curve between two places, bent a little so lines that share a row do not sit on top of each other.
-const curve = (p: Path) => `M${p.x1} ${p.y1} Q${p.cx} ${p.cy} ${p.x2} ${p.y2}`;
-
-// The world's map, the same on the big screen and the phone: places and the people in them, paths between.
-// Zoom with the buttons, the wheel or a pinch; drag to look around. With onSelect, tapping a place picks it.
-export function WorldMap({ view, me = null, before = null, selected = null, onSelect, className = '', tall = false }: {
+// The world's map, the same on the big screen and the phone: the GM's drawing of the world, each place named on it
+// with the people there, the paths with their distances. Drag, wheel, pinch and the buttons move and zoom it.
+// With onSelect, tapping a place picks it and lights the way there from your place.
+export function WorldMap({ view, me = null, before = null, selected = null, onSelect, className = '' }: {
   view: Record<string, unknown>; me?: string | null; before?: Record<string, string> | null; selected?: string | null;
-  onSelect?: (id: string) => void; className?: string; tall?: boolean;
+  onSelect?: (id: string) => void; className?: string;
 }) {
-  // className sizes the map itself (its height); the key sits under it.
-  const plan = layout(view, { me, before, aspect: tall ? 0.75 : 1.6 });
+  const data = useMemo(() => plan(view, { me, before }), [view, me, before]);
   const box = useRef<HTMLDivElement>(null);
-  const [cam, setCam] = useState({ s: 1, x: 0, y: 0 });
-  const [fitted, setFitted] = useState(false);
-  const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const drag = useRef<{ moved: boolean; dist: number; s: number } | null>(null);
-  const width = plan?.width ?? 0;
-  const height = plan?.height ?? 0;
+  const map = useRef<Leaflet.Map | null>(null);
+  const lib = useRef<typeof Leaflet | null>(null);
+  const art = useRef<{ layer: Leaflet.Layer; svg: string } | null>(null);
+  const marks = useRef<Leaflet.LayerGroup | null>(null);
+  const pick = useRef(onSelect);
+  pick.current = onSelect;
+  const [ready, setReady] = useState(false);
 
-  const fit = useCallback(() => {
-    const el = box.current;
-    if (!el || !width) return;
-    const s = clamp(Math.min(el.clientWidth / width, el.clientHeight / height) * 0.96, MIN, 1.15);
-    setCam({ s, x: (el.clientWidth - width * s) / 2, y: (el.clientHeight - height * s) / 2 });
-  }, [width, height]);
-
-  useLayoutEffect(() => {
-    if (!fitted && width) {
-      fit();
-      setFitted(true);
-    }
-  }, [fit, fitted, width]);
-
+  // Leaflet needs the browser, so it loads after the first paint and builds the map once.
   useEffect(() => {
-    const el = box.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => fit());
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [fit]);
-
-  const zoomAt = useCallback((factor: number, px: number, py: number) => {
-    setCam((c) => {
-      const s = clamp(c.s * factor, MIN, MAX);
-      const k = s / c.s;
-      return { s, x: px - (px - c.x) * k, y: py - (py - c.y) * k };
-    });
+    let gone = false;
+    (async () => {
+      const L = (await import('leaflet')).default;
+      if (gone || !box.current || map.current) return;
+      const bounds = L.latLngBounds([0, 0], [MAP_H, MAP_W]);
+      const m = L.map(box.current, { crs: L.CRS.Simple, minZoom: -3, maxZoom: 2, zoomSnap: 0.25, zoomDelta: 0.5, wheelPxPerZoomLevel: 120, attributionControl: false, zoomControl: false, maxBounds: bounds.pad(0.25), maxBoundsViscosity: 0.8 });
+      L.control.zoom({ position: 'bottomright', zoomInTitle: 'Zoom in', zoomOutTitle: 'Zoom out' }).addTo(m);
+      const Fit = L.Control.extend({
+        onAdd: () => {
+          const b = L.DomUtil.create('button', 'map-fit');
+          b.type = 'button';
+          b.textContent = 'Fit';
+          b.title = 'Fit the map';
+          L.DomEvent.on(b, 'click', (e) => { L.DomEvent.stop(e); m.fitBounds(bounds, { padding: [8, 8] }); });
+          return b;
+        },
+      });
+      new Fit({ position: 'bottomright' }).addTo(m);
+      m.fitBounds(bounds, { padding: [8, 8] });
+      marks.current = L.layerGroup().addTo(m);
+      // A drawer that slides open changes the box's size: the map measures itself again.
+      if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => m.invalidateSize()).observe(box.current);
+      lib.current = L;
+      map.current = m;
+      setReady(true);
+    })();
+    return () => {
+      gone = true;
+      map.current?.remove();
+      map.current = null;
+      art.current = null;
+    };
   }, []);
 
-  // The wheel zooms where the pointer is; it needs a listener that may stop the page from scrolling.
+  // The picture under everything: the GM's drawing, or a plain one from the same spots.
   useEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const wheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const r = el.getBoundingClientRect();
-      zoomAt(Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
-    };
-    el.addEventListener('wheel', wheel, { passive: false });
-    return () => el.removeEventListener('wheel', wheel);
-  }, [zoomAt]);
+    const L = lib.current;
+    const m = map.current;
+    if (!ready || !L || !m || !data) return;
+    const svg = data.art ?? plainMapSvg(data);
+    if (art.current?.svg === svg) return;
+    if (art.current) m.removeLayer(art.current.layer);
+    const el = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement as unknown as SVGElement;
+    el.setAttribute('preserveAspectRatio', 'none');
+    const layer = L.svgOverlay(el, L.latLngBounds([0, 0], [MAP_H, MAP_W]), { interactive: false }).addTo(m);
+    layer.bringToBack();
+    art.current = { layer, svg };
+  }, [ready, data]);
 
-  if (!plan) return null;
-
-  const down = (e: React.PointerEvent) => {
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    const pts = [...pointers.current.values()];
-    drag.current = { moved: false, dist: pts.length === 2 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0, s: cam.s };
-  };
-  const move = (e: React.PointerEvent) => {
-    const last = pointers.current.get(e.pointerId);
-    if (!last || !drag.current) return;
-    const dx = e.clientX - last.x;
-    const dy = e.clientY - last.y;
-    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    const pts = [...pointers.current.values()];
-    if (pts.length === 2) {
-      const r = box.current!.getBoundingClientRect();
-      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
-      if (drag.current.dist) zoomAt(dist / drag.current.dist, (pts[0].x + pts[1].x) / 2 - r.left, (pts[0].y + pts[1].y) / 2 - r.top);
-      drag.current.dist = dist;
-      drag.current.moved = true;
-      return;
+  // Paths, distances and places on top, redrawn whenever someone moves or a place is picked.
+  useEffect(() => {
+    const L = lib.current;
+    const group = marks.current;
+    if (!ready || !L || !group || !data) return;
+    group.clearLayers();
+    const way = me && selected ? route(view, data.here, selected) : null;
+    const onWay = (p: Path) => Boolean(way && way.steps.some((s, i) => i > 0 && ((way.steps[i - 1] === p.from && s === p.to) || (way.steps[i - 1] === p.to && s === p.from))));
+    for (const p of data.paths) {
+      const lit = onWay(p);
+      L.polyline(p.points.map((q) => at(L, q)), { color: lit ? 'var(--primary)' : '#e8dcc0', weight: lit ? 5 : 2, opacity: lit ? 0.95 : 0.35, dashArray: lit ? undefined : '6 8', interactive: false, className: 'map-path' }).addTo(group);
+      // On a phone only the distances from your place, and the way you picked, are written on the map.
+      if (p.label && p.lx !== undefined && p.ly !== undefined && (!me || p.near || lit)) {
+        L.marker(at(L, { x: p.lx, y: p.ly }), { interactive: false, keyboard: false, icon: L.divIcon({ className: 'map-distance-icon', html: `<span class="map-distance${lit || p.near ? ' near' : ''}">${p.label}</span>`, iconSize: [0, 0] }) }).addTo(group);
+      }
     }
-    if (!drag.current.moved && Math.hypot(dx, dy) < 3) return;
-    if (!drag.current.moved) (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
-    drag.current.moved = true;
-    setCam((c) => ({ ...c, x: c.x + dx, y: c.y + dy }));
-  };
-  const up = (e: React.PointerEvent) => {
-    pointers.current.delete(e.pointerId);
-    if (!pointers.current.size) setTimeout(() => { drag.current = null; }, 0);
-  };
-  const pick = (id: string) => {
-    if (drag.current?.moved) return;
-    onSelect?.(id);
-  };
-  const centre = (factor: number) => {
-    const el = box.current;
-    if (el) zoomAt(factor, el.clientWidth / 2, el.clientHeight / 2);
-  };
+    for (const p of data.places) {
+      const marker = L.marker(at(L, p), { keyboard: Boolean(pick.current), interactive: Boolean(pick.current), riseOnHover: true, icon: L.divIcon({ className: 'map-place-icon', html: placeLabelHtml(p, { selected: selected === p.id }), iconSize: [0, 0] }) });
+      marker.on('click', () => pick.current?.(p.id));
+      marker.addTo(group);
+    }
+  }, [ready, data, selected, me, view]);
 
+  if (!data) return null;
   return (
     <div className="flex flex-col gap-2">
-      <div ref={box} data-world-map data-terrain={plan.terrain ?? undefined}
-        className={`world-map relative min-h-64 touch-none select-none overflow-hidden rounded-xl border border-border bg-card ${className}`}
-        style={className ? undefined : { aspectRatio: `${width} / ${height}`, maxHeight: '64vh' }}
-        onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onPointerLeave={up}>
-        <div className="absolute left-0 top-0 origin-top-left" style={{ width, height, transform: `translate(${cam.x}px, ${cam.y}px) scale(${cam.s})` }}>
-          <svg className="absolute inset-0" width={width} height={height} aria-hidden="true">
-            {plan.paths.map((p) => (
-              <path key={`${p.from}-${p.to}`} d={curve(p)} fill="none" strokeLinecap="round"
-                className={p.near ? 'stroke-primary' : 'stroke-muted-foreground'}
-                strokeOpacity={p.near === false ? 0.25 : p.near ? 0.9 : 0.45} strokeWidth={p.kind === 'road' || p.kind === 'corridor' ? 4 : 2.5} strokeDasharray={DASH[p.kind]} />
-            ))}
-          </svg>
-          {plan.paths.filter((p) => p.label && p.lx !== undefined && p.near !== false).map((p) => (
-            <span key={`d-${p.from}-${p.to}`} data-distance className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border bg-background px-2 py-0.5 text-xs ${p.near ? 'border-primary/60 text-foreground' : 'border-border text-muted-foreground'}`}
-              style={{ left: p.lx, top: p.ly }}>{p.label}</span>
-          ))}
-          {plan.places.map((p) => (
-            <button key={p.id} type="button" data-place={p.id} title={p.info || p.name} onClick={() => pick(p.id)} disabled={!onSelect}
-              className={`absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 rounded-xl border bg-background px-3 py-2.5 text-center shadow-sm transition-colors disabled:cursor-default ${p.here ? 'border-primary ring-2 ring-primary/40' : selected === p.id ? 'border-primary' : 'border-border enabled:hover:border-primary/60'}`}
-              style={{ left: p.x, top: p.y, width: CARD_W }}>
-              <span className="flex max-w-full items-center gap-1.5 text-[0.95rem] font-semibold leading-tight">
-                {p.icon && <span aria-hidden="true">{p.icon}</span>}
-                <span className="line-clamp-2">{p.name}</span>
-              </span>
-              {p.people.length > 0 && (
-                <span className="flex flex-wrap justify-center gap-1">
-                  {p.people.map((c) => (
-                    <span key={c.id} title={c.name} className={`who ${c.kind}${c.minor ? ' minor' : ''}${c.me ? ' me' : ''}${c.moved ? ' moved' : ''}`}>{c.label}</span>
-                  ))}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-        <div className="absolute bottom-2 right-2 flex overflow-hidden rounded-lg border border-border bg-background/90 text-sm shadow-sm backdrop-blur">
-          <button type="button" aria-label="Zoom out" className="px-3 py-1.5 hover:bg-muted" onClick={() => centre(1 / 1.3)}>−</button>
-          <button type="button" aria-label="Fit the map" className="border-x border-border px-3 py-1.5 text-xs hover:bg-muted" onClick={fit}>Fit</button>
-          <button type="button" aria-label="Zoom in" className="px-3 py-1.5 hover:bg-muted" onClick={() => centre(1.3)}>+</button>
-        </div>
+      <div ref={box} data-world-map data-terrain={data.terrain ?? undefined}
+        className={`world-map relative z-0 overflow-hidden rounded-xl border border-border bg-card ${className}`}
+        style={className ? undefined : { aspectRatio: `${MAP_W} / ${MAP_H}`, maxHeight: '64vh' }}>
+        {!ready && <div className="absolute inset-0 grid place-items-center text-sm text-muted-foreground">Unfolding the map…</div>}
       </div>
       <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
         {me && <span className="who player me">You</span>}
         <span className="who player">Player</span>
         <span className="who npc">Played by the GM</span>
-        {plan.hasMinor && <span className="who npc minor">Minor</span>}
+        {data.hasMinor && <span className="who npc minor">Minor</span>}
       </div>
     </div>
   );

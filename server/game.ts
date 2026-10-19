@@ -9,6 +9,7 @@ import { GENERATION_STEPS } from './progress.ts';
 import { sanitizeMusic } from '../src/lib/music-theory.ts';
 import { cleanSoundtrack } from '../src/lib/soundtrack/clean.ts';
 import { DECK, drawIdea } from '../src/lib/settings-deck.ts';
+import { mapSpots } from '../src/lib/map-layout.ts';
 import { ART_CHOICES, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 import { difficultyOf } from '../src/lib/difficulty.ts';
 import { planGeography, pathMetres, tripTime } from '../src/lib/geography.ts';
@@ -602,6 +603,32 @@ export function mapOf(scenario, edits = {}) {
 
 // The map's geography at the GM's planned positions: a host dragging a place never changes a walking time.
 // A landmark is scenery only: never a place, a person, a clue or where any of them is.
+// What the GM draws the map from: public facts only (the setting, the places as everyone sees them, the paths),
+// and the spots the screens will put each name on. Never clues, the truth or where anyone is.
+export function mapArtInput(scenario) {
+  const places = mapOf(scenario);
+  const geo = geographyOf(scenario);
+  const spots = mapSpots(places, geo.landmarks);
+  const info = Object.fromEntries((scenario.locations ?? []).map((l) => [l.id, l.public_info ?? '']));
+  return {
+    spots,
+    input: {
+      setting: scenario.setting_summary ?? '',
+      terrain: geo.terrain,
+      places: places.map((p) => ({ id: p.id, name: p.name, what: info[p.id], at: spots[p.id] })),
+      paths: geo.paths.filter((p) => spots[p.from] && spots[p.to]).map((p) => ({ kind: p.kind, points: [spots[p.from], spots[p.to]] })),
+      landmarks: geo.landmarks.map((l) => ({ kind: l.kind, name: l.name, at: spots[l.id] })),
+    },
+  };
+}
+
+export function mapArt(game, svg, spots) {
+  const clean = cleanSvg(svg, 40_000);
+  if (!clean || !game.state) return false;
+  game.state.mapArt = { svg: clean, spots };
+  return true;
+}
+
 export function geographyOf(scenario) {
   const people = [...(scenario?.players ?? []), ...(scenario?.npcs ?? [])];
   const ids = [
@@ -2676,9 +2703,9 @@ export function publicKnowledge(game) {
 
 const SVG_BAD = /<script|<foreignObject|\son\w+\s*=|(?:href|src)\s*=\s*["'](?!#)|javascript:|<iframe|<image/i;
 
-export function cleanSvg(svg) {
+export function cleanSvg(svg, max = 20_000) {
   const text = String(svg ?? '').trim();
-  if (!text.startsWith('<svg') || !text.endsWith('</svg>') || text.length > 20_000 || SVG_BAD.test(text)) return null;
+  if (!text.startsWith('<svg') || !text.endsWith('</svg>') || text.length > max || SVG_BAD.test(text)) return null;
   return text;
 }
 
@@ -2839,7 +2866,7 @@ function publicCore(game, now) {
     setting: sc?.setting_summary ?? null,
     opening: sc?.opening_scene ?? null,
     cast: publicCast(game),
-    map: sc ? { places: mapOf(sc, st?.mapEdits), positions: st?.positions ?? startPositions(sc), geography: geographyOf(sc) } : null,
+    map: sc ? { places: mapOf(sc, st?.mapEdits), positions: st?.positions ?? startPositions(sc), geography: geographyOf(sc), art: st?.mapArt ?? null } : null,
     phase: st && st.phaseIndex >= 0 ? { index: st.phaseIndex, number: roundNumber(game), count: totalRounds(game), name: sc.phases[st.phaseIndex].name, endsAt: st.phaseEndsAt } : null,
     recap: st?.recap ?? null,
     people: sc && st ? peopleView(game) : null,

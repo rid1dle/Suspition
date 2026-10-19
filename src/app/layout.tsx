@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import 'leaflet/dist/leaflet.css';
 import './globals.css';
 import './world.css';
 import { worldFontVariables } from '@/components/world/fonts';

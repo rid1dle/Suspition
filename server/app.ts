@@ -84,6 +84,7 @@ export class App {
     if (this.game.status === 'playing' && pendingTheory(this.game)) this.advance();
     const music = this.game.state?.soundtrack?.status;
     if (['reading', 'playing'].includes(this.game.status) && (!music || music === 'writing')) this.composeMusic(this.game);
+    if (['reading', 'playing'].includes(this.game.status)) this.drawMap(this.game);
     return this;
   }
 
@@ -290,6 +291,7 @@ export class App {
         G.attachScenario(game, scenario, this.clock());
         game.progress = null;
         this.drawPicture(game);
+        this.drawMap(game);
         this.composeMusic(game);
       } catch (err) {
         if (this.game !== game) return;
@@ -375,6 +377,18 @@ export class App {
       const clean = G.cleanSvg(svg);
       if (!clean) throw new Error('the picture was not a safe SVG');
       game.state.illustration = clean;
+      await this.changed();
+    });
+  }
+
+  // The world's map picture, drawn while everyone reads; the plain map shows until it lands or if this fails.
+  drawMap(game) {
+    if (typeof this.gm.drawMap !== 'function' || !game.scenario || game.state?.mapArt) return null;
+    return this.background('map', async () => {
+      const { spots, input } = G.mapArtInput(game.scenario);
+      const { svg } = await this.gm.drawMap(game, { style: resolveStyle(game.setup?.artStyle ?? DEFAULT_STYLE, game.id, 0), input });
+      if (this.game !== game || !game.state) return;
+      if (!G.mapArt(game, svg, spots)) throw new Error('the map was not a safe SVG');
       await this.changed();
     });
   }

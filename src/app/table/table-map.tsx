@@ -17,6 +17,8 @@ export function TableMap({ view, host, act }: Pick<TableProps, 'view' | 'host' |
   const [editing, setEditing] = useState(false);
 
   const [moved, setMoved] = useState<Record<string, string> | null>(null);
+  // A map the GM drew has its places fixed in the picture: editing then only names their spots in your room.
+  const drawn = Boolean((view.map as { art?: unknown } | null)?.art);
   // Who moved since the last update glows for a moment.
   useEffect(() => {
     if (editing) return;
@@ -68,8 +70,24 @@ export function TableMap({ view, host, act }: Pick<TableProps, 'view' | 'host' |
         <Muted className="text-xs">Who is where right now</Muted>
         {host && <Button size="sm" variant={editing ? 'default' : 'ghost'} onClick={() => setEditing((e) => !e)}>{editing ? 'Done' : 'Edit map'}</Button>}
       </div>
-      {editing && <Muted className="text-xs">Drag places to move them. Type where each place is in your room.</Muted>}
-      {editing ? <div ref={box} /> : <WorldMap view={view} before={moved} />}
+      {editing && <Muted className="text-xs">{drawn ? 'Type where each place is in your room.' : 'Drag places to move them. Type where each place is in your room.'}</Muted>}
+      {editing && drawn ? <RoomSpots view={view} act={act} /> : editing ? <div ref={box} /> : <WorldMap view={view} before={moved} />}
+    </div>
+  );
+}
+
+function RoomSpots({ view, act }: Pick<TableProps, 'view' | 'act'>) {
+  const places = (view.map as { places?: { id: string; name: string; room?: string }[] } | null)?.places ?? [];
+  return (
+    <div className="flex flex-col gap-2">
+      {places.map((p) => (
+        <label key={p.id} className="flex items-center gap-3 text-sm">
+          <span className="w-40 shrink-0 truncate">{p.name}</span>
+          <input defaultValue={p.room ?? ''} maxLength={40} placeholder="Spot in our room" className="min-w-0 flex-1 rounded-md border border-border bg-background px-2 py-1"
+            onBlur={(e) => { if (e.target.value !== (p.room ?? '')) act('place', { id: p.id, room: e.target.value }); }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
+        </label>
+      ))}
     </div>
   );
 }

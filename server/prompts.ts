@@ -669,6 +669,26 @@ export function roundPicturePrompt(game, styleId = DEFAULT_STYLE) {
   return artPrompt(`${scene}\nDraw a symbol of this round: an object or a place that stands for it. No people, no faces, nothing that shows who did it or how.`, styleId);
 }
 
+// The world's map as one SVG picture, from public facts only, drawn to the spots the screens put the names on.
+export function mapArtPrompt(input, styleId = DEFAULT_STYLE) {
+  return `Draw the map of this world as one SVG picture, seen from straight above, like a map in an old book.
+The world: ${input.setting}
+Ground: ${input.terrain ?? 'whatever fits the world'}.
+Style: ${styleRules(styleId)}
+
+Draw to these exact spots on a 1200 x 800 canvas:
+- Each place is centred on its spot: draw it as what it is, seen from above (a chapel, a shed, a room of a house, a yard), about 170 x 90, filled and solid. Keep its middle calm and plain: the game writes the place's name over it.
+- Each path joins its points in order: draw it as what it is (road, trail, corridor, stairs, bridge, water crossing).
+- Each landmark sits on its spot, small: draw it as its kind.
+- Fill the rest with the ground and things that belong in this world (walls, fields, trees, water, streets), quiet so the places stand out.
+
+PLACES: ${JSON.stringify(input.places)}
+PATHS: ${JSON.stringify(input.paths)}
+LANDMARKS: ${JSON.stringify(input.landmarks)}
+
+Rules: start with <svg and use viewBox="0 0 1200 800". No words, letters or numbers anywhere. No people. No scripts, no links, no external images, no foreignObject. Under 30000 characters.`;
+}
+
 export function illustrationPrompt(scenario, styleId = DEFAULT_STYLE) {
   return artPrompt(`${scenario.setting_summary} ${scenario.background?.slice(0, 3).join(' ') ?? ''}`.trim(), styleId);
 }

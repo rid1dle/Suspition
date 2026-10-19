@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA } from './prompts.ts';
+import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, mapArtPrompt } from './prompts.ts';
 import { theoryPrompt } from './theory.ts';
 import { continuityPrompt } from './continuity.ts';
 import { storyIssues, issueCounts, applyStoryPatches } from './story.ts';
@@ -356,6 +356,17 @@ export class GM {
     return this.call('illustrate', {
       system: 'You draw clean SVG illustrations in the style you are given. Output only the SVG in the svg field.',
       prompt: prompt ?? illustrationPrompt(game.scenario, style),
+      schema: ILLUSTRATION_SCHEMA,
+      model: this.playModel,
+      timeoutMs: 300_000,
+    }, this.pictureLimiter);
+  }
+
+  // The world's map, drawn once while everyone reads, from public facts only (mapArtInput).
+  drawMap(game, { style = undefined, input }) {
+    return this.call('map', {
+      system: 'You draw clean SVG maps in the style you are given. Output only the SVG in the svg field.',
+      prompt: mapArtPrompt(input, style),
       schema: ILLUSTRATION_SCHEMA,
       model: this.playModel,
       timeoutMs: 300_000,

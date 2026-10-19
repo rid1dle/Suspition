@@ -408,7 +408,7 @@ function GoSomewhere({ view }: { view: PlayerView }) {
   const cast = [...(view.cast?.players ?? []), ...(view.cast?.npcs ?? [])] as { id: string; name: string }[];
   return (
     <div className="flex flex-col gap-3">
-      <WorldMap view={view} me={view.me.id} selected={pick} onSelect={setPick} tall className="h-[58dvh]" />
+      <WorldMap view={view} me={view.me.id} selected={pick} onSelect={setPick} className="h-[58dvh]" />
       {chosen ? (
         <PlacePanel name={chosen.name} info={chosen.public_info} here={chosen.id === hereId} canGo={playing}
           people={cast.filter((c) => positions[c.id] === chosen.id && c.id !== view.me.id).map((c) => c.name)}
