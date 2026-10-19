@@ -63,6 +63,7 @@ const WORLD_SCHEMA = obj({
       fears: str,
       goal: str,
       goal_steps: strArr,
+      goal_where: str,
       goal_why: str,
       side: { type: 'string', enum: ['investigator', 'culprit', 'wildcard'] },
       side_explanation: str,
@@ -206,6 +207,7 @@ export const PHASE_SCHEMA = obj({
   round_name: str,
   because: str,
   vote: obj({ kind: { type: 'string', enum: ['keep', 'spotlight', 'choice'] }, question: str, options: strArr }),
+  checks: { type: 'array', items: obj({ clue_id: str, line: str }) },
 });
 
 export const SCORE_SCHEMA = obj({
@@ -322,6 +324,7 @@ Design rules:
 - Culprits know they are culprits. Their private_info says exactly what they did and what they must hide, and their goal is to avoid being named.
 - case_question is the one big question the whole group must answer by the end, under 12 words, naming the victim or event (for example "Who poisoned Mr Rao, and why?").
 - goal_steps: 2 or 3 concrete things to do in the story that lead to that player's goal, in order, each one sentence starting with a verb; the last one is the goal itself ("Find out who has the letter.", "Get the letter away from them.", "Burn it before the final vote."). Each step can really happen through a move.
+- goal_where: the id of the place or GM character where this goal can be reached. Whatever the goal needs (a letter, a photo, a person to win over) is there from round 1, so a move there can really reach it; if it is a thing to find, say where it is in that player's private_info. Every player has a goal they can reach. A culprit whose goal is only not to be named may leave it empty.
 - Every goal is one sentence that starts with a verb and says exactly what counts as done, so the player and the GM can both tell at the end if it happened (for example "Get Rao's notebook back before the final vote."). Investigators already want to solve the case (that is the group goal), so their goal is only their personal objective. A wildcard's goal is something else entirely (escape with an item, protect someone, expose a different secret).
 - public_info, setting_summary and opening_scene are read by everyone. They must never reveal a culprit, a secret or a hidden fact.
 - The hint ladder runs from vague to specific. Write at least as many hints as requested. If you use the false-hint twist, mark exactly one hint is_false: true and make it plausible but refutable by evidence.
@@ -451,6 +454,10 @@ ${lastRound?.kind === 'choice' ? `The room chose "${lastRound.pickedText ?? 'not
 
 quiet_players lists players who made no private move last round. Send each of them one private message in messages_to_players: a small, personal lead tied to their own goal, so they have something to do.
 
+goals_stuck lists players whose goal has not moved and the game is past half way. Send each of them one private message in messages_to_players that opens a way to their goal at its where: someone there mentions it, or it turns up within reach. The game sends a plain one if you do not.
+
+case_gaps lists parts of the case (the culprit, the method, the motive) that no clue anyone has found settles yet, with the clues that would. Near the end the room must be able to solve it: bring each one into reach this round, through a check or an event that points straight at where it is. At the start of the last round the game shows any still missing itself.
+
 Players_now says what each player is trying to do and how they are coming across. Shape moments, messages and events around that, so each player feels the story answering them.
 
 The players drive this story; the planned beat is only a loose outline. Write the public_event announced on the table and read out loud (15 to 40 words). It is the round's one loud moment, so make it something the whole room reacts to: build first on what players actually asked, found and did, and use the planned beat only where it still fits. Never undo a player's discovery or force an event that makes their choices pointless. Do not restate the phase number or name; the table already shows it. React to suspicion: above 60, the culprit's position should get worse (a witness remembers, evidence surfaces); below 30, the culprit may gain cover. Destroy clues only if a culprit or GM character would plausibly act now (can_be_destroyed must be true). Use messages_to_players for private developments, including any planned goal change for a player. Moments (optional, 0 to 2 per round change): a moment asks one player's character to say something out loud now. line is first person, under 20 words, and only things that character already knows (their card, what they found, what they were told). why is one short line, only for that player, saying why it comes out now. Use moments to push the story: a small confession, a memory, a challenge to someone. Never force a culprit to confess the crime. The player may refuse with an override; react to past moment results in moments_so_far (said_instead is what the player really said in place of the line; treat it as said out loud). GM characters may only act on what they know (see the strict rule above); if one of them learns something during this change, show it happening and add it to learned. Use positions for people who visibly move now (GM characters wander off, people gather somewhere); list only changes, with location ids. Leave arrays empty if nothing applies.
@@ -464,6 +471,7 @@ Also write, for everyone:
 - public_facts: each new fact about a specific person that became public since the last round change (in your public_event, news, round results, shared clues or things said out loud). person_id is the player or GM character id; fact is one short plain line. Never a secret that is not public yet.
 - round_name: a fresh name for the coming round, 2 to 5 words, from what actually happened (not the plan). Never a culprit's name. Empty keeps the planned name.
 - because: one line, under 25 words, that ties the room's last choice or vote to what happens now ("Because the room looked at Nikhil, the clerk is asked for the seal log."). It is shown first, so everyone sees their choice matter. Empty if nothing ties.
+- checks: when the room raised a fair lead more than once and nobody checked it (count the candles, look at the shawls), a GM character who would do it checks it now. clue_id is the clue the check turns up (only a clue open now); line is one short line of them doing it, under 20 words, naming no culprit. At most 2. Usually empty.
 - vote: the coming round's vote. kind "keep" keeps the planned question. "spotlight" asks who the room looks at (no options needed). "choice" is a story decision for the room with 2 or 3 short options and no right answer ("Break the strongroom door now, or wait for the key?"); the story will follow whatever they pick, so every option must lead somewhere interesting. Never put the culprit's name in a choice.`;
 }
 

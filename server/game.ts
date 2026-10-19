@@ -360,6 +360,7 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
     if (!Array.isArray(p.hidden_facts) || p.hidden_facts.length < 1) {
       errors.push(`${p.id} needs at least one hidden fact.`);
     }
+    if (!String(p.goal ?? '').trim()) errors.push(`${p.id} needs a goal.`);
   }
 
   const named = s.truth?.culprit_ids ?? [];
@@ -808,10 +809,37 @@ function learn(game, entries, source, now) {
   }
 }
 
-function destroy(game, clueIds) {
+// The clue sets the case rests on: what points at each culprit, and what settles each key deduction.
+function caseNeeds(game) {
+  const sc = game.scenario;
+  const exists = new Set((sc.clues ?? []).map((c) => c.id));
+  const real = (ids) => (ids ?? []).filter((id) => exists.has(id));
+  const culpritClues = real((sc.key_deductions ?? []).filter((k) => k.about === 'culprit').flatMap((k) => k.clue_ids));
+  return [
+    ...(sc.truth?.culprit_ids ?? []).map((id) => {
+      const own = real((sc.suspects ?? []).find((x) => x?.character_id === id)?.pointer_clue_ids);
+      return { needs: 'culprit', id, clues: own.length ? own : culpritClues };
+    }),
+    ...(sc.key_deductions ?? []).filter((k) => ['culprit', 'method', 'motive'].includes(k.about)).map((k) => ({ needs: k.about, id: k.id, clues: real(k.clue_ids) })),
+  ].filter((n) => n.clues.length);
+}
+
+const foundByAnyone = (game) => new Set([...Object.values(game.state.found ?? {}).flat(), ...game.state.shared.map((x) => x.clueId)]);
+
+// What the room could not yet solve: a culprit nothing found points at, a deduction nobody holds a clue for.
+export function caseGaps(game) {
+  const found = foundByAnyone(game);
+  return caseNeeds(game).filter((n) => !n.clues.some((id) => found.has(id)));
+}
+
+// A clue is never destroyed when it is the last one left that points at a culprit or settles a deduction.
+export function destroy(game, clueIds) {
   const destroyable = new Set(game.scenario.clues.filter((c) => c.can_be_destroyed).map((c) => c.id));
+  const needs = caseNeeds(game);
   for (const id of clueIds ?? []) {
-    if (destroyable.has(id) && !game.state.destroyed.includes(id)) game.state.destroyed.push(id);
+    if (!destroyable.has(id) || game.state.destroyed.includes(id)) continue;
+    const last = needs.some((n) => n.clues.includes(id) && n.clues.every((c) => c === id || game.state.destroyed.includes(c)));
+    if (!last) game.state.destroyed.push(id);
   }
 }
 
@@ -1235,7 +1263,7 @@ function placeFor(game, clue) {
 }
 
 // Steps toward a player's own goal, ticked off when the GM says a move completed one.
-function markGoalSteps(game, pid, steps) {
+export function markGoalSteps(game, pid, steps) {
   const card = game.scenario.players.find((p) => p.id === pid);
   const total = (card?.goal_steps ?? []).length;
   if (!total) return;
@@ -1417,6 +1445,7 @@ export function completePhase(game, result, now = Date.now()) {
     return;
   }
   const next = replay ? st.phaseIndex : st.phaseIndex + 1;
+  const stuck = goalsStuck(game);
   destroy(game, result.clues_destroyed);
   for (const p of result.positions ?? []) move(game, p?.character_id, p?.location_id);
   learn(game, result.learned, 'round change', now);
@@ -1439,6 +1468,9 @@ export function completePhase(game, result, now = Date.now()) {
   announceRound(game, next, now, replay);
   addMoments(game, result.moments, now);
   whisper(game, result.messages_to_players, now);
+  nudgeStuckGoals(game, stuck, result.messages_to_players, now);
+  applyChecks(game, result.checks, now);
+  if (isLastPhase(game)) surfaceGaps(game, now);
 }
 
 export function proposeHint(game, playerId, now = Date.now()) {
@@ -2130,6 +2162,77 @@ export function publicTimeline(game) {
     .sort((a, b) => a.order - b.order);
 }
 
+const CHECK_LINE = 'Someone finally checks.';
+const MAX_CHECKS = 2;
+
+// A clue the story turns up for everyone, not found by a player: a GM character's check, or the game keeping the case solvable.
+function publishClue(game, clueId, line, now) {
+  const clue = game.scenario.clues.find((c) => c.id === clueId);
+  const round = roundNumber(game);
+  if (!(Number(clue.reveal_round) <= round)) clue.reveal_round = round;
+  game.state.shared.push({ clueId, by: null, check: true, at: now });
+  addEvent(game, `${line} ${clue.name}: ${clue.shows}`, 'clue', now, { name: clue.name });
+  addFacts(game, mentions(game, `${clue.name} ${clue.shows}`).map((id) => ({ person: id, fact: `Clue, ${clue.name}: ${clue.shows}` })), 'clue', now);
+}
+
+function checkLine(game, line) {
+  const text = sayable(game)(line, 200);
+  return text && !leaksPrivateCard(game, text) ? dropPuppeting(game, null, text, { others: true }).text : '';
+}
+
+// Leads the room kept raising that a GM character checks now: only clues open now, never one already out.
+function applyChecks(game, checks, now) {
+  const open = new Set(openClues(game));
+  let taken = 0;
+  for (const c of checks ?? []) {
+    if (taken >= MAX_CHECKS) break;
+    const id = String(c?.clue_id ?? '');
+    if (!open.has(id) || game.state.destroyed.includes(id) || game.state.shared.some((x) => x.clueId === id)) continue;
+    publishClue(game, id, checkLine(game, c?.line) || CHECK_LINE, now);
+    taken += 1;
+  }
+}
+
+// At the start of the last round, the room gets whatever it still needs to solve the case.
+function surfaceGaps(game, now) {
+  for (let gap = caseGaps(game)[0]; gap; gap = caseGaps(game)[0]) {
+    const alive = gap.clues.filter((id) => !game.state.destroyed.includes(id));
+    const clue = game.scenario.clues.filter((c) => (alive.length ? alive : gap.clues).includes(c.id)).sort((a, b) => (Number(a.reveal_round) || 1) - (Number(b.reveal_round) || 1))[0];
+    if (!clue) return;
+    publishClue(game, clue.id, CHECK_LINE, now);
+  }
+}
+
+// Past half way, a player whose goal has not moved gets a way in: from the round GM, or plainly from the game.
+function goalsStuck(game) {
+  const st = game.state;
+  const coming = st.phaseIndex + 2;
+  if (coming <= totalRounds(game) / 2) return [];
+  return game.scenario.players.filter((c) => (c.goal_steps ?? []).length && !(st.goalSteps?.[c.id] ?? []).length && !st.goalNudged?.[c.id]).map((c) => ({
+    player_id: c.id,
+    goal: c.goal,
+    next_step: c.goal_steps[0],
+    where: placeOrPerson(game, c.goal_where),
+  }));
+}
+
+function placeOrPerson(game, id) {
+  const sc = game.scenario;
+  const place = sc.locations.find((l) => l.id === id);
+  if (place) return place.name;
+  return [...sc.npcs.map((n) => [n.id, n.name]), ...sc.players.map((p) => [p.id, p.character_name])].find(([pid]) => pid === id)?.[1] ?? '';
+}
+
+function nudgeStuckGoals(game, stuck, messages, now) {
+  const st = game.state;
+  for (const g of stuck) {
+    (st.goalNudged ??= {})[g.player_id] = roundNumber(game);
+    if ((messages ?? []).some((m) => m?.player_id === g.player_id && String(m?.text ?? '').trim())) continue;
+    const place = game.scenario.locations.some((l) => l.name === g.where) ? `the ${g.where.replace(/^the\s+/i, '')}` : g.where;
+    whisper(game, [{ player_id: g.player_id, text: `Your goal is still open: ${g.next_step}${place ? ` Try ${place}.` : ''}` }], now);
+  }
+}
+
 export function shareClue(game, playerId, clueId, now = Date.now()) {
   if (!['playing', 'final'].includes(game.status)) fail('You can share clues during the game.', 409);
   const st = game.state;
@@ -2401,6 +2504,9 @@ export function snapshotForGM(game) {
     where_we_are: st.recap ?? null,
     players_now: st.persona ?? {},
     quiet_players: quietPlayers(game),
+    goals_stuck: game.status === 'playing' ? goalsStuck(game) : [],
+    // Near the end only: early on the room is meant to search for itself.
+    case_gaps: game.status === 'playing' && st.phaseIndex + 1 >= game.scenario.phases.length - 2 ? caseGaps(game).map((g) => ({ needs: g.needs, clue_ids: g.clues })) : [],
     play_by_player: Object.fromEntries(game.players.map((p) => [p.id, skillSplit(st.play?.[p.id])])),
     suspicion: st.suspicion,
     destroyed_clues: st.destroyed,
@@ -2508,7 +2614,7 @@ function publicCore(game, now) {
     roundResults: st?.roundResults ?? [],
     sharedClues: st ? st.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
-      return { id: x.clueId, name: c.name, shows: c.shows, by: game.players.find((p) => p.id === x.by)?.name };
+      return { id: x.clueId, name: c.name, shows: c.shows, by: x.check ? 'a check' : game.players.find((p) => p.id === x.by)?.name };
     }) : [],
     illustration: st?.illustration ?? null,
     calling: st ? (st.moments ?? []).filter((m) => m.status === 'called').map((m) => game.players.find((p) => p.id === m.player_id)?.name) : [],

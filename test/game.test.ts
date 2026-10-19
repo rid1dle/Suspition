@@ -176,8 +176,8 @@ describe('asking the GM', () => {
   test('should destroy only clues marked destroyable', () => {
     const game = playing();
     G.beginAsk(game, 'p1', { kind: 'action', text: 'burn things' });
-    G.completeAsk(game, 'p1', { ...emptyAsk, clues_destroyed: ['c1', 'c2'] });
-    assert.deepEqual(game.state.destroyed, ['c1']);
+    G.completeAsk(game, 'p1', { ...emptyAsk, clues_destroyed: ['c3', 'c2'] });
+    assert.deepEqual(game.state.destroyed, ['c3']);
   });
 
   test('should clamp suspicion between 0 and 100', () => {

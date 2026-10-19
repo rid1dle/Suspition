@@ -115,6 +115,19 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     });
   });
 
+  // Every goal can be reached: a place or person to reach it at, and steps to get there. Worlds from before goal_where skip this.
+  if ((s.players ?? []).some((p) => p && 'goal_where' in p)) {
+    const reachable = new Set([...(s.locations ?? []), ...(s.npcs ?? []), ...(s.players ?? [])].map((x) => x?.id));
+    (s.players ?? []).forEach((p, i) => {
+      const at = `players[${i}] (${p?.id})`;
+      const where = String(p?.goal_where ?? '').trim();
+      const steps = (p?.goal_steps ?? []).length;
+      if (steps < 2) out.push(`goal: ${at} has ${steps} goal step${steps === 1 ? '' : 's'}; it needs 2 or 3.`);
+      if (!where && !culprits.includes(p?.id)) out.push(`goal: ${at} has no goal_where; give the place or GM character where the goal can be reached, and put what it needs there.`);
+      else if (where && !reachable.has(where)) out.push(`goal: players[${i}].goal_where (${where}) is not a place or a person.`);
+    });
+  }
+
   (s.key_objects ?? []).forEach((o, i) => {
     if (pointsAtCulprit(s, players, o?.about) || (o?.where_is_public && culprits.includes(o?.where))) out.push(`giveaway: key_objects[${i}] points at the culprit; keep where it is secret and say only what it is.`);
   });
@@ -162,7 +175,7 @@ export const issueCounts = (issues) => {
 
 const STORY_PATHS = [
   /^clues\.\d+\.(shows|does_not_prove|where|reveal_round)$/,
-  /^players\.\d+\.(private_info|public_info|starting_knowledge)$/,
+  /^players\.\d+\.(private_info|public_info|starting_knowledge|goal|goal_where)$/,
   /^npcs\.\d+\.(knows|secrets|lies|reveals_freely|reveals_under_pressure)$/,
   /^hint_ladder\.\d+\.text$/,
   /^public_timeline\.\d+\.event$/,
