@@ -97,9 +97,19 @@ export function applyTheory(game, verdict, now = Date.now()) {
   r.theory = 'led';
   st.suspicion = clamp(st.suspicion - 10, 0, 100);
   const lr = verdict?.lead_round;
-  const options = (lr?.options ?? []).map((o) => String(o ?? '').trim()).filter(Boolean);
-  if (String(lr?.name ?? '').trim() && (String(lr?.objective ?? '').trim() || (lr.question && options.length >= 2))) {
-    const added = addRound(game, { name: lr.name, objective: lr.objective, planned_beat: `Lead the room back to what really happened. ${String(lr.objective ?? '').trim()}`.trim(), question: lr.question, options, answer_index: lr.answer_index, reward: '', wrong_nudge: '' }, now, { next: true });
+  let options = (lr?.options ?? []).map((o) => String(o ?? '').trim()).filter(Boolean);
+  let question = String(lr?.question ?? '').trim();
+  // The same answers again is the same question again, however it is worded: the lead round only points where to look.
+  const key = (list) => list.map((o) => String(o ?? '').trim().toLowerCase()).sort().join('|');
+  const asked = sc.phases.slice(0, st.phaseIndex + 1).filter((ph) => ph.options?.length).map((ph) => key(ph.options));
+  if (asked.includes(key(options))) {
+    question = '';
+    options = [];
+  }
+  // A round that was itself a lead never gets another: the story moves on instead of asking again.
+  const chained = sc.phases[r.phaseIndex]?.lead === true;
+  if (!chained && String(lr?.name ?? '').trim() && (String(lr?.objective ?? '').trim() || (question && options.length >= 2))) {
+    const added = addRound(game, { name: lr.name, objective: lr.objective, planned_beat: `Lead the room back to what really happened. ${String(lr.objective ?? '').trim()}`.trim(), question, options, answer_index: lr.answer_index, reward: '', wrong_nudge: '', lead: true }, now, { next: true });
     if (added) r.roundAdded = true;
   }
   // The clue that shows the real answer opens in the very next round.

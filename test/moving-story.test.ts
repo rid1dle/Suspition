@@ -31,7 +31,7 @@ describe('code decides how long the story runs', () => {
     assert.equal(G.paceStory(game, 5_000), 'more');
     assert.equal(game.scenario.phases.length, 4);
     assert.equal(G.isLastPhase(game), false);
-    assert.equal(game.state.events.at(-1).text, 'The story needs one more round. There are now 4 rounds.');
+    assert.ok(!game.state.events.some((e) => /needs one more round/.test(e.text)), 'the room is not told the round count');
   });
 
   test('should add a round when fewer than half the opened clues are found', () => {

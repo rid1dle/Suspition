@@ -82,13 +82,16 @@ function patchPlan(game, patches, now) {
   return guardedPatches(target, patches, apply, () => structural(game));
 }
 
+const GAME_TALK = /\bvot(e|ed|es|ing)\b|\b(extra|another|new|added)\s+round\b|\bround\s+\d|\brounds?\s+(was|were)\s+added\b/i;
+
 export function addCanon(game, items, now) {
   const st = game.state;
   const ids = new Set([...game.scenario.players, ...game.scenario.npcs].map((c) => c.id));
   let added = 0;
   for (const item of items ?? []) {
     const fact = String(item?.fact ?? '').replace(/\s+/g, ' ').trim().slice(0, 240);
-    if (!fact || st.canon.some((c) => c.fact === fact)) continue;
+    // Settled facts are about the world. Votes, rounds and the game itself never become part of the story.
+    if (!fact || st.canon.some((c) => c.fact === fact) || GAME_TALK.test(fact)) continue;
     st.canon.push({ fact, about: (item.about ?? []).filter((id) => ids.has(id)), public: item.public === true, round: roundNumber(game), at: now });
     added += 1;
   }

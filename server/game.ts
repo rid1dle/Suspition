@@ -1524,13 +1524,20 @@ export function addRound(game, round, now = Date.now(), { next = false } = {}) {
   sc.phases.splice(at, 0, ph);
   for (const c of sc.clues ?? []) if (Number.isInteger(c.reveal_round) && c.reveal_round >= at + 1) c.reveal_round += 1;
   for (const t of sc.public_timeline ?? []) if (Number(t.reveal_round) >= at + 1) t.reveal_round = Number(t.reveal_round) + 1;
+  if (round.lead) ph.lead = true;
   st.addedRounds = (st.addedRounds ?? 0) + 1;
   st.roundsVersion = (st.roundsVersion ?? 0) + 1;
-  addEvent(game, `The story needs one more round. There are now ${totalRounds(game)} rounds.`, 'phase', now);
+  // The round count is the game's business, not the story's: nothing is said in the room.
   return true;
 }
 
 // Code decides how long the story runs: asked "do you want another round?", the GM never says yes.
+// A because line ties what someone did in the story to what happens now; a line about the vote itself is the game talking.
+export function storyBecause(game, text) {
+  const t = String(text ?? '').trim();
+  return t && !/could not agree|\bvot(e|ed|es|ing)\b|\bsplit\b|\bpicked\b|\banswered\b/i.test(t) ? t : '';
+}
+
 export function paceStory(game, now = Date.now()) {
   const st = game.state;
   const sc = game.scenario;
@@ -1665,7 +1672,7 @@ export function completePhase(game, result, now = Date.now()) {
   setJob(game, result);
   planRound(game, next, result, replay);
   addEvent(game, phaseLine(game, next, replay), 'phase', now);
-  const because = sayable(game)(result.because, 200);
+  const because = storyBecause(game, sayable(game)(result.because, 200));
   if (because && !leaksPrivateCard(game, because)) addEvent(game, dropPuppeting(game, null, because).text, 'because', now);
   addEvent(game, withoutPrivateCards(game, dropPuppeting(game, null, result.public_event).text), 'event', now);
   setRecap(game, result, now);
@@ -2222,6 +2229,14 @@ export function resolveRoundVote(game, now = Date.now(), force = false) {
   const top = Math.max(...counts);
   const winners = counts.flatMap((c, i) => (c === top && top > 0 ? [i] : []));
   const picked = winners.length === 1 ? winners[0] : null;
+  // Everyone answered and the answers split: once, they talk it out and pick again, instead of the round ending in nothing.
+  if (everyone && winners.length > 1 && !vote.retried && !q.kind) {
+    vote.votes = {};
+    vote.retried = true;
+    vote.endsAt = now + ROUND_VOTE_MS;
+    addEvent(game, 'You picked different answers. Talk it out, then pick again.', 'vote', now);
+    return null;
+  }
   if (q.kind === 'spotlight') return resolveSpotlight(game, vote, q, picked, counts, now);
   if (q.kind === 'choice') {
     const result = { kind: 'choice', phaseIndex: vote.phaseIndex, round: roundNumber(game), question: q.question, picked, pickedText: picked === null ? null : q.options[picked], correct: null, counts };

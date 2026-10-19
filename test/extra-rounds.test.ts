@@ -25,7 +25,7 @@ describe('rounds grow with the story', () => {
     assert.equal(sc.clues[0].reveal_round, 1);
     assert.equal(sc.public_timeline[1].reveal_round, 4);
     assert.equal(G.totalRounds(game), 4);
-    assert.equal(game.state.events.at(-1).text, 'The story needs one more round. There are now 4 rounds.');
+    assert.ok(!game.state.events.some((e) => /needs one more round/.test(e.text)), 'the room is not told the round count');
     assert.match(G.playerView(game, 'p1').rules.join(' '), /There are 4 rounds\./);
   });
 
