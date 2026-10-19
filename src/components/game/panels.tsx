@@ -85,10 +85,30 @@ export function Night({ card }: { card: { night?: { time: string; where: string;
   );
 }
 
-interface AlibiTable { times: { time: string; what: string }[]; rows: { name: string; kind: string; minor: boolean; cells: string[] }[] }
+interface AlibiTable { times: { time: string; what: string }[]; rows: { name: string; kind: string; minor: boolean; cells: string[]; statement?: string }[] }
 
+// What each person says, in their own words, then the short summary of where everyone says they were.
 export function Alibis({ alibis, me = null }: { alibis: AlibiTable | null | undefined; me?: string | null }) {
   if (!alibis?.rows?.length) return <Muted>Nobody has said where they were yet.</Muted>;
+  const said = alibis.rows.filter((r) => r.statement);
+  if (!said.length) return <AlibiSummary alibis={alibis} me={me} />;
+  return (
+    <div className="flex flex-col gap-4">
+      <ul className="flex flex-col gap-3">
+        {said.map((r, i) => (
+          <li key={i} data-kind={r.kind} className={`flex flex-col gap-1 rounded-xl p-3 ${me && r.name === me ? 'bg-primary/10' : 'bg-muted/40'} ${r.minor ? 'text-muted-foreground' : ''}`}>
+            <span className="text-sm font-medium">{r.name}</span>
+            <p className="italic leading-relaxed">“{r.statement}”</p>
+          </li>
+        ))}
+      </ul>
+      <Label>In short</Label>
+      <AlibiSummary alibis={alibis} me={me} />
+    </div>
+  );
+}
+
+function AlibiSummary({ alibis, me = null }: { alibis: AlibiTable; me?: string | null }) {
   const isMe = (name: string) => Boolean(me && name === me);
   return (
     <div className="@container flex flex-col gap-2">

@@ -722,7 +722,7 @@ export const AUDIT_SCHEMA = obj({
     items: obj({ player_id: str, add: strArr, known_hidden_fact_ids: strArr, hook: str, distrusts: str, distrust_why: str, reveals: strArr, wants: str, fears: str, goal_why: str, reasons: strArr, night: { type: 'array', items: obj({ time: str, where: str, doing: str }) }, reminders: strArr }),
   },
   key_times: { type: 'array', items: obj({ time: str, what: str }) },
-  alibis: { type: 'array', items: obj({ id: str, alibi: { type: 'array', items: obj({ time: str, where: str }) } }) },
+  alibis: { type: 'array', items: obj({ id: str, alibi: { type: 'array', items: obj({ time: str, where: str }) }, statement: str }) },
   rounds: { type: 'array', items: obj({ index: { type: 'integer' }, objective: str, try: strArr }) },
 });
 
@@ -748,6 +748,7 @@ Then lay out who was where, so the group can work it out:
 - key_times: the 3 to 5 moments of the night that matter most, in order, taken from the truth and public_timeline (time like "9:40 pm", what is one short public line like "Lights go out"). Never reveal a secret in what.
 - night (in each player entry): where that player really was and what they were doing at each key time, as they remember it. night: copy this character's entries from truth.whereabouts; add only what they did between them. where is a place name from the map when possible. Keep to the truth, except things that are their hidden facts.
 - alibis: for every player and GM character (by id), where they have told everyone they were at each key time. A red herring's target gives an alibi with no witness (never "with someone"): only the refuting clue, in its own round, may clear them. Never give a culprit a reveal that retells a clue about the culprit. Innocent people mostly tell the truth, but may hide an embarrassing secret. Culprits lie where the truth would give them away. GM characters say what fits their sheet (knows and lies). Use the same time strings as key_times; where under 6 words.
+  statement: what they say, in their own voice, first person, as if questioned tonight: 2 or 3 short sentences, under 45 words, covering the same key times and making exactly the same claims as their alibi (a lie stays the same lie; a red herring's target names no witness). Let it sound like them: nervous, proud, curt or chatty. Never name a culprit as having done anything, unless the speaker is that culprit talking about themselves.
 - rounds: for each round (index from 0) a clear job: objective starts with a verb, under 15 words, says what the group should find out this round; try is 2 or 3 pointers under 10 words, naming people or places to check, never the answer. The job must lead toward that round's question.
 
 THE MYSTERY:

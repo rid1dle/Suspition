@@ -233,6 +233,13 @@ export function applyAudit(scenario, audit) {
       c.alibi = alibi;
       changes += 1;
     }
+    // Their alibi in their own words. An innocent who names a culprit would give it away, so that statement is dropped.
+    const statement = String(entry?.statement ?? '').trim().slice(0, 300);
+    const others = culpritIds.filter((id) => id !== entry?.id);
+    if (c && statement && !c.alibi_statement && !namesAnyOf(scenario, [], others, statement)) {
+      c.alibi_statement = statement;
+      changes += 1;
+    }
   }
   changes += nightsFromWhereabouts(scenario);
   for (const r of audit?.rounds ?? []) {
@@ -338,7 +345,7 @@ export function peopleView(game) {
 export function alibiTable(scenario) {
   const times = scenario?.key_times ?? [];
   if (!times.length) return null;
-  const row = (c, name, kind) => ({ name, kind, minor: isMinor(c), cells: times.map((t) => c.alibi?.find((a) => a.time === t.time)?.where ?? '') });
+  const row = (c, name, kind) => ({ name, kind, minor: isMinor(c), cells: times.map((t) => c.alibi?.find((a) => a.time === t.time)?.where ?? ''), ...(c.alibi_statement ? { statement: c.alibi_statement } : {}) });
   const rows = [
     ...scenario.players.map((c) => row(c, c.character_name, 'player')),
     ...[...scenario.npcs].sort((a, b) => isMinor(a) - isMinor(b)).map((n) => row(n, n.name, 'npc')),
