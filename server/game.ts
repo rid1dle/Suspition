@@ -164,6 +164,8 @@ export function applySetup(game, input = {}) {
 
 export const isMinor = (npc) => npc?.importance === 'minor';
 
+const cleanList = (list, max, chars) => (list ?? []).map((t) => String(t ?? '').trim().slice(0, chars)).filter(Boolean).slice(0, max);
+
 export function applyAudit(scenario, audit) {
   let changes = 0;
   // A culprit's reveals never retell a clue that points at them; a herring target's alibi never names a witness.
@@ -213,6 +215,12 @@ export function applyAudit(scenario, audit) {
       p.reminders = reminders;
       changes += 1;
     }
+    const people = new Set([...scenario.players, ...scenario.npcs].map((c) => c.id).filter((id) => id !== p.id));
+    const ties = (entry.ties ?? []).map((t) => ({ id: String(t?.id ?? ''), line: String(t?.line ?? '').trim().slice(0, 140) }))
+      .filter((t, i, all) => people.has(t.id) && t.line && all.findIndex((x) => x.id === t.id) === i);
+    if (ties.length && !p.ties?.length) p.ties = ties;
+    const lead = { lines: cleanList(entry.first_lead?.lines, 4, 200), ideas: cleanList(entry.first_lead?.ideas, 3, 80) };
+    if (lead.lines.length && !p.first_lead?.lines?.length) p.first_lead = lead;
     // A culprit who does not know it remembers no night where they were doing it.
     const acting = (scenario.truth?.timeline ?? []).filter((t) => (t?.character_ids ?? []).includes(p.id)).map((t) => t.time);
     const night = cleanSlots(entry.night, ['time', 'where', 'doing']).filter((n) => !p.unaware || !acting.some((t) => sameTime(t, n.time)));
@@ -340,6 +348,37 @@ export function peopleView(game) {
     ...sc.players.map((c) => person(c, { name: c.character_name, player: game.players.find((p) => p.id === c.id)?.name ?? '', kind: 'player', minor: false })),
     ...[...sc.npcs].sort((a, b) => isMinor(a) - isMinor(b)).map((n) => person(n, { name: n.name, player: '', kind: 'npc', minor: isMinor(n) })),
   ];
+}
+
+// Who every other person is to this player: the card check's line, or their role when it wrote none
+// or when its line would retell a clue (nobody starts the night knowing what a clue shows).
+export function tiesFor(game, playerId) {
+  const sc = game.scenario;
+  const own = sc.players.find((p) => p.id === playerId);
+  const role = (c) => `${String(c.role_title ?? '').trim().replace(/\.$/, '')}.`;
+  const out = {};
+  for (const c of [...sc.players, ...sc.npcs]) {
+    if (c.id === playerId) continue;
+    const line = (own?.ties ?? []).find((t) => t.id === c.id)?.line ?? '';
+    out[c.id] = line && !(sc.clues ?? []).some((k) => retells(line, k.shows)) ? line : role(c);
+  }
+  return out;
+}
+
+// The first private message: where you are and what to try. A world without one starts from your hook and the round's pointers.
+function firstLeads(game, now) {
+  const sc = game.scenario;
+  for (const p of sc.players) {
+    const thread = game.state.threads[p.id];
+    if (!thread) continue;
+    const lead = p.first_lead ?? {};
+    const start = sc.locations.find((l) => l.id === p.start_location)?.name;
+    const lines = (lead.lines?.length ? lead.lines : [p.hook, p.hook && start ? `You are in the ${start.replace(/^the\s+/i, '')}.` : ''])
+      .map((t) => String(t ?? '').trim()).filter((t) => t && !leaksLaterClue(game, t));
+    const ideas = (lead.ideas?.length ? lead.ideas : sc.phases[0]?.try ?? []).map((t) => String(t ?? '').trim()).filter(Boolean).slice(0, 3);
+    if (!lines.length) continue;
+    thread.push({ from: 'gm', text: lines.join('\n'), lines: lines.map((t) => ({ speaker: '', text: t })), ...(ideas.length ? { ideas } : {}), at: now });
+  }
 }
 
 export function alibiTable(scenario) {
@@ -683,6 +722,7 @@ export function startPlay(game, now = Date.now()) {
   planSeats(game, now);
   game.state.events.push({ at: now, phase: 0, kind: 'phase', text: phaseLine(game, 0) });
   announceRound(game, 0, now);
+  firstLeads(game, now);
 }
 
 function announceRound(game, index, now, again = false) {
@@ -2937,6 +2977,7 @@ export function playerView(game, playerId, now = Date.now()) {
     starting_knowledge: card.starting_knowledge,
     hook: card.hook ?? '',
     intro_line: card.intro_line ?? '',
+    people: Object.entries(tiesFor(game, playerId)).map(([id, line]) => ({ name: [...game.scenario.players.map((p) => [p.id, p.character_name]), ...game.scenario.npcs.map((n) => [n.id, n.name])].find(([x]) => x === id)?.[1] ?? '', line })),
     distrusts: game.scenario.players.find((p) => p.id === card.distrusts)?.character_name ?? '',
     distrust_why: card.distrusts ? card.distrust_why ?? '' : '',
     locked,
@@ -2952,6 +2993,7 @@ export function playerView(game, playerId, now = Date.now()) {
     hidden_unknown: card.hidden_facts.filter((h) => !revealed.includes(h.id)).length,
   };
   view.rules = rulesLines({ rounds: game.scenario.phases.length, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0, players: game.players.length });
+  view.ties = tiesFor(game, playerId);
   view.thread = st.threads[playerId].map(({ read, ...m }) => m);
   view.canCallMeeting = game.status === 'playing' && game.players.length >= 2 && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;

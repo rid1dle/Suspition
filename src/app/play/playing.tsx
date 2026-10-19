@@ -385,7 +385,7 @@ function PeopleBody({ view }: { view: PlayerView }) {
       {view.setup?.roundStyle === 'hotseats' && !(view.seat as { status?: string } | null)?.status && (
         <PointButtons people={view.cast?.players} me={view.me.id} onPoint={(to) => act('point', { token: tokenOf(), to })} />
       )}
-      <PeopleList people={view.people} open={open} seen={seen} onToggle={(id, isOpen) => {
+      <PeopleList people={view.people} ties={view.ties} open={open} seen={seen} onToggle={(id, isOpen) => {
         setOpen((s) => { const n = new Set(s); if (isOpen) n.add(id); else n.delete(id); return n; });
         if (isOpen) setSeen((s) => ({ ...s, [id]: view.people?.find((p: { id: string }) => p.id === id)?.facts.length ?? 0 }));
       }} />

@@ -62,6 +62,14 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
         </Section>
       )}
 
+      {card.people?.length > 0 && (
+        <Section title="Your people">
+          <ul className="flex flex-col gap-1.5">
+            {card.people.map((x: { name: string; line: string }) => <li key={x.name}><b>{x.name}</b> <span className="text-sm">{x.line}</span></li>)}
+          </ul>
+        </Section>
+      )}
+
       {persona && (persona.intent || persona.persona) && (
         <Section title="How you are playing it">
           {persona.intent && <p>{persona.intent}</p>}

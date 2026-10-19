@@ -58,6 +58,7 @@ export interface Play { points: number; skill: string | null; why: string }
 export interface ThreadEntry { from: 'you' | 'gm' | 'whisper' | 'system'; text: string; kind?: string; lines?: { speaker: string; text: string }[]; ideas?: string[]; play?: Play; penalty?: Play; at: number }
 
 export interface CardView {
+  people?: { name: string; line: string }[];
   watch?: { threat: string; stake: string } | null;
   watched?: boolean;
   backstory?: string;
@@ -103,6 +104,7 @@ export interface PlayerView extends PublicView {
   me: { id: string; name: string };
   card?: CardView;
   thread?: ThreadEntry[];
+  ties?: Record<string, string>;
   pending?: { kind: string; text: string } | null;
   clues?: { id: string; name: string; shows: string; destroyed: boolean }[];
   myRoundVote?: number | null;

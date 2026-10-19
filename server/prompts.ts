@@ -719,7 +719,7 @@ What to return:
 export const AUDIT_SCHEMA = obj({
   players: {
     type: 'array',
-    items: obj({ player_id: str, add: strArr, known_hidden_fact_ids: strArr, hook: str, distrusts: str, distrust_why: str, reveals: strArr, wants: str, fears: str, goal_why: str, reasons: strArr, night: { type: 'array', items: obj({ time: str, where: str, doing: str }) }, reminders: strArr }),
+    items: obj({ player_id: str, add: strArr, known_hidden_fact_ids: strArr, hook: str, distrusts: str, distrust_why: str, reveals: strArr, wants: str, fears: str, goal_why: str, reasons: strArr, night: { type: 'array', items: obj({ time: str, where: str, doing: str }) }, reminders: strArr, ties: { type: 'array', items: obj({ id: str, line: str }) }, first_lead: obj({ lines: strArr, ideas: strArr }) }),
   },
   key_times: { type: 'array', items: obj({ time: str, what: str }) },
   alibis: { type: 'array', items: obj({ id: str, alibi: { type: 'array', items: obj({ time: str, where: str }) }, statement: str }) },
@@ -742,6 +742,8 @@ Then make each player feel why, not just read what:
 - hook: one line in the second person that a player can play at once: who they are and what they want tonight ("You are the cook, and you need tonight to end before anyone finds your debt.").
 - distrusts: the id of ONE other player character this character distrusts, and distrust_why: one short reason they could say out loud. Never themselves. Spread the targets so not everyone distrusts the same person.
 - reveals: 3 short true lines about this character that the room could learn about them, ordered mild to sharp, written without their name ("Was seen near the shed at ten."). Never give away the method or the motive, and never name another culprit, even for a culprit.
+- ties: one line for every other person in the story (every other player character and every GM character, by id): who they are to this character and how this character feels about them, in second person, under 15 words ("Your captain. Strict, but she trusts you.", "Your cousin. You still owe him money."). Only what this character would know at the start; strangers get what anyone can see ("A traveller. You have never met him."). Never a crime, a clue or a secret this character does not know.
+- first_lead: the first message this player gets when play starts, so they never wonder how to begin. lines: 2 to 4 short narration lines in second person (under 15 words each): where they are right now, one small thing happening near them that matters to the case or their goal, and who is close by. ideas: 2 or 3 things they could do first, written the way they would type them, under 10 words each, naming people or places ("Ask Nan what the bell means."). Never the answer, never a clue's contents. For a culprit who does not know it, write it as for an innocent.
 Never give away their hidden facts in any of these. Give an entry for every player; use empty lists when nothing is missing.
 
 Then lay out who was where, so the group can work it out:
