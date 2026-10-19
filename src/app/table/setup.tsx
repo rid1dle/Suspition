@@ -169,15 +169,13 @@ export function Setup(props: TableProps) {
                 <SurpriseLine setting={form.setting} surprise={view.surprise} onShuffle={() => act('surprise')} />
                 <div className="flex flex-wrap gap-2">{SETTINGS.map((s) => <button key={s} onClick={() => set('setting', s)} className="rounded-full bg-muted/50 px-3 py-1 text-xs hover:text-primary">{s}</button>)}</div>
               </Field>
-              <div className="grid gap-5 md:grid-cols-3">
-                <Field label="Mood"><Chips small options={TONES} value={form.tone} onPick={(v) => set('tone', v)} /></Field>
-                <Field label="How long?" note={LENGTHS.find(([v]) => v === form.length)?.[2]}>
-                  <Chips small options={LENGTHS.map(([v, l]) => [v, l] as [string, ReactNode])} value={form.length} onPick={(v) => set('length', v)} />
-                </Field>
-                <Field label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
-                  <Chips small options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
-                </Field>
-              </div>
+              <Row label="Mood"><Chips small options={TONES} value={form.tone} onPick={(v) => set('tone', v)} /></Row>
+              <Row label="How long?" note={LENGTHS.find(([v]) => v === form.length)?.[2]}>
+                <Chips small options={LENGTHS.map(([v, l]) => [v, l] as [string, ReactNode])} value={form.length} onPick={(v) => set('length', v)} />
+              </Row>
+              <Row label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
+                <Chips small options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
+              </Row>
             </Group>
             <Group title="The culprit">
               <Row label="Who did it?" note={n === 1 ? 'Playing alone, a culprit among you never knows at the start: the clues lead you there.' : 'Let the GM decide can be any of these, and the GM never says which.'}>
