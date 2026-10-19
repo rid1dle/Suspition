@@ -1286,6 +1286,10 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const dest = game.scenario.locations.some((l) => l.id === result.player_location) ? result.player_location : st.at[playerId] ?? from;
   st.at[playerId] = dest;
   const clueIds = new Set(openClues(game));
+  // A player who narrates finding something where next round's clue lies finds it now: the world bends toward who is there.
+  if (ask.read?.finds?.length && !ask.read.sways_gm) {
+    for (const c of game.scenario.clues) if (placeFor(game, c) === st.at[playerId] && Number(c.reveal_round) <= (st.phaseIndex ?? -1) + 2) clueIds.add(c.id);
+  }
   let tripRewarded = false;
   for (const id of result.clues_found ?? []) {
     const clue = game.scenario.clues.find((c) => c.id === id);

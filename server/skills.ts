@@ -14,7 +14,7 @@ export { PLAY_MAX };
 
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const current = (moves: Move[] | undefined | null) => (moves ?? []).filter((m) => m.rubric === RUBRIC_VERSION);
-type ReadFlags = Partial<Pick<Read, 'claims' | 'out_of_world' | 'sways_gm' | 'kind'>> | null | undefined;
+type ReadFlags = Partial<Pick<Read, 'claims' | 'finds' | 'out_of_world' | 'sways_gm' | 'kind'>> | null | undefined;
 interface ScoreOpts { from?: string }
 
 export function scoreMove(play: Play | null | undefined, read: ReadFlags, { from = 'private' }: ScoreOpts = {}): Move {
@@ -22,7 +22,8 @@ export function scoreMove(play: Play | null | undefined, read: ReadFlags, { from
   const why = String(play?.why ?? '').trim().slice(0, 160);
   const base = { why, rubric: RUBRIC_VERSION, from };
   if (read?.sways_gm) return { ...base, points: -1, skill: 'swaying' };
-  let points = clamp(Math.round(Number(play?.points) || 0), outLoud ? 0 : -1, outLoud ? 1 : 2);
+  // Narrating what your own search finds is writing the story with the GM: it never costs a point.
+  let points = clamp(Math.round(Number(play?.points) || 0), outLoud || read?.finds?.length ? 0 : -1, outLoud ? 1 : 2);
   // Asking about your own character is part of the game, even if the reader also marked it out of the game.
   const outOfWorld = read?.out_of_world && read?.kind !== 'self';
   if (read?.claims?.length || outOfWorld) {
