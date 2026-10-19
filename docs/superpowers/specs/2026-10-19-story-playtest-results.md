@@ -74,3 +74,14 @@ The first try failed: a ten-player world took more than the 15 minutes the write
   - **Two culprits:** game 1 had two. 6 of 10 players named one of them and the culprits won. Players can pick more than one person, but nothing tells them there may be two, and naming one of two counts as wrong. Should the final screen say "there may be more than one", and should naming one of two earn partial credit?
   - **Game 2 not solvable at the end:** leads the room raised again and again (a candle count, shawls in first class) were never checked by anyone, and two secret goals had nothing findable to reach them.
   - **"You told us" lines:** a GM character said "you told us you are from Amritsar" to a player who never said it.
+
+## The creator's answers, and what was built
+
+- **Two culprits:** like Among Us, the host picks the count before the game: "Let the GM decide" (the default), 1, or 2 (6 players or more). Nobody is told the count during play. The final vote says how many to find ("There are 2 culprits. Pick 2.") and takes exactly that many. Naming one of two still counts as wrong; knowing the count is the fix, not partial credit.
+- **Always solvable, every goal reachable:**
+  - Every player must have a goal, with `goal_where`: the place or GM character where it can be reached. The story check flags a goal with no place or fewer than 2 steps. A culprit whose goal is only not to be named may leave it empty.
+  - Past half way, a player whose goal has not moved gets one private way in: from the round GM, or a plain line from the game ("Your goal is still open: ... Try the Kitchen.").
+  - A GM character can check a lead the room kept raising (`checks` on the round change): the clue it finds is shown to everyone.
+  - At the start of the last round, the game shows any clue the case still needs: one for each culprit nothing found points at, and one for each culprit, method or motive deduction nobody holds a clue for.
+  - The last clue a culprit or a deduction rests on can never be destroyed.
+- **"You told us":** a GM line saying a player told them something ("you told us", "you said", "as you said") is dropped unless that player's own words in play back it. A player's card is not something they said.
