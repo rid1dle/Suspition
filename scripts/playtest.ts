@@ -59,6 +59,13 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
   for (let i = 0; i < briefingSteps(app.game).length; i += 1) await app.brief(host, 1);
   for (const b of bots) await app.ready(b.token);
   await app.start(host);
+  // Bots always go where they said: a move confirm is answered at once, so nothing waits 90 seconds.
+  const confirmer = setInterval(() => {
+    for (const b of bots) {
+      const pid = app.game.players.find((p) => p.token === b.token)?.id;
+      if (pid && app.game.state?.moveConfirm?.[pid]) app.confirmMove(b.token, true).catch(() => {});
+    }
+  }, 100);
 
   const turn = (b, mode) => takeTurn(app, b, mode, botCall);
 
@@ -94,6 +101,7 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
     }
   }
 
+  clearInterval(confirmer);
   const game = app.game;
   const m = metrics(game, roles);
   log('The judge is reading the whole game.');

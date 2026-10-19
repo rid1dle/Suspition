@@ -13,6 +13,12 @@ export const JUDGE_SCHEMA = obj({
   points_fair: obj({ verdict: str, wrong: strArr }),
   story: str,
   fixes: strArr,
+  honoured: strArr,
+  contradictions_let_in: strArr,
+  rightly_refused: strArr,
+  wrongly_refused: strArr,
+  refused_without_reason: strArr,
+  case_complete: obj({ complete: { type: 'boolean' }, why: str }),
 });
 
 const words = (t) => String(t ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
@@ -62,6 +68,12 @@ Find:
 - vague: answers that left a player with nothing to do (dead ends), or ignored a fair question.
 - points_fair: were play points fair? verdict in one line; wrong lists moves that got points they should not have, or lost points unfairly.
 - story: one short paragraph on whether the story moved, whether each player's goal mattered, and whether it was fun.
+- honoured: moves where a player pushed the story their way (a theory, a version of events, a detail about their own past, a search where their theory points) and the GM let it shape the story without breaking the truth. One line each: who, what, how it showed.
+- contradictions_let_in: answers or events where the GM accepted something that contradicts the truth, the timeline, a player's card or something already said. One line each, quoting both sides.
+- rightly_refused: moves the GM refused because they would contradict the story, and the player was told why. One line each.
+- wrongly_refused: fair in-world moves the GM refused or ignored. One line each.
+- refused_without_reason: moves that did not happen but the player was never told why.
+- case_complete: at the end, can the case question still be answered from what was found and said (complete true or false), and why in one line.
 - fixes: concrete, short fixes for the game (prompt, rule or code), most important first.
 Plain, simple English.`;
 }
@@ -115,6 +127,14 @@ export function reportMd(report) {
   lines.push(`- Puppeting: ${j.puppeting.length}`, ...j.puppeting.map((p) => `  - ${p}`));
   lines.push(`- Vague: ${j.vague.length}`, ...j.vague.map((v) => `  - ${v}`));
   lines.push(`- Points: ${j.points_fair.verdict}`, ...j.points_fair.wrong.map((w) => `  - ${w}`));
+  if (j.honoured) {
+    lines.push('', '## Story', '', `- Moves honoured: ${j.honoured.length}`, ...j.honoured.map((x) => `  - ${x}`));
+    lines.push(`- Contradictions let in: ${j.contradictions_let_in.length}`, ...j.contradictions_let_in.map((x) => `  - ${x}`));
+    lines.push(`- Rightly refused: ${j.rightly_refused.length}`, ...j.rightly_refused.map((x) => `  - ${x}`));
+    lines.push(`- Wrongly refused: ${j.wrongly_refused.length}`, ...j.wrongly_refused.map((x) => `  - ${x}`));
+    lines.push(`- Refused without a reason: ${j.refused_without_reason.length}`, ...j.refused_without_reason.map((x) => `  - ${x}`));
+    lines.push(`- Case still complete: ${j.case_complete.complete ? 'yes' : 'no'}. ${j.case_complete.why}`);
+  }
   lines.push('', `Story: ${j.story}`, '', '## Fixes', '', ...j.fixes.map((f, i) => `${i + 1}. ${f}`), '');
   return lines.join('\n');
 }
