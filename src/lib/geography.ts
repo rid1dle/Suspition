@@ -38,7 +38,7 @@ export function tripShort(m, about = false) {
   const walk = walkMinutes(m);
   const time = walk < 1 ? 'under 1 min' : `${Math.round(walk)} min`;
   const car = m > DRIVE_FROM_M ? ` · ${Math.max(1, Math.round(m / DRIVE_M_PER_MIN))} min by car` : '';
-  return `${about ? 'about ' : ''}${metresText(m)} · ${time}${car}`;
+  return `${about ? '~' : ''}${metresText(m)} · ${time}${car}`;
 }
 
 // "350 m, 4 min walk".

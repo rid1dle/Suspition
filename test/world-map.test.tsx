@@ -83,11 +83,11 @@ describe('distances on the paths', () => {
     assert.ok(plan.paths.every((p: { label: string }) => p.label));
   });
 
-  test('should say a short walk is under a minute and mark a guessed world with about', () => {
+  test('should say a short walk is under a minute and mark a guessed world with ~', () => {
     const near = { ...crowded, map: { ...crowded.map, geography: { ...crowded.map.geography, paths: [{ from: 'bunk', to: 'duty', kind: 'corridor', m: 20 }] } } };
     assert.equal(layoutMap(near).paths.find((p: { from: string }) => p.from === 'bunk').label, '20 m · under 1 min');
     const old = { ...near, map: { ...near.map, geography: { ...near.map.geography, about: true } } };
-    assert.equal(layoutMap(old).paths.find((p: { from: string }) => p.from === 'bunk').label, 'about 20 m · under 1 min');
+    assert.equal(layoutMap(old).paths.find((p: { from: string }) => p.from === 'bunk').label, '~20 m · under 1 min');
   });
 
   test('should never put a distance on top of a place card', () => {
