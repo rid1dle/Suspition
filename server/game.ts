@@ -1319,7 +1319,7 @@ export function leaksPrivateCard(game, text) {
   return privateCardFacts(game).some((f) => retells(text, f));
 }
 
-const withoutPrivateCards = (game, text) => sentences(text).filter((s) => !leaksPrivateCard(game, s)).join(' ');
+export const withoutPrivateCards = (game, text) => sentences(text).filter((s) => !leaksPrivateCard(game, s)).join(' ');
 
 // The refusal line is read by the player (or the room): it never speaks for a player or names the culprit.
 const cleanWhy = (game, why) => {

@@ -154,6 +154,17 @@ describe('the GM leads the room back when the theory does not fit', () => {
     assert.equal(game.scenario.phases.length, count);
   });
 
+  test('should cut a sentence of the line that tells the room what only one player\'s card says', () => {
+    const game = voted();
+    game.scenario.players[1].private_info = 'One hard blow to the back of the head killed him.';
+    applyTheory(game, lead({ line: 'The wound shows one hard blow to the back of the head. The weight box is open.' }), 3_000);
+    assert.equal(game.state.events.at(-1).text, 'The weight box is open.');
+  });
+
+  test('should tell the GM the line is seen by everyone', () => {
+    assert.match(theoryPrompt(voted()), /KNOWN TO EVERYONE/);
+  });
+
   test('should still lead with the round\'s own nudge when the GM gave nothing', () => {
     const game = voted();
     applyTheory(game, null, 3_000);

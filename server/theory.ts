@@ -2,7 +2,7 @@
 // A wrong answer to a round question is the room's theory. Before the next round the GM either folds it into the
 // story (it becomes true, changing only what nobody has seen) or leads the room back to what really happened.
 // Code holds the line on both: a fold that touches anything known, any person, or breaks the world becomes a lead.
-import { roundQuestion, addRound, addEvent, addFacts, mentions, namesCulprit, namesAnyOf, retells, validateScenario, clueWhereErrors, playerFacts, publicTimeline, resolveStoryIds } from './game.ts';
+import { roundQuestion, addRound, addEvent, addFacts, mentions, namesCulprit, namesAnyOf, retells, validateScenario, clueWhereErrors, playerFacts, publicTimeline, resolveStoryIds, withoutPrivateCards } from './game.ts';
 import { applyPatches, storyIssues } from './story.ts';
 import { futurePath, addCanon, continuityState } from './continuity.ts';
 import { THEORY_RULES, FAIR_PLAY, PLAIN_STYLE } from './prompts.ts';
@@ -45,8 +45,10 @@ const broken = (game) => {
     + storyIssues(sc, { players: game.players, difficulty: game.setup?.difficulty }).length;
 };
 
+// The line is seen by everyone: never the culprit's name, and in a group never what only one player's card says.
 const cleanLine = (game, text) => {
-  const line = String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, 220);
+  const raw = String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, 220);
+  const line = game.players.length > 1 ? withoutPrivateCards(game, raw) : raw;
   return line && !namesCulprit(game.scenario, game.players, line) ? line : '';
 };
 
@@ -134,11 +136,19 @@ THE ROOM'S ANSWER: ${r?.pickedText ?? ''}
 THE TRUTH (secret; who did it, how and why never change):
 ${JSON.stringify({ culprit_ids: sc.truth?.culprit_ids, method: sc.truth?.method, motive: sc.truth?.motive, crime: sc.truth?.crime, summary: sc.truth?.summary })}
 
-KNOWN (what players have seen, heard or been told; never contradict any of it):
+Never contradict anything below. The line is seen by everyone, so it may only use what is KNOWN TO EVERYONE.
+
+KNOWN TO EVERYONE:
 ${JSON.stringify({
-    said_and_seen: (st.events ?? []).filter((e) => e.kind !== 'opening').map((e) => e.text),
+    said_and_seen: (st.events ?? []).map((e) => e.text),
     timeline: publicTimeline(game),
-    canon: (st.canon ?? []).map((c) => c.fact),
+    canon: (st.canon ?? []).filter((c) => c.public).map((c) => c.fact),
+    shared_clues: (sc.clues ?? []).filter((c) => (st.shared ?? []).some((x) => x.clueId === c.id)).map((c) => ({ id: c.id, name: c.name, shows: c.shows })),
+  })}
+
+KNOWN TO ONE PLAYER (their card, what they found and were told):
+${JSON.stringify({
+    canon: (st.canon ?? []).filter((c) => !c.public).map((c) => c.fact),
     found_clues: (sc.clues ?? []).filter((c) => found.has(c.id)).map((c) => ({ id: c.id, name: c.name, shows: c.shows })),
     players: Object.fromEntries(game.players.map((p) => [p.id, playerFacts(game, p.id, { forGM: true })])),
   })}
