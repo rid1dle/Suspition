@@ -2483,6 +2483,87 @@ function nudgeStuckGoals(game, stuck, messages, now) {
   }
 }
 
+const playerIds = (game) => new Set(game.players.map((p) => p.id));
+const cleanLine = (text, max = 500) => {
+  const t = String(text ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+  if (!t) fail('Write something first.');
+  return t;
+};
+
+// A line said to the room, or to one person in it, with no GM answer: the players just talk.
+export function roomTalk(game, playerId, text, to = null, now = Date.now()) {
+  if (!['playing', 'final'].includes(game.status)) fail('You can talk during the game.', 409);
+  const words = cleanLine(text);
+  const toName = to ? nameOf(game, to) : '';
+  if (to && !playerIds(game).has(to) && !game.scenario.npcs.some((n) => n.id === to)) fail('Talk to someone in the story.');
+  const by = nameOf(game, playerId);
+  addEvent(game, `${by}${toName ? ` to ${toName}` : ''}: "${words}"`, 'talk', now, { by, pid: playerId, words, ...(toName ? { toName } : {}) });
+  markTold(game, playerId, words, now);
+}
+
+// A message from one player to another, in character. Only the two of them see it; the GM reads it to keep the story whole.
+export function sendDm(game, from, to, text, now = Date.now()) {
+  if (!['playing', 'final'].includes(game.status)) fail('You can send messages during the game.', 409);
+  if (from === to || !playerIds(game).has(to)) fail('Send it to someone else in the game.');
+  const words = cleanLine(text);
+  const st = game.state;
+  st.dms ??= [];
+  const m = { id: `d${st.dms.length + 1}`, from, to, pair: [from, to].sort(), text: words, at: now };
+  st.dms.push(m);
+  markTold(game, from, words, now);
+  return m;
+}
+
+// The GM's answer inside two players' messages, when one of them asked it in.
+export function addDmAnswer(game, a, b, lines, now = Date.now()) {
+  const st = game.state;
+  st.dms ??= [];
+  const clean = novelLines(game, lines, {});
+  if (!clean.length) return null;
+  const m = { id: `d${st.dms.length + 1}`, from: 'gm', pair: [a, b].sort(), text: linesText(clean), lines: clean, at: now };
+  st.dms.push(m);
+  return m;
+}
+
+const INVITE_MS = 5 * 60_000;
+
+// "Let's all go there": the room is told, and everyone else gets a card to come along or not.
+export function invite(game, playerId, placeId, now = Date.now()) {
+  if (game.status !== 'playing') fail('You can do that during a round.', 409);
+  const loc = game.scenario.locations.find((l) => l.id === placeId);
+  if (!loc) fail('Unknown place.');
+  const st = game.state;
+  st.invites ??= [];
+  const inv = { id: `i${st.invites.length + 1}`, by: playerId, place: placeId, at: now, answers: { [playerId]: true } };
+  st.invites.push(inv);
+  addEvent(game, `${nameOf(game, playerId)} asks everyone to come to the ${String(loc.name).replace(/^the\s+/i, '')}.`, 'invite', now);
+  return inv;
+}
+
+export function answerInvite(game, playerId, id, yes, now = Date.now()) {
+  const inv = (game.state.invites ?? []).find((i) => i.id === id);
+  if (!inv) fail('That is no longer asked.', 404);
+  inv.answers[playerId] = yes === true;
+  if (yes === true && currentPlace(game, playerId) !== inv.place) goTo(game, playerId, inv.place, now, `with ${nameOf(game, inv.by)}`);
+}
+
+function invitesFor(game, playerId, now) {
+  const here = currentPlace(game, playerId);
+  return (game.state.invites ?? [])
+    .filter((i) => i.by !== playerId && !(playerId in i.answers) && now - i.at < INVITE_MS && i.place !== here)
+    .map((i) => ({ id: i.id, by: nameOf(game, i.by), place: game.scenario.locations.find((l) => l.id === i.place)?.name ?? '' }));
+}
+
+function dmsFor(game, playerId) {
+  return (game.state.dms ?? []).filter((m) => m.pair.includes(playerId)).map((m) => ({
+    id: m.id, at: m.at, text: m.text, ...(m.lines ? { lines: m.lines } : {}),
+    from: m.from === 'gm' ? 'GM' : nameOf(game, m.from),
+    to: m.to ? nameOf(game, m.to) : '',
+    mine: m.from === playerId,
+    with: m.pair.find((id) => id !== playerId),
+  }));
+}
+
 // A find the player told the room about, in their own words. The room heard only those words, never the whole clue.
 function markTold(game, playerId, words, now) {
   const st = game.state;
@@ -2787,6 +2868,7 @@ export const playerWords = (read, text, mode = 'move') => (read ? formForGM(read
 // Own-words lines go to the GM as the reader's form; host notes are player-written, so they are quoted.
 export function eventForGM(e) {
   if (e.kind === 'said' && e.read) return `${e.by} said out loud in their own words: ${playerWords(e.read, '', 'said')}`;
+  if (e.kind === 'talk') return `${e.by}${e.toName ? ` to ${e.toName}` : ''} said out loud: ${quoteRaw(e.words)}`;
   if (e.kind === 'note') return `The room thinks: ${quoteRaw(e.text.replace(/^The room thinks: /, ''))}`;
   return e.text;
 }
@@ -2829,6 +2911,7 @@ export function snapshotForGM(game) {
     overrides_left: st.overridesLeft,
     what_gm_characters_have_said: gmCharacterSaid(game),
     gm_characters_now: gmCharactersNow(game),
+    players_told_each_other: (st.dms ?? []).filter((m) => m.from !== 'gm').slice(-20).map((m) => `${nameOf(game, m.from)} to ${nameOf(game, m.to)}, privately: ${quoteRaw(m.text)}`),
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     canon: (st.canon ?? []).map((c) => ({ fact: c.fact, round: c.round })),
     goal_steps_done_so_far: Object.fromEntries(game.players.map((p) => [p.id, st.goalSteps?.[p.id] ?? []])),
@@ -3162,6 +3245,8 @@ export function playerView(game, playerId, now = Date.now()) {
   view.canCallMeeting = game.status === 'playing' && game.players.length >= 2 && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;
   if (view.meeting) view.meeting = { ...view.meeting, mine: st.meeting.by === playerId };
+  view.dms = dmsFor(game, playerId);
+  view.invites = game.status === 'playing' ? invitesFor(game, playerId, now) : [];
   view.clues = st.found[playerId].map((id) => {
     const c = game.scenario.clues.find((x) => x.id === id);
     return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id), told: (st.told ?? []).some((t) => t.clueId === id && t.by === playerId) };

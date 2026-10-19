@@ -16,6 +16,7 @@ export interface Read {
   finds?: string[];
   acts?: boolean;
   goes_to?: string;
+  invites_to?: string;
 }
 
 export interface FinalRead {

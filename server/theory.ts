@@ -27,6 +27,7 @@ export function knownTexts(game) {
     ...cards,
     ...sc.npcs.flatMap((n) => [n.public_info, n.alibi_statement]),
     ...Object.values(st.threads ?? {}).flat().map((m) => m.text),
+    ...(st.dms ?? []).map((m) => m.text),
   ].map((t) => String(t ?? '')).filter(Boolean);
 }
 

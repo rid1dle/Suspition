@@ -511,6 +511,9 @@ export class App {
       try {
         const words = await this.gm.read(game, p.id, q, 'public');
         if (this.game !== game) return;
+        // "Let's all go to the ruin" asks everyone else to come along.
+        const asked = G.placeIdFromText(game, words?.invites_to);
+        if (asked && game.status === 'playing') G.invite(game, p.id, asked, this.clock());
         let heard = words;
         if (await this.goFirst(game, p.id, words, 'out loud') === 'stay') heard = stayed(words);
         if (this.game !== game) return;
@@ -530,6 +533,49 @@ export class App {
         if (this.game === game) await this.changed();
       }
     });
+    await this.changed();
+  }
+
+  // Room talk with the GM switched off: the players just talk.
+  async say(tok, { text, to = null } = {}) {
+    const p = G.playerByToken(this.game, tok);
+    G.roomTalk(this.game, p.id, text, to, this.clock());
+    await this.changed();
+  }
+
+  // A message to another player. The GM stays out unless asked in; then only the two of them hear its answer.
+  async dm(tok, { to, text, gm = false } = {}) {
+    const game = this.game;
+    const p = G.playerByToken(game, tok);
+    const m = G.sendDm(game, p.id, to, text, this.clock());
+    await this.changed();
+    if (!gm) return;
+    this.background(`dm ${p.id}`, async () => {
+      try {
+        const read = await this.gm.read(game, p.id, m.text, 'public');
+        if (this.game !== game) return;
+        await this.withCharacters(G.charactersAsked(game, m.text, read), async () => {
+          const out = await this.gm.publicAnswer(game, m.text, read, p.id, { audience: [p.id, to] });
+          if (this.game !== game) return;
+          G.addDmAnswer(game, p.id, to, out?.lines?.length ? out.lines : [{ speaker: '', text: String(out?.answer ?? '') }], this.clock());
+        });
+      } catch (err) {
+        this.log(`dm ${p.id} failed: ${err.message}`);
+      } finally {
+        if (this.game === game) await this.changed();
+      }
+    });
+  }
+
+  async invite(tok, place) {
+    const p = G.playerByToken(this.game, tok);
+    G.invite(this.game, p.id, place, this.clock());
+    await this.changed();
+  }
+
+  async answerInvite(tok, id, yes) {
+    const p = G.playerByToken(this.game, tok);
+    G.answerInvite(this.game, p.id, id, yes, this.clock());
     await this.changed();
   }
 
