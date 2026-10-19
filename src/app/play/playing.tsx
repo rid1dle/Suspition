@@ -227,16 +227,18 @@ function RoomButtons({ view }: { view: PlayerView }) {
   const [reason, setReason] = useState<string | null>(null);
   const vote = view.round?.vote;
   const canVote = view.round?.question && !view.round.done && !vote;
+  // Playing alone there is no group to ask: the buttons just do it.
+  const solo = view.players.length === 1;
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
         {view.canCallMeeting && reason === null && <button className="hover:text-foreground" onClick={() => setReason('')}>📣 Call a meeting · once a game</button>}
         <button className="hover:text-foreground disabled:opacity-50" disabled={view.hintsLeft < 1 || Boolean(view.hintVote)} onClick={() => act('hint', { token: tokenOf() })}>
-          {view.hintsLeft < 1 ? 'No group hints left' : `Ask the group for a hint · ${view.hintsLeft} left`}
+          {view.hintsLeft < 1 ? (solo ? 'No hints left' : 'No group hints left') : solo ? `Get a hint · ${view.hintsLeft} left` : `Ask the group for a hint · ${view.hintsLeft} left`}
         </button>
         {canVote && (view.voteAskBlocked
           ? <span className="text-xs">Nobody took your last two requests. You can ask for the vote again next round.</span>
-          : <button className="hover:text-foreground disabled:opacity-50" disabled={Boolean(view.voteAsk) || view.transitioning} onClick={() => act('voteask', { token: tokenOf() })}>Ask to vote now · everyone has to agree</button>)}
+          : <button className="hover:text-foreground disabled:opacity-50" disabled={Boolean(view.voteAsk) || view.transitioning} onClick={() => act('voteask', { token: tokenOf() })}>{solo ? 'Answer the round question now' : 'Ask to vote now · everyone has to agree'}</button>)}
       </div>
       {reason !== null && (
         <div className="flex flex-col gap-2 rounded-xl bg-card p-3">

@@ -1589,7 +1589,7 @@ export function askVote(game, playerId, now = Date.now()) {
   if (st.voteAsk) fail('Someone already asked. Say yes or no on your phone.', 409);
   if (st.voteAskBlocked?.[playerId] === roundNumber(game)) fail('Nobody took your last two requests. You can ask again next round.', 409);
   st.voteAsk = { by: playerId, votes: { [playerId]: true }, at: now, endsAt: now + VOTE_ASK_MS };
-  addEvent(game, `${nameOf(game, playerId)} wants to vote now. Everyone else has to say yes.`, 'voteask', now);
+  if (game.players.length > 1) addEvent(game, `${nameOf(game, playerId)} wants to vote now. Everyone else has to say yes.`, 'voteask', now);
   return resolveVoteAsk(game, now);
 }
 

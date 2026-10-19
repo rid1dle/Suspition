@@ -77,3 +77,33 @@ describe('the setup screen shows only choices that can change this game', () => 
     }
   });
 });
+
+describe('the phone shows a player alone no group buttons', () => {
+  test('should say get a hint and answer now, not ask the group, playing alone', async () => {
+    const { Playing } = await import('../src/app/play/playing');
+    const { gameInReading } = await import('./fixtures.ts');
+    const screen = (players: number) => {
+      const game = gameInReading(players, 1_000, { questions: true });
+      G.startPlay(game, 1_000);
+      return renderToStaticMarkup(React.createElement(Playing, { view: G.playerView(game, 'p1', 2_000), dots: new Set(), clearDot: () => {} } as never)).replace(/<[^>]+>/g, ' ');
+    };
+    const solo = screen(1);
+    assert.match(solo, /Get a hint · 3 left/);
+    assert.match(solo, /Answer the round question now/);
+    assert.doesNotMatch(solo, /Ask the group|everyone has to agree|Call a meeting/);
+    assert.match(screen(3), /Ask the group for a hint/);
+  });
+});
+
+describe('a player alone gets a hint or the vote with one tap', () => {
+  test('should give a hint at once, and start the round vote at once', async () => {
+    const { gameInReading } = await import('./fixtures.ts');
+    const game = gameInReading(1, 1_000, { questions: true });
+    G.startPlay(game, 1_000);
+    G.proposeHint(game, 'p1', 2_000);
+    assert.equal(game.state.hintsLeft, 2);
+    G.askVote(game, 'p1', 3_000);
+    assert.ok(game.state.roundVote, 'the vote is open');
+    assert.ok(!game.state.events.some((e) => /Everyone else has to say yes/.test(e.text)), 'no group words for a player alone');
+  });
+});
