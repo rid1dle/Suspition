@@ -1243,12 +1243,16 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     .map((l) => (short ? { ...l, text: capWords(l.text, 30) } : l));
   const text = lines.length ? linesText(lines) : String(result.answer ?? '').trim();
   const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
+  // A line the player could tell the room about what they just saw. Kept or dropped the same way whoever it names:
+  // a button that went missing only on lines about the culprit would tell the player who did it.
+  const tell = String(result.tell ?? '').replace(/\s+/g, ' ').trim().slice(0, 200);
+  const tellable = tell && !leaksLaterClue(game, tell) ? tell : '';
   readPlayer(game, playerId, result.player_read, 'private', now);
   // An act the game held back for a meeting never costs the player a point.
   const play = ask.held && result.play ? { ...result.play, points: Math.max(0, Number(result.play.points) || 0) } : result.play;
   const [scored, penalty] = recordPlay(game, playerId, play, ask.read, 'private');
   const shown = (m) => ({ points: m.points, skill: m.skill, why: m.why });
-  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: shown(scored), ...(penalty ? { penalty: shown(penalty) } : {}), at: now });
+  thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), ...(tellable ? { tell: tellable } : {}), play: shown(scored), ...(penalty ? { penalty: shown(penalty) } : {}), at: now });
   // The GM says when this player has seen enough to answer the round: told once a round, and the round card shows it.
   st.ready ??= {};
   if (result.round_ready === true && needsRoundVote(game) && st.ready[playerId] !== roundNumber(game)) {

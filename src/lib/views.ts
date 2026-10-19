@@ -55,7 +55,9 @@ export interface PublicView {
 }
 
 export interface Play { points: number; skill: string | null; why: string }
-export interface ThreadEntry { from: 'you' | 'gm' | 'whisper' | 'system'; text: string; kind?: string; lines?: { speaker: string; text: string }[]; ideas?: string[]; play?: Play; penalty?: Play; at: number }
+export interface ThreadEntry { from: 'you' | 'gm' | 'whisper' | 'system'; text: string; kind?: string; lines?: { speaker: string; text: string }[]; ideas?: string[]; tell?: string; play?: Play; penalty?: Play; at: number }
+export interface DmView { id: string; at: number; from: string; to: string; text: string; lines?: { speaker: string; text: string }[]; mine: boolean; with: string }
+export interface InviteView { id: string; by: string; place: string }
 
 export interface CardView {
   case_label?: string;
@@ -105,6 +107,8 @@ export interface PlayerView extends PublicView {
   me: { id: string; name: string };
   card?: CardView;
   thread?: ThreadEntry[];
+  dms?: DmView[];
+  invites?: InviteView[];
   ties?: Record<string, string>;
   pending?: { kind: string; text: string } | null;
   clues?: { id: string; name: string; shows: string; destroyed: boolean; told?: boolean }[];
