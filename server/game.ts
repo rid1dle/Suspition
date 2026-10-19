@@ -119,6 +119,9 @@ export function applySetup(game, input = {}) {
   if (!Number.isInteger(questions) || questions < 1 || questions > 6) fail('Private questions must be between 1 and 6.');
   const npcRole = input.npcRole ?? 'mixed';
   if (!NPC_ROLES.includes(npcRole)) fail('Pick what the GM characters do.');
+  const culprits = [undefined, null, '', 'gm'].includes(input.culprits) ? 'gm' : Number(input.culprits);
+  if (culprits !== 'gm' && ![1, 2].includes(culprits)) fail('Pick 1 or 2 culprits, or let the GM decide.');
+  if (culprits === 2 && game.players.length < 6) fail('Two culprits need 6 players or more.');
   game.setup = {
     setting: String(input.setting ?? '').trim().slice(0, 200),
     tone,
@@ -127,6 +130,7 @@ export function applySetup(game, input = {}) {
     overrides,
     npcs,
     npcRole,
+    culprits,
     replays,
     questions,
     roundStyle,
@@ -1508,6 +1512,8 @@ export function submitFinal(game, playerId, input = {}) {
   const cast = castIds(game);
   const culprits = [...new Set(input.culprit_ids ?? [])].filter((id) => cast.includes(id));
   if (!culprits.length) fail('Pick at least one person.');
+  const count = game.scenario.truth.culprit_ids.length;
+  if (culprits.length !== count) fail(`Pick ${count} ${count === 1 ? 'person' : 'people'}.`);
   game.state.submissions[playerId] = {
     culprit_ids: culprits,
     how: String(input.how ?? '').trim().slice(0, 600),
@@ -2465,6 +2471,8 @@ function publicCore(game, now) {
     title: sc?.title ?? null,
     background: sc?.background ?? [],
     caseQuestion: sc ? caseQuestion(sc) : null,
+    // How many to find is told only at the final vote, as in Among Us: during play it would narrow the hunt.
+    culpritCount: sc && ['final', 'reveal'].includes(game.status) ? sc.truth.culprit_ids.length : null,
     keyObjects: sc ? keyObjectsView(game) : [],
     alibis: game.state ? alibiTable(sc) : null,
     timeline: publicTimeline(game),

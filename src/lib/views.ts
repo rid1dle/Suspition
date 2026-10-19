@@ -38,6 +38,7 @@ export interface PublicView {
   setup: Record<string, unknown> | null;
   title: string;
   caseQuestion: string;
+  culpritCount: number | null;
   cast: Cast | null;
   round: Round | null;
   voteBrief?: VoteBriefView | null;

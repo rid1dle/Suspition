@@ -13,6 +13,8 @@ import { useDraft } from '@/lib/live';
 import type { PlayerView } from '@/lib/views';
 import { act, tokenOf } from './play-app';
 
+export const findLine = (n: number) => (n === 1 ? 'There is 1 culprit. Pick 1.' : `There are ${n} culprits. Pick ${n}.`);
+
 export function Final({ view }: { view: PlayerView }) {
   const [pickedText, setPickedText] = useDraft(`final-picks-${view.gameId}`);
   const [how, setHow] = useDraft(`final-how-${view.gameId}`);
@@ -30,6 +32,7 @@ export function Final({ view }: { view: PlayerView }) {
     );
   }
   const cast = view.cast!;
+  const count = view.culpritCount ?? 0;
   const suspects = view.setup?.npcRole === 'background' ? [] : cast.npcs.filter((n) => !n.minor);
   const people = [...cast.players.filter((c) => c.id !== view.me.id), ...suspects, ...cast.players.filter((c) => c.id === view.me.id)];
   const send = async () => {
@@ -40,6 +43,7 @@ export function Final({ view }: { view: PlayerView }) {
     <main className="mx-auto flex max-w-md flex-col gap-5 px-5 pt-8 pb-16">
       <div>
         <h1 className="font-display text-4xl">Who did it?</h1>
+        {count && <p className="font-semibold">{findLine(count)}</p>}
         <Muted>Everyone picks. Culprits too. Most votes decides who wins.</Muted>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -69,7 +73,7 @@ export function Final({ view }: { view: PlayerView }) {
           <div className="flex gap-2"><Button size="sm" onClick={send}>Send</Button><Button size="sm" variant="ghost" onClick={() => setWarn(null)}>Go back</Button></div>
         </div>
       )}
-      <Button size="lg" disabled={!picked.size} onClick={() => { const w = emptyAnswers({ how, why }); if (w) setWarn(w); else send(); }}>Send my answer</Button>
+      <Button size="lg" disabled={count ? picked.size !== count : !picked.size} onClick={() => { const w = emptyAnswers({ how, why }); if (w) setWarn(w); else send(); }}>Send my answer</Button>
     </main>
   );
 }

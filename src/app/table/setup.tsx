@@ -115,7 +115,7 @@ function JoinCard({ view }: { view: TableProps['view'] }) {
 
 export function Setup(props: TableProps) {
   const { view, host, act } = props;
-  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', replays: 2, questions: 2, testGame: false, notes: '' });
+  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, replays: 2, questions: 2, testGame: false, notes: '' });
   const [picked, setPicked] = useState(false);
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const enough = view.players.length >= 3;
@@ -141,6 +141,9 @@ export function Setup(props: TableProps) {
               onPick={(v) => { set('length', v); if (!picked) set('questions', form.roundStyle === 'hotseats' ? 2 : v === 'long' ? 4 : 3); }} /></Field>
             <Field label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
               <Chips options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
+            </Field>
+            <Field label="How many culprits?" note="Nobody is told how many until the final vote. Two need 6 players or more.">
+              <Chips options={([['gm', 'Let the GM decide'], [1, '1'], ...(view.players.length >= 6 ? [[2, '2']] : [])] as ['gm' | 1 | 2, ReactNode][])} value={form.culprits} onPick={(v) => set('culprits', v)} />
             </Field>
             <Field label="Round style" note={form.roundStyle === 'hotseats' ? 'Players take turns in the hot seat, point at suspects, and vote who the room looks at.' : 'Each round ends with a group quiz; a wrong answer replays the round.'}>
               <Chips options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle}

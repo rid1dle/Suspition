@@ -297,7 +297,7 @@ describe('final reconstruction', () => {
   test('should give the win to investigators when a majority names exactly the culprits', () => {
     const game = finalGame(4);
     for (const id of ['p1', 'p2', 'p3']) G.submitFinal(game, id, { culprit_ids: ['p1'] });
-    G.submitFinal(game, 'p4', { culprit_ids: ['p1', 'n1'] });
+    G.submitFinal(game, 'p4', { culprit_ids: ['n1'] });
     const v = G.computeVerdict(game);
     assert.equal(v.winner, 'investigators');
     assert.deepEqual(v.correct_player_ids, ['p1', 'p2', 'p3']);

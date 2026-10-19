@@ -225,9 +225,11 @@ export const SCORE_SCHEMA = obj({
 });
 
 // The game, not the model and never a player's wish, decides who the culprits are.
-export function pickCulprits(playerCount, twists = [], random = Math.random) {
+// The host may fix the count at setup (1 or 2); 'gm' leaves it to chance and the twists.
+export function pickCulprits(playerCount, twists = [], random = Math.random, wanted = 'gm') {
   const ids = Array.from({ length: playerCount }, (_, i) => `p${i + 1}`);
-  const count = twists.some((t) => t.id === 'culprit-team') ? 2 : playerCount >= 6 && random() < 0.35 ? 2 : 1;
+  const chance = () => (twists.some((t) => t.id === 'culprit-team') ? 2 : playerCount >= 6 && random() < 0.35 ? 2 : 1);
+  const count = [1, 2].includes(wanted) ? Math.min(wanted, playerCount - 1) : chance();
   const picked = [];
   while (picked.length < count) {
     const id = ids[Math.floor(random() * ids.length)];
@@ -256,8 +258,8 @@ export const TWISTS = [
   { id: 'culprit-team', text: 'Two culprits who do not know about each other at the start.', minPlayers: 6 },
 ];
 
-export function pickTwists(playerCount, random = Math.random) {
-  const pool = TWISTS.filter((t) => !t.minPlayers || playerCount >= t.minPlayers);
+export function pickTwists(playerCount, random = Math.random, { culprits = 'gm' } = {}) {
+  const pool = TWISTS.filter((t) => (!t.minPlayers || playerCount >= t.minPlayers) && !(culprits === 1 && t.id === 'culprit-team'));
   const count = playerCount >= 6 ? 3 : 2;
   const picked = [];
   while (picked.length < count && pool.length) picked.push(pool.splice(Math.floor(random() * pool.length), 1)[0]);

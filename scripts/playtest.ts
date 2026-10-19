@@ -169,7 +169,7 @@ async function main() {
   });
   const botCall = ({ bot, view, mode }) => gm.call(`bot ${bot.username}`, {
     system: botSystem(bot),
-    prompt: `${botPrompt(view)}${mode === 'vote' ? '\nA round vote is open. Pick action "vote" with your choice.' : ''}${mode === 'final' ? '\nThe game is over. Name who did it (culprit_ids from people), how and why, and whether you met your goal.' : ''}`,
+    prompt: `${botPrompt(view)}${mode === 'vote' ? '\nA round vote is open. Pick action "vote" with your choice.' : ''}${mode === 'final' ? `\nThe game is over. There ${view.culpritCount === 1 ? 'is 1 culprit' : `are ${view.culpritCount} culprits`}: name exactly that many (culprit_ids from people), how and why, and whether you met your goal.` : ''}`,
     schema: mode === 'final' ? FINAL_BOT_SCHEMA : BOT_SCHEMA,
     effort: 'low',
   });

@@ -21,6 +21,7 @@ export function FinalWait(props: TableProps) {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="flex flex-col gap-4 rounded-2xl bg-card p-6">
           <p className="font-heading text-2xl">Everyone picks on their phone. Culprits too.</p>
+          {view.culpritCount && <p className="text-xl">{view.culpritCount === 1 ? 'There is 1 culprit to find.' : `There are ${view.culpritCount} culprits to find.`}</p>}
           <div className="flex flex-col gap-1 text-lg">
             {view.players.map((p) => <div key={p.id}>{view.submitted.includes(p.id) ? '✓' : '…'} {p.name}</div>)}
           </div>
