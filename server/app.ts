@@ -77,6 +77,8 @@ export class App {
     for (const p of this.game.players) if (p.username) this.profiles.set(p.username, (await this.people.load(p.username)) ?? newProfile(p.username, p.name, this.clock()));
     await this.changed();
     this.drawRound(this.game);
+    const music = this.game.state?.soundtrack?.status;
+    if (['reading', 'playing'].includes(this.game.status) && (!music || music === 'writing')) this.composeMusic(this.game);
     return this;
   }
 
@@ -283,6 +285,7 @@ export class App {
         G.attachScenario(game, scenario, this.clock());
         game.progress = null;
         this.drawPicture(game);
+        this.composeMusic(game);
       } catch (err) {
         if (this.game !== game) return;
         game.status = 'failed';
@@ -369,6 +372,32 @@ export class App {
       game.state.illustration = clean;
       await this.changed();
     });
+  }
+
+  // Three soundtrack directions, written while everyone reads; simple music plays until they land or if this fails.
+  composeMusic(game) {
+    if (typeof this.gm.compose !== 'function' || !game.state) return null;
+    G.startSoundtrack(game);
+    this.notify();
+    return this.background('compose', async () => {
+      try {
+        const raw = await this.gm.compose(game);
+        if (this.game !== game) return;
+        G.applySoundtrack(game, raw);
+        if (game.state.soundtrack.status === 'failed') this.log('compose: no direction in the music plan could play');
+      } catch (err) {
+        if (this.game === game) G.failSoundtrack(game);
+        throw err;
+      } finally {
+        if (this.game === game) await this.changed();
+      }
+    });
+  }
+
+  async pickMusic(hostToken, index) {
+    this.requireHost(hostToken);
+    G.pickSoundtrack(this.game, index);
+    await this.changed();
   }
 
   async brief(hostToken, delta) {

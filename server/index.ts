@@ -81,6 +81,7 @@ export function createHandler(app, { joinUrl, next = null }) {
     'POST /api/meetingend': (b) => app.endMeeting(b),
     'POST /api/place': (b) => app.editPlace(b.host, b),
     'POST /api/brief': (b) => app.brief(b.host, b.delta),
+    'POST /api/music': (b) => app.pickMusic(b.host, b.index),
     'POST /api/roundvote': (b) => app.voteRound(b.token, b.choice),
     'POST /api/share': (b) => app.shareClue(b.token, b.clueId),
     'POST /api/note': (b) => app.note(b.host, b.text),

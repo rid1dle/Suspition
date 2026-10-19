@@ -85,5 +85,7 @@ export function cuesBetween(prev, next) {
   if (next.status === 'playing' && prev.status === 'reading') cues.push('phase');
   if (next.hintsLeft != null && prev.hintsLeft != null && next.hintsLeft < prev.hintsLeft) cues.push('hint');
   if (next.status === 'final' && prev.status === 'playing') cues.push('final');
+  if (next.seat?.status === 'live' && (prev.seat?.status !== 'live' || prev.seat?.name !== next.seat.name)) cues.push('seat');
+  if (next.round?.vote && !prev.round?.vote) cues.push('vote');
   return cues;
 }
