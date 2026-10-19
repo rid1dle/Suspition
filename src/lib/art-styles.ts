@@ -16,6 +16,7 @@ export const ART_STYLES: ArtStyle[] = [
   { id: 'blueprint', name: 'Blueprint', rules: 'An architect\'s blueprint: thin white lines and dashed guides on deep blue, a grid behind, no fills.' },
   { id: 'neon', name: 'Neon', rules: 'Glowing neon tube outlines on near-black, 2 or 3 bright colours with a soft glow (blurred copies of the lines).' },
   { id: 'pixel', name: 'Pixel', rules: 'Chunky pixel art built only from squares on a 40 by 20 grid, 6 to 8 colours.' },
+  { id: 'occult-victorian', name: 'Occult Victorian', rules: 'A gothic Victorian occult engraving, like a page from a forbidden grimoire: fine engraved lines and cross-hatching in deep ink on aged parchment, with blood crimson and tarnished brass gold as the only colours. Gaslight glow and drifting fog; a huge crimson moon in the sky when the scene is outdoors. Arcane symbols woven in: an all-seeing eye, tarot arcana, alchemical circles, old keys and clock gears, framed by an ornate engraved border.' },
 ];
 
 export const ART_CHOICES = [...ART_STYLES.map((s) => s.id), 'random', 'mix'];

@@ -7,13 +7,19 @@ import { cleanSvg } from '../server/game.ts';
 import * as G from '../server/game.ts';
 import { makeScenario } from './fixtures.ts';
 
-const IDS = ['moody-flat', 'paper-cut', 'ink-noir', 'retro-poster', 'stained-glass', 'woodblock', 'folk-art', 'storybook', 'blueprint', 'neon', 'pixel'];
+const IDS = ['moody-flat', 'paper-cut', 'ink-noir', 'retro-poster', 'stained-glass', 'woodblock', 'folk-art', 'storybook', 'blueprint', 'neon', 'pixel', 'occult-victorian'];
 
 describe('art styles', () => {
   test("should keep today's style as the default and first in the list", () => {
     assert.deepEqual(ART_STYLES.map((s) => s.id), IDS);
     assert.match(ART_STYLES[0].rules, /Flat shapes and gradients, 4 to 7 colours/);
     assert.deepEqual(ART_CHOICES, [...IDS, 'random', 'mix']);
+  });
+
+  test('should offer an occult Victorian style: engraved lines, parchment, crimson and brass, arcane symbols', () => {
+    const style = ART_STYLES.find((s) => s.id === 'occult-victorian');
+    assert.equal(style.name, 'Occult Victorian');
+    for (const part of [/engrav/, /parchment/, /crimson moon/, /brass/, /tarot/, /all-seeing eye/]) assert.match(style.rules, part);
   });
 
   test('should give every style a sample picture on disk', () => {
