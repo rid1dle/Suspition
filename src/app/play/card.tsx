@@ -71,6 +71,13 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
 
       <div className="flex flex-col gap-3">
         <CaseBox question={caseQuestion} label="The group's goal" />
+        {card.watch && (
+          <Section title="Stop it" tone="hidden">
+            <p className="text-lg font-medium">{card.watch.threat}</p>
+            {card.watch.stake && <p className="text-sm">{card.watch.stake}</p>}
+            <Muted className="text-xs">You do not know who. Guard it, get there first, or warn the room. At the end, say who you think it was.</Muted>
+          </Section>
+        )}
         <Section title="Your secret goal">
           <p className="text-lg font-medium">{card.goal}</p>
           {!!card.goal_steps?.length && (
@@ -79,6 +86,7 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
             </ul>
           )}
           {card.goal_why && <p className="text-sm">{card.goal_why}</p>}
+          {card.watched && <p className="text-sm text-muted-foreground">Someone may try to stop you.</p>}
           <p className="text-sm"><b>You are a {side}.</b> {card.win}</p>
         </Section>
       </div>

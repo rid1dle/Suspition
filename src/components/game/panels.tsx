@@ -155,7 +155,7 @@ export function Results({ results }: { results: { kind?: string; phaseIndex: num
 }
 
 // What each player is working toward, always in view: the case, this round's job, their own goal, what is still open.
-export function GoalsPanel({ caseQuestion, job, goal, steps = [], open = [] }: { caseQuestion?: string | null; job?: string | null; goal?: string | null; steps?: { text: string; done: boolean }[]; open?: string[] }) {
+export function GoalsPanel({ caseQuestion, job, goal, steps = [], open = [], watch = null, watched = false }: { caseQuestion?: string | null; job?: string | null; goal?: string | null; steps?: { text: string; done: boolean }[]; open?: string[]; watch?: { threat: string; stake: string } | null; watched?: boolean }) {
   if (!caseQuestion && !job && !goal && !open.length) return null;
   const done = steps.filter((s) => s.done).length;
   return (
@@ -169,6 +169,8 @@ export function GoalsPanel({ caseQuestion, job, goal, steps = [], open = [] }: {
           {steps.map((s) => <li key={s.text} className={s.done ? 'text-muted-foreground line-through' : ''}>{s.done ? '✓' : '○'} {s.text}</li>)}
         </ul>
       )}
+      {watched && <Muted className="text-xs">Someone may try to stop you.</Muted>}
+      {watch && <p className="mt-1"><b>Stop it:</b> {watch.threat} {watch.stake}</p>}
       {!!open.length && (<><Muted className="mt-1 text-xs">Still open</Muted><Facts lines={open} /></>)}
     </section>
   );

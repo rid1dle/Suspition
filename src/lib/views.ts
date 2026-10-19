@@ -58,6 +58,8 @@ export interface Play { points: number; skill: string | null; why: string }
 export interface ThreadEntry { from: 'you' | 'gm' | 'whisper' | 'system'; text: string; kind?: string; lines?: { speaker: string; text: string }[]; ideas?: string[]; play?: Play; penalty?: Play; at: number }
 
 export interface CardView {
+  watch?: { threat: string; stake: string } | null;
+  watched?: boolean;
   backstory?: string;
   goal_steps?: { text: string; done: boolean }[];
   hook?: string;

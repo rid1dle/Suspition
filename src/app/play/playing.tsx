@@ -363,7 +363,7 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
 
 function DrawerBody({ view, drawer }: { view: PlayerView; drawer: Drawer }) {
   if (drawer === 'card') return view.card ? <CardFlip card={view.card} caseQuestion={view.caseQuestion} overridesLeft={view.overridesLeft ?? 0} overridesTotal={view.overridesTotal ?? 0} persona={view.persona} rules={view.rules} profile={view.profile} onForget={() => act('forget', { token: tokenOf() })} /> : null;
-  if (drawer === 'goals') return <GoalsPanel caseQuestion={view.caseQuestion} job={view.round?.objective} goal={view.card?.goal} steps={view.card?.goal_steps ?? []} open={view.recap?.open ?? []} />;
+  if (drawer === 'goals') return <GoalsPanel caseQuestion={view.caseQuestion} job={view.round?.objective} goal={view.card?.goal} steps={view.card?.goal_steps ?? []} open={view.recap?.open ?? []} watch={view.card?.watch ?? null} watched={Boolean(view.card?.watched)} />;
   if (drawer === 'clues') return <CluesBody view={view} />;
   if (drawer === 'map') return <GoSomewhere view={view} />;
   if (drawer === 'people') return <PeopleBody view={view} />;

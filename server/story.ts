@@ -128,6 +128,15 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     });
   }
 
+  // A watcher knows a vague threat and what it costs them, never who is behind it.
+  for (const w of s.watchers ?? []) {
+    const i = (s.players ?? []).findIndex((p) => p?.id === w.watcher);
+    if (i < 0) continue;
+    const threat = String(s.players[i].watch_threat ?? '').trim();
+    if (!threat) out.push(`watch: players[${i}] (${w.watcher}) watches ${w.owner}'s goal but has no watch_threat; say what someone wants to make happen and roughly where, never who.`);
+    else if (namesAnyOf(s, players, [w.owner], threat)) out.push(`watch: players[${i}].watch_threat names the owner of the goal; say what and where, never who.`);
+  }
+
   (s.key_objects ?? []).forEach((o, i) => {
     if (pointsAtCulprit(s, players, o?.about) || (o?.where_is_public && culprits.includes(o?.where))) out.push(`giveaway: key_objects[${i}] points at the culprit; keep where it is secret and say only what it is.`);
   });
@@ -175,7 +184,7 @@ export const issueCounts = (issues) => {
 
 const STORY_PATHS = [
   /^clues\.\d+\.(shows|does_not_prove|where|reveal_round)$/,
-  /^players\.\d+\.(private_info|public_info|starting_knowledge|goal|goal_where)$/,
+  /^players\.\d+\.(private_info|public_info|starting_knowledge|goal|goal_where|watch_threat|watch_stake)$/,
   /^npcs\.\d+\.(knows|secrets|lies|reveals_freely|reveals_under_pressure)$/,
   /^hint_ladder\.\d+\.text$/,
   /^public_timeline\.\d+\.event$/,

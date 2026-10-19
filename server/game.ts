@@ -130,6 +130,8 @@ export function applySetup(game, input = {}) {
   if (culprits !== 'gm' && ![1, 2].includes(culprits)) fail('Pick 1 or 2 culprits, or let the GM decide.');
   const culpritWho = [undefined, null, ''].includes(input.culpritWho) ? 'gm' : input.culpritWho;
   if (!CULPRIT_WHO.includes(culpritWho)) fail('Pick who did it: one of you, a GM character, or let the GM decide.');
+  const goalWatch = [undefined, null, ''].includes(input.goalWatch) ? 'gm' : input.goalWatch;
+  if (!['gm', 'tell', 'hide'].includes(goalWatch)) fail('Pick whether players know someone may stop their goal.');
   const culpritKnows = [undefined, null, ''].includes(input.culpritKnows) ? 'gm' : input.culpritKnows;
   if (!CULPRIT_KNOWS.includes(culpritKnows)) fail('Pick whether the culprit knows: from the start, later, or let the GM decide.');
   if (culpritWho === 'npc' && npcs < 1) fail('A GM character culprit needs at least 1 GM character.');
@@ -147,6 +149,7 @@ export function applySetup(game, input = {}) {
     culprits,
     culpritWho,
     culpritKnows,
+    goalWatch,
     replays,
     roundStyle,
     difficulty: difficultyOf(input.difficulty),
@@ -1305,6 +1308,18 @@ export function markGoalSteps(game, pid, steps) {
 }
 
 // A culprit who does not know it stays an investigator in their own eyes until the game tells them.
+// A watcher sees the threat and what it costs them, never who; an owner sees a warning only when told.
+function watchView(game, playerId, card) {
+  const watchers = game.scenario.watchers ?? [];
+  const mine = watchers.find((w) => w.watcher === playerId);
+  const threat = String(card.watch_threat ?? '').trim();
+  const safe = mine && threat && !namesAnyOf(game.scenario, game.players, [mine.owner], threat) ? threat : 'Someone here wants something that would cost you.';
+  return {
+    watch: mine ? { threat: safe, stake: String(card.watch_stake ?? '').trim() } : null,
+    watched: watchers.some((w) => w.owner === playerId && w.told),
+  };
+}
+
 export function knowsGuilt(game, playerId) {
   const card = game.scenario?.players.find((p) => p.id === playerId);
   return card?.side === 'culprit' && (!card.unaware || Boolean(game.state?.awakened?.[playerId]));
@@ -1639,6 +1654,7 @@ export function submitFinal(game, playerId, input = {}) {
     how: String(input.how ?? '').trim().slice(0, 600),
     why: String(input.why ?? '').trim().slice(0, 600),
     goal: String(input.goal ?? '').trim().slice(0, 400),
+    watch_guess: game.players.some((p) => p.id === input.watch_guess && p.id !== playerId) ? input.watch_guess : '',
   };
 }
 
@@ -1679,6 +1695,13 @@ export function storyShape(game) {
   return became ? `This story began as ${withArticle(type)}. It became ${withArticle(became)}.` : `This story was ${withArticle(type)}.`;
 }
 
+// A watcher scores for stopping the goal they watched; their guess of who was behind it shows at the reveal.
+function watchResult(game, pid, s) {
+  const w = (game.scenario.watchers ?? []).find((x) => x.watcher === pid);
+  if (!w) return { max: MAX_POINTS };
+  return { max: MAX_POINTS + 1, stopped: Boolean(s.stopped), watch_guess_right: game.state.submissions?.[pid]?.watch_guess === w.owner };
+}
+
 export function applyScore(game, verdict, score) {
   const byId = Object.fromEntries((score.players ?? []).map((p) => [p.player_id, p]));
   game.state.result = {
@@ -1693,6 +1716,7 @@ export function applyScore(game, verdict, score) {
         method_score: clamp(Number(s.method_score) || 0, 0, 2),
         motive_score: clamp(Number(s.motive_score) || 0, 0, 2),
         goal_achieved: Boolean(s.goal_achieved),
+        ...watchResult(game, p.id, s),
         goal_outcome: String(s.goal_outcome ?? ''),
         comment: String(s.comment ?? ''),
         coaching: String(s.coaching ?? '').slice(0, 200),
@@ -2585,6 +2609,7 @@ export function snapshotForGM(game) {
     players_now: st.persona ?? {},
     quiet_players: quietPlayers(game),
     awakened_players: Object.keys(st.awakened ?? {}),
+    goal_watchers: game.scenario.watchers ?? [],
     goals_stuck: game.status === 'playing' ? goalsStuck(game) : [],
     // Near the end only: early on the room is meant to search for itself.
     case_gaps: game.status === 'playing' && st.phaseIndex + 1 >= game.scenario.phases.length - 2 ? caseGaps(game).map((g) => ({ needs: g.needs, clue_ids: g.clues })) : [],
@@ -2898,6 +2923,7 @@ export function playerView(game, playerId, now = Date.now()) {
     private_info: card.private_info,
     goal: card.goal,
     goal_steps: (card.goal_steps ?? []).map((t, i) => ({ text: String(t), done: (st.goalSteps?.[playerId] ?? []).includes(i) })),
+    ...watchView(game, playerId, card),
     win: WIN[shownSide] ?? '',
     side: shownSide,
     side_explanation: card.unaware && st.awakened?.[playerId] ? String(card.guilt_reveal ?? card.side_explanation) : card.side_explanation,

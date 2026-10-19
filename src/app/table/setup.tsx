@@ -138,7 +138,7 @@ function JoinCard({ view, children }: { view: TableProps['view']; children?: Rea
 
 export function Setup(props: TableProps) {
   const { view, host, act } = props;
-  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, culpritWho: 'gm' as 'gm' | 'player' | 'npc', culpritKnows: 'gm' as 'gm' | 'start' | 'later', testGame: false, notes: '' });
+  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, culpritWho: 'gm' as 'gm' | 'player' | 'npc', culpritKnows: 'gm' as 'gm' | 'start' | 'later', goalWatch: 'gm' as 'gm' | 'tell' | 'hide', testGame: false, notes: '' });
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const n = view.players.length;
   const enough = n >= 1;
@@ -218,6 +218,9 @@ export function Setup(props: TableProps) {
                     <Chips small options={(small ? [1, 2, 3, 4, 5, 6] : [0, 1, 2, 3, 4, 5, 6]).map((k) => [k, k] as [number, ReactNode])} value={npcs} onPick={(v) => set('npcs', v)} />
                     {!small && <Chips small options={[['mixed', 'Some matter to the case'], ['background', 'Background only']]} value={npcRole} onPick={(v) => set('npcRole', v)} />}
                   </div>
+                </Row>
+                <Row label="Do players know someone may stop their goal?" note="Every secret goal has someone working against it. With Let the GM decide, some players are told and some are not.">
+                  <Chips small options={[['gm', 'Let the GM decide'], ['tell', 'Tell them'], ['hide', 'Keep it secret']] as ['gm' | 'tell' | 'hide', ReactNode][]} value={form.goalWatch} onPick={(v) => set('goalWatch', v)} />
                 </Row>
                 <Row label="Test game" note="A test game is saved but never teaches the game about anyone.">
                   <Chips small options={[['no', 'No, a real game'], ['yes', 'Yes, just testing']]} value={form.testGame ? 'yes' : 'no'} onPick={(v) => set('testGame', v === 'yes')} />

@@ -97,3 +97,13 @@ The first try failed: a ten-player world took more than the 15 minutes the write
 - **Not only murder:** the world writer is told a death is only one choice (a theft, a disappearance, a betrayal, a sabotage, a forgery, a stolen secret, a rite gone wrong), the victim can be a thing as well as a person, and a setting with magic or strange powers keeps fixed rules the room can learn. Four non-violent story types were added. The rules no longer speak of "the murder" or "the death".
 - **Guards for a culprit who does not know** (from review): the story check may not patch their card; the card check drops any night entry from a moment they acted; a hidden fact the GM reveals early turns their card at once (a player alone is told "Now you know what happened" instead of "do not get named"); hot-seat whispers treat them as innocent; they count as part of the room for the last-round clue help; their crime stays guarded from round lines after it comes back to them; the continuity check knows who has woken. The rules card and the final vote no longer offer meetings or say "culprits vote too" to a player alone.
 - **Left for later:** in hot seats, the spotlight vote lists only players, so the room cannot spotlight a GM character culprit.
+
+## Secret goals that others can stop (2026-10-19, later)
+
+A secret goal used to matter only to its owner. Now every goal has a watcher who loses something if it happens.
+
+- **Who watches whom** is decided in code before the world is written (`planWatchers`): every goal gets one watcher and nobody watches two goals; two players watch each other; a culprit who knows only hides (the whole room already works against that); a player alone is watched by a GM character.
+- **The watcher's card** says "Stop it": a vague threat (what and roughly where, never who) and the stake (why it hurts them). A threat that names its owner is flagged by the story check and blanked on the card.
+- **The owner** may see "Someone may try to stop you." A setup choice under More options decides: Let the GM decide (the default: some are told, some are not), Tell them, or Keep it secret.
+- **In play** the GM knows who watches what; a watcher who guards the place, takes what the goal needs first or warns the room in time makes the owner's step fail, and the owner is told privately what got in the way, never who.
+- **At the end** the watcher names who they think was behind it, and scores 1 point for stopping it (the goal did not happen and they acted against it, judged by the scorer). A watcher's case total is out of 7.

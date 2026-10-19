@@ -105,7 +105,7 @@ export function Reveal(props: TableProps) {
               <div className="rounded-lg bg-primary/10 p-3 text-sm"><Label className="text-primary">Secret</Label>{c.private_info}<div className="mt-1"><b>Goal:</b> {c.goal}</div></div>
               {c.hidden_facts.length > 0 && <div className="rounded-lg bg-layer-hidden/10 p-3 text-sm"><Label className="text-layer-hidden">They never knew</Label>{c.hidden_facts.map((f: string, i: number) => <div key={i}>{f}</div>)}</div>}
               <div className="text-sm"><b>Picked:</b> {c.submission ? c.submission.culprit_ids.map(nameOf).join(', ') : <span className="text-muted-foreground">nobody</span>}</div>
-              <div className="text-sm"><b>{totalLine(s)}</b>{best && <b className="text-primary"> · Best play</b>} · Culprit {s.culprit_correct ? '✓' : '✗'} · How {s.method_score ?? 0}/2 · Why {s.motive_score ?? 0}/2 · Goal {s.goal_achieved ? '✓' : '✗'}</div>
+              <div className="text-sm"><b>{totalLine(s)}</b>{best && <b className="text-primary"> · Best play</b>} · Culprit {s.culprit_correct ? '✓' : '✗'} · How {s.method_score ?? 0}/2 · Why {s.motive_score ?? 0}/2 · Goal {s.goal_achieved ? '✓' : '✗'}{s.max > 6 ? ` · Stopped ${s.stopped ? '✓' : '✗'}` : ''}</div>
               <Muted className="text-xs">{s.goal_outcome} {s.comment}</Muted>
             </div>
           );

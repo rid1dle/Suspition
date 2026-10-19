@@ -13,7 +13,7 @@ export function whoisLines(cast) {
 }
 
 export function pointsOf(s) {
-  return (s?.culprit_correct ? 1 : 0) + (s?.method_score ?? 0) + (s?.motive_score ?? 0) + (s?.goal_achieved ? 1 : 0);
+  return (s?.culprit_correct ? 1 : 0) + (s?.method_score ?? 0) + (s?.motive_score ?? 0) + (s?.goal_achieved ? 1 : 0) + (s?.stopped ? 1 : 0);
 }
 
 export function playLine(play) {
@@ -21,4 +21,4 @@ export function playLine(play) {
   return [signed(play.points ?? 0), play.skill && SKILL_LABELS[play.skill], play.why].filter(Boolean).join(' · ');
 }
 
-export const totalLine = (s) => `Case ${pointsOf(s)}/6 · Play ${signed(s?.play ?? 0)}${s?.play_earned != null && s.play_earned > (s?.play ?? 0) ? ` (${s.play_earned} earned, at most ${PLAY_MAX} a round)` : ''}`;
+export const totalLine = (s) => `Case ${pointsOf(s)}/${s?.max ?? 6} · Play ${signed(s?.play ?? 0)}${s?.play_earned != null && s.play_earned > (s?.play ?? 0) ? ` (${s.play_earned} earned, at most ${PLAY_MAX} a round)` : ''}`;

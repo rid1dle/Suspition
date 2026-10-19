@@ -20,6 +20,7 @@ export function Final({ view }: { view: PlayerView }) {
   const [how, setHow] = useDraft(`final-how-${view.gameId}`);
   const [why, setWhy] = useDraft(`final-why-${view.gameId}`);
   const [goal, setGoal] = useDraft(`final-goal-${view.gameId}`);
+  const [guess, setGuess] = useDraft(`final-guess-${view.gameId}`);
   const picked = new Set(pickedText ? pickedText.split(',') : []);
   const setPicked = (next: (s: Set<string>) => Set<string>) => setPickedText([...next(picked)].join(','));
   const [warn, setWarn] = useState<string | null>(null);
@@ -41,8 +42,8 @@ export function Final({ view }: { view: PlayerView }) {
   const suspects = view.setup?.npcRole === 'background' ? [] : cast.npcs.filter((n) => !n.minor);
   const people = [...cast.players.filter((c) => c.id !== view.me.id), ...suspects, ...cast.players.filter((c) => c.id === view.me.id)];
   const send = async () => {
-    if (!await act('submit', { token: tokenOf(), culprit_ids: [...picked], how, why, goal })) return;
-    for (const clear of [setPickedText, setHow, setWhy, setGoal]) clear('');
+    if (!await act('submit', { token: tokenOf(), culprit_ids: [...picked], how, why, goal, watch_guess: guess })) return;
+    for (const clear of [setPickedText, setHow, setWhy, setGoal, setGuess]) clear('');
   };
   return (
     <main className="mx-auto flex max-w-md flex-col gap-5 px-5 pt-8 pb-16">
@@ -65,6 +66,17 @@ export function Final({ view }: { view: PlayerView }) {
           );
         })}
       </div>
+      {view.card?.watch && (
+        <section className="flex flex-col gap-2">
+          <Label>Who was behind it? {view.card.watch.threat}</Label>
+          <div className="flex flex-wrap gap-2">
+            {cast.players.filter((c) => c.id !== view.me.id).map((c) => (
+              <button key={c.id} aria-pressed={guess === c.id} onClick={() => setGuess(guess === c.id ? '' : c.id)}
+                className={`rounded-full border px-3 py-1 text-sm ${guess === c.id ? 'border-primary bg-primary/20' : 'border-border'}`}>{c.name}</button>
+            ))}
+          </div>
+        </section>
+      )}
       <Muted className="text-xs">Type, or tap the 🎤 mic on your keyboard to speak.</Muted>
       {([['How?', how, setHow, true, 600], ['Why?', why, setWhy, true, 600], ['Did you get your goal?', goal, setGoal, false, 400]] as const).map(([label, value, set, points, max]) => (
         <label key={label} className="flex flex-col gap-1">
@@ -99,7 +111,7 @@ export function Reveal({ view }: { view: PlayerView }) {
       <section className="flex flex-col gap-3 rounded-2xl bg-card p-5">
         <Label>How you did</Label>
         <div className="text-lg"><TotalLine result={mine} /></div>
-        <div className="text-sm text-muted-foreground">Culprit {mine.culprit_correct ? '✓' : '✗'} · How {mine.method_score ?? 0}/2 · Why {mine.motive_score ?? 0}/2 · Goal {mine.goal_achieved ? '✓' : '✗'}</div>
+        <div className="text-sm text-muted-foreground">Culprit {mine.culprit_correct ? '✓' : '✗'} · How {mine.method_score ?? 0}/2 · Why {mine.motive_score ?? 0}/2 · Goal {mine.goal_achieved ? '✓' : '✗'}{mine.max > 6 ? ` · Stopped ${mine.stopped ? '✓' : '✗'}` : ''}</div>
         {best && <p className="font-semibold text-primary">Best play this game.</p>}
         {mine.goal_outcome && <p className="text-sm">{mine.goal_outcome}</p>}
         {mine.comment && <Muted>{mine.comment}</Muted>}
