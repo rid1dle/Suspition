@@ -36,9 +36,7 @@ describe('lobby', () => {
 
   test('should refuse setup with fewer than the minimum players', () => {
     const game = G.createGame();
-    G.addPlayer(game, { name: 'A' });
-    G.addPlayer(game, { name: 'B' });
-    assert.throws(() => G.applySetup(game, { tone: 'tense', length: 'short', hints: 3 }), /at least 3/);
+    assert.throws(() => G.applySetup(game, { tone: 'tense', length: 'short', hints: 3 }), /at least 1/);
   });
 
   test('should refuse hints outside 1 to 5', () => {

@@ -87,3 +87,12 @@ The first try failed: a ten-player world took more than the 15 minutes the write
   - The GM is told which clues are the last evidence (`clues_kept`), so it never narrates one destroyed.
   - The last clue a culprit or a deduction rests on can never be destroyed.
 - **"You told us":** a GM line saying a player told them something ("you told us", "you said", "as you said") is dropped unless that player's own words in play back it. A player's card is not something they said.
+
+## One and two players, and who did it (2026-10-19, later)
+
+- **1 or 2 players:** a game needs only 1 player now. Under 3 players the rounds are classic (hot seats need others to question you), meetings are off for a player alone, and a round never becomes a spotlight vote (looking at one of 1 or 2 players tells nobody anything). Twists that need more players or an innocent player are never drawn.
+- **Who did it** (a setup choice at every size): Let the GM decide (default), One of us, or A GM character. The GM's choice is made in code before the world is written (`planCulprits`) and is never said. A GM character culprit needs a GM character who matters to the case; two of them need 2 GM characters, and then a small group can have two culprits.
+- **Does the culprit know** (2 players or more): Let the GM decide (default), From the start, or They find out later. A culprit who finds out later has an innocent's card (`unaware`); what they did is in their hidden facts, the card check never writes it onto their card, and the GM treats them as innocent. Near the end (the round before the last, or the last at the latest) the game tells them privately (`guilt_reveal`) and their card turns. Playing alone, a culprit among you never knows at the start: the clues lead you there.
+- **The final vote in a game of 1 or 2:** a culprit who knows does not cancel the only detective's vote; only the others decide.
+- **Not only murder:** the world writer is told a death is only one choice (a theft, a disappearance, a betrayal, a sabotage, a forgery, a stolen secret, a rite gone wrong), the victim can be a thing as well as a person, and a setting with magic or strange powers keeps fixed rules the room can learn. Four non-violent story types were added. The rules no longer speak of "the murder" or "the death".
+- **Left for later:** in hot seats, the spotlight vote lists only players, so the room cannot spotlight a GM character culprit.

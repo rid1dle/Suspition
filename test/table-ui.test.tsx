@@ -57,10 +57,9 @@ describe('the table screen', () => {
     assert.match(renderToStaticMarkup(<Reveal {...props(G.tableView(s.game))} />), /TRUTH-STORY/);
   });
 
-  test('should need three players before the mystery can be made', () => {
+  test('should need one player before the mystery can be made', () => {
     const g = G.createGame();
-    G.addPlayer(g, { name: 'A' });
-    assert.match(renderToStaticMarkup(<Setup {...props(G.tableView(g))} />), /Need 3 players or more \(1 now\)/);
+    assert.match(renderToStaticMarkup(<Setup {...props(G.tableView(g))} />), /Need 1 player or more \(0 now\)/);
     assert.ok(renderToStaticMarkup(<Generating {...props({ ...G.tableView(g), status: 'generating', progress: { attempt: 1, draft: 1, startedAt: Date.now(), plan: null, thinking: true, redraft: false } })} />).includes('Thinking'));
   });
 });

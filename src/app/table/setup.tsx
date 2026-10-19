@@ -115,11 +115,17 @@ function JoinCard({ view }: { view: TableProps['view'] }) {
 
 export function Setup(props: TableProps) {
   const { view, host, act } = props;
-  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, replays: 2, testGame: false, notes: '' });
+  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, culpritWho: 'gm' as 'gm' | 'player' | 'npc', culpritKnows: 'gm' as 'gm' | 'start' | 'later', replays: 2, testGame: false, notes: '' });
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
-  const enough = view.players.length >= 3;
-  // Two culprits need 6 players: if someone leaves, the choice goes back to the GM.
-  const culprits = form.culprits === 2 && view.players.length < 6 ? 'gm' : form.culprits;
+  const n = view.players.length;
+  const enough = n >= 1;
+  // A choice the group no longer allows (someone left, no GM characters) goes back to the GM.
+  const npcOk = form.npcs >= 1 && form.npcRole !== 'background';
+  const who = form.culpritWho === 'npc' && !npcOk ? 'gm' : form.culpritWho;
+  const twoOk = who === 'npc' ? form.npcs >= 2 : n >= 6;
+  const culprits = form.culprits === 2 && !twoOk ? 'gm' : form.culprits;
+  // Hot seats need others to question you.
+  const roundStyle = n < 3 ? 'classic' : form.roundStyle;
   return (
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 pt-8">
       <Header {...props} title="Suspition" sub="A mystery game for this room" />
@@ -143,14 +149,24 @@ export function Setup(props: TableProps) {
             <Field label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
               <Chips options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
             </Field>
-            <Field label="How many culprits?" note="The room sees this choice. With Let the GM decide, nobody knows how many until the final vote. Two need 6 players or more.">
-              <Chips options={([['gm', 'Let the GM decide'], [1, '1'], ...(view.players.length >= 6 ? [[2, '2']] : [])] as ['gm' | 1 | 2, ReactNode][])} value={culprits} onPick={(v) => set('culprits', v)} />
+            <Field label="Who did it?" note={n === 1 ? 'Playing alone, a culprit among you never knows at the start: the clues lead you there.' : 'Let the GM decide can be any of these, and the GM never says which.'}>
+              <Chips options={([['gm', 'Let the GM decide'], ['player', 'One of us'], ...(npcOk ? [['npc', 'A GM character']] : [])] as ['gm' | 'player' | 'npc', ReactNode][])} value={who} onPick={(v) => set('culpritWho', v)} />
             </Field>
-            <Field label="Round style" note={form.roundStyle === 'hotseats' ? 'Players take turns in the hot seat, point at suspects, and vote who the room looks at.' : 'Each round ends with a group quiz; a wrong answer replays the round.'}>
-              <Chips options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle}
-                onPick={(v) => set('roundStyle', v)} />
+            {n >= 2 && who !== 'npc' && (
+              <Field label="Does the culprit know?" note="They find out later: their card says they are innocent until it comes back to them near the end.">
+                <Chips options={[['gm', 'Let the GM decide'], ['start', 'From the start'], ['later', 'They find out later']] as ['gm' | 'start' | 'later', ReactNode][]} value={form.culpritKnows} onPick={(v) => set('culpritKnows', v)} />
+              </Field>
+            )}
+            <Field label="How many culprits?" note="The room sees this choice. With Let the GM decide, nobody knows how many until the final vote. Two need 6 players, or 2 GM characters when a GM character did it.">
+              <Chips options={([['gm', 'Let the GM decide'], [1, '1'], ...(twoOk ? [[2, '2']] : [])] as ['gm' | 1 | 2, ReactNode][])} value={culprits} onPick={(v) => set('culprits', v)} />
             </Field>
-            {form.roundStyle === 'classic' && (
+            {n >= 3 && (
+              <Field label="Round style" note={form.roundStyle === 'hotseats' ? 'Players take turns in the hot seat, point at suspects, and vote who the room looks at.' : 'Each round ends with a group quiz; a wrong answer replays the round.'}>
+                <Chips options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle}
+                  onPick={(v) => set('roundStyle', v)} />
+              </Field>
+            )}
+            {roundStyle === 'classic' && (
               <Field label="Got a round wrong? Play it again" note="A round you vote wrong is played again, with a clearer job.">
                 <Chips options={[[0, 'Never'], [1, 'Once'], [2, 'Up to twice']]} value={form.replays} onPick={(v) => set('replays', v)} />
               </Field>
@@ -171,8 +187,8 @@ export function Setup(props: TableProps) {
             <Field label="Anything the GM should know?">
               <Textarea value={form.notes} maxLength={500} placeholder="Jokes, things you like, things to avoid" onChange={(e) => set('notes', e.target.value)} className="min-h-20" />
             </Field>
-            <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', { ...form, culprits })}>Make our mystery</Button>
-            <Muted className="text-xs">{enough ? `${view.players.length} players. Each one gets a character.` : `Need 3 players or more (${view.players.length} now).`}</Muted>
+            <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', { ...form, culprits, culpritWho: who, roundStyle })}>Make our mystery</Button>
+            <Muted className="text-xs">{!enough ? 'Need 1 player or more (0 now).' : n === 1 ? '1 player. You get a character.' : `${n} players. Each one gets a character.`}</Muted>
           </section>
         )}
       </div>

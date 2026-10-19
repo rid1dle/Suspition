@@ -22,7 +22,7 @@ describe('suspects, red herrings, whereabouts and clue rounds in the world', () 
     assert.deepEqual(Object.keys(p.red_herrings.items.properties), ['points_at', 'clue_ids', 'why_convincing', 'refuted_by_clue_ids']);
     assert.deepEqual(p.clues.items.properties.reveal_round, { type: 'integer', minimum: 1, maximum: 5 });
     assert.deepEqual(p.key_deductions.items.properties.about.enum, ['culprit', 'method', 'motive', 'other']);
-    for (const phrase of ['Everyone is a suspect.', 'a secret crime of their own is not a motive', 'Red herrings are built, not labelled.', '"It is a different crime" never rules anything out.', 'Never write in a clue\'s own text that it has nothing to do with the death.', 'No giveaways.', 'Each clue has a reveal_round', 'Whereabouts: in truth.whereabouts', 'Nobody but the culprit and the victim is at truth.crime\'s place at its time', 'Do not make the twist "the victim was secretly kind".']) {
+    for (const phrase of ['Everyone is a suspect.', 'a secret crime of their own is not a motive', 'Red herrings are built, not labelled.', '"It is a different crime" never rules anything out.', 'Never write in a clue\'s own text that it has nothing to do with the case.', 'No giveaways.', 'Each clue has a reveal_round', 'Whereabouts: in truth.whereabouts', 'Nobody but the culprit and the victim is at truth.crime\'s place at its time', 'Do not make the twist "the victim was secretly kind".']) {
       assert.ok(GENERATION_SYSTEM.includes(phrase), `missing: ${phrase}`);
     }
     assert.ok(!GENERATION_SYSTEM.includes('Innocent players hide real things'), 'the old herring rule is replaced');

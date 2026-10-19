@@ -13,7 +13,7 @@ import { ART_CHOICES, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 import { difficultyOf } from '../src/lib/difficulty.ts';
 import { planGeography, pathMetres, tripTime } from '../src/lib/geography.ts';
 
-export const MIN_PLAYERS = 3;
+export const MIN_PLAYERS = 1;
 export const MAX_PLAYERS = 10;
 export const TONES = ['cozy', 'tense', 'dark', 'funny'];
 export const HINT_VOTE_MS = 60_000;
@@ -100,9 +100,12 @@ export function playerByToken(game, tok) {
   return player;
 }
 
+const CULPRIT_WHO = ['gm', 'player', 'npc'];
+const CULPRIT_KNOWS = ['gm', 'start', 'later'];
+
 export function applySetup(game, input = {}) {
   if (!['lobby', 'failed'].includes(game.status)) fail('Setup is already done.', 409);
-  if (game.players.length < MIN_PLAYERS) fail(`Need at least ${MIN_PLAYERS} players.`, 409);
+  if (game.players.length < MIN_PLAYERS) fail(`Need at least ${MIN_PLAYERS} player${MIN_PLAYERS === 1 ? '' : 's'}.`, 409);
   const tone = TONES.includes(input.tone) ? input.tone : null;
   if (!tone) fail('Pick a tone.');
   if (!LENGTHS[input.length]) fail('Pick a game length.');
@@ -114,12 +117,20 @@ export function applySetup(game, input = {}) {
   if (!Number.isInteger(npcs) || npcs < 0 || npcs > 6) fail('GM characters must be between 0 and 6.');
   const replays = input.replays === undefined ? 2 : Number(input.replays);
   if (!Number.isInteger(replays) || replays < 0 || replays > MAX_REPLAYS) fail(`Replays must be between 0 and ${MAX_REPLAYS}.`);
-  const roundStyle = input.roundStyle === 'hotseats' ? 'hotseats' : 'classic';
+  // Hot seats need others to question you: under 3 players the rounds are classic.
+  const roundStyle = input.roundStyle === 'hotseats' && game.players.length >= 3 ? 'hotseats' : 'classic';
   const npcRole = input.npcRole ?? 'mixed';
   if (!NPC_ROLES.includes(npcRole)) fail('Pick what the GM characters do.');
   const culprits = [undefined, null, '', 'gm'].includes(input.culprits) ? 'gm' : Number(input.culprits);
   if (culprits !== 'gm' && ![1, 2].includes(culprits)) fail('Pick 1 or 2 culprits, or let the GM decide.');
-  if (culprits === 2 && game.players.length < 6) fail('Two culprits need 6 players or more.');
+  const culpritWho = [undefined, null, ''].includes(input.culpritWho) ? 'gm' : input.culpritWho;
+  if (!CULPRIT_WHO.includes(culpritWho)) fail('Pick who did it: one of you, a GM character, or let the GM decide.');
+  const culpritKnows = [undefined, null, ''].includes(input.culpritKnows) ? 'gm' : input.culpritKnows;
+  if (!CULPRIT_KNOWS.includes(culpritKnows)) fail('Pick whether the culprit knows: from the start, later, or let the GM decide.');
+  if (culpritWho === 'npc' && npcs < 1) fail('A GM character culprit needs at least 1 GM character.');
+  if (culpritWho === 'npc' && npcRole === 'background') fail('A GM character culprit needs GM characters who matter to the case, not background only.');
+  if (culprits === 2 && culpritWho === 'npc' && npcs < 2) fail('Two GM character culprits need 2 GM characters or more.');
+  if (culprits === 2 && culpritWho !== 'npc' && game.players.length < 6) fail('Two culprits need 6 players or more.');
   game.setup = {
     setting: String(input.setting ?? '').trim().slice(0, 200),
     tone,
@@ -129,6 +140,8 @@ export function applySetup(game, input = {}) {
     npcs,
     npcRole,
     culprits,
+    culpritWho,
+    culpritKnows,
     replays,
     roundStyle,
     difficulty: difficultyOf(input.difficulty),
@@ -157,9 +170,10 @@ export function applyAudit(scenario, audit) {
     const p = scenario.players.find((x) => x.id === entry?.player_id);
     if (!p) continue;
     const known = [p.public_info, p.private_info, p.starting_knowledge].join(' ').toLowerCase();
-    const moved = (p.hidden_facts ?? []).filter((h) => (entry.known_hidden_fact_ids ?? []).includes(h.id));
+    // A culprit who does not know it keeps their crime out of what they know: it stays hidden until found or told.
+    const moved = p.unaware ? [] : (p.hidden_facts ?? []).filter((h) => (entry.known_hidden_fact_ids ?? []).includes(h.id));
     p.hidden_facts = (p.hidden_facts ?? []).filter((h) => !moved.includes(h));
-    const adds = [...(entry.add ?? []), ...moved.map((h) => h.fact)]
+    const adds = [...(p.unaware ? [] : entry.add ?? []), ...moved.map((h) => h.fact)]
       .map((t) => String(t ?? '').trim())
       .filter((t, i, all) => t && all.indexOf(t) === i && !known.includes(t.toLowerCase()));
     if (adds.length) p.starting_knowledge = [String(p.starting_knowledge ?? '').trim(), ...adds].filter(Boolean).join(' ');
@@ -323,7 +337,7 @@ export function alibiTable(scenario) {
 }
 export const NPC_ROLES = ['mixed', 'background'];
 
-export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole = 'mixed', culprits, exact = false }) {
+export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole = 'mixed', culprits, exact = false, unaware = [] }) {
   const errors = [];
   if (!s || typeof s !== 'object') return ['Scenario is not an object.'];
   const ids = (list) => (Array.isArray(list) ? list.map((x) => x?.id) : []);
@@ -362,11 +376,18 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
 
   const named = s.truth?.culprit_ids ?? [];
   if (!named.length) errors.push('truth.culprit_ids is empty.');
-  if (culprits && [...named].filter((id) => got.includes(id)).sort().join() !== [...culprits].sort().join()) {
-    errors.push(`The culprits among the players must be exactly ${culprits.join(' and ')}.`);
+  const plannedNpcs = (culprits ?? []).filter((id) => !got.includes(id));
+  const plannedPlayers = (culprits ?? []).filter((id) => got.includes(id));
+  if (culprits && plannedNpcs.length && !plannedPlayers.length) {
+    if (named.some((id) => got.includes(id)) || plannedNpcs.some((id) => !named.includes(id))) errors.push(`The culprits must be exactly the GM character ${plannedNpcs.join(' and ')}; no player character is a culprit.`);
+  } else if (culprits && [...named].filter((id) => got.includes(id)).sort().join() !== [...plannedPlayers].sort().join()) {
+    errors.push(`The culprits among the players must be exactly ${plannedPlayers.join(' and ')}.`);
+  }
+  for (const id of unaware) {
+    if (!String(players.find((p) => p.id === id)?.guilt_reveal ?? '').trim()) errors.push(`${id} needs a guilt_reveal: the moment what they did comes back to them.`);
   }
   // The host fixed the count: a GM character added as a culprit would change what the final vote asks for.
-  if (exact && culprits && named.length !== culprits.length) errors.push(`Exactly ${culprits.length} culprit${culprits.length === 1 ? '' : 's'}: ${culprits.join(' and ')}. GM characters are never culprits in this game.`);
+  if (exact && culprits && named.length !== culprits.length) errors.push(`Exactly ${culprits.length} culprit${culprits.length === 1 ? '' : 's'}: ${culprits.join(' and ')}. Nobody else is a culprit in this game.`);
   for (const id of named) {
     const npc = (s.npcs ?? []).find((n) => n.id === id);
     if (npc && (isMinor(npc) || npcRole === 'background')) errors.push(`${id} is a background GM character and cannot be a culprit.`);
@@ -374,7 +395,7 @@ export function validateScenario(s, { playerCount, phases, hints, npcs, npcRole 
   const known = new Set([...got, ...npcIds]);
   for (const id of named) if (!known.has(id)) errors.push(`Culprit ${id} is not a character.`);
   const playerCulprits = players.filter((p) => p.side === 'culprit').map((p) => p.id);
-  if (!playerCulprits.length) errors.push('At least one player character must be a culprit.');
+  if (!playerCulprits.length && !(plannedNpcs.length && !plannedPlayers.length)) errors.push('At least one player character must be a culprit.');
   for (const id of playerCulprits) {
     if (!named.includes(id)) errors.push(`${id} has side culprit but is not in truth.culprit_ids.`);
   }
@@ -721,6 +742,7 @@ export const MEETING_MS = 3 * 60_000;
 // Any player can call one meeting a game: everyone talks it out over the line, acts and moves wait, the round clock waits too.
 export function callMeeting(game, playerId, reason, now = Date.now()) {
   if (game.status !== 'playing') fail('Meetings only happen during a round.', 409);
+  if (game.players.length < 2) fail('Meetings need 2 players or more.', 409);
   const st = game.state;
   if (st.roundVote) fail('Not during a vote.', 409);
   if (st.transitioning) fail('Things are changing. Try again in a moment.', 409);
@@ -1271,6 +1293,25 @@ export function markGoalSteps(game, pid, steps) {
   for (const i of steps ?? []) if (Number.isInteger(i) && i >= 0 && i < total && !done.includes(i)) done.push(i);
 }
 
+// A culprit who does not know it stays an investigator in their own eyes until the game tells them.
+export function knowsGuilt(game, playerId) {
+  const card = game.scenario?.players.find((p) => p.id === playerId);
+  return card?.side === 'culprit' && (!card.unaware || Boolean(game.state?.awakened?.[playerId]));
+}
+
+function awaken(game, now) {
+  const st = game.state;
+  const at = Number(game.scenario.awaken_round);
+  if (!at) return;
+  for (const card of game.scenario.players) {
+    if (card.side !== 'culprit' || !card.unaware || st.awakened?.[card.id]) continue;
+    if (st.phaseIndex + 1 < at && !isLastPhase(game)) continue;
+    (st.awakened ??= {})[card.id] = roundNumber(game);
+    for (const h of card.hidden_facts ?? []) if (!st.revealed[card.id].includes(h.id)) st.revealed[card.id].push(h.id);
+    whisper(game, [{ player_id: card.id, text: `${String(card.guilt_reveal ?? '').trim()} You are one of the culprits now. Do not get named at the final vote.`.trim() }], now);
+  }
+}
+
 export function isLastPhase(game) {
   return game.state.phaseIndex >= game.scenario.phases.length - 1;
 }
@@ -1341,7 +1382,7 @@ export function paceStory(game, now = Date.now()) {
   const next = st.phaseIndex + 1;
   if (next === sc.phases.length - 1 && (missed || (share !== null && share < 0.5) || unsolvable)) {
     if (!addRound(game, { name: 'One More Round', planned_beat: 'The room needs more time: bring what they are missing into reach.' }, now)) return 'on';
-    sc.phases[next].vote_kind = 'spotlight';
+    if (game.players.length >= 3) sc.phases[next].vote_kind = 'spotlight';
     return 'more';
   }
   if (!st.closedSooner && !unsolvable && sc.phases.length >= 4 && next < sc.phases.length - 1 && next + 1 >= 3 && opened.length >= 3 && share >= 0.9) {
@@ -1471,6 +1512,7 @@ export function completePhase(game, result, now = Date.now()) {
   // A step the round change just completed is not stuck.
   const stuck = stuckBefore.filter((g) => !(st.goalSteps?.[g.player_id] ?? []).length);
   nudgeStuckGoals(game, stuck, result.messages_to_players, now);
+  awaken(game, now);
   applyChecks(game, result.checks, now);
   if (isLastPhase(game)) surfaceGaps(game, now);
 }
@@ -1596,7 +1638,9 @@ export function computeVerdict(game) {
     const named = [...(subs[p.id]?.culprit_ids ?? [])].sort();
     return named.length === truth.length && named.every((id, i) => id === truth[i]);
   });
-  const majority = correct.length > game.players.length / 2;
+  // In a game of 1 or 2, a culprit who knows would cancel the only detective's vote: only the others decide.
+  const voters = game.players.length < 3 ? game.players.filter((p) => !knowsGuilt(game, p.id)) : game.players;
+  const majority = correct.filter((p) => voters.includes(p)).length > voters.length / 2;
   const tally = {};
   for (const s of Object.values(subs)) for (const id of s.culprit_ids) tally[id] = (tally[id] ?? 0) + 1;
   return {
@@ -1888,7 +1932,7 @@ export function answerMoment(game, playerId, momentId, choice, now = Date.now(),
       if (read) m.readInstead = read;
       addEvent(game, `${name}, in their own words: "${own}"`, 'said', now, read ? { by: name, read } : {});
       if (read) {
-        const culprit = game.scenario.players.find((c) => c.id === playerId)?.side === 'culprit';
+        const culprit = knowsGuilt(game, playerId);
         recordPlay(game, playerId, read.sways_gm ? null : { points: 1, skill: culprit ? 'bluffing' : 'persuading', why: 'Said it in their own words, in character.' }, read, 'out loud');
       }
       addFacts(game, [{ person: playerId, fact: `Said out loud: "${own}"` }], 'said', now);
@@ -1939,7 +1983,8 @@ export function roundQuestion(game, index) {
     return { kind: 'choice', question: String(ph.choice_question), options: ph.choice_options.map(String), answer: -1, reward: '', rewardTime: '', rewardOrder: 0, nudge: '' };
   }
   if (game.setup?.roundStyle === 'hotseats' || ph?.vote_kind === 'spotlight') {
-    if (!ph) return null;
+    // Looking at one of 1 or 2 players tells nobody anything.
+    if (!ph || game.players.length < 3) return null;
     return { kind: 'spotlight', question: SPOTLIGHT_QUESTION, options: game.scenario.players.map((p) => p.character_name), answer: -1, reward: String(ph.reward ?? ''), rewardTime: String(ph.reward_time ?? ''), rewardOrder: Number(ph.reward_order) || 0, nudge: '' };
   }
   const options = (ph?.options ?? []).map((o) => String(o ?? '').trim()).filter(Boolean).slice(0, 4);
@@ -2044,7 +2089,7 @@ function rewardTurns(game, result) {
     if (!said.length) return;
     const before = prev?.counts?.[i] ?? 0;
     if (prev && (prev.top === card.id || before >= 2) && (result.counts[i] ?? 0) < before && result.top !== card.id) {
-      recordPlay(game, card.id, { points: 1, skill: card.side === 'culprit' ? 'bluffing' : 'persuading', why: 'Turned the room away from you.' }, null, 'out loud');
+      recordPlay(game, card.id, { points: 1, skill: knowsGuilt(game, card.id) ? 'bluffing' : 'persuading', why: 'Turned the room away from you.' }, null, 'out loud');
     }
     if (result.top && result.top !== card.id && said.some((t) => { const named = mentions(game, t); return named.length === 1 && named[0] === result.top; })) {
       recordPlay(game, card.id, { points: 1, skill: 'persuading', why: 'The room followed your lead.' }, null, 'out loud');
@@ -2075,7 +2120,7 @@ function resolveSpotlight(game, vote, q, picked, counts, now) {
   unlockCard(game, target.id, 'reasons');
   if (target.side !== 'culprit') {
     st.suspicion = clamp(st.suspicion - 10, 0, 100);
-    const culprits = game.scenario.players.filter((p) => p.side === 'culprit');
+    const culprits = game.scenario.players.filter((p) => knowsGuilt(game, p.id));
     whisper(game, culprits.map((c) => ({ player_id: c.id, text: `The room is looking at ${target.character_name}, not you.` })), now);
   }
   return result;
@@ -2522,6 +2567,7 @@ export function snapshotForGM(game) {
     where_we_are: st.recap ?? null,
     players_now: st.persona ?? {},
     quiet_players: quietPlayers(game),
+    awakened_players: Object.keys(st.awakened ?? {}),
     goals_stuck: game.status === 'playing' ? goalsStuck(game) : [],
     // Near the end only: early on the room is meant to search for itself.
     case_gaps: game.status === 'playing' && st.phaseIndex + 1 >= game.scenario.phases.length - 2 ? caseGaps(game).map((g) => ({ needs: g.needs, clue_ids: g.clues })) : [],
@@ -2823,6 +2869,7 @@ export function playerView(game, playerId, now = Date.now()) {
   const card = game.scenario.players.find((p) => p.id === playerId);
   const revealed = st.revealed[playerId];
   const locked = lockedSections(game, playerId);
+  const shownSide = card.side === 'culprit' && !knowsGuilt(game, playerId) ? 'investigator' : card.side;
   view.card = {
     name: card.character_name,
     role: card.role_title,
@@ -2831,9 +2878,9 @@ export function playerView(game, playerId, now = Date.now()) {
     private_info: card.private_info,
     goal: card.goal,
     goal_steps: (card.goal_steps ?? []).map((t, i) => ({ text: String(t), done: (st.goalSteps?.[playerId] ?? []).includes(i) })),
-    win: WIN[card.side] ?? '',
-    side: card.side,
-    side_explanation: card.side_explanation,
+    win: WIN[shownSide] ?? '',
+    side: shownSide,
+    side_explanation: card.unaware && st.awakened?.[playerId] ? String(card.guilt_reveal ?? card.side_explanation) : card.side_explanation,
     starting_knowledge: card.starting_knowledge,
     hook: card.hook ?? '',
     intro_line: card.intro_line ?? '',
@@ -2853,7 +2900,7 @@ export function playerView(game, playerId, now = Date.now()) {
   };
   view.rules = rulesLines({ rounds: game.scenario.phases.length, overrides: game.setup?.overrides ?? 0, hints: game.setup?.hints ?? 0 });
   view.thread = st.threads[playerId].map(({ read, ...m }) => m);
-  view.canCallMeeting = game.status === 'playing' && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
+  view.canCallMeeting = game.status === 'playing' && game.players.length >= 2 && !st.meeting && !st.roundVote && !st.meetingsUsed?.[playerId];
   view.pending = st.pending[playerId] ? { kind: st.pending[playerId].kind, text: st.pending[playerId].text } : null;
   view.clues = st.found[playerId].map((id) => {
     const c = game.scenario.clues.find((x) => x.id === id);
