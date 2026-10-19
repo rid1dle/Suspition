@@ -57,13 +57,16 @@ async function main() {
     { setting: 'a monsoon wedding in an old haveli', bots: PERSONAS.slice(0, 10) },
     { setting: 'a night train stuck in the snow', bots: PERSONAS.slice(10, 20) },
   ];
-  const results = await Promise.allSettled(games.map((g, i) => runPlaytest({
-    gm: makeGm(`game${i + 1}`), botCall, judgeCall, outDir: out, setting: g.setting, length: 'standard', actionsPerRound: 2, people: new MemoryPeople(),
+  // --only 2 runs just the second game (to rerun one that failed).
+  const only = Number(process.argv[process.argv.indexOf('--only') + 1]) || 0;
+  const chosen = games.map((g, i) => ({ ...g, i })).filter((g) => !only || g.i + 1 === only);
+  const results = await Promise.allSettled(chosen.map((g) => runPlaytest({
+    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, outDir: out, setting: g.setting, length: 'standard', actionsPerRound: 2, people: new MemoryPeople(),
     bots: g.bots.map((p) => ({ ...p, username: p.name.toLowerCase(), samples: [], about: [] })),
-    log: (l) => console.log(`[game ${i + 1}] ${l}`),
+    log: (l) => console.log(`[game ${g.i + 1}] ${l}`),
   })));
-  const summary = results.map((r, i) => (r.status === 'fulfilled' ? { game: i + 1, dir: r.value.dir, judge: r.value.report.judge, metrics: r.value.report.metrics } : { game: i + 1, error: String(r.reason?.message ?? r.reason) }));
-  await writeFile(join(out, 'summary.json'), `${JSON.stringify(summary, null, 1)}\n`);
+  const summary = results.map((r, k) => (r.status === 'fulfilled' ? { game: chosen[k].i + 1, dir: r.value.dir, judge: r.value.report.judge, metrics: r.value.report.metrics } : { game: chosen[k].i + 1, error: String(r.reason?.message ?? r.reason) }));
+  await writeFile(join(out, only ? `summary-${only}.json` : 'summary.json'), `${JSON.stringify(summary, null, 1)}\n`);
   console.log(`Done. Summary: ${join(out, 'summary.json')}`);
 }
 
