@@ -49,3 +49,9 @@ The first try failed: a ten-player world took more than the 15 minutes the write
 - **Claims repeated as facts:** the GM sometimes repeats a player's claim as fact. A list of confirmed vs only-claimed facts would help.
 - **Card facts leak:** a round's reward line can carry a fact from a private card. This is hard to check in code.
 - **Scoring:** the fair part of a move that also tried to sway the GM still scores as swaying.
+
+## After the playtest (2026-10-19, later)
+
+- **GM characters contradicting themselves:** fixed. Each GM character's own lines (to the room and privately) are kept and handed to both the private and the out-loud GM, with the rule never to contradict them and never to repeat a private line to the room.
+- **Round lines carrying a private card:** fixed. A reward, a round event or a "because" line that retells a sentence only a player's own card holds is dropped (a round event loses just that sentence), until the room has heard that fact in public.
+- **World writing time:** measured, not changed. A 10-player world spends about 9 of its 12 to 13 draft minutes thinking. Two 10-player worlds written with less thinking took 11 and 12.5 minutes in all instead of about 16, but both needed the story repair pass and kept more holes (5 and 2 left after the card check, against 1 and 1). Running the story check and the card check side by side would save about 2 minutes, but the card check would then write facts from a draft the story check is still changing. Both trade consistency for time, so neither was done. The table now tells the room the real wait for its size (about 11 minutes for 4 players, 16 for 10).
