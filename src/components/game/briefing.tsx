@@ -83,7 +83,7 @@ export function BriefPager({ view, me = null, at, onGo, swipe = false, tableStep
       </motion.div>
       {tableStep != null && tableStep !== at && (
         <button type="button" className="self-start text-sm text-primary underline underline-offset-4" onClick={() => onGo(tableStep)}>
-          The table is on card {tableStep + 1}. Go there
+          The big screen is on card {tableStep + 1}. Go there
         </button>
       )}
       <div role="group" aria-label="Briefing cards" className="flex flex-col gap-3">

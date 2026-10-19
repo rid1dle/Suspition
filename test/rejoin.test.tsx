@@ -37,7 +37,7 @@ describe('getting a dropped player back in', () => {
     const game = G.createGame();
     for (const name of ['A', 'B', 'C']) G.addPlayer(game, { name });
     G.applySetup(game, { tone: 'tense', length: 'short', hints: 2 });
-    assert.throws(() => G.addPlayer(game, { name: 'A' }), /already started\. If you were playing, ask the table for your rejoin code: Rejoin a player\./);
+    assert.throws(() => G.addPlayer(game, { name: 'A' }), /already started\. If you were playing, ask the host for your rejoin code: Rejoin a player, on the big screen\./);
   });
 
   test("should show the players' names and the chosen player's code", () => {

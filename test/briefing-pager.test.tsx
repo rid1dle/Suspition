@@ -37,7 +37,7 @@ describe('briefing pager', () => {
   });
 
   test('should offer a way back to the table card when the reader is elsewhere', () => {
-    assert.match(text(<BriefPager view={view(1)} at={2} onGo={noop} tableStep={1} />), /The table is on card 2/);
+    assert.match(text(<BriefPager view={view(1)} at={2} onGo={noop} tableStep={1} />), /The big screen is on card 2/);
     assert.ok(!text(<BriefPager view={view(1)} at={1} onGo={noop} tableStep={1} />).includes('The table is on'), 'no note when on the same card');
   });
 });

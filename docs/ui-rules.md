@@ -67,6 +67,7 @@ What was rejected and what was accepted, one line each. Add new verdicts the sam
 **Words**
 - Plain labels, one reading per action ("Show everyone", "Tap again to end it").
 - Never assume a murder: "the culprit", "the case", not "the killer".
+- Players never see our internal word "table": the shared screen is "the big screen" ("The table is on card 1" read as a table of data).
 - No em dashes anywhere, in UI or GM text.
 
 **Carried over from the creator's platform rules** (they hold here too)
