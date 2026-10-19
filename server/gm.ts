@@ -3,8 +3,9 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, mapArtPrompt } from './prompts.ts';
+import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
 import { theoryPrompt } from './theory.ts';
+import { bendPrompt } from './bend.ts';
 import { continuityPrompt } from './continuity.ts';
 import { storyIssues, issueCounts, applyStoryPatches } from './story.ts';
 import { validateScenario, resolveStoryIds, placeOf, currentPlace, walkBetween, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore, speakerFinds } from './game.ts';
@@ -311,6 +312,16 @@ export class GM {
   }
 
   // Fold the room's wrong answer into the story, or lead them back (server/theory.ts holds the line).
+  // Before answering a find the player narrates: may the world bend so it is true?
+  bend(game, playerId, read) {
+    return this.call('bend', {
+      system: playSystem(game.scenario, game.players.length),
+      prompt: bendPrompt(game, playerId, read),
+      schema: BEND_SCHEMA,
+      model: this.playModel,
+    });
+  }
+
   theory(game) {
     return this.call('theory', {
       system: playSystem(game.scenario, game.players.length),

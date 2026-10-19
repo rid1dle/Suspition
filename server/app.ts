@@ -10,6 +10,7 @@ import { resolveStyle, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 import { roundPicturePrompt } from './prompts.ts';
 import { applyContinuity, continuityState, CHECK_AFTER_ANSWERS } from './continuity.ts';
 import { pendingTheory, applyTheory } from './theory.ts';
+import { applyBend } from './bend.ts';
 
 const { GameError } = G;
 export const RETRY_MS = 60_000;
@@ -604,6 +605,15 @@ export class App {
         game.state.threads[p.id].push({ from: 'system', text: 'You stayed where you are. The GM answers you here.', at: this.clock() });
       }
       if (this.game !== game || !game.state.pending[p.id]) return;
+      if (read?.finds?.length && !read.sways_gm && typeof this.gm.bend === 'function') {
+        try {
+          const verdict = await this.gm.bend(game, p.id, read);
+          if (this.game !== game || !game.state.pending[p.id]) return;
+          applyBend(game, p.id, read, verdict, this.clock());
+        } catch (err) {
+          this.log(`bend ${p.id} failed: ${err.message}`);
+        }
+      }
       const settled = G.settleAct(game, p.id, read);
       try {
         const result = await this.gm.answer(game, p.id, { ...ask, read, talk: !settled.spent, held: settled.held ?? null });

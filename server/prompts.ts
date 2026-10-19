@@ -235,6 +235,28 @@ Never change who did it, how or why. Never change a fact a player has seen or be
 - canon_add: fold only. The new facts, plain and short, that later answers must agree with.
 - line: one story line, under 25 words, that everyone sees now. Fold: show their answer fitting ("The clerk nods. The side door was open at midnight."). Lead: something that makes them look again, never saying they are wrong and never giving the answer ("The Captain frowns at the plate. It does not match her log."). Never name a culprit.`;
 
+export const BEND_SCHEMA = obj({
+  known_facts: { type: 'array', items: obj({ fact: str, agrees: { type: 'boolean' } }) },
+  mode: { type: 'string', enum: ['bend', 'keep', 'no'] },
+  patches: { type: 'array', items: obj({ path: str, value: str }) },
+  canon_add: { type: 'array', items: obj({ fact: str, about: strArr, public: { type: 'boolean' } }) },
+  new_clue: obj({ name: str, shows: str }),
+  why: str,
+});
+
+export const BEND_RULES = `A player says what their character finds. They are writing the story with you: make it true whenever you can, so the game feels like theirs. Decide before anyone answers them.
+
+- keep: it already fits something planned (a clue where they stand, open now or next round). Change nothing; the answer will hand it over.
+- bend: make it true by changing only HIDDEN things: what a GM character knows, hides or lies about, and their reasons (a GM character's unrevealed motive may change a lot, if it makes the game more interesting); clues nobody has found; steps of the true night nobody has heard of; who is suspected and why (suspects, red_herrings, as whole JSON lists). When the find is a new thing, put it in new_clue (name 2 to 4 words, shows one plain sentence of what they see): it lies where they stand. Leave new_clue's name and shows empty when there is none.
+- no: only when it would contradict something KNOWN, or would need a change you cannot make cleanly. The answer then shows them what they really find.
+Never change anything a player has seen, heard or been told, a found clue, or a player's card. A sentence a GM character has already said stays in their sheet word for word.
+CULPRIT CAN CHANGE says if who did it, how and why may change. Only when it says yes, and only with no loose ends: every found clue, known fact and round answer must still fit, and the new truth must be solvable from fair clues. Then patch truth.culprit_ids (JSON list), truth.method, truth.motive, truth.summary and each affected players.N.side, side_explanation, guilt_reveal together. If you cannot make it whole, do not change it.
+Make the smallest change that makes the find true and the story more interesting. Never make a find that names who did it.
+- known_facts: the 2 to 5 KNOWN things your change touches, each with agrees: true when it stays true. If any is false, the mode is no.
+- patches: {path, value}, value a string (JSON for lists): npcs.N.knows|secrets|lies|reveals_freely|reveals_under_pressure, clues.N.shows|where|reveal_round, truth.timeline.N.time|event|location_id, truth.whereabouts.N.time|location_id|doing, suspects, red_herrings, and the culprit fields above only when allowed.
+- canon_add: the new facts, plain and short, that later answers must agree with (public false unless everyone saw it).
+- why: one plain line on what you decided.`;
+
 export const SCORE_SCHEMA = obj({
   reveal_story: str,
   players: {

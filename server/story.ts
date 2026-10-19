@@ -192,7 +192,7 @@ const STORY_PATHS = [
   /^suspects$/,
   /^red_herrings$/,
 ];
-const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings']);
+const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings', 'truth.culprit_ids']);
 const INTEGER_KEYS = new Set(['reveal_round', 'answer_index']);
 
 function patchValue(path, key, value) {

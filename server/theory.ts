@@ -13,7 +13,7 @@ const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 export const pendingTheory = (game) => (game.state?.roundResults ?? []).find((r) => r.theory === 'open') ?? null;
 
 // Everything any player has seen, heard or been told: the public feed, the timeline, found clues, every card and every private thread.
-function knownTexts(game) {
+export function knownTexts(game) {
   const sc = game.scenario;
   const st = game.state;
   const found = new Set([...Object.values(st.found ?? {}).flat(), ...(st.shared ?? []).map((x) => x.clueId)]);
@@ -31,7 +31,7 @@ function knownTexts(game) {
 }
 
 // A step of the true night may change only while nobody has heard of it.
-function hiddenTruth(game, path, known) {
+export function hiddenTruth(game, path, known) {
   const m = /^truth\.(timeline|whereabouts)\.(\d+)\.(time|event|location_id|doing)$/.exec(path);
   if (!m) return false;
   const entry = game.scenario.truth?.[m[1]]?.[Number(m[2])];
@@ -40,7 +40,7 @@ function hiddenTruth(game, path, known) {
   return !known.some((k) => retells(k, text));
 }
 
-const broken = (game) => {
+export const broken = (game) => {
   const sc = game.scenario;
   return validateScenario(sc, { playerCount: game.players.length, phases: sc.phases.length, hints: 0 }).length + clueWhereErrors(sc).length
     + storyIssues(sc, { players: game.players, difficulty: game.setup?.difficulty }).length;
