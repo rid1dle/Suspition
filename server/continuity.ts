@@ -65,7 +65,13 @@ function patchPlan(game, patches, now) {
     },
   };
   const apply = (p) => {
-    if (String(p?.path ?? '').trim() !== 'clues.+') return applyPatches(game.scenario, [p], (path) => futurePath(game, path));
+    const path = String(p?.path ?? '').trim();
+    // A clue opens in a round still to come, and never after the last one.
+    if (/^clues\.\d+\.reveal_round$/.test(path)) {
+      const r = Number(p?.value);
+      if (!Number.isInteger(r) || r <= game.state.phaseIndex + 1 || r > game.scenario.phases.length) return { applied: 0, skipped: [`${path}: not a round still to come`] };
+    }
+    if (path !== 'clues.+') return applyPatches(game.scenario, [p], (path) => futurePath(game, path));
     try {
       addBackupClue(game, p.value, now);
       return { applied: 1, skipped: [] };
@@ -86,9 +92,12 @@ function addCanon(game, items, now) {
     st.canon.push({ fact, about: (item.about ?? []).filter((id) => ids.has(id)), public: item.public === true, round: roundNumber(game), at: now });
     added += 1;
   }
+  // Over the cap, the two shortest neighbours merge, so no single line grows without end.
   while (st.canon.length > CANON_MAX) {
-    const [a, b] = st.canon.splice(0, 2);
-    st.canon.unshift({ fact: `${a.fact} ${b.fact}`, about: [...new Set([...a.about, ...b.about])], public: a.public && b.public, round: a.round, at: a.at });
+    let at = 0;
+    for (let i = 1; i < st.canon.length - 1; i += 1) if (st.canon[i].fact.length + st.canon[i + 1].fact.length < st.canon[at].fact.length + st.canon[at + 1].fact.length) at = i;
+    const [a, b] = st.canon.splice(at, 2);
+    st.canon.splice(at, 0, { fact: `${a.fact} ${b.fact}`.slice(-600), about: [...new Set([...a.about, ...b.about])], public: a.public && b.public, round: a.round, at: a.at });
   }
   return added;
 }
@@ -144,6 +153,8 @@ export function continuityPrompt(game) {
   const found = foundClues(game);
   const plan = {
     round_now: roundNumber(game),
+    // reveal_round counts planned rounds; a replayed round does not move it.
+    reveal_round_now: st.phaseIndex + 1,
     rounds_in_all: totalRounds(game),
     rounds_you_may_add: game.status === 'playing' ? Math.max(0, roundCap(game) - totalRounds(game)) : 0,
     rounds_to_come: sc.phases.map((ph, index) => ({ index, ...ph })).filter((ph) => ph.index > st.phaseIndex),

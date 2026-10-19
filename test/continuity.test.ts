@@ -76,12 +76,12 @@ describe('continuity during play', () => {
     }
   });
 
-  test('should keep canon to 60 facts, merging the oldest', () => {
+  test('should keep canon to 60 facts, merging short neighbours and losing none', () => {
     const game = playing();
     applyContinuity(game, { ...empty, canon_add: Array.from({ length: 62 }, (_, i) => ({ fact: `Fact ${i}.`, about: [], public: true })) }, 2_000);
     assert.equal(CANON_MAX, 60);
     assert.equal(game.state.canon.length, 60);
-    assert.match(game.state.canon[0].fact, /^Fact 0\. Fact 1\. Fact 2\.$/);
+    assert.equal(game.state.canon.map((c) => c.fact).join(' '), Array.from({ length: 62 }, (_, i) => `Fact ${i}.`).join(' '));
     assert.equal(game.state.canon.at(-1).fact, 'Fact 61.');
   });
 
