@@ -1,0 +1,686 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-19T11:44:07+00:00",
+  "title": "Design System: Suspition",
+  "extensions": {
+    "colorMeta": {
+      "lamplight-amber": {
+        "role": "primary",
+        "displayName": "Lamplight Amber",
+        "canonical": "oklch(76.9% 0.116 73.7)",
+        "tonalRamp": [
+          "#130900",
+          "#332003",
+          "#56390b",
+          "#7e5408",
+          "#a9741f",
+          "#d0994a",
+          "#f8bf71",
+          "#feebd4"
+        ],
+        "roomRole": "accent",
+        "overriddenByRoom": true
+      },
+      "burnt-ink": {
+        "role": "primary",
+        "displayName": "Burnt Ink",
+        "canonical": "oklch(19.6% 0.025 80.3)",
+        "tonalRamp": [
+          "#110a02",
+          "#2a2316",
+          "#473f31",
+          "#655c4e",
+          "#887f70",
+          "#ada394",
+          "#d3c9b9",
+          "#f7eddd"
+        ],
+        "roomRole": "accentText",
+        "overriddenByRoom": true
+      },
+      "ember-warning": {
+        "role": "secondary",
+        "displayName": "Ember Warning",
+        "canonical": "oklch(67.3% 0.143 33.0)",
+        "tonalRamp": [
+          "#1d0200",
+          "#450c03",
+          "#721d0c",
+          "#9e3521",
+          "#c75a44",
+          "#f08068",
+          "#feb6a6",
+          "#fee9e4"
+        ],
+        "roomRole": "danger",
+        "overriddenByRoom": true
+      },
+      "right-green": {
+        "role": "tertiary",
+        "displayName": "Right Green",
+        "canonical": "oklch(76.5% 0.151 163.1)",
+        "tonalRamp": [
+          "#010f08",
+          "#082b1d",
+          "#024c34",
+          "#1b6e4e",
+          "#07976a",
+          "#1ac189",
+          "#57e9ae",
+          "#c6fde2"
+        ],
+        "overriddenByRoom": false
+      },
+      "hidden-violet": {
+        "role": "tertiary",
+        "displayName": "Hidden Violet",
+        "canonical": "oklch(70.3% 0.155 293.5)",
+        "tonalRamp": [
+          "#0f0029",
+          "#2b075c",
+          "#472488",
+          "#6446ab",
+          "#866ad3",
+          "#aa8ffc",
+          "#ccc1fb",
+          "#efecff"
+        ],
+        "overriddenByRoom": false
+      },
+      "whisper-violet": {
+        "role": "tertiary",
+        "displayName": "Whisper Violet",
+        "canonical": "oklch(60.6% 0.213 292.9)",
+        "tonalRamp": [
+          "#0f0129",
+          "#2a095b",
+          "#491894",
+          "#6833c7",
+          "#895cf1",
+          "#a990fb",
+          "#ccc1fb",
+          "#efecff"
+        ],
+        "overriddenByRoom": false
+      },
+      "public-sky": {
+        "role": "tertiary",
+        "displayName": "Public Sky",
+        "canonical": "oklch(74.5% 0.136 232.9)",
+        "tonalRamp": [
+          "#010d15",
+          "#022839",
+          "#0a465f",
+          "#02668c",
+          "#1d8bba",
+          "#2eb2eb",
+          "#92d5f9",
+          "#def2fe"
+        ],
+        "overriddenByRoom": false
+      },
+      "tension-ember": {
+        "role": "tertiary",
+        "displayName": "Tension Ember",
+        "canonical": "oklch(64.4% 0.169 37.1)",
+        "tonalRamp": [
+          "#1a0401",
+          "#411306",
+          "#721f02",
+          "#9e3716",
+          "#d1522b",
+          "#fb7852",
+          "#feb7a2",
+          "#fee9e3"
+        ],
+        "overriddenByRoom": false
+      },
+      "night-room": {
+        "role": "neutral",
+        "displayName": "Night Room",
+        "canonical": "oklch(18.7% 0.010 303.5)",
+        "tonalRamp": [
+          "#0c0a0f",
+          "#252328",
+          "#413e44",
+          "#5f5c63",
+          "#817f85",
+          "#a6a3aa",
+          "#ccc9d0",
+          "#f0edf4"
+        ],
+        "roomRole": "bg",
+        "overriddenByRoom": true
+      },
+      "smoke-card": {
+        "role": "neutral",
+        "displayName": "Smoke Card",
+        "canonical": "oklch(22.4% 0.014 304.7)",
+        "tonalRamp": [
+          "#0c0a10",
+          "#25222a",
+          "#413e46",
+          "#5f5c64",
+          "#827e87",
+          "#a6a2ac",
+          "#ccc8d2",
+          "#f0ecf6"
+        ],
+        "roomRole": "surface",
+        "overriddenByRoom": true
+      },
+      "raised-smoke": {
+        "role": "neutral",
+        "displayName": "Raised Smoke",
+        "canonical": "oklch(26.0% 0.018 305.3)",
+        "tonalRamp": [
+          "#0d0911",
+          "#26222b",
+          "#423e47",
+          "#605b66",
+          "#837e89",
+          "#a7a2ae",
+          "#cdc8d4",
+          "#f1ecf8"
+        ],
+        "roomRole": "surfaceAlt",
+        "overriddenByRoom": true
+      },
+      "candle-paper": {
+        "role": "neutral",
+        "displayName": "Candle Paper",
+        "canonical": "oklch(94.3% 0.013 75.4)",
+        "tonalRamp": [
+          "#0e0a06",
+          "#28231d",
+          "#443f39",
+          "#625d56",
+          "#857f78",
+          "#a9a49c",
+          "#cfcac2",
+          "#f3ede5"
+        ],
+        "roomRole": "text",
+        "overriddenByRoom": true
+      },
+      "ash-note": {
+        "role": "neutral",
+        "displayName": "Ash Note",
+        "canonical": "oklch(69.7% 0.017 73.6)",
+        "tonalRamp": [
+          "#100a04",
+          "#29231b",
+          "#453f36",
+          "#645c53",
+          "#877f75",
+          "#aba399",
+          "#d1c9bf",
+          "#f6ede2"
+        ],
+        "roomRole": "muted",
+        "overriddenByRoom": true
+      },
+      "qr-white": {
+        "role": "neutral",
+        "displayName": "QR White",
+        "canonical": "oklch(100.0% 0.000 0.0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ],
+        "overriddenByRoom": false
+      },
+      "shell-black": {
+        "role": "neutral",
+        "displayName": "Shell Black",
+        "canonical": "oklch(14.5% 0.000 0.0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ],
+        "overriddenByRoom": false
+      },
+      "shell-card": {
+        "role": "neutral",
+        "displayName": "Shell Card",
+        "canonical": "oklch(20.5% 0.000 0.0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ],
+        "overriddenByRoom": false
+      },
+      "shell-text": {
+        "role": "neutral",
+        "displayName": "Shell Text",
+        "canonical": "oklch(98.5% 0.000 0.0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ],
+        "overriddenByRoom": false
+      },
+      "shell-muted": {
+        "role": "neutral",
+        "displayName": "Shell Muted",
+        "canonical": "oklch(70.9% 0.000 0.0)",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ],
+        "overriddenByRoom": false
+      }
+    },
+    "typographyMeta": {
+      "display-hero": {
+        "displayName": "Display Hero",
+        "purpose": "The full-screen round title on the table. World display face."
+      },
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page titles on the table and phones. World display face, big titles only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section titles, sheet titles, briefing step titles. World heading face."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "The case question, this round's job, the quick question. World heading face."
+      },
+      "body-reading": {
+        "displayName": "Body Reading",
+        "purpose": "Read-aloud text on the table; moment and whisper lines on phones."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Phone default for chat, cards and answers. Always Inter."
+      },
+      "body-small": {
+        "displayName": "Body Small",
+        "purpose": "The most used size: feed rows, alibis, details, chips."
+      },
+      "action": {
+        "displayName": "Action",
+        "purpose": "Button and toggle text."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase small caps line above every panel."
+      },
+      "timer": {
+        "displayName": "Timer",
+        "purpose": "Countdowns and times, monospace with tabular figures."
+      }
+    },
+    "shadows": [
+      {
+        "name": "float",
+        "value": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
+        "purpose": "Banners that interrupt, the rejoin panel, the character card faces."
+      },
+      {
+        "name": "notice",
+        "value": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+        "purpose": "The sticky phone call banner and the reminder card."
+      },
+      {
+        "name": "lift",
+        "value": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+        "purpose": "The selected half of the room/private switch and the pinned vote tray."
+      },
+      {
+        "name": "drag",
+        "value": "0 6px 20px rgb(0 0 0 / 0.5)",
+        "purpose": "A map place while the host drags it."
+      },
+      {
+        "name": "here-ring",
+        "value": "0 0 0 2px color-mix(in oklab, var(--primary) 35%, transparent)",
+        "purpose": "The map place you are in."
+      },
+      {
+        "name": "story-beat",
+        "value": "inset 0 0 140px 24px color-mix(in oklab, var(--primary) 35%, transparent)",
+        "purpose": "The one-time edge glow on a story turn."
+      },
+      {
+        "name": "suspicion-glow",
+        "value": "0 0 12px var(--destructive)",
+        "purpose": "The suspicion meter once it passes 50."
+      }
+    ],
+    "motion": [
+      {
+        "name": "card-flip",
+        "value": "0.6s cubic-bezier(0.2, 0.7, 0.2, 1)",
+        "purpose": "The character card turning over."
+      },
+      {
+        "name": "entrance",
+        "value": "0.25s to 0.35s, fade and rise 6px to 24px",
+        "purpose": "Panels, chat lines, briefing steps arriving."
+      },
+      {
+        "name": "press",
+        "value": "scale 0.95 to 0.97",
+        "purpose": "Chips, vote options and name buttons on tap."
+      },
+      {
+        "name": "story-beat",
+        "value": "2.5s ease-out, once",
+        "purpose": "Edge glow on a story turn."
+      },
+      {
+        "name": "tension",
+        "value": "3s ease on opacity",
+        "purpose": "Vignette and warm tint following the story tension."
+      },
+      {
+        "name": "shimmer",
+        "value": "2.2s linear infinite",
+        "purpose": "The GM is thinking line."
+      },
+      {
+        "name": "ambient",
+        "value": "0.7s to 55s linear or ease-in-out loops, up to 1.5x with tension",
+        "purpose": "Rain, snow, embers, fog and the other world effects."
+      },
+      {
+        "name": "reveal",
+        "value": "gsap back.out(1.6) verdict, then cards rotateY with 0.35s stagger",
+        "purpose": "The staged answer on the table."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "40rem"
+      },
+      {
+        "name": "lg",
+        "value": "64rem"
+      },
+      {
+        "name": "xl",
+        "value": "80rem"
+      },
+      {
+        "name": "container-2xl",
+        "value": "42rem",
+        "purpose": "Alibis switch from per-time blocks to the full grid."
+      }
+    ],
+    "room": {
+      "source": "server/room.ts ROOM_SCHEMA; src/components/world/room.tsx roomStyle",
+      "options": {
+        "font_pair": [
+          "noir-serif",
+          "royal-deco",
+          "cozy-rounded",
+          "old-typewriter",
+          "neon-grotesk",
+          "gothic-ink",
+          "storybook",
+          "modern-clean",
+          "tropical-script",
+          "vintage-press",
+          "handwritten-note",
+          "poster-bold",
+          "terminal",
+          "marquee"
+        ],
+        "texture": [
+          "paper",
+          "velvet",
+          "rain-glass",
+          "film-grain",
+          "stone",
+          "none"
+        ],
+        "ambient": [
+          "rain",
+          "fog",
+          "embers",
+          "fireflies",
+          "dust",
+          "snow",
+          "lantern",
+          "petals",
+          "sparks",
+          "leaves",
+          "sand",
+          "stars",
+          "bubbles",
+          "none"
+        ],
+        "intensity": [
+          "low",
+          "medium"
+        ]
+      },
+      "house": {
+        "fontPair": "noir-serif",
+        "texture": "film-grain",
+        "ambient": "none",
+        "intensity": "low"
+      },
+      "paletteFromSeed": {
+        "bg": "oklch(0.17, tint*0.7, h)",
+        "surface": "oklch(0.215, tint*0.8, h)",
+        "surfaceAlt": "oklch(0.26, tint, h)",
+        "text": "oklch(0.95, 0.012, h)",
+        "muted": "oklch(0.76 + lift/2, 0.02, h)",
+        "accent": "oklch(0.78 + lift, clamp(c, 0.09, 0.17), h)",
+        "accentText": "oklch(0.2, 0.03, h)",
+        "danger": "oklch(0.72 + lift, 0.15, 30)",
+        "tint": "min(seed chroma, 0.04)",
+        "lifts": [
+          0,
+          0.04,
+          0.08
+        ],
+        "contrast": "4.5:1 on 7 pairs, else house palette"
+      },
+      "cssVariables": {
+        "--background": "bg",
+        "--foreground": "text",
+        "--card": "surface",
+        "--card-foreground": "text",
+        "--popover": "surfaceAlt",
+        "--muted": "surfaceAlt",
+        "--muted-foreground": "muted",
+        "--secondary": "surfaceAlt",
+        "--accent": "surfaceAlt",
+        "--primary": "accent",
+        "--primary-foreground": "accentText",
+        "--destructive": "danger",
+        "--border": "text 12%",
+        "--input": "text 16%",
+        "--ring": "accent"
+      }
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action in a prompt: Go, Send, Join, Start round 1.",
+      "html": "<button class=\"ds-btn-primary\">Send</button>",
+      "css": ".ds-btn-primary { font-family: Inter, system-ui, sans-serif; background: #e0a85a; color: #1b1408; height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 10px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.15s; } .ds-btn-primary:hover { background: color-mix(in oklab, #e0a85a 80%, transparent); } .ds-btn-primary:focus-visible { outline: none; border-color: #e0a85a; box-shadow: 0 0 0 3px color-mix(in oklab, #e0a85a 50%, transparent); } .ds-btn-primary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The quieter partner: Back, No, Show everyone, Go to a place.",
+      "html": "<button class=\"ds-btn-secondary\">Show everyone</button>",
+      "css": ".ds-btn-secondary { font-family: Inter, system-ui, sans-serif; background: #26222b; color: #f1ebe3; height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 10px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.15s; } .ds-btn-secondary:hover { background: color-mix(in oklch, #26222b, #f1ebe3 5%); } .ds-btn-secondary:focus-visible { outline: none; border-color: #e0a85a; box-shadow: 0 0 0 3px color-mix(in oklab, #e0a85a 50%, transparent); } .ds-btn-secondary:active { transform: translateY(1px); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Not now, Close, Say it my way, host tools. Danger text for End game.",
+      "html": "<button class=\"ds-btn-ghost\">Not now</button>",
+      "css": ".ds-btn-ghost { font-family: Inter, system-ui, sans-serif; background: transparent; color: #f1ebe3; height: 32px; padding: 0 10px; border: 1px solid transparent; border-radius: 10px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.15s; } .ds-btn-ghost:hover { background: color-mix(in oklab, #26222b 50%, transparent); } .ds-btn-ghost:focus-visible { outline: none; border-color: #e0a85a; box-shadow: 0 0 0 3px color-mix(in oklab, #e0a85a 50%, transparent); }"
+    },
+    {
+      "name": "Choice Pill",
+      "kind": "chip",
+      "refersTo": "choice-pill",
+      "description": "Setup choices and tips. Round pill; selected is solid amber.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-chip\">Cozy</button><button class=\"ds-chip\" aria-pressed=\"true\">Tense</button><button class=\"ds-chip\">Dark</button><button class=\"ds-chip\">Funny</button></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 4px; } .ds-chip { font-family: Inter, system-ui, sans-serif; background: color-mix(in oklab, #26222b 40%, transparent); color: #f1ebe3; border: 1px solid color-mix(in oklab, #f1ebe3 12%, transparent); border-radius: 9999px; padding: 4px 10px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.15s; } .ds-chip:hover { border-color: #e0a85a; } .ds-chip:active { transform: scale(0.95); } .ds-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, #e0a85a 50%, transparent); } .ds-chip[aria-pressed=true] { background: #e0a85a; color: #1b1408; border-color: #e0a85a; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Single-line field with a faint stroke; the accent marks focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Or say it your way\" />",
+      "css": ".ds-input { font-family: Inter, system-ui, sans-serif; width: 100%; height: 32px; padding: 4px 10px; border-radius: 10px; border: 1px solid color-mix(in oklab, #f1ebe3 16%, transparent); background: color-mix(in oklab, #f1ebe3 5%, transparent); color: #f1ebe3; font-size: 1rem; transition: border-color 0.15s, box-shadow 0.15s; } .ds-input::placeholder { color: #a49c92; } .ds-input:focus-visible { outline: none; border-color: #e0a85a; box-shadow: 0 0 0 3px color-mix(in oklab, #e0a85a 50%, transparent); }"
+    },
+    {
+      "name": "Panel with Case Box",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A solid reading panel: uppercase label, then the case question in a faint amber box.",
+      "html": "<section class=\"ds-panel\"><div class=\"ds-label\">This round, your job</div><div class=\"ds-title\">Find out who saw the gate open.</div><div class=\"ds-case\"><div class=\"ds-label\">The big question</div><div class=\"ds-title\">Who switched off the lights before the vows?</div></div></section>",
+      "css": ".ds-panel { font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 12px; background: #1d1a21; color: #f1ebe3; border-radius: 18px; padding: 20px; max-width: 28rem; } .ds-label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #a49c92; } .ds-title { font-family: 'Playfair Display', Georgia, serif; font-size: 1.25rem; line-height: 1.375; margin-top: 4px; } .ds-case { border: 1px solid color-mix(in oklab, #e0a85a 30%, transparent); background: color-mix(in oklab, #e0a85a 5%, transparent); border-radius: 14px; padding: 16px; }"
+    },
+    {
+      "name": "Vote Option",
+      "kind": "custom",
+      "refersTo": "vote-option",
+      "description": "One answer to the round question; your pick fills amber.",
+      "html": "<div class=\"ds-votes\"><button class=\"ds-vote\">The caterer</button><button class=\"ds-vote\" aria-pressed=\"true\">The bride's uncle</button></div>",
+      "css": ".ds-votes { display: grid; gap: 8px; max-width: 28rem; } .ds-vote { font-family: Inter, system-ui, sans-serif; text-align: left; border-radius: 14px; padding: 12px 16px; font-size: 1rem; border: 1px solid color-mix(in oklab, #f1ebe3 12%, transparent); background: color-mix(in oklab, #26222b 40%, transparent); color: #f1ebe3; cursor: pointer; transition: all 0.15s; } .ds-vote:hover { border-color: #e0a85a; } .ds-vote:active { transform: scale(0.97); } .ds-vote:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, #e0a85a 50%, transparent); } .ds-vote[aria-pressed=true] { background: #e0a85a; border-color: #e0a85a; color: #1b1408; }"
+    },
+    {
+      "name": "Line Tabs",
+      "kind": "nav",
+      "refersTo": "tab-trigger",
+      "description": "The table side panel and phone reading tabs: muted text, amber underline on the active tab.",
+      "html": "<nav class=\"ds-tabs\"><button class=\"ds-tab\" aria-selected=\"true\">Map</button><button class=\"ds-tab\">Timeline <span class=\"ds-new\">3</span></button><button class=\"ds-tab\">Alibis</button><button class=\"ds-tab\">Clues</button><button class=\"ds-tab\">People</button></nav>",
+      "css": ".ds-tabs { font-family: Inter, system-ui, sans-serif; display: flex; gap: 4px; border-bottom: 1px solid color-mix(in oklab, #f1ebe3 12%, transparent); } .ds-tab { position: relative; background: none; border: 0; padding: 8px 12px; font-size: 0.875rem; font-weight: 500; color: #a49c92; cursor: pointer; } .ds-tab:hover { color: #f1ebe3; } .ds-tab:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in oklab, #e0a85a 50%, transparent); border-radius: 6px; } .ds-tab[aria-selected=true] { color: #f1ebe3; } .ds-tab[aria-selected=true]::after { content: ''; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px; background: #e0a85a; } .ds-new { margin-left: 4px; color: #e0a85a; }"
+    },
+    {
+      "name": "Chat Bubbles",
+      "kind": "custom",
+      "refersTo": "chat-bubble",
+      "description": "The phone stream: your private line on amber 15%, the GM reply as a novel page on the card colour.",
+      "html": "<div class=\"ds-chat\"><div class=\"ds-bubble ds-me\"><div class=\"ds-label\">You · only the GM sees</div><p>I search the desk.</p></div><div class=\"ds-bubble\"><div class=\"ds-label\">GM · only you</div><p><i>The top drawer sticks, then gives.</i></p><p><b class=\"ds-speaker\">Lata</b>&ldquo;That drawer was locked an hour ago.&rdquo;</p></div></div>",
+      "css": ".ds-chat { font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 8px; max-width: 28rem; color: #f1ebe3; } .ds-bubble { display: flex; flex-direction: column; gap: 4px; max-width: 88%; border-radius: 18px; padding: 12px; background: #1d1a21; } .ds-bubble p { margin: 0; font-size: 1rem; line-height: 1.5; } .ds-me { align-self: flex-end; background: color-mix(in oklab, #e0a85a 15%, transparent); } .ds-label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: #a49c92; } .ds-speaker { font-family: 'Playfair Display', Georgia, serif; color: #e0a85a; margin-right: 6px; }"
+    },
+    {
+      "name": "Alert Banner",
+      "kind": "custom",
+      "refersTo": "alert-banner",
+      "description": "A moment that needs the room: the hot seat, with name and clock.",
+      "html": "<div class=\"ds-banner\"><div><div class=\"ds-kicker\">Hot seat</div><div class=\"ds-name\">Ramesh</div><div class=\"ds-sub\">Ask your questions out loud.</div></div><div class=\"ds-clock\">1:42</div></div>",
+      "css": ".ds-banner { font-family: Inter, system-ui, sans-serif; display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #e0a85a; color: #1b1408; border-radius: 18px; padding: 20px; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); } .ds-kicker { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.8; } .ds-name { font-family: 'Playfair Display', Georgia, serif; font-size: 1.875rem; } .ds-sub { font-size: 0.875rem; opacity: 0.9; } .ds-clock { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 3rem; font-variant-numeric: tabular-nums; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Lamplit Room",
+    "overview": "Suspition is played in a real living room at night: friends on sofas, a TV or laptop across the room, a phone in every hand. The design is a lamp in that room. It gives just enough warm light to read by, then gets out of the way so the talk can be the game. Before a story exists the room is the house look: a near-black plum dark with one lamplight amber. Once the GM writes a world, the GM picks a new seed colour, font pair, texture and ambient effect, and the whole room is relit in that world's mood. The layout, the type scale, the shapes and the reading surfaces never change. Only the light does.\n\nThe system has two registers, set by screen. The **phone** is product: one narrow column (28rem), solid surfaces, short lines, the chat as the spine and everything else one tap away in a bottom sheet. It is read in two-second glances. The **table screen** is the shared show: a wide two-column grid (up to 80rem), big display titles, a living background at the edges, and text sized to read from the sofa. Both are always dark (the root element carries the `dark` class), because the room is dim.\n\nThis system rejects what PRODUCT.md rejects: a SaaS dashboard of settings, stats and pills; a wall of text on a phone; a turn-based board app with greyed-out screens; cheap horror or neon gamer looks with blood-splatter fonts, RGB glow and skulls.\n\n**How the room overrides the tokens.** The colour tokens above are the house room (`src/lib/house-room.ts`). Every screen is wrapped in the world room component, which writes the room's eight colours into the CSS variables that the shadcn components read: background, card, popover, muted, secondary, accent, primary, destructive, plus a border at 12% text and an input stroke at 16% text. A world's palette is built in OKLCH from one seed hex (`server/room.ts`): background at 17% lightness, card at 21.5%, raised surface at 26%, all with at most 0.04 chroma of the seed hue; text at 95%; muted text at 76%; the accent at 78% lightness with chroma held between 0.09 and 0.17; text on the accent at 20%; danger always at hue 30. Every palette must pass 4.5:1 contrast on seven pairs: text on all three surfaces, muted text on the background and the card, text on the accent, and the accent on the background. If it fails after two small lifts, the house palette is used instead. A grey seed keeps the house amber. So the shapes, spacing and type in this file are fixed, and the colours are a contract: any world colour lands in the same role with the same contrast.",
+    "keyCharacteristics": [
+      "Dark, warm, low-chroma surfaces; one accent per world, used for \"this is yours\" and \"act now\".",
+      "Solid reading surfaces in one clean body font (Inter); character fonts on titles only.",
+      "Mood lives at the screen edges: texture, ambient effect, a vignette that deepens with tension, a single edge glow on a story turn.",
+      "Tonal layering, not shadows. Rings and fills mark state.",
+      "Phone: narrow, private, quick. Table: wide, public, big.",
+      "All motion respects reduce-motion; heavy table effects switch off on slow screens or in Calm mode."
+    ],
+    "rules": [
+      {
+        "name": "The One Lamp Rule",
+        "body": "A screen has one accent, the world's. It marks what is yours or what needs you now. If amber is on more than a fifth of a phone screen outside a banner, it has stopped meaning anything.",
+        "section": "colors"
+      },
+      {
+        "name": "The Same Role Rule",
+        "body": "Never pick a colour by its look. Pick its role (background, card, raised, text, muted, accent, on-accent, danger) and let the room fill it. A hard-coded hex will be wrong in the next world.",
+        "section": "colors"
+      },
+      {
+        "name": "The Contrast Contract Rule",
+        "body": "Every world palette passes 4.5:1 or falls back to the house palette. New colour pairs must be added to that check, not trusted.",
+        "section": "colors"
+      },
+      {
+        "name": "The Character At The Edges Rule",
+        "body": "The display face is for page and round titles only. The heading face is for section titles and the one-line case or job. Body text, buttons, chips, labels and inputs are always Inter. If a paragraph is set in Pirata One, it is broken.",
+        "section": "typography"
+      },
+      {
+        "name": "The Glance Rule",
+        "body": "A phone line is read in two seconds while someone is talking. Keep phone body at 1rem or above for anything the player must act on, and never set a paragraph wider than the 28rem column.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Reading Rule",
+        "body": "Reading surfaces never float. A panel is a solid card on the background, with no shadow. If a panel needs a shadow to stand out, the surface steps are wrong.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Edges Only Rule",
+        "body": "Every atmospheric layer (texture, ambient, vignette, tint, backdrop picture) is either very faint or masked out of the middle 34rem to 52rem of the screen. On screens under 40rem the ambient drops to 35% opacity. The reading column never changes with mood.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** take every colour from a role (background, card, raised, text, muted, accent, on-accent, danger) so the room can relight it. The house values are only the default.",
+      "**Do** keep reading text on solid surfaces (Night Room or Smoke Card) in Inter, and keep the world's character fonts to display and heading roles.",
+      "**Do** keep mood at the edges: texture, ambient, vignette and tint stay masked out of the central reading column, and the story beat glows the edges once, never the content.",
+      "**Do** use the 18px panel, 14px inner box, 10px control and full pill radii. Nothing else.",
+      "**Do** mark state with an amber ring or a 5% to 20% amber fill, not a shadow.",
+      "**Do** size the table for the sofa: titles at 3rem, read-aloud text at 1.125rem or more, clocks at 2.25rem or more.",
+      "**Do** make a culprit's phone look exactly like an innocent's: same sections, same colours, same lengths. No screen may reveal a side by its layout.",
+      "**Do** respect reduce-motion and the Calm switch on every new effect, and drop heavy table effects when the screen runs under 40 fps."
+    ],
+    "donts": [
+      "**Don't** build \"a SaaS dashboard: cards of settings, stats and pills everywhere; a tool, not a game.\" Show only what can change this game; fold rare choices into \"More options\".",
+      "**Don't** put \"a wall of text: long paragraphs on a phone during a loud room.\" One idea per line, one action per prompt.",
+      "**Don't** make \"a turn-based board app: waiting for your turn, greyed-out screens, nothing to do.\" A choice that cannot change anything is hidden, not shown disabled.",
+      "**Don't** use \"cheap horror or neon gamer: blood-splatter fonts, RGB glow, skulls, mystery-game clichés.\" The neon-grotesk and gothic-ink pairs are for titles in those worlds, never for body text.",
+      "**Don't** add new Tailwind palette hues (emerald, violet, sky, white) or raw hex in components. They ignore the room and skip the contrast check. Add a role instead.",
+      "**Don't** put text on the danger colour in pure white. Pair a danger fill with a defined on-danger role, as amber pairs with Burnt Ink.",
+      "**Don't** use glass blur on reading panels. Blur is for sticky bars and overlays only.",
+      "**Don't** hand-roll a new pill or panel style. Reuse the chip, panel and label patterns above, with their paddings.",
+      "**Don't** let any effect become louder than a place name or a line of text. If you notice the ambient while reading, it is too strong."
+    ]
+  }
+}
