@@ -150,3 +150,9 @@ describe('the map on screen', () => {
     assert.doesNotMatch(out, /Go there/);
   });
 });
+
+describe('the map on a phone', () => {
+  test('should draw a narrower plan for a tall screen, so it is not shrunk to fit', () => {
+    assert.ok(layoutMap(crowded, { aspect: 0.75 }).width < layoutMap(crowded, { aspect: 1.6 }).width);
+  });
+});

@@ -6,6 +6,8 @@ import { tripTime, tripShort, pathMetres } from './geography.ts';
 import { shortName } from './map.ts';
 
 export const CELL_W = 280;
+// A phone is narrow: its cells are too, and only the distances from your place are drawn.
+export const TALL_CELL_W = 205;
 export const CELL_H = 130;
 export const CARD_W = 172;
 export const BEND = 0.12;
@@ -46,6 +48,7 @@ const offset = (w) => (w.fx - Math.round(w.fx)) ** 2 + (w.fy - Math.round(w.fy))
 
 // view: a public or player view (map, cast). me: the player's own id on a phone.
 export function layoutMap(view, { me = null, before = null, aspect = 1.6 } = {}) {
+  const cellW = aspect < 1 ? TALL_CELL_W : CELL_W;
   const map = view?.map;
   if (!map?.places?.length) return null;
   const people = [
@@ -56,7 +59,7 @@ export function layoutMap(view, { me = null, before = null, aspect = 1.6 } = {})
   const here = me ? map.places.find((p) => p.name === view.here)?.id ?? map.positions?.[me] ?? null : null;
   const places = map.places.map((p) => {
     const cell = at[p.id];
-    const x = PAD + cell.c * CELL_W + CELL_W / 2;
+    const x = PAD + cell.c * cellW + cellW / 2;
     const y = PAD + cell.r * CELL_H + CELL_H / 2;
     const inside = people.filter((c) => map.positions?.[c.id] === p.id)
       .map((c) => ({ id: c.id, name: c.name, label: c.id === me ? 'You' : shortName(c.name), kind: c.kind, minor: Boolean(c.minor), me: c.id === me, moved: Boolean(before && before[c.id] && before[c.id] !== p.id) }))
@@ -103,7 +106,7 @@ export function layoutMap(view, { me = null, before = null, aspect = 1.6 } = {})
       taken.push(spot);
     } else p.label = '';
   }
-  return { width: PAD * 2 + cols * CELL_W, height: PAD * 2 + rows * CELL_H, places, paths, here, terrain: geo?.terrain ?? null, hasMinor: people.some((c) => c.minor) };
+  return { width: PAD * 2 + cols * cellW, height: PAD * 2 + rows * CELL_H, places, paths, here, terrain: geo?.terrain ?? null, hasMinor: people.some((c) => c.minor) };
 }
 
 // How long it takes to walk from one place to another along the paths, as words ("4 min walk"); null if no way.
