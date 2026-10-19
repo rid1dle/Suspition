@@ -514,12 +514,14 @@ export class App {
         let heard = words;
         if (await this.goFirst(game, p.id, words, 'out loud') === 'stay') heard = stayed(words);
         if (this.game !== game) return;
-        const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, heard, p.id);
-        if (this.game !== game) return;
-        const drops = game.state.rippleDrops?.length ?? 0;
-        G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, heard, ripple, refused);
-        this.logRippleDrop(game, drops);
-        this.countAnswer(game);
+        await this.withCharacters(G.charactersAsked(game, q, heard), async () => {
+          const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, heard, p.id);
+          if (this.game !== game) return;
+          const drops = game.state.rippleDrops?.length ?? 0;
+          G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, heard, ripple, refused);
+          this.logRippleDrop(game, drops);
+          this.countAnswer(game);
+        });
       } catch (err) {
         if (this.game !== game) return;
         G.failPublicAsk(game, p.id, 'The GM could not read that. Try saying that again.');
@@ -616,12 +618,15 @@ export class App {
       }
       const settled = G.settleAct(game, p.id, read);
       try {
-        const result = await this.gm.answer(game, p.id, { ...ask, read, talk: !settled.spent, held: settled.held ?? null });
-        if (this.game !== game) return;
-        const drops = game.state.rippleDrops?.length ?? 0;
-        G.completeAsk(game, p.id, result, this.clock());
-        this.logRippleDrop(game, drops);
-        this.countAnswer(game);
+        // One GM character, one conversation at a time: an answer waits for any other answer about the same people.
+        await this.withCharacters(G.charactersInvolved(game, p.id, read), async () => {
+          const result = await this.gm.answer(game, p.id, { ...ask, read, talk: !settled.spent, held: settled.held ?? null });
+          if (this.game !== game) return;
+          const drops = game.state.rippleDrops?.length ?? 0;
+          G.completeAsk(game, p.id, result, this.clock());
+          this.logRippleDrop(game, drops);
+          this.countAnswer(game);
+        });
       } catch (err) {
         if (this.game !== game) return;
         G.failAsk(game, p.id);
@@ -634,6 +639,16 @@ export class App {
     this.asks.set(p.id, task);
     task.finally(() => this.asks.get(p.id) === task && this.asks.delete(p.id));
     await this.changed();
+  }
+
+  // Runs fn once every earlier answer about any of these GM characters has finished.
+  withCharacters(ids, fn) {
+    this.characterTails ??= new Map();
+    const before = Promise.all(ids.map((id) => this.characterTails.get(id) ?? Promise.resolve()));
+    const run = before.then(fn);
+    const tail = run.catch(() => {});
+    for (const id of ids) this.characterTails.set(id, tail);
+    return run;
   }
 
   // A move that would take the character somewhere else is confirmed first; going is announced to everyone.

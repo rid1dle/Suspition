@@ -2661,9 +2661,9 @@ export function addFacts(game, items, source, now = Date.now()) {
 
 // Every line each GM character has said, to the room or to one player, the newest last. They never contradict it.
 export const GM_SAID_KEPT = 15;
-export function gmCharacterSaid(game) {
+// Every line a GM character has spoken, in order: to the room or privately to one player.
+function gmCharacterLines(game) {
   const st = game.state;
-  const out = Object.fromEntries(game.scenario.npcs.map((n) => [n.name, []]));
   const round = (e) => (e.round ?? (Number.isInteger(e.phase) ? e.phase + 1 : null));
   const quoted = (text) => /^(.+?): "(.*)"$/.exec(String(text ?? ''));
   const items = [];
@@ -2680,7 +2680,42 @@ export function gmCharacterSaid(game) {
       if (q) items.push({ at: m.at, who: q[1], round: null, to, text: q[2] });
     }
   }
-  for (const it of items.sort((a, b) => a.at - b.at)) {
+  return items.sort((a, b) => a.at - b.at);
+}
+
+const TALK_MS = 3 * 60_000;
+
+// The GM characters a player's move is about: the ones it names and the ones where the player stands.
+export function charactersInvolved(game, playerId, read) {
+  const npcs = new Set(game.scenario.npcs.map((n) => n.id));
+  const named = mentions(game, [read?.target, read?.attempt, read?.said_aloud].filter(Boolean).join(' ')).filter((id) => npcs.has(id));
+  const here = currentPlace(game, playerId);
+  const near = game.scenario.npcs.filter((n) => game.state.positions?.[n.id] === here).map((n) => n.id);
+  return [...new Set([...named, ...near])].sort();
+}
+
+// The GM characters a question out loud is put to.
+export function charactersAsked(game, text, read = null) {
+  const npcs = new Set(game.scenario.npcs.map((n) => n.id));
+  return [...new Set(mentions(game, [text, read?.target, read?.said_aloud].filter(Boolean).join(' ')).filter((id) => npcs.has(id)))].sort();
+}
+
+// Where each GM character is, and who they are talking with right now (their last words within a few minutes of play).
+export function gmCharactersNow(game) {
+  const st = game.state;
+  const lines = gmCharacterLines(game);
+  const latest = Math.max(0, ...(st?.events ?? []).map((e) => e.at ?? 0), ...Object.values(st?.threads ?? {}).flat().map((m) => m.at ?? 0));
+  return game.scenario.npcs.map((n) => {
+    const last = lines.filter((l) => l.who === n.name || l.who === n.id).at(-1);
+    const recent = last && latest - last.at <= TALK_MS;
+    return { name: n.name, place: game.scenario.locations.find((l) => l.id === st?.positions?.[n.id])?.name ?? '', talking_with: recent ? last.to : '', last_line: recent ? last.text : '' };
+  });
+}
+
+export function gmCharacterSaid(game) {
+  const st = game.state;
+  const out = Object.fromEntries(game.scenario.npcs.map((n) => [n.name, []]));
+  for (const it of gmCharacterLines(game)) {
     if (!out[it.who]) continue;
     out[it.who].push({ round: it.round ?? roundAt(game, it.at), to: it.to, text: it.text });
   }
@@ -2793,6 +2828,7 @@ export function snapshotForGM(game) {
     moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.readInstead ? playerWords(m.readInstead, m.saidInstead, 'said') : m.saidInstead } : {}) })),
     overrides_left: st.overridesLeft,
     what_gm_characters_have_said: gmCharacterSaid(game),
+    gm_characters_now: gmCharactersNow(game),
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     canon: (st.canon ?? []).map((c) => ({ fact: c.fact, round: c.round })),
     goal_steps_done_so_far: Object.fromEntries(game.players.map((p) => [p.id, st.goalSteps?.[p.id] ?? []])),
