@@ -1083,6 +1083,7 @@ describe('playing a round again when the group got it wrong', () => {
 
   test('should use the job the GM wrote from what players did, and keep a recap for everyone', () => {
     const game = voting();
+    game.state.events.push({ at: 1_500, phase: 0, kind: 'event', text: 'Someone says the lamp moved at ten.' });
     change(game, { job: 'Find out who moved the lamp.', job_tips: ['Ask Gopi.'], recap: ['The lamp moved at ten.'], open_questions: ['Who moved it?'] });
     const view = G.tableView(game);
     assert.equal(view.round.objective, 'Find out who moved the lamp.');

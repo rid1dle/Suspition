@@ -89,6 +89,7 @@ describe('no words put in players mouths', () => {
 
   test('should filter recap lines and round events too', () => {
     const game = named();
+    game.state.events.push({ at: 1_500, phase: 0, kind: 'event', text: 'The gate was locked at ten.' });
     G.beginPhaseChange(game);
     G.completePhase(game, { public_event: 'Himanshu says he heard the door. The lights flicker.', recap: ['Himanshu says he heard the door.', 'The gate was locked at ten.'], messages_to_players: [], clues_destroyed: [], suspicion_change: 0 }, 3_000);
     assert.deepEqual(game.state.recap.lines, ['The gate was locked at ten.']);
@@ -97,6 +98,7 @@ describe('no words put in players mouths', () => {
 
   test('should keep a recap line about what a player did, not what they said', () => {
     const game = named();
+    game.state.events.push({ at: 1_500, phase: 0, kind: 'said', text: 'Nikhil asked Ramesh about the gate.' });
     G.beginPhaseChange(game);
     G.completePhase(game, { public_event: 'x', recap: ['Nikhil asked Ramesh about the gate.'], messages_to_players: [], clues_destroyed: [], suspicion_change: 0 }, 3_000);
     assert.deepEqual(game.state.recap.lines, ['Nikhil asked Ramesh about the gate.']);
