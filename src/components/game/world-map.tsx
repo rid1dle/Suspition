@@ -18,9 +18,9 @@ const at = (L: typeof Leaflet, p: Spot) => L.latLng(MAP_H - p.y, p.x);
 // The world's map, the same on the big screen and the phone: the GM's drawing of the world, each place named on it
 // with the people there, the paths with their distances. Drag, wheel, pinch and the buttons move and zoom it.
 // With onSelect, tapping a place picks it and lights the way there from your place.
-export function WorldMap({ view, me = null, before = null, selected = null, onSelect, className = '' }: {
+export function WorldMap({ view, me = null, before = null, selected = null, onSelect, className = '', fill = false }: {
   view: Record<string, unknown>; me?: string | null; before?: Record<string, string> | null; selected?: string | null;
-  onSelect?: (id: string) => void; className?: string;
+  onSelect?: (id: string) => void; className?: string; fill?: boolean;
 }) {
   const data = useMemo(() => plan(view, { me, before }), [view, me, before]);
   const box = useRef<HTMLDivElement>(null);
@@ -28,8 +28,39 @@ export function WorldMap({ view, me = null, before = null, selected = null, onSe
   const lib = useRef<typeof Leaflet | null>(null);
   const art = useRef<{ layer: Leaflet.Layer; svg: string } | null>(null);
   const marks = useRef<Leaflet.LayerGroup | null>(null);
+  const placed = useRef<{ places: { id: string; rank: number; el: HTMLElement | undefined }[]; distances: HTMLElement[] }>({ places: [], distances: [] });
   const pick = useRef(onSelect);
   pick.current = onSelect;
+  const mine = useRef<Spot | null>(null);
+  mine.current = data?.places.find((p) => p.here) ?? null;
+  // Labels shrink a little with the map; where they still collide, the less important place shows less.
+  const tidy = useRef(() => {});
+  tidy.current = () => {
+    const m = map.current;
+    if (!m || !box.current) return;
+    box.current.style.setProperty('--label-scale', String(Math.min(1, Math.max(0.78, 2 ** m.getZoom() * 1.6))));
+    const shown: DOMRect[] = [];
+    const hits = (r: DOMRect) => shown.some((o) => r.left < o.right + 4 && r.right > o.left - 4 && r.top < o.bottom + 2 && r.bottom > o.top - 2);
+    for (const p of [...placed.current.places].sort((a, b) => b.rank - a.rank)) {
+      const label = p.el?.querySelector<HTMLElement>('.map-place');
+      if (!label) continue;
+      label.classList.remove('compact', 'pin');
+      for (const level of ['', 'compact', 'pin']) {
+        if (level) label.classList.add(level);
+        const r = label.getBoundingClientRect();
+        if (!hits(r) || level === 'pin') {
+          shown.push(r);
+          break;
+        }
+      }
+    }
+    for (const d of placed.current.distances) {
+      d.classList.remove('hidden');
+      const r = d.getBoundingClientRect();
+      if (hits(r)) d.classList.add('hidden');
+      else shown.push(r);
+    }
+  };
   const [ready, setReady] = useState(false);
 
   // Leaflet needs the browser, so it loads after the first paint and builds the map once.
@@ -52,7 +83,11 @@ export function WorldMap({ view, me = null, before = null, selected = null, onSe
         },
       });
       new Fit({ position: 'bottomright' }).addTo(m);
-      m.fitBounds(bounds, { padding: [8, 8] });
+      // A phone opens on you at a readable size, like a map app; the big screen shows the whole world.
+      const start = mine.current;
+      if (start) m.setView(at(L, start), -0.5);
+      else m.fitBounds(bounds, { padding: [8, 8] });
+      m.on('zoomend', () => tidy.current());
       marks.current = L.layerGroup().addTo(m);
       // A drawer that slides open changes the box's size: the map measures itself again.
       if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => m.invalidateSize()).observe(box.current);
@@ -89,6 +124,7 @@ export function WorldMap({ view, me = null, before = null, selected = null, onSe
     const group = marks.current;
     if (!ready || !L || !group || !data) return;
     group.clearLayers();
+    placed.current = { places: [], distances: [] };
     const way = me && selected ? route(view, data.here, selected) : null;
     const onWay = (p: Path) => Boolean(way && way.steps.some((s, i) => i > 0 && ((way.steps[i - 1] === p.from && s === p.to) || (way.steps[i - 1] === p.to && s === p.from))));
     for (const p of data.paths) {
@@ -96,19 +132,25 @@ export function WorldMap({ view, me = null, before = null, selected = null, onSe
       L.polyline(p.points.map((q) => at(L, q)), { color: lit ? 'var(--primary)' : '#e8dcc0', weight: lit ? 5 : 2, opacity: lit ? 0.95 : 0.35, dashArray: lit ? undefined : '6 8', interactive: false, className: 'map-path' }).addTo(group);
       // On a phone only the distances from your place, and the way you picked, are written on the map.
       if (p.label && p.lx !== undefined && p.ly !== undefined && (!me || p.near || lit)) {
-        L.marker(at(L, { x: p.lx, y: p.ly }), { interactive: false, keyboard: false, icon: L.divIcon({ className: 'map-distance-icon', html: `<span class="map-distance${lit || p.near ? ' near' : ''}">${p.label}</span>`, iconSize: [0, 0] }) }).addTo(group);
+        const d = L.marker(at(L, { x: p.lx, y: p.ly }), { interactive: false, keyboard: false, icon: L.divIcon({ className: 'map-distance-icon', html: `<span class="map-distance${lit || p.near ? ' near' : ''}">${p.label}</span>`, iconSize: [0, 0] }) }).addTo(group);
+        const el = d.getElement()?.querySelector<HTMLElement>('.map-distance');
+        if (el) placed.current.distances.push(el);
       }
     }
     for (const p of data.places) {
       const marker = L.marker(at(L, p), { keyboard: Boolean(pick.current), interactive: Boolean(pick.current), riseOnHover: true, icon: L.divIcon({ className: 'map-place-icon', html: placeLabelHtml(p, { selected: selected === p.id }), iconSize: [0, 0] }) });
       marker.on('click', () => pick.current?.(p.id));
       marker.addTo(group);
+      // Who wins a crowded spot: your place, the one you picked, then places with players, then with anyone.
+      const rank = (p.here ? 8 : 0) + (selected === p.id ? 4 : 0) + (p.people.some((c) => c.kind === 'player') ? 2 : 0) + (p.people.length ? 1 : 0);
+      placed.current.places.push({ id: p.id, rank, el: marker.getElement() });
     }
+    tidy.current();
   }, [ready, data, selected, me, view]);
 
   if (!data) return null;
   return (
-    <div className="flex flex-col gap-2">
+    <div className={`flex flex-col gap-2 ${fill ? 'h-full min-h-0' : ''}`}>
       <div ref={box} data-world-map data-terrain={data.terrain ?? undefined}
         className={`world-map relative z-0 overflow-hidden rounded-xl border border-border bg-card ${className}`}
         style={className ? undefined : { aspectRatio: `${MAP_W} / ${MAP_H}`, maxHeight: '64vh' }}>

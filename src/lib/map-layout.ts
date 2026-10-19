@@ -184,5 +184,5 @@ export function plainMapSvg(plan) {
 // The label of a place on the map: its name, where it is in your room, and who is there.
 export function placeLabelHtml(p, { selected = false } = {}) {
   const chips = p.people.map((c) => `<span class="who ${c.kind}${c.minor ? ' minor' : ''}${c.me ? ' me' : ''}${c.moved ? ' moved' : ''}" title="${esc(c.name)}">${esc(c.label)}</span>`).join('');
-  return `<div class="map-place${p.here ? ' here' : ''}${selected ? ' selected' : ''}" data-place="${esc(p.id)}"><div class="map-place-name">${p.icon ? `${esc(p.icon)} ` : ''}${esc(p.name)}</div>${p.room ? `<div class="map-place-room">&#128205; ${esc(p.room)}</div>` : ''}${chips ? `<div class="whos">${chips}</div>` : ''}</div>`;
+  return `<div class="map-place${p.here ? ' here' : ''}${selected ? ' selected' : ''}" data-place="${esc(p.id)}"><div class="map-place-name">${p.icon ? `<span class="map-place-glyph">${esc(p.icon)}</span> ` : ''}<span class="map-place-text">${esc(p.name)}</span></div>${p.room ? `<div class="map-place-room">&#128205; ${esc(p.room)}</div>` : ''}${chips ? `<div class="whos">${chips}</div>` : ''}</div>`;
 }

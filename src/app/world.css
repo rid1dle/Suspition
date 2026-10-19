@@ -215,3 +215,11 @@
 .world-map .leaflet-bar a, .world-map .map-fit { background: var(--background); color: var(--foreground); border-color: var(--border); }
 .world-map .leaflet-bar a:hover, .world-map .map-fit:hover { background: var(--muted); }
 .world-map .map-fit { display: block; padding: 4px 10px; border: 2px solid rgb(0 0 0 / 0.2); border-radius: 4px; font-size: 0.8rem; cursor: pointer; }
+.map-place { scale: var(--label-scale, 1); transform-origin: center; }
+.map-place.compact .whos, .map-place.compact .map-place-room { display: none; }
+.map-place.pin { min-width: 0; padding: 3px 6px; border-radius: 999px; }
+.map-place.pin .map-place-text, .map-place.pin .whos, .map-place.pin .map-place-room { display: none; }
+.map-place.pin:not(:has(.map-place-glyph)) .map-place-text { display: inline; font-size: 0.75rem; }
+.map-place.pin:hover { z-index: 5; }
+.map-place.pin:hover .map-place-text { display: inline; }
+.map-distance.hidden { visibility: hidden; }

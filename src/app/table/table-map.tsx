@@ -17,6 +17,7 @@ export function TableMap({ view, host, act }: Pick<TableProps, 'view' | 'host' |
   const [editing, setEditing] = useState(false);
 
   const [moved, setMoved] = useState<Record<string, string> | null>(null);
+  const [big, setBig] = useState(false);
   // A map the GM drew has its places fixed in the picture: editing then only names their spots in your room.
   const drawn = Boolean((view.map as { art?: unknown } | null)?.art);
   // Who moved since the last update glows for a moment.
@@ -72,6 +73,16 @@ export function TableMap({ view, host, act }: Pick<TableProps, 'view' | 'host' |
       </div>
       {editing && <Muted className="text-xs">{drawn ? 'Type where each place is in your room.' : 'Drag places to move them. Type where each place is in your room.'}</Muted>}
       {editing && drawn ? <RoomSpots view={view} act={act} /> : editing ? <div ref={box} /> : <WorldMap view={view} before={moved} />}
+      {!editing && <Button size="sm" variant="ghost" className="self-start" onClick={() => setBig(true)}>Bigger map</Button>}
+      {big && (
+        <div className="fixed inset-0 z-50 flex flex-col gap-3 bg-background/95 p-6 backdrop-blur" role="dialog" aria-label="The map" onKeyDown={(e) => e.key === 'Escape' && setBig(false)}>
+          <div className="flex items-center justify-between">
+            <Muted className="text-sm">Who is where right now</Muted>
+            <Button size="sm" variant="ghost" onClick={() => setBig(false)} autoFocus>Close</Button>
+          </div>
+          <div className="min-h-0 flex-1"><WorldMap view={view} before={moved} fill className="min-h-0 flex-1" /></div>
+        </div>
+      )}
     </div>
   );
 }
