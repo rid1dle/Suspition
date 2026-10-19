@@ -16,3 +16,7 @@ Key routing rules:
 - Save progress → invoke /context-save
 - Resume context → invoke /context-restore
 - Author a backlog-ready spec/issue → invoke /spec
+
+## Design context
+
+Before any UI work, read `docs/ui-rules.md` (the game's UI rules and the creator's verdict ledger), `PRODUCT.md` (who plays, the feel, anti-references) and `DESIGN.md` (tokens). They sit on top of the impeccable skill at `~/.claude/plugins/marketplaces/impeccable/.claude/skills/impeccable/`. The biggest rule: show only the choices that can change this group's game.
