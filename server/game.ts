@@ -2824,7 +2824,8 @@ export function applySoundtrack(game, raw) {
   const sc = game.scenario;
   const names = [...game.players.map((p) => p.name), ...sc.players.map((p) => p.character_name), ...(sc.npcs ?? []).map((n) => n.name)].filter(Boolean);
   const clean = cleanSoundtrack(raw, { rounds: sc.phases.length, names });
-  game.state.soundtrack = clean ? { status: 'ready', directions: clean.directions, chosen: 0 } : { status: 'failed' };
+  // The GM's own pick plays; the host only steps in to change it.
+  game.state.soundtrack = clean ? { status: 'ready', directions: clean.directions, chosen: clean.chosen, gmPick: clean.chosen, why: String(raw?.why ?? '').trim().slice(0, 160) } : { status: 'failed' };
 }
 
 export function failSoundtrack(game) {
@@ -2836,12 +2837,14 @@ export function pickSoundtrack(game, index) {
   if (s?.status !== 'ready') fail('The music is not ready yet.', 409);
   if (!Number.isInteger(index) || index < 0 || index >= s.directions.length) fail('That music is not on the list.', 400);
   s.chosen = index;
+  // A switch away from the GM's pick tells the next games what this room likes.
+  s.switched = index !== (s.gmPick ?? 0);
 }
 
 function soundtrackView(game) {
   const s = game.state?.soundtrack;
   if (!s) return null;
-  return s.status === 'ready' ? { status: s.status, directions: s.directions, chosen: s.chosen } : { status: s.status };
+  return s.status === 'ready' ? { status: s.status, directions: s.directions, chosen: s.chosen, why: s.why ?? '' } : { status: s.status };
 }
 
 // This round's own picture, table only; null until it is drawn (the scene picture stands in).

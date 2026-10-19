@@ -85,3 +85,13 @@ Which model to use, and what it costs, is decided when phase 2 starts.
 - The exact instrument subset (for example piano, cello section, violin section, harp, celesta, a few percussion pieces, a choir pad).
 - The audio format and quality setting.
 - How theme variation is written (transposing, slowing, breaking up, inverting).
+
+## Later decision (2026-10-19): the GM picks, from a pool that grows
+
+The creator liked the music but did not want to choose it every game, and did not want a fixed set of tracks that would repeat.
+
+- **The GM picks:** the composer writes 3 new directions per game and names the one that fits this world best (`best`, with `why`). That one plays; the briefing shows its name and why, and "Change" folds the list away.
+- **The pool:** music the host switched to in past games (the strongest sign of taste), the three hand-made music lab directions, then what played. Up to 3 go to the composer as favourites "to learn from, never copy".
+- **No repeats:** what played in the last 6 real games goes to the composer as "never repeat these names, and never the same lead instrument in the same mode".
+- **The look:** the composer also sees the world's look (colour, ambient effect, texture, lettering, sound feel). Everything it sees is public; never the truth or the story type.
+- **Where it lives:** `src/lib/soundtrack/pool.ts` (`musicPool`), `Db.musicPool` reads the soundtracks of past real games, `App.musicPool` passes them to `GM.compose`. Playtests never count.

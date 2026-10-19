@@ -39,7 +39,7 @@ export type Direction = {
 
 export type Soundtrack = { directions: Direction[]; chosen: number };
 
-export type TableSoundtrack = { status: 'writing' | 'ready' | 'failed'; directions?: Direction[]; chosen?: number };
+export type TableSoundtrack = { status: 'writing' | 'ready' | 'failed'; directions?: Direction[]; chosen?: number; why?: string };
 
 export type Part = 'drone' | 'pad' | 'bass' | 'chords' | 'pulse' | 'melody' | 'counter' | 'groove' | 'stinger';
 

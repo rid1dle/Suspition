@@ -61,6 +61,7 @@ What was rejected and what was accepted, one line each. Add new verdicts the sam
 - The briefing keeps "Start round 1" at the top of its column, seen at once; long reference (alibis, the whole night on the reveal) folds.
 - A panel with nothing in it is hidden, not shown empty ("No round votes" was rejected).
 - The room feed sits beside the map, not at the bottom under the cards.
+- Music is never a setup chore: "I don't want to set the sound myself every game". The GM picks the direction that fits the world and says why in one line; "Change" folds the list away.
 - Map time chips that overlapped place names were cut on old worlds; crowded places spread apart on screen.
 
 **Words**

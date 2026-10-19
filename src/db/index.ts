@@ -110,6 +110,16 @@ export class Db {
       .map((r) => `${r.title}: ${r.setting ?? ''}`.trim());
   }
 
+  // The soundtracks of past real games, newest first: what played and whether the host switched to it.
+  musicPool(n: number): { directions: unknown[]; chosen: number; switched?: boolean }[] {
+    return this.orm.select({ music: sql<string | null>`json_extract(${schema.games.state}, '$.state.soundtrack')` })
+      .from(schema.games)
+      .where(ne(schema.games.learning, 'playtest'))
+      .orderBy(desc(schema.games.createdAt)).limit(n).all()
+      .map((r) => { try { return r.music ? JSON.parse(r.music) : null; } catch { return null; } })
+      .filter((m) => m?.status === 'ready' && Array.isArray(m.directions));
+  }
+
   getMeta(key: string): string | null {
     return this.orm.select().from(schema.meta).where(eq(schema.meta.key, key)).get()?.value ?? null;
   }

@@ -756,12 +756,15 @@ export const SOUNDTRACK_SCHEMA = obj({
       stingers: obj(Object.fromEntries(STINGER_KINDS.map((k) => [k, oneOf(STINGER_STYLES)]))),
     }),
   },
+  best: int(0, 2),
+  why: str,
 });
 
 export const COMPOSE_SYSTEM = 'You write soundtrack plans for a party mystery game, as JSON. Use only the facts you are given. Write in plain, simple English.';
 
-export function composePrompt(game) {
+export function composePrompt(game, pool = { favourites: [], recent: [] }) {
   const sc = game.scenario;
+  const look = sc.room ? `colour ${sc.room.seed_color}, ${sc.room.ambient} in the air, ${sc.room.texture} texture, ${sc.room.font_pair} lettering, a ${sc.room.sound_set} feel` : '';
   const rounds = sc.phases.map((p) => p.name);
   const list = (role) => forRole(role).map((id) => `${id} (${INSTRUMENTS[id].label})`).join(', ');
   return `You are the composer for a party mystery game. Write 3 different soundtrack directions for this world.
@@ -781,6 +784,16 @@ Setting: ${sc.setting_summary}
 Tone: ${game.setup?.tone ?? 'tense'}
 Opening scene: ${sc.opening_scene}
 Rounds (${rounds.length}): ${rounds.map((name, i) => `${i + 1}. ${name}`).join('; ')}
+${look ? `
+THE LOOK OF THIS WORLD (the music should feel like it looks): ${look}
+` : ''}
+${pool.favourites.length ? `FAVOURITES (music this room has liked; learn from what makes them work, never copy them):
+${pool.favourites.map((d) => JSON.stringify(d)).join('\n')}
+` : ''}
+${pool.recent.length ? `PLAYED RECENTLY (never repeat these names, and never reuse the same lead instrument in the same mode as any of them):
+${pool.recent.map((d) => `${d.name}: ${d.lead}, ${d.root} ${d.mode}, ${d.tempo} bpm`).join('\n')}
+` : ''}
+- best: the index (0 to 2) of the direction that fits this world best. It plays unless the host changes it. why: one short line on why it fits.
 
 INSTRUMENTS:
 lead: ${list('lead')}

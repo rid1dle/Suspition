@@ -3,6 +3,8 @@ import * as G from './game.ts';
 import { GENERATION_STEPS, stepForKey } from './progress.ts';
 import { MemoryPeople } from './store.ts';
 import { QUESTIONS, pickQuestions } from './questions.ts';
+import { musicPool } from '../src/lib/soundtrack/pool.ts';
+import { FIXTURE } from '../src/lib/soundtrack/fixture.ts';
 import { usernameFor, newProfile, addAnswer, aboutForGM, recordGame, profileView } from './profiles.ts';
 import { resolveStyle, DEFAULT_STYLE } from '../src/lib/art-styles.ts';
 import { roundPicturePrompt } from './prompts.ts';
@@ -381,7 +383,7 @@ export class App {
     this.notify();
     return this.background('compose', async () => {
       try {
-        const raw = await this.gm.compose(game);
+        const raw = await this.gm.compose(game, this.musicPool());
         if (this.game !== game) return;
         G.applySoundtrack(game, raw);
         if (game.state.soundtrack.status === 'failed') this.log('compose: no direction in the music plan could play');
@@ -392,6 +394,16 @@ export class App {
         if (this.game === game) await this.changed();
       }
     });
+  }
+
+  // Music the room liked before, and what played lately, so new music is in its spirit and never a repeat.
+  musicPool() {
+    try {
+      return musicPool(this.library?.musicPool?.(12) ?? [], FIXTURE.directions);
+    } catch (err) {
+      this.log(`music pool failed: ${err.message}`);
+      return musicPool([], FIXTURE.directions);
+    }
   }
 
   async pickMusic(hostToken, index) {

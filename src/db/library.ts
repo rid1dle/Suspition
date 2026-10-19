@@ -27,6 +27,10 @@ export class GameLibrary {
     return this.db.recentWorlds(n);
   }
 
+  musicPool(n = 12) {
+    return this.db.musicPool(n);
+  }
+
   setLearning(id: string, learning: Learning, note?: string) {
     this.db.setLearning(id, learning, note);
   }

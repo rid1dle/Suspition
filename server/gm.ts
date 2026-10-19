@@ -350,10 +350,10 @@ export class GM {
   }
 
   // Public facts only: the system prompt is not playSystem, which carries the truth.
-  compose(game) {
+  compose(game, pool) {
     return this.call('compose', {
       system: COMPOSE_SYSTEM,
-      prompt: composePrompt(game),
+      prompt: composePrompt(game, pool),
       schema: SOUNDTRACK_SCHEMA,
       model: this.playModel,
       timeoutMs: 300_000,

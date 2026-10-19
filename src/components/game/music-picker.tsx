@@ -37,8 +37,20 @@ export function MusicPicker({ soundtrack, host, previewing, onListen, onPick }: 
       <Label>Music for this game</Label>
       {soundtrack.status === 'writing' && <Muted>The GM is writing the music. Simple music plays until it is ready.</Muted>}
       {soundtrack.status === 'failed' && <Muted>Simple music this game. The GM could not write a soundtrack.</Muted>}
+      {soundtrack.status === 'ready' && (() => {
+        const picked = soundtrack.directions?.[soundtrack.chosen ?? 0];
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="font-heading text-lg leading-snug">{picked?.name}</div>
+            {soundtrack.why ? <p className="text-sm">{soundtrack.why}</p> : picked?.line && <p className="text-sm">{picked.line}</p>}
+          </div>
+        );
+      })()}
+      {/* The GM picks the music that fits; changing it is there, but never asked for. */}
       {soundtrack.status === 'ready' && (
-        <ul className="flex flex-col gap-3">
+        <details className="[&_summary::-webkit-details-marker]:hidden">
+        <summary className="cursor-pointer list-none text-sm font-medium text-primary">Change</summary>
+        <ul className="mt-3 flex flex-col gap-3">
           {(soundtrack.directions ?? []).map((d, i) => {
             const chosen = i === (soundtrack.chosen ?? 0);
             return (
@@ -53,6 +65,7 @@ export function MusicPicker({ soundtrack, host, previewing, onListen, onPick }: 
             );
           })}
         </ul>
+        </details>
       )}
     </section>
   );

@@ -140,12 +140,16 @@ export function cleanSoundtrack(raw: unknown, opts: { rounds: number; names: str
   if (!Array.isArray(r.directions)) return null;
   const words = nameWords(opts.names);
   const directions: Direction[] = [];
-  for (const d of r.directions) {
+  // The GM's best pick counts by its place in what it wrote; a dropped direction before it shifts the rest.
+  let best = -1;
+  for (const [i, d] of r.directions.entries()) {
     if (directions.length >= MAX_DIRECTIONS) break;
     const clean = cleanDirection(d, directions.length, opts.rounds, words);
-    if (clean) directions.push(clean);
+    if (!clean) continue;
+    if (i === r.best) best = directions.length;
+    directions.push(clean);
   }
   if (!directions.length) return null;
-  const chosen = Number.isInteger(r.chosen) && (r.chosen as number) >= 0 && (r.chosen as number) < directions.length ? (r.chosen as number) : 0;
+  const chosen = best >= 0 ? best : Number.isInteger(r.chosen) && (r.chosen as number) >= 0 && (r.chosen as number) < directions.length ? (r.chosen as number) : 0;
   return { directions, chosen };
 }
