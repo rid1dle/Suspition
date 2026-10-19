@@ -5,6 +5,7 @@
 import { roundQuestion, addRound, addEvent, addFacts, mentions, namesCulprit, namesAnyOf, retells, validateScenario, clueWhereErrors, playerFacts, publicTimeline, resolveStoryIds, withoutPrivateCards } from './game.ts';
 import { applyPatches, storyIssues } from './story.ts';
 import { futurePath, addCanon, continuityState } from './continuity.ts';
+import { rememberedNight } from './night.ts';
 import { THEORY_RULES, FAIR_PLAY, PLAIN_STYLE } from './prompts.ts';
 
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
@@ -16,7 +17,7 @@ function knownTexts(game) {
   const sc = game.scenario;
   const st = game.state;
   const found = new Set([...Object.values(st.found ?? {}).flat(), ...(st.shared ?? []).map((x) => x.clueId)]);
-  const cards = sc.players.flatMap((p) => [p.public_info, p.private_info, p.starting_knowledge, p.backstory, p.alibi_statement, ...(p.night ?? []).map((n) => `${n.time} ${n.where} ${n.doing}`)]);
+  const cards = sc.players.flatMap((p) => [p.public_info, p.private_info, p.starting_knowledge, p.backstory, p.alibi_statement, ...rememberedNight(sc, st.awakened, p).map((n) => `${n.time} ${n.where} ${n.doing}`)]);
   return [
     sc.opening_scene, ...(sc.background ?? []),
     ...(st.events ?? []).map((e) => e.text),

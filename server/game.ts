@@ -4,6 +4,7 @@ import { formForGM, quoteRaw } from './reader.ts';
 import { scoreMoves, playTotal, playEarned, skillSplit, PLAY_MAX } from './skills.ts';
 import { rulesLines } from '../src/lib/rules.ts';
 import { LENGTHS, PLAN_SECTIONS } from './prompts.ts';
+import { sameTime, rememberedNight } from './night.ts';
 import { roomTheme, guessRoom } from './room.ts';
 import { GENERATION_STEPS } from './progress.ts';
 import { sanitizeMusic } from '../src/lib/music-theory.ts';
@@ -273,7 +274,7 @@ export function nightMinutes(time) {
   const minutes = h * 60 + Number(m[2] ?? 0);
   return minutes < 360 ? minutes + 1440 : minutes;
 }
-export const sameTime = (a, b) => String(a ?? '').replace(/\s+/g, '').toLowerCase() === String(b ?? '').replace(/\s+/g, '').toLowerCase();
+export { sameTime };
 
 // A player's night is copied from the truth's whereabouts; the card check's own lines only fill the times between.
 function nightsFromWhereabouts(scenario) {
@@ -1038,10 +1039,11 @@ export function playerFacts(game, pid, { forGM = false } = {}) {
   if (!c) return [];
   const st = game.state ?? {};
   const revealed = st.revealed?.[pid] ?? [];
+  const night = rememberedNight(game.scenario, st.awakened, c);
   if (forGM) {
     return [
       c.role_title, c.public_info, c.private_info, c.starting_knowledge, c.goal,
-      ...(c.night ?? []).map((n) => `${n.time} ${n.where} ${n.doing}`),
+      ...night.map((n) => `${n.time} ${n.where} ${n.doing}`),
       ...(c.hidden_facts ?? []).filter((h) => revealed.includes(h.id)).map((h) => h.fact),
       ...(st.threads?.[pid] ?? []).filter((m) => m.from === 'you').map((m) => playerWords(m.read, m.text, 'move')),
       ...(st.moments ?? []).filter((m) => m.player_id === pid && ['said', 'own'].includes(m.status)).map((m) => (m.status === 'said' ? m.line : playerWords(m.readInstead, m.saidInstead, 'said'))),
@@ -1050,7 +1052,7 @@ export function playerFacts(game, pid, { forGM = false } = {}) {
   }
   return [
     c.role_title, c.public_info, c.private_info, c.starting_knowledge, c.goal,
-    ...(c.night ?? []).map((n) => `${n.time} ${n.where} ${n.doing}`),
+    ...night.map((n) => `${n.time} ${n.where} ${n.doing}`),
     ...(c.alibi ?? []).map((a) => `${a.time} ${a.where}`),
     ...(c.hidden_facts ?? []).filter((h) => revealed.includes(h.id)).map((h) => h.fact),
     ...(st.threads?.[pid] ?? []).filter((m) => m.from === 'you').flatMap((m) => [m.text, m.read?.attempt, m.read?.place, m.read?.said_aloud]),
@@ -3049,6 +3051,7 @@ export function playerView(game, playerId, now = Date.now()) {
   const card = game.scenario.players.find((p) => p.id === playerId);
   const revealed = st.revealed[playerId];
   const locked = lockedSections(game, playerId);
+  const night = rememberedNight(game.scenario, st.awakened, card);
   const shownSide = card.side === 'culprit' && !knowsGuilt(game, playerId) ? 'investigator' : card.side;
   view.card = {
     name: card.character_name,
@@ -3074,9 +3077,9 @@ export function playerView(game, playerId, now = Date.now()) {
     fears: locked.includes('drives') ? '' : card.fears ?? '',
     goal_why: card.goal_why ?? '',
     reasons: locked.includes('reasons') ? [] : card.reasons ?? [],
-    pellets: pelletsFor({ ...card, wants: locked.includes('drives') ? '' : card.wants, fears: locked.includes('drives') ? '' : card.fears, reasons: locked.includes('reasons') ? [] : card.reasons }),
-    reminders: remindersFor(card),
-    night: card.night ?? [],
+    pellets: pelletsFor({ ...card, night, wants: locked.includes('drives') ? '' : card.wants, fears: locked.includes('drives') ? '' : card.fears, reasons: locked.includes('reasons') ? [] : card.reasons }),
+    reminders: remindersFor({ ...card, night }),
+    night,
     alibi: card.alibi ?? [],
     hidden_known: card.hidden_facts.filter((h) => revealed.includes(h.id)).map((h) => h.fact),
     hidden_unknown: card.hidden_facts.filter((h) => !revealed.includes(h.id)).length,

@@ -1,6 +1,7 @@
 // @ts-nocheck -- legacy JS, typed file by file later
 import { ROOTS, MODES, PALETTES, PERCUSSION } from '../src/lib/music-theory.ts';
 import { formForGM, quoteRaw } from './reader.ts';
+import { rememberedNight } from './night.ts';
 import { SKILLS, PENALTIES } from './skills.ts';
 import { ROOM_SCHEMA } from './room.ts';
 import { DEFAULT_STYLE, styleRules } from '../src/lib/art-styles.ts';
@@ -633,7 +634,7 @@ export function seatsPrompt(game) {
     character: card(s.pid)?.character_name,
     // A culprit who does not know it is whispered as an innocent until the game tells them.
     knows_guilt: card(s.pid)?.side === 'culprit' && !(card(s.pid)?.unaware && !st.awakened?.[s.pid]),
-    askers: s.askers.map((a) => ({ player_id: a.pid, character: card(a.pid)?.character_name, knows: askerKnows(card(a.pid) ?? {}) })),
+    askers: s.askers.map((a) => ({ player_id: a.pid, character: card(a.pid)?.character_name, knows: askerKnows({ ...card(a.pid), night: rememberedNight(sc, st.awakened, card(a.pid)) }) })),
   }));
   return `Write this round's hot seats for a mystery played out loud in one room. A hot seat puts one player on the spot for 90 seconds while up to 3 others each ask them one question out loud.
 Round ${i + 1} of ${n}. ${i < n - 2
