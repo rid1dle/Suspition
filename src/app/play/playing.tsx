@@ -8,7 +8,8 @@ import { Label, Muted } from '@/components/game/label';
 import { RoundCard } from '@/components/game/round';
 import { Novel } from '@/components/game/novel';
 import { PeopleList, PointButtons } from '@/components/game/people';
-import { MapView } from '@/components/game/map';
+import { WorldMap, PlacePanel } from '@/components/game/world-map';
+import { tripFrom } from '@/lib/map-layout';
 import { ReminderCard } from '@/components/game/reminder';
 import { SeatCard, type SeatView } from '@/components/game/hot-seat';
 import { OfferCard } from '@/components/game/offer';
@@ -399,26 +400,22 @@ function PeopleBody({ view }: { view: PlayerView }) {
 // Tap a place on the map, or a button under it, then confirm. Going is free and everyone sees it.
 function GoSomewhere({ view }: { view: PlayerView }) {
   const [pick, setPick] = useState<string | null>(null);
-  const places = ((view.map as { places?: { id: string; name: string }[] } | null)?.places ?? []);
-  const here = view.here ?? '';
+  const places = ((view.map as { places?: { id: string; name: string; public_info?: string }[] } | null)?.places ?? []);
+  const positions = ((view.map as { positions?: Record<string, string> } | null)?.positions ?? {});
+  const hereId = places.find((p) => p.name === view.here)?.id ?? positions[view.me.id] ?? null;
   const playing = view.status === 'playing' && !view.meeting;
   const chosen = places.find((p) => p.id === pick);
+  const cast = [...(view.cast?.players ?? []), ...(view.cast?.npcs ?? [])] as { id: string; name: string }[];
   return (
     <div className="flex flex-col gap-3">
-      <MapView view={view} me={view.me.id} onPlace={playing ? setPick : undefined} />
-      {view.meeting ? <Muted className="text-xs">A meeting is on. Moves wait until it ends.</Muted> : playing && (
-        <>
-          <Muted className="text-xs">{here ? `You are in: ${here}. ` : ''}Tap a place to go there. Going is free; everyone sees you go.</Muted>
-          <div className="flex flex-wrap gap-2">
-            {places.filter((p) => p.name !== here).map((p) => (
-              <Button key={p.id} size="sm" variant="secondary" onClick={() => setPick(p.id)}>Go to {p.name}</Button>
-            ))}
-          </div>
-          {chosen && chosen.name !== here && (
-            <GoConfirm place={chosen.name.replace(/^the\s+/i, '')} onAnswer={async (yes) => { if (yes) await act('go', { token: tokenOf(), place: chosen.id }); setPick(null); }} />
-          )}
-        </>
-      )}
+      <WorldMap view={view} me={view.me.id} selected={pick} onSelect={setPick} className="h-[55dvh]" />
+      {chosen ? (
+        <PlacePanel name={chosen.name} info={chosen.public_info} here={chosen.id === hereId} canGo={playing}
+          people={cast.filter((c) => positions[c.id] === chosen.id && c.id !== view.me.id).map((c) => c.name)}
+          trip={tripFrom(view, hereId, chosen.id)}
+          onGo={async () => { if (await act('go', { token: tokenOf(), place: chosen.id })) setPick(null); }} />
+      ) : <Muted className="text-xs">Tap a place to see who is there{playing ? ' and go there. Going is free; everyone sees you go' : ''}.</Muted>}
+      {view.meeting && <Muted className="text-xs">A meeting is on. Moves wait until it ends.</Muted>}
     </div>
   );
 }

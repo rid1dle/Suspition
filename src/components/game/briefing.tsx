@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { swipeTo } from '@/lib/brief';
 import { ScenePicture, CaseBox, Facts } from './panels';
 import { Label } from './label';
-import { MapView } from './map';
+import { WorldMap } from './world-map';
 
 interface Step { kind: string; title: string; lines: string[]; playerId?: string; icon?: string }
 
@@ -29,7 +29,7 @@ export function BriefStep({ view, me = null, at }: { view: BriefView; me?: strin
       </div>
     );
   } else if (step.kind === 'map') {
-    body = <>{step.lines.map((l, i) => <p key={i}>{l}</p>)}<MapView view={view} me={me} /></>;
+    body = <>{step.lines.map((l, i) => <p key={i}>{l}</p>)}<WorldMap view={view} me={me} className="h-[360px]" /></>;
   } else if (step.kind === 'scene') {
     body = <><ScenePicture svg={view.illustration} />{step.lines.map((l, i) => <p key={i} className="text-lg leading-relaxed">{l}</p>)}</>;
   } else if (step.kind === 'story') {

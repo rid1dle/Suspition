@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { mapHtml as drawMap } from '@/lib/map';
 import { Button } from '@/components/ui/button';
 import { Muted } from '@/components/game/label';
+import { WorldMap } from '@/components/game/world-map';
 import type { TableProps } from './table-app';
 
 const mapHtml = drawMap as (view: unknown, opts: { before?: Record<string, string> | null; editing?: boolean }) => string;
@@ -15,12 +16,19 @@ export function TableMap({ view, host, act }: Pick<TableProps, 'view' | 'host' |
   const dragging = useRef(false);
   const [editing, setEditing] = useState(false);
 
+  const [moved, setMoved] = useState<Record<string, string> | null>(null);
+  // Who moved since the last update glows for a moment.
+  useEffect(() => {
+    if (editing) return;
+    setMoved(before.current);
+    before.current = (view.map as { positions?: Record<string, string> } | null)?.positions ?? null;
+  }, [view, editing]);
+
+  // Editing keeps the old drawing: drag a place, type where it is in your room.
   useEffect(() => {
     const el = box.current;
-    if (!el || dragging.current || document.activeElement?.classList.contains('room-input')) return;
-    el.innerHTML = mapHtml(view, { before: before.current, editing });
-    before.current = view.map?.positions ?? null;
-    if (!editing) return;
+    if (!editing || !el || dragging.current || document.activeElement?.classList.contains('room-input')) return;
+    el.innerHTML = mapHtml(view, { editing });
     const area = el.querySelector<HTMLElement>('.map');
     for (const place of el.querySelectorAll<HTMLElement>('.place.editing')) {
       let at: { x?: number; y?: number } = {};
@@ -61,7 +69,7 @@ export function TableMap({ view, host, act }: Pick<TableProps, 'view' | 'host' |
         {host && <Button size="sm" variant={editing ? 'default' : 'ghost'} onClick={() => setEditing((e) => !e)}>{editing ? 'Done' : 'Edit map'}</Button>}
       </div>
       {editing && <Muted className="text-xs">Drag places to move them. Type where each place is in your room.</Muted>}
-      <div ref={box} />
+      {editing ? <div ref={box} /> : <WorldMap view={view} before={moved} className="h-[min(62vh,620px)]" />}
     </div>
   );
 }
