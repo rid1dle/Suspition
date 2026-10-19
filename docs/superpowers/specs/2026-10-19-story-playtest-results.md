@@ -55,3 +55,22 @@ The first try failed: a ten-player world took more than the 15 minutes the write
 - **GM characters contradicting themselves:** fixed. Each GM character's own lines (to the room and privately) are kept and handed to both the private and the out-loud GM, with the rule never to contradict them and never to repeat a private line to the room.
 - **Round lines carrying a private card:** fixed. A reward, a round event or a "because" line that retells a sentence only a player's own card holds is dropped (a round event loses just that sentence), until the room has heard that fact in public.
 - **World writing time:** measured, not changed. A 10-player world spends about 9 of its 12 to 13 draft minutes thinking. Two 10-player worlds written with less thinking took 11 and 12.5 minutes in all instead of about 16, but both needed the story repair pass and kept more holes (5 and 2 left after the card check, against 1 and 1). Running the story check and the card check side by side would save about 2 minutes, but the card check would then write facts from a draft the story check is still changing. Both trade consistency for time, so neither was done. The table now tells the room the real wait for its size (about 11 minutes for 4 players, 16 for 10).
+
+## Second run, on the fixed code (before the GM memory and private card fixes)
+
+| Measure | Game 1 | Game 2 |
+|---|---|---|
+| Moves honoured | 9 | 8 |
+| Rightly refused | 15 | 8 |
+| Wrongly refused | 0 (game 2 of the first run had 7) | 1 |
+| Contradictions let in | 4 | 8 |
+| Leaks | 2 | 3 |
+| Breaches | 0 | 0 |
+| Case still complete | yes | no |
+
+- **The meeting fix worked:** no act was blocked by a stuck meeting.
+- **Game 2's contradictions:** mostly one GM character taking back his own words (6 times). The GM memory fix that came after this run targets exactly that.
+- **New findings, left for the creator:**
+  - **Two culprits:** game 1 had two. 6 of 10 players named one of them and the culprits won. Players can pick more than one person, but nothing tells them there may be two, and naming one of two counts as wrong. Should the final screen say "there may be more than one", and should naming one of two earn partial credit?
+  - **Game 2 not solvable at the end:** leads the room raised again and again (a candle count, shawls in first class) were never checked by anyone, and two secret goals had nothing findable to reach them.
+  - **"You told us" lines:** a GM character said "you told us you are from Amritsar" to a player who never said it.
