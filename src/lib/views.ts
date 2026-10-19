@@ -107,7 +107,7 @@ export interface PlayerView extends PublicView {
   thread?: ThreadEntry[];
   ties?: Record<string, string>;
   pending?: { kind: string; text: string } | null;
-  clues?: { id: string; name: string; shows: string; destroyed: boolean }[];
+  clues?: { id: string; name: string; shows: string; destroyed: boolean; told?: boolean }[];
   myRoundVote?: number | null;
   publicPending?: string | null;
   publicError?: string | null;

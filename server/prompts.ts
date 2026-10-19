@@ -587,7 +587,7 @@ Then write reveal_story (80 to 160 words, short sentences): what really happened
 const refusedField = obj({ refused: { type: 'boolean' }, why: str });
 export const PUBLIC_ANSWER_SCHEMA = obj({ lines: { type: 'array', items: obj({ speaker: str, text: str }) }, ripple: str, refused: refusedField, asker_read: obj({ intent: str, persona: str, facts: { type: 'array', items: obj({ person: str, fact: str }) }, play: play(0, 1) }) });
 
-export function publicSystem(publicView, people = []) {
+export function publicSystem(publicView, people = [], speaker = null) {
   return `You answer questions asked out loud in a mystery game, for everyone in the room to hear.
 You only know what is below. Answer from it. Never answer only "Nobody knows that yet": when something is not known, say so in a few words and add one concrete next step (a person to ask, a place to search, or a clue to look at again). If the same thing was asked before (see asked_out_loud_before), say it is still unknown and point somewhere new. Never send the room to the same person twice for one question ("only Nikhil can say"): the second time, point to a place, a document or another person. Never invent clues, secrets or facts about who did it. You may add harmless everyday detail about the world (the weather, how far a town is, what a room looks like) if it fits. Stay consistent with asked_out_loud_before. Established facts (canon) are true; never contradict them.
 alibis_claimed_not_checked is only what each person says about where they were; some of it may be lies. Say it as their claim ("Kunal says he was at the sangeet"), never as fact. Never call anything "the record", and never speak from a hidden list of where people really were: only from what a witness, a document or a found clue shows.
@@ -608,7 +608,11 @@ asker_read.${PLAY_RUBRIC.replace('- 2:', '- 2 (counts as 1 out loud):')} Out lou
 ${PLAIN_STYLE}
 
 PUBLIC INFORMATION:
-${JSON.stringify(publicView)}
+${JSON.stringify(publicView)}${speaker ? `
+
+WHAT THE ASKER REALLY FOUND OR SAW (only they have seen it; it is true):
+${JSON.stringify(speaker)}
+When the asker tells the room any of this, never doubt it and never call it unknown: it is real, and a GM character who looks can see it. Only what the asker says becomes public: never add the parts they left out. Anything they claim beyond this is only their claim.` : ''}
 ${people.length ? `
 PEOPLE BEING ASKED (their own sheets; use only what they would say out loud):
 ${JSON.stringify(people)}` : ''}`;

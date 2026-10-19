@@ -420,7 +420,7 @@ function GoSomewhere({ view }: { view: PlayerView }) {
   );
 }
 
-function CluesBody({ view }: { view: PlayerView }) {
+export function CluesBody({ view }: { view: PlayerView }) {
   const key = `detective-notes-${view.gameId}`;
   const [notes, setNotes] = useState(() => storage.get(key) ?? '');
   const shared = new Set((view.sharedClues ?? []).map((c: { id: string }) => c.id));
@@ -433,7 +433,10 @@ function CluesBody({ view }: { view: PlayerView }) {
           <b>{c.name}{c.destroyed && <span className="ml-2 rounded bg-destructive/20 px-1.5 text-xs text-destructive">now gone</span>}</b>
           <p className="text-sm">{c.shows}</p>
           {shared.has(c.id) ? <Muted className="text-xs">Everyone can see this.</Muted>
-            : <Button size="sm" variant="secondary" className="self-start" onClick={() => act('share', { token: tokenOf(), clueId: c.id })}>Show everyone</Button>}
+            : c.told ? (
+              <span className="flex flex-wrap items-baseline gap-x-3 text-xs text-muted-foreground">You told the room in your own words.
+                <button className="hover:text-foreground" onClick={() => act('share', { token: tokenOf(), clueId: c.id })}>Show all of it</button></span>
+            ) : <Button size="sm" variant="secondary" className="self-start" onClick={() => act('share', { token: tokenOf(), clueId: c.id })}>Show everyone</Button>}
         </div>
       )) : <Muted>Nothing yet. Acts find clues: search a place, look closely at something.</Muted>}
       <Label>Shown to everyone</Label>

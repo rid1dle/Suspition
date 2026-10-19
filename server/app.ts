@@ -513,7 +513,7 @@ export class App {
         let heard = words;
         if (await this.goFirst(game, p.id, words, 'out loud') === 'stay') heard = stayed(words);
         if (this.game !== game) return;
-        const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, heard);
+        const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, heard, p.id);
         if (this.game !== game) return;
         const drops = game.state.rippleDrops?.length ?? 0;
         G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, heard, ripple, refused);

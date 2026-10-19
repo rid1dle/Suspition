@@ -2479,6 +2479,29 @@ function nudgeStuckGoals(game, stuck, messages, now) {
   }
 }
 
+// A find the player told the room about, in their own words. The room heard only those words, never the whole clue.
+function markTold(game, playerId, words, now) {
+  const st = game.state;
+  const said = new Set(wordsOf(words).map(stem));
+  const shared = new Set((st.shared ?? []).map((x) => x.clueId));
+  st.told ??= [];
+  for (const id of st.found?.[playerId] ?? []) {
+    if (shared.has(id) || st.told.some((t) => t.clueId === id && t.by === playerId)) continue;
+    const clue = game.scenario.clues.find((c) => c.id === id);
+    const key = [...new Set(wordsOf(clue?.name).filter((w) => w.length >= 3 && !STOP.has(w)).map(stem))];
+    if (key.length && key.filter((w) => said.has(w)).length >= Math.ceil(key.length / 2)) st.told.push({ clueId: id, by: playerId, at: now });
+  }
+}
+
+// What only this player has found or been shown in private: true, and theirs to tell.
+export function speakerFinds(game, playerId) {
+  const st = game.state ?? {};
+  const shared = new Set((st.shared ?? []).map((x) => x.clueId));
+  const found = (st.found?.[playerId] ?? []).filter((id) => !shared.has(id)).map((id) => game.scenario.clues.find((c) => c.id === id)).filter(Boolean);
+  const scenes = (st.threads?.[playerId] ?? []).filter((m) => m.from === 'gm').slice(-6).map((m) => m.text);
+  return found.length || scenes.length ? { found_clues: found.map((c) => ({ name: c.name, shows: c.shows })), private_scenes_they_saw: scenes } : null;
+}
+
 export function shareClue(game, playerId, clueId, now = Date.now()) {
   if (!['playing', 'final'].includes(game.status)) fail('You can share clues during the game.', 409);
   const st = game.state;
@@ -2563,6 +2586,7 @@ export function completePublicAsk(game, playerId, answer, now = Date.now(), read
   const lines = Array.isArray(answer) ? novelLines(game, answer, { unpuppet: clean, unpuppetSpeech: clean }) : null;
   const text = (lines ? linesText(lines) : clean(String(answer ?? '').trim())) || 'Nobody knows that yet.';
   st.events.push({ at: now, phase: st.phaseIndex, kind: 'qa', by: name, pid: playerId, q, text, ...(lines?.length ? { lines } : {}), ...(words ? { read: words } : {}) });
+  markTold(game, playerId, [q, words?.said_aloud, words?.attempt].filter(Boolean).join(' '), now);
   if (why) {
     addEvent(game, `That can't happen: ${why}`, 'refused', now);
     logRefused(game, playerId, why, true, now);
@@ -3100,7 +3124,7 @@ export function playerView(game, playerId, now = Date.now()) {
   if (view.meeting) view.meeting = { ...view.meeting, mine: st.meeting.by === playerId };
   view.clues = st.found[playerId].map((id) => {
     const c = game.scenario.clues.find((x) => x.id === id);
-    return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id) };
+    return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id), told: (st.told ?? []).some((t) => t.clueId === id && t.by === playerId) };
   });
   view.myVote = st.hintVote ? st.hintVote.votes[playerId] ?? null : null;
   view.myVoteAsk = st.voteAsk ? st.voteAsk.votes[playerId] ?? null : null;
