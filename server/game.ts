@@ -1041,7 +1041,9 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const text = lines.length ? linesText(lines) : String(result.answer ?? '').trim();
   const ideas = (result.ideas ?? []).map((t) => String(t ?? '').trim().slice(0, 80)).filter(Boolean).slice(0, 3);
   readPlayer(game, playerId, result.player_read, 'private', now);
-  const [scored, penalty] = recordPlay(game, playerId, result.play, ask.read, 'private');
+  // An act the game held back (a meeting, no acts left) never costs the player a point.
+  const play = ask.held && result.play ? { ...result.play, points: Math.max(0, Number(result.play.points) || 0) } : result.play;
+  const [scored, penalty] = recordPlay(game, playerId, play, ask.read, 'private');
   const shown = (m) => ({ points: m.points, skill: m.skill, why: m.why });
   thread.push({ from: 'gm', text: text || '(No answer.)', ...(lines.length ? { lines } : {}), ...(ideas.length ? { ideas } : {}), play: shown(scored), ...(penalty ? { penalty: shown(penalty) } : {}), at: now });
   // A move that would contradict the story does not happen: no clue, no move, no stir. The player is told why.
@@ -1219,6 +1221,11 @@ export function addRound(game, round, now = Date.now()) {
     Object.assign(ph, { question: text('question'), options, answer_index: Number.isInteger(answer) && answer >= 0 && answer < options.length ? answer : 0, reward: text('reward'), reward_time: '', reward_order: 0, wrong_nudge: text('wrong_nudge') });
     if (namesCulprit(sc, game.players, ph.reward)) ph.reward = '';
     if (namesCulprit(sc, game.players, ph.wrong_nudge)) ph.wrong_nudge = '';
+    // "That is right!" on an answer that names the culprit would name them before the final vote.
+    if (namesCulprit(sc, game.players, ph.options[ph.answer_index])) {
+      for (const k of ['question', 'options', 'answer_index', 'reward', 'reward_time', 'reward_order', 'wrong_nudge']) delete ph[k];
+      ph.vote_kind = 'spotlight';
+    }
   }
   // During a round change the next round is already being prepared, and the final vote never gains a round.
   if (st.transitioning && isLastPhase(game)) return false;
@@ -1338,6 +1345,8 @@ export function cancelPhaseChange(game) {
 export function completePhase(game, result, now = Date.now()) {
   if (game.status !== 'playing') fail('No phase is running.', 409);
   const st = game.state;
+  // A meeting belongs to its round: it never runs on into the next one.
+  if (st.meeting) endMeeting(game, null, now);
   st.transitioning = false;
   const replay = willReplay(game);
   if (game.setup?.roundStyle === 'hotseats') postRoundReward(game, now);
@@ -1858,6 +1867,7 @@ export function beginRoundVote(game, now = Date.now()) {
   if (!needsRoundVote(game)) fail('This round has no question to vote on.', 409);
   st.hintVote = null;
   st.voteAsk = null;
+  if (st.meeting) endMeeting(game, null, now);
   st.roundVote = { phaseIndex: st.phaseIndex, votes: {}, endsAt: now + ROUND_VOTE_MS };
   addEvent(game, `Time to vote: ${roundQuestion(game, st.phaseIndex).question}`, 'vote', now);
   return st.roundVote;

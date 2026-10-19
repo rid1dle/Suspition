@@ -428,7 +428,7 @@ ${JSON.stringify(scenario)}`;
 }
 
 export function askPrompt({ snapshot, player, kind, text, read, short = false, here = '', trip = '', talk = false, noActs = false }) {
-  const talkRule = talk ? `This is talk, not an act. Answer only with what people say and how they react; a GM character shares what their sheet lets them say. Leave clues_found empty, destroy nothing, move nobody, no public_event.${noActs ? ' The player has no acts left this round, so their character cannot search, take or check anything now; if they tried, the people there can still talk, and the act has to wait for the next round.' : ''}\n\n` : '';
+  const talkRule = talk ? `This is talk, not an act. Answer only with what people say and how they react; a GM character shares what their sheet lets them say. Leave clues_found empty, destroy nothing, move nobody, no public_event.${noActs ? ' The player has no acts left this round, so their character cannot search, take or check anything now; if they tried, the people there can still talk, and the act has to wait for the next round. Never write that the character chose not to do it: say plainly that it has to wait.' : ''}\n\n` : '';
   return `${talkRule}${short ? 'Reply in at most 2 short lines (each under 30 words), and end with something this player can do or say in the room next (show a clue to someone, ask someone out loud).\n\n' : ''}Game state:
 ${JSON.stringify(snapshot)}
 

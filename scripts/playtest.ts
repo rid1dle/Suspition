@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { App } from '../server/app.ts';
 import { GM } from '../server/gm.ts';
 import { Store, MemoryPeople } from '../server/store.ts';
+import * as G from '../server/game.ts';
 import { forDataset, briefingSteps } from '../server/game.ts';
 import { rating } from '../server/skills.ts';
 import { BOT_SCHEMA, FINAL_BOT_SCHEMA, botSystem, botPrompt, applyBotAction } from './playtest/bots.ts';
@@ -60,6 +61,10 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
   for (const b of bots) await app.ready(b.token);
   await app.start(host);
   // Bots always go where they said: a move confirm is answered at once, so nothing waits 90 seconds.
+  // The server's clock ends meetings on time; the harness runs it too.
+  const clock = setInterval(() => {
+    if (G.tickMeeting(app.game, Date.now())) app.changed().catch(() => {});
+  }, 1000);
   const confirmer = setInterval(() => {
     for (const b of bots) {
       const pid = app.game.players.find((p) => p.token === b.token)?.id;
@@ -102,6 +107,7 @@ export async function runPlaytest({ gm, botCall, judgeCall, bots, outDir, settin
   }
 
   clearInterval(confirmer);
+  clearInterval(clock);
   const game = app.game;
   const m = metrics(game, roles);
   log('The judge is reading the whole game.');
