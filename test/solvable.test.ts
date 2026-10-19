@@ -58,6 +58,11 @@ describe('every player has a goal they can reach', () => {
     assert.deepEqual(issues(s), []);
   });
 
+  test('should tell the private GM a goal can be reached at its place', async () => {
+    const { playSystem } = await import('../server/prompts.ts');
+    assert.match(playSystem({ title: 'x' }), /A goal can always be reached: when the asker moves toward it at their goal_where/);
+  });
+
   test('should let the story check set a goal place', () => {
     const s = withGoals(makeScenario(4));
     s.players[2].goal_where = '';
