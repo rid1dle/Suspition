@@ -62,10 +62,10 @@ export function CardFlip({ card, caseQuestion, overridesLeft, overridesTotal, pe
         </Section>
       )}
 
-      {card.people?.length > 0 && (
+      {(card.people?.length ?? 0) > 0 && (
         <Section title="Your people">
           <ul className="flex flex-col gap-1.5">
-            {card.people.map((x: { name: string; line: string }) => <li key={x.name}><b>{x.name}</b> <span className="text-sm">{x.line}</span></li>)}
+            {(card.people ?? []).map((x) => <li key={x.name}><b>{x.name}</b> <span className="text-sm">{x.line}</span></li>)}
           </ul>
         </Section>
       )}
