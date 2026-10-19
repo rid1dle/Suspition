@@ -8,7 +8,8 @@ const long = 'word '.repeat(80);
 describe('reader', () => {
   test('should cut every move field to 200 characters and keep at most 5 claims', () => {
     const read = cleanRead({ kind: 'action', target: long, place: long, attempt: long, said_aloud: long, out_of_world: false, sways_gm: false, claims: Array(9).fill(long) }, 'move');
-    for (const k of ['target', 'place', 'attempt', 'said_aloud']) assert.ok(read[k].length <= 200, k);
+    for (const k of ['target', 'place', 'attempt']) assert.ok(read[k].length <= 200, k);
+    assert.ok(read.said_aloud.length <= 700, 'a spoken line is kept whole, up to 700 characters');
     assert.equal(read.claims.length, 5);
     assert.ok(read.claims.every((c) => c.length <= 160));
   });

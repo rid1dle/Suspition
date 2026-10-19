@@ -2242,7 +2242,8 @@ export function publicKnowledge(game) {
     timeline: publicTimeline(game),
     news: game.state.events.filter((e) => !['opening', 'qa'].includes(e.kind)).slice(-20).map(eventForGM),
     asked_out_loud_before: game.state.events.filter((e) => e.kind === 'qa').slice(-15).map((e) => `${e.by} asked: ${e.read ? playerWords(e.read, e.q, 'public') : e.q} Answer: ${e.text}`),
-    where_people_say_they_were: alibiTable(sc),
+    // Named for what it holds: claims, which may be lies. The out-loud GM must never quote them as fact.
+    alibis_claimed_not_checked: alibiTable(sc),
     canon: (game.state.canon ?? []).filter((c) => c.public).map((c) => c.fact),
     shared_clues: game.state.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
