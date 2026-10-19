@@ -33,6 +33,14 @@ export function tripTime(m, about = false) {
   return about ? `about ${text}` : text;
 }
 
+// "350 m · 4 min", short enough to sit on a path of the map.
+export function tripShort(m, about = false) {
+  const walk = walkMinutes(m);
+  const time = walk < 1 ? 'under 1 min' : `${Math.round(walk)} min`;
+  const car = m > DRIVE_FROM_M ? ` · ${Math.max(1, Math.round(m / DRIVE_M_PER_MIN))} min by car` : '';
+  return `${about ? 'about ' : ''}${metresText(m)} · ${time}${car}`;
+}
+
 // "350 m, 4 min walk".
 export const tripLabel = (m, about = false) => `${about ? 'about ' : ''}${metresText(m)}, ${tripTime(m)}`;
 

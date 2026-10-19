@@ -75,6 +75,30 @@ describe('the map lays places out so none ever overlap', () => {
   });
 });
 
+describe('distances on the paths', () => {
+  test('should label every path with its length and walk', () => {
+    const plan = layoutMap(crowded);
+    const bunkDuty = plan.paths.find((p: { from: string; to: string }) => [p.from, p.to].sort().join() === 'bunk,duty');
+    assert.equal(bunkDuty.label, '40 m · under 1 min');
+    assert.ok(plan.paths.every((p: { label: string }) => p.label));
+  });
+
+  test('should say a short walk is under a minute and mark a guessed world with about', () => {
+    const near = { ...crowded, map: { ...crowded.map, geography: { ...crowded.map.geography, paths: [{ from: 'bunk', to: 'duty', kind: 'corridor', m: 20 }] } } };
+    assert.equal(layoutMap(near).paths.find((p: { from: string }) => p.from === 'bunk').label, '20 m · under 1 min');
+    const old = { ...near, map: { ...near.map, geography: { ...near.map.geography, about: true } } };
+    assert.equal(layoutMap(old).paths.find((p: { from: string }) => p.from === 'bunk').label, 'about 20 m · under 1 min');
+  });
+
+  test('should never put a distance on top of a place card', () => {
+    const plan = layoutMap(crowded);
+    for (const p of plan.paths) for (const c of plan.places) {
+      const inside = Math.abs(p.lx - c.x) < CARD_W / 2 + 30 && Math.abs(p.ly - c.y) < c.h / 2 + 8;
+      assert.ok(!inside, `${p.from}-${p.to} label sits on ${c.name}`);
+    }
+  });
+});
+
 describe('how far a place is, along the paths', () => {
   test('should give the walk along a direct path', () => {
     assert.equal(tripFrom(crowded, 'bunk', 'duty'), 'under a minute');
@@ -91,11 +115,18 @@ describe('how far a place is, along the paths', () => {
 });
 
 describe('the map on screen', () => {
-  test('should show every place by name with its people, and no walking times', () => {
-    const out = text(<WorldMap view={crowded} me="p1" />);
+  test('should show every place by name with its people, and the distance on each path', () => {
+    const out = text(<WorldMap view={crowded} />);
     for (const name of ['Vestry', 'Chapel of St. Selene', 'Iron Gate Vault', 'Old Cistern Well']) assert.ok(out.includes(name), name);
+    assert.match(out, /40 m · under 1 min/);
+    assert.match(out, /60 m · under 1 min/);
+  });
+
+  test('should show on a phone only the distances from your place', () => {
+    const out = text(<WorldMap view={crowded} me="p1" />);
     assert.match(out, /You/);
-    assert.doesNotMatch(out, /min walk|under a minute/);
+    assert.match(out, /40 m · under 1 min/);
+    assert.doesNotMatch(out, /60 m/);
   });
 
   test('should offer zoom out, fit and zoom in', () => {

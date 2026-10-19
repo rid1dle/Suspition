@@ -5,7 +5,7 @@ import { layoutMap, CARD_W } from '@/lib/map-layout';
 
 type Person = { id: string; name: string; label: string; kind: string; minor: boolean; me: boolean; moved: boolean };
 type Place = { id: string; name: string; icon: string; info: string; x: number; y: number; here: boolean; people: Person[] };
-type Path = { from: string; to: string; kind: string; x1: number; y1: number; x2: number; y2: number; near: boolean | null };
+type Path = { from: string; to: string; kind: string; x1: number; y1: number; x2: number; y2: number; cx: number; cy: number; label: string; lx?: number; ly?: number; near: boolean | null };
 type Layout = { width: number; height: number; places: Place[]; paths: Path[]; here: string | null; terrain: string | null; hasMinor: boolean };
 
 const layout = layoutMap as (view: unknown, opts: { me?: string | null; before?: Record<string, string> | null; aspect?: number }) => Layout | null;
@@ -15,12 +15,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
 const DASH: Record<string, string | undefined> = { stairs: '3 5', water: '8 5' };
 
 // A soft curve between two places, bent a little so lines that share a row do not sit on top of each other.
-function curve(p: Path) {
-  const mx = (p.x1 + p.x2) / 2;
-  const my = (p.y1 + p.y2) / 2;
-  const bend = 0.12;
-  return `M${p.x1} ${p.y1} Q${mx - (p.y2 - p.y1) * bend} ${my + (p.x2 - p.x1) * bend} ${p.x2} ${p.y2}`;
-}
+const curve = (p: Path) => `M${p.x1} ${p.y1} Q${p.cx} ${p.cy} ${p.x2} ${p.y2}`;
 
 // The world's map, the same on the big screen and the phone: places and the people in them, paths between.
 // Zoom with the buttons, the wheel or a pinch; drag to look around. With onSelect, tapping a place picks it.
@@ -135,6 +130,10 @@ export function WorldMap({ view, me = null, before = null, selected = null, onSe
                 strokeOpacity={p.near === false ? 0.25 : p.near ? 0.9 : 0.45} strokeWidth={p.kind === 'road' || p.kind === 'corridor' ? 4 : 2.5} strokeDasharray={DASH[p.kind]} />
             ))}
           </svg>
+          {plan.paths.filter((p) => p.label && p.lx !== undefined && p.near !== false).map((p) => (
+            <span key={`d-${p.from}-${p.to}`} data-distance className={`absolute -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border bg-background px-2 py-0.5 text-xs ${p.near ? 'border-primary/60 text-foreground' : 'border-border text-muted-foreground'}`}
+              style={{ left: p.lx, top: p.ly }}>{p.label}</span>
+          ))}
           {plan.places.map((p) => (
             <button key={p.id} type="button" data-place={p.id} title={p.info || p.name} onClick={() => pick(p.id)} disabled={!onSelect}
               className={`absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5 rounded-xl border bg-background px-3 py-2.5 text-center shadow-sm transition-colors disabled:cursor-default ${p.here ? 'border-primary ring-2 ring-primary/40' : selected === p.id ? 'border-primary' : 'border-border enabled:hover:border-primary/60'}`}
