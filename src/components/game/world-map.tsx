@@ -167,8 +167,8 @@ export function WorldMap({ view, me = null, before = null, selected = null, onSe
 }
 
 // What a tap on a place shows on the phone: who is there, how far it is, and the way to go.
-export function PlacePanel({ name, info, people, trip, here, canGo, onGo }: {
-  name: string; info?: string; people: string[]; trip: string | null; here: boolean; canGo: boolean; onGo: () => void;
+export function PlacePanel({ name, info, people, trip, here, canGo, onGo, onInvite }: {
+  name: string; info?: string; people: string[]; trip: string | null; here: boolean; canGo: boolean; onGo: () => void; onInvite?: () => void;
 }) {
   return (
     <div data-place-panel className="flex items-start gap-3 rounded-xl bg-card p-3">
@@ -177,6 +177,7 @@ export function PlacePanel({ name, info, people, trip, here, canGo, onGo }: {
         {info && <p className="text-sm text-muted-foreground">{info}</p>}
         <p className="mt-1 text-sm">{people.length ? `Here: ${people.join(', ')}` : 'Nobody is here.'}</p>
         <p className="text-sm text-muted-foreground">{here ? 'You are here.' : trip ? `${trip[0].toUpperCase()}${trip.slice(1)} from you.` : ''}</p>
+        {canGo && onInvite && <button type="button" onClick={onInvite} className="mt-1 text-sm text-primary hover:underline">Ask everyone to come</button>}
       </div>
       {!here && canGo && <button type="button" onClick={onGo} className="shrink-0 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">Go there</button>}
     </div>

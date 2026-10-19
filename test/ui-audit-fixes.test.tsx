@@ -86,7 +86,7 @@ describe('ui audit: layout', () => {
     const html = phone(game, 'p2');
     const tray = html.slice(html.indexOf('data-tray'));
     assert.ok(tray.includes('QUESTION-1'));
-    assert.ok(tray.indexOf('QUESTION-1') < tray.indexOf('To the room'));
+    assert.ok(tray.indexOf('QUESTION-1') < tray.indexOf('Who hears it'));
   });
 
   test('should put the drawers in the top bar', () => {

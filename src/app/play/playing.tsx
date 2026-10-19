@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label, Muted } from '@/components/game/label';
 import { RoundCard } from '@/components/game/round';
 import { Novel } from '@/components/game/novel';
@@ -19,7 +20,7 @@ import { PlayChip, PlayLine } from '@/components/game/score';
 import { Timeline, Alibis, SharedClues, Recap, ScenePicture, Facts, GoalsPanel, KeyObjects } from '@/components/game/panels';
 import { useDraft } from '@/lib/live';
 import { storage } from '@/lib/api';
-import { chatItems, introLines, type ChatItem } from '@/lib/chat';
+import { chatItems, channelItems, targetsFor, unreadIn, introLines, type ChatItem, type Layout, type Target } from '@/lib/chat';
 import { countdown, reminderDue, suspicionLabel, callFor, type ReminderState } from '@/lib/phone';
 import type { PlayerView } from '@/lib/views';
 import { CardFlip } from './card';
@@ -28,7 +29,6 @@ import { act, tokenOf } from './play-app';
 // The chat is the game: one stream, the composer at the bottom, everything else a tap away in a drawer.
 type Drawer = 'card' | 'goals' | 'clues' | 'map' | 'people' | 'case';
 const DRAWERS: [Drawer, string][] = [['card', 'Me'], ['goals', 'Goals'], ['clues', 'Clues'], ['map', 'Map'], ['people', 'People'], ['case', 'Case file']];
-type Mode = 'room' | 'private';
 const STARTERS: [string, string][] = [['Talk to…', 'I ask '], ['Look at…', 'I look at '], ['Secretly…', 'Secretly, I '], ['Remember…', 'I try to remember ']];
 const ICONS: Record<string, string> = { event: '🔔', move: '🚶', meeting: '📣', because: '➜', clue: '🔎', timeline: '⏱', hint: '✦', ripple: '〰', refused: '✋', said: '🗣', seat: '🎙', vote: '🗳', point: '👉', note: '💬', voteask: '🗳', sync: '📋', recap: '📋' };
 
@@ -41,18 +41,54 @@ function useNow(ms = 1000) {
   return now;
 }
 
+// Three ways to lay out the chat; Room | Private is the default, the others are a per-phone choice under Me.
+const LAYOUTS: [Layout, string][] = [['tabs', 'Room | Private'], ['three', 'Room | GM | People'], ['stream', 'One stream']];
+const TABS: Record<Layout, [string, string][]> = {
+  tabs: [['room', 'Room'], ['private', 'Private']],
+  three: [['room', 'Room'], ['gm', 'GM'], ['people', 'People']],
+  stream: [['all', 'All'], ['room', 'Room'], ['private', 'Private']],
+};
+const layoutKey = 'detective-chat-layout';
+const readLayout = (): Layout => {
+  const v = storage.get(layoutKey);
+  return v === 'three' || v === 'stream' ? v : 'tabs';
+};
+
 export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<string>; clearDot: (t: string) => void }) {
   const [drawer, setDrawer] = useState<Drawer | null>(null);
   const [text, setText] = useDraft(`say-${view.gameId}`);
-  const [mode, setMode] = useState<Mode>('room');
+  const [layout, setLayoutState] = useState<Layout>(readLayout);
+  const [tab, setTabState] = useState<string>(layout === 'stream' ? 'all' : 'room');
+  const [person, setPerson] = useState<string | null>(null);
+  const [target, setTarget] = useState<Target | null>(null);
   const [intro, setIntro] = useState(() => !storage.get(`detective-intro-${view.gameId}`));
   const box = useRef<HTMLTextAreaElement>(null);
+  const items = chatItems(view);
+  const solo = (view.cast?.players ?? []).length < 2;
+  const tabs = TABS[layout].filter(([t]) => !(solo && t === 'people'));
+  const [seen, setSeen] = useState<Record<string, number>>({});
+  const latest = Math.max(0, ...items.map((i) => (Number.isFinite(i.at) ? i.at : 0)));
+  useEffect(() => {
+    setSeen((s) => (s[tab] === latest ? s : { ...s, [tab]: latest }));
+  }, [tab, latest]);
+  const setTab = (t: string) => {
+    setTabState(t);
+    setTarget(null);
+  };
+  const setLayout = (l: Layout) => {
+    storage.set(layoutKey, l);
+    setLayoutState(l);
+    setTab(l === 'stream' ? 'all' : 'room');
+  };
   const open = (d: Drawer) => {
     setDrawer(d);
     clearDot(d);
   };
-  const write = (words: string, as: Mode = mode, fresh = true) => {
-    setMode(as);
+  const write = (words: string, to: Target | null = null, fresh = true) => {
+    if (to) {
+      setTab(to.kind === 'room' ? 'room' : layout === 'three' ? (to.kind === 'gm' ? 'gm' : 'people') : layout === 'stream' ? 'all' : 'private');
+      setTarget(to);
+    }
     setText(fresh ? words : `${text}${text && !text.endsWith(' ') ? ' ' : ''}${words}`);
     box.current?.focus();
   };
@@ -72,19 +108,22 @@ export function Playing({ view, dots, clearDot }: { view: PlayerView; dots: Set<
   }, []);
   return (
     <div className="mx-auto flex min-h-dvh max-w-md flex-col">
-      <TopBar view={view} onOpenCard={() => open('card')} dots={dots} onDrawer={open} />
+      <TopBar view={view} onOpenCard={() => open('card')} dots={dots} onDrawer={open}>
+        <ChatTabs tabs={tabs} tab={tab} onTab={setTab} unread={(t) => unreadIn(channelItems(items, { layout, tab: t }), seen[t] ?? 0)} />
+      </TopBar>
       <main className="flex flex-1 flex-col gap-3 px-4 pt-3" style={{ paddingBottom: room + 16 }}>
-        <RoundStrip view={view} onIdea={(t) => write(t, 'private')} />
-        <Stream view={view} onGo={(d) => open(d)} />
+        <RoundStrip view={view} onIdea={(t) => write(t, GM_TARGET)} />
+        {layout === 'three' && tab === 'people' && <PersonPicker view={view} person={person} onPick={setPerson} />}
+        <Stream items={channelItems(items, { layout, tab, person })} empty={EMPTY[tab] ?? EMPTY.room} onGo={(d) => open(d)} onTell={(line) => write(line, ROOM_TARGET)} />
       </main>
-      <Composer view={view} text={text} setText={setText} mode={mode} setMode={setMode} box={box} barRef={bottom} onIdea={(t) => write(t, mode, false)} />
-      <AnimatePresence>{drawer && <Sheet key={drawer} title={DRAWERS.find(([d]) => d === drawer)?.[1] ?? ''} onClose={() => setDrawer(null)}><DrawerBody view={view} drawer={drawer} /></Sheet>}</AnimatePresence>
-      <AnimatePresence>{intro && view.card && <Intro view={view} onPick={(line) => { closeIntro(); write(line, 'room'); }} onClose={closeIntro} />}</AnimatePresence>
+      <Composer view={view} text={text} setText={setText} layout={layout} tab={tab} person={person} target={target} setTarget={setTarget} box={box} barRef={bottom} onIdea={(t) => write(t, null, false)} />
+      <AnimatePresence>{drawer && <Sheet key={drawer} title={DRAWERS.find(([d]) => d === drawer)?.[1] ?? ''} onClose={() => setDrawer(null)}><DrawerBody view={view} drawer={drawer} layout={layout} onLayout={setLayout} onTell={(line) => { setDrawer(null); write(line, ROOM_TARGET); }} /></Sheet>}</AnimatePresence>
+      <AnimatePresence>{intro && view.card && <Intro view={view} onPick={(line) => { closeIntro(); write(line, ROOM_TARGET); }} onTry={(idea) => { closeIntro(); write(idea, GM_TARGET); }} onClose={closeIntro} />}</AnimatePresence>
     </div>
   );
 }
 
-function TopBar({ view, onOpenCard, dots, onDrawer }: { view: PlayerView; onOpenCard: () => void; dots: Set<string>; onDrawer: (d: Drawer) => void }) {
+function TopBar({ view, onOpenCard, dots, onDrawer, children }: { view: PlayerView; onOpenCard: () => void; dots: Set<string>; onDrawer: (d: Drawer) => void; children?: React.ReactNode }) {
   const now = useNow();
   const timer = view.phase?.endsAt ? countdown(view.phase.endsAt, now) : null;
   const [reminder, setReminder] = useState<string | null>(null);
@@ -134,6 +173,7 @@ function TopBar({ view, onOpenCard, dots, onDrawer }: { view: PlayerView; onOpen
           <ReminderCard key={reminder} name={view.card.name} line={reminder} onOpen={() => { setReminder(null); onOpenCard(); }} onDismiss={() => setReminder(null)} />
         )}
       </AnimatePresence>
+      {children}
     </header>
   );
 }
@@ -144,7 +184,8 @@ function Pinned({ view }: { view: PlayerView }) {
   const now = useNow();
   const vote = view.round?.vote;
   const meeting = view.meeting as { by: string; reason: string; endsAt: number; mine?: boolean } | null;
-  const any = meeting || view.seat || view.moments?.[0] || view.moveConfirm || view.offers?.[0] || vote;
+  const invite = view.invites?.[0];
+  const any = meeting || view.seat || view.moments?.[0] || view.moveConfirm || view.offers?.[0] || vote || invite;
   if (!any) return null;
   return (
     <div data-tray className="flex max-h-[45dvh] flex-col gap-3 overflow-y-auto">
@@ -152,12 +193,27 @@ function Pinned({ view }: { view: PlayerView }) {
       <SeatCard seat={view.seat as SeatView | null} now={now} />
       <Moment view={view} now={now} />
       {view.moveConfirm && <GoConfirm place={view.moveConfirm.place} onAnswer={(yes) => act('move', { token: tokenOf(), yes })} />}
+      {invite && !view.moveConfirm && <InviteCard invite={invite} />}
       {view.offers?.[0] && <OfferCard offer={view.offers[0]} onAnswer={(take, text = '') => act('offer', { token: tokenOf(), id: view.offers![0].id, action: take ? 'take' : 'own', text })} />}
       {vote && (
         <section className="rounded-2xl bg-card p-4 shadow-sm ring-2 ring-primary">
           <RoundCard round={view.round} brief={view.voteBrief} voting myVote={view.myRoundVote ?? null} countdown={countdown(vote.endsAt, now).text} onVote={(i) => act('roundvote', { token: tokenOf(), choice: i })} />
         </section>
       )}
+    </div>
+  );
+}
+
+// Someone asked everyone to go somewhere together: come along, or stay.
+function InviteCard({ invite }: { invite: { id: string; by: string; place: string } }) {
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl bg-card p-4 ring-1 ring-primary/40">
+      <Label>{invite.by} asks everyone to come</Label>
+      <p className="text-base">To the {invite.place.replace(/^the\s+/i, '')}.</p>
+      <div className="flex gap-2">
+        <Button onClick={() => act('inviteanswer', { token: tokenOf(), id: invite.id, yes: true })}>Go with them</Button>
+        <Button variant="ghost" onClick={() => act('inviteanswer', { token: tokenOf(), id: invite.id, yes: false })}>Not now</Button>
+      </div>
     </div>
   );
 }
@@ -258,24 +314,63 @@ function RoomButtons({ view }: { view: PlayerView }) {
   );
 }
 
-function Stream({ view, onGo }: { view: PlayerView; onGo: (d: Drawer) => void }) {
-  const items = chatItems(view);
-  const last = items.at(-1)?.key;
-  useEffect(() => {
-    window.scrollTo?.({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
-  }, [items.length, last]);
-  if (!items.length) return <Muted>Nothing yet. Say hello to the room.</Muted>;
+const GM_TARGET: Target = { kind: 'gm', id: null, label: 'GM' };
+const ROOM_TARGET: Target = { kind: 'room', id: null, label: 'Everyone' };
+const EMPTY: Record<string, string> = {
+  room: 'Nothing yet. Say hello to the room.',
+  private: 'Nothing private yet. Talk to the GM, or message someone.',
+  gm: 'Nothing yet. Tell the GM what you do.',
+  people: 'No messages yet.',
+  all: 'Nothing yet. Say hello to the room.',
+};
+
+// The chat's tabs: which conversation you are looking at. A dot means something new there.
+function ChatTabs({ tabs, tab, onTab, unread }: { tabs: [string, string][]; tab: string; onTab: (t: string) => void; unread: (t: string) => number }) {
   return (
-    <div className="flex flex-col gap-2" data-chat>
-      {items.map((it, i) => <ChatLine key={it.key} item={it} latest={i === items.length - 1} onGo={onGo} />)}
+    <div role="tablist" aria-label="Conversations" className="-mb-2 flex gap-5">
+      {tabs.map(([t, label]) => {
+        const n = t === tab ? 0 : unread(t);
+        return (
+          <button key={t} role="tab" aria-selected={t === tab} onClick={() => onTab(t)}
+            className={`relative py-2 text-sm ${t === tab ? 'font-medium text-primary' : 'text-muted-foreground'}`}>
+            {label}{n > 0 && <span className="ml-1 text-xs text-primary">{n}</span>}
+            {t === tab && <span className="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function ChatLine({ item, latest, onGo }: { item: ChatItem; latest: boolean; onGo: (d: Drawer) => void }) {
+// With several other players, People shows one person's messages at a time.
+function PersonPicker({ view, person, onPick }: { view: PlayerView; person: string | null; onPick: (id: string) => void }) {
+  const others = (view.cast?.players ?? []).filter((p) => p.id !== view.me.id);
+  if (others.length < 2) return null;
+  return (
+    <div className="flex gap-x-4 gap-y-1 overflow-x-auto text-sm">
+      {others.map((p) => <button key={p.id} onClick={() => onPick(p.id)} className={person === p.id ? 'font-medium text-primary' : 'text-muted-foreground'}>{p.name}</button>)}
+    </div>
+  );
+}
+
+function Stream({ items, empty, onGo, onTell }: { items: ChatItem[]; empty: string; onGo: (d: Drawer) => void; onTell: (line: string) => void }) {
+  const last = items.at(-1)?.key;
+  useEffect(() => {
+    window.scrollTo?.({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+  }, [items.length, last]);
+  if (!items.length) return <Muted>{empty}</Muted>;
+  return (
+    <div className="flex flex-col gap-2" data-chat>
+      {items.map((it, i) => <ChatLine key={it.key} item={it} latest={i === items.length - 1} onGo={onGo} onTell={onTell} />)}
+    </div>
+  );
+}
+
+function ChatLine({ item, latest, onGo, onTell }: { item: ChatItem; latest: boolean; onGo: (d: Drawer) => void; onTell: (line: string) => void }) {
   const fade = latest ? { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } } : {};
   if (item.kind === 'round-start') return <div className="mt-3 flex items-center gap-2 text-xs tracking-wide text-primary uppercase"><span className="h-px flex-1 bg-border" />{item.text.replace(/^Round (\d+) of \d+: /, 'Round $1 · ')}<span className="h-px flex-1 bg-border" /></div>;
-  if (item.side === 'me') return <PrivateLine item={item} latest={latest} fade={fade} />;
+  if (item.dm) return <DmLine item={item} latest={latest} fade={fade} />;
+  if (item.side === 'me') return <PrivateLine item={item} latest={latest} fade={fade} onTell={onTell} />;
   if (item.kind === 'opening') return <motion.div {...fade} className="rounded-2xl bg-card p-4"><Label>The story so far</Label><p className="mt-1">{item.text}</p></motion.div>;
   if (['recap', 'sync'].includes(item.kind)) return <motion.div {...fade} className="rounded-xl border border-border bg-card p-3 text-sm"><Label>Where we are now</Label><p className="mt-1">{item.text.replace(/^Where we are now\. /, '')}</p></motion.div>;
   if (item.kind === 'qa' || item.kind === 'asking') {
@@ -298,7 +393,19 @@ function ChatLine({ item, latest, onGo }: { item: ChatItem; latest: boolean; onG
 
 const WHO: Record<string, string> = { you: 'You · only the GM sees', gm: 'GM · only you', whisper: 'Secret note', system: 'Note', thinking: 'GM' };
 
-function PrivateLine({ item, latest, fade }: { item: ChatItem; latest: boolean; fade: object }) {
+// A message between two players: only the two of them see it, and the GM only when one of them asked it in.
+function DmLine({ item, latest, fade }: { item: ChatItem; latest: boolean; fade: object }) {
+  const m = item.dm!;
+  const tint = m.mine ? 'self-end bg-primary/15' : 'bg-card';
+  return (
+    <motion.div {...fade} className={`flex max-w-[88%] flex-col gap-1 rounded-2xl p-3 ${tint}`}>
+      <Label>{m.mine ? `You → ${m.to}` : `${m.from} · only you two`}</Label>
+      {m.lines?.length ? <Novel lines={m.lines} animate={latest} /> : <p>{m.text}</p>}
+    </motion.div>
+  );
+}
+
+function PrivateLine({ item, latest, fade, onTell }: { item: ChatItem; latest: boolean; fade: object; onTell: (line: string) => void }) {
   const m = item.entry;
   const mine = item.kind === 'you';
   const tint = mine ? 'self-end bg-primary/15' : item.kind === 'whisper' ? 'bg-layer-hidden/15' : item.kind === 'system' ? 'bg-destructive/15' : 'bg-card';
@@ -308,50 +415,106 @@ function PrivateLine({ item, latest, fade }: { item: ChatItem; latest: boolean; 
       {m?.lines ? <Novel lines={m.lines} animate={latest} /> : <p className={item.kind === 'thinking' ? 'animate-pulse text-muted-foreground' : ''}>{item.text}</p>}
       <PlayLine play={m?.play} />
       <PlayLine play={m?.penalty} />
+      {m?.tell && <button className="self-start text-xs text-primary hover:underline" onClick={() => onTell(m.tell!)}>Tell the room</button>}
       {latest && m?.play && <span className="absolute -top-3 right-3"><PlayChip play={m.play} /></span>}
     </motion.div>
   );
 }
 
-// One box for everything you say: to the room (everyone hears) or in private to the GM. Both are free.
-function Composer({ view, text, setText, mode, setMode, box, barRef, onIdea }: {
-  view: PlayerView; text: string; setText: (t: string) => void; mode: Mode; setMode: (m: Mode) => void; box: React.RefObject<HTMLTextAreaElement | null>;
+// One box for everything you say. To: everyone or one person out loud, the GM in private, or a message to one player.
+// The GM answers in the room unless switched off, and joins a message between players only when asked in.
+function Composer({ view, text, setText, layout, tab, person, target, setTarget, box, barRef, onIdea }: {
+  view: PlayerView; text: string; setText: (t: string) => void; layout: Layout; tab: string; person: string | null;
+  target: Target | null; setTarget: (t: Target | null) => void; box: React.RefObject<HTMLTextAreaElement | null>;
   barRef: React.RefObject<HTMLDivElement | null>; onIdea: (t: string) => void;
 }) {
-  const busy = mode === 'room' ? Boolean(view.publicPending) : Boolean(view.pending) || Boolean(view.round?.vote) || view.transitioning;
-  const ideas = [...(view.thread ?? [])].reverse().find((m) => m.from === 'gm')?.ideas ?? [];
-  const chips: [string, string][] = mode === 'private' ? (ideas.length ? ideas.map((t) => [t, t] as [string, string]) : STARTERS) : [];
-  const names = [...(view.cast?.players ?? []).filter((p) => p.id !== view.me.id).map((p) => p.name), ...(view.cast?.npcs ?? []).map((n) => n.name)];
+  const [gmInRoom, setGmInRoom] = useState(true);
+  const [gmInDm, setGmInDm] = useState(false);
+  const options = composerTargets(view, layout, tab, person);
+  const to = (target && options.find((o) => o.kind === target.kind && o.id === target.id)) ?? options[0];
+  const busy = to.kind === 'room' ? Boolean(view.publicPending) : to.kind === 'gm' ? Boolean(view.pending) || Boolean(view.round?.vote) || view.transitioning : false;
+  const ideas = to.kind === 'gm' ? [...(view.thread ?? [])].reverse().find((m) => m.from === 'gm')?.ideas ?? [] : [];
+  const chips: [string, string][] = to.kind === 'gm' ? (ideas.length ? ideas.map((t) => [t, t] as [string, string]) : STARTERS) : [];
   const send = async () => {
-    const ok = mode === 'room' ? await act('public', { token: tokenOf(), text }) : await act('ask', { token: tokenOf(), kind: 'chat', text });
+    const named = to.id && !new RegExp(`^\\s*${to.label.split(/\s+/)[0]}\\b`, 'i').test(text) ? `${to.label}, ${text}` : text;
+    const ok = to.kind === 'gm' ? await act('ask', { token: tokenOf(), kind: 'chat', text })
+      : to.kind === 'dm' ? await act('dm', { token: tokenOf(), to: to.id, text, gm: gmInDm })
+      : gmInRoom ? await act('public', { token: tokenOf(), text: named })
+      : await act('say', { token: tokenOf(), text, to: to.id });
     if (ok) setText('');
   };
+  const hint = to.kind === 'gm' ? 'Only you see the answer. Talk and act as much as you like.'
+    : to.kind === 'dm' ? (gmInDm ? `Only you and ${to.label} see it, and the GM answers you both.` : `Only you and ${to.label} see it.`)
+    : gmInRoom ? 'Everyone hears it. Free.' : 'Everyone hears it. The GM stays quiet.';
   return (
     <div ref={barRef} data-composer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background pb-[env(safe-area-inset-bottom,0px)]">
       <div className="mx-auto flex max-w-md flex-col gap-2 px-3 pt-2 pb-3">
         <Pinned view={view} />
         <RoomButtons view={view} />
-        <div className="flex gap-1 overflow-x-auto">
-          {chips.map(([l, t]) => <button key={l} onClick={() => setText(t)} className="shrink-0 rounded-full border border-border px-3 py-1 text-xs">{l}</button>)}
-          {names.map((n) => <button key={n} onClick={() => onIdea(n)} className="shrink-0 rounded-full bg-muted px-3 py-1 text-xs">{n}</button>)}
-        </div>
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1 text-sm" role="radiogroup" aria-label="Who hears it">
-          {(['room', 'private'] as Mode[]).map((m) => (
-            <button key={m} role="radio" aria-checked={mode === m} onClick={() => setMode(m)} className={`rounded-md py-1.5 ${mode === m ? 'bg-background font-medium shadow-sm' : 'text-muted-foreground'}`}>
-              {m === 'room' ? 'To the room' : 'Private, to the GM'}
-            </button>
-          ))}
+        {chips.length > 0 && (
+          <div className="flex gap-1 overflow-x-auto">
+            {chips.map(([l, t]) => <button key={l} onClick={() => onIdea(t)} className="shrink-0 rounded-full border border-border px-3 py-1 text-xs">{l}</button>)}
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3 text-sm">
+          <label className="flex min-w-0 items-center gap-2">
+            <span className="text-muted-foreground">To</span>
+            {options.length < 2 ? <span className="font-medium">{to.label}</span> : (
+              <Select value={`${to.kind}:${to.id ?? ''}`} onValueChange={(v) => { const [kind, id] = v.split(':'); setTarget(options.find((o) => o.kind === kind && (o.id ?? '') === id) ?? null); }}>
+                <SelectTrigger size="sm" aria-label="Who hears it" className="min-w-0 font-medium"><SelectValue>{to.label}</SelectValue></SelectTrigger>
+                <SelectContent>
+                  {groupsOf(options).map(([group, list]) => (
+                    <SelectGroup key={group || 'all'}>
+                      {group && <SelectLabel>{group}</SelectLabel>}
+                      {list.map((o) => <SelectItem key={`${o.kind}:${o.id}`} value={`${o.kind}:${o.id ?? ''}`}>{o.label}</SelectItem>)}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </label>
+          {to.kind === 'room' && <Toggle on={gmInRoom} onChange={setGmInRoom} label="GM answers" />}
+          {to.kind === 'dm' && <Toggle on={gmInDm} onChange={setGmInDm} label="Ask the GM in" />}
         </div>
         <div className="flex gap-2">
-          <Textarea ref={box} value={text} maxLength={500} rows={2} onChange={(e) => setText(e.target.value)} className="min-w-0 flex-1 bg-card text-base"
-            placeholder={mode === 'room' ? 'Say something to everyone. "Lata, when did the music stop?"' : 'Talk to someone, or do something. "I search the desk."'} />
+          <Textarea ref={box} value={text} maxLength={500} rows={3} onChange={(e) => setText(e.target.value)} className="min-h-24 min-w-0 flex-1 bg-card text-base leading-snug"
+            placeholder={to.kind === 'gm' ? 'Talk to someone, or do something. "I search the desk."' : to.kind === 'dm' ? `Message ${to.label}` : to.id ? `Say something to ${to.label}, out loud.` : 'Say something to everyone. "Lata, when did the music stop?"'} />
           <Button className="self-end" disabled={!text.trim() || busy} onClick={send}>{busy ? '…' : 'Send'}</Button>
         </div>
-        <Muted className="text-xs">{mode === 'room' ? 'Everyone hears it. Free.' : 'Only you see the answer. Talk and act as much as you like.'}</Muted>
+        <Muted className="text-xs">{hint}</Muted>
       </div>
     </div>
   );
 }
+
+function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <button type="button" role="switch" aria-checked={on} onClick={() => onChange(!on)} className={`shrink-0 text-xs ${on ? 'text-primary' : 'text-muted-foreground'}`}>
+      {on ? '✓ ' : ''}{label}
+    </button>
+  );
+}
+
+// Who the box can send to from this tab. One stream offers everything, grouped.
+function composerTargets(view: PlayerView, layout: Layout, tab: string, person: string | null): (Target & { group?: string })[] {
+  const room = targetsFor(view, 'room');
+  const priv = targetsFor(view, 'private');
+  if (tab === 'room') return room;
+  if (layout === 'three' && tab === 'gm') return [GM_TARGET];
+  if (layout === 'three' && tab === 'people') {
+    const dms = priv.filter((t) => t.kind === 'dm');
+    const one = dms.find((t) => t.id === person);
+    return one ? [one] : dms.length ? dms : [GM_TARGET];
+  }
+  if (tab === 'private') return priv;
+  return [...room.map((t) => ({ ...t, group: 'Out loud' })), ...priv.map((t) => ({ ...t, group: 'Private' }))];
+}
+
+const groupsOf = (options: (Target & { group?: string })[]): [string, (Target & { group?: string })[]][] => {
+  const out = new Map<string, (Target & { group?: string })[]>();
+  for (const o of options) out.set(o.group ?? '', [...(out.get(o.group ?? '') ?? []), o]);
+  return [...out.entries()];
+};
 
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
@@ -365,10 +528,23 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
   );
 }
 
-function DrawerBody({ view, drawer }: { view: PlayerView; drawer: Drawer }) {
-  if (drawer === 'card') return view.card ? <CardFlip card={view.card} caseQuestion={view.caseQuestion} overridesLeft={view.overridesLeft ?? 0} overridesTotal={view.overridesTotal ?? 0} persona={view.persona} rules={view.rules} profile={view.profile} onForget={() => act('forget', { token: tokenOf() })} /> : null;
+function DrawerBody({ view, drawer, layout, onLayout, onTell }: { view: PlayerView; drawer: Drawer; layout: Layout; onLayout: (l: Layout) => void; onTell: (line: string) => void }) {
+  if (drawer === 'card') {
+    const solo = (view.cast?.players ?? []).length < 2;
+    return view.card ? (
+      <div className="flex flex-col gap-4">
+        <CardFlip card={view.card} caseQuestion={view.caseQuestion} overridesLeft={view.overridesLeft ?? 0} overridesTotal={view.overridesTotal ?? 0} persona={view.persona} rules={view.rules} profile={view.profile} onForget={() => act('forget', { token: tokenOf() })} />
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span>Chat view:</span>
+          {LAYOUTS.filter(([l]) => !(solo && l === 'three')).map(([l, label]) => (
+            <button key={l} onClick={() => onLayout(l)} className={l === layout ? 'font-medium text-primary' : 'hover:text-foreground'}>{label}</button>
+          ))}
+        </div>
+      </div>
+    ) : null;
+  }
   if (drawer === 'goals') return <GoalsPanel caseQuestion={view.caseQuestion} job={view.round?.objective} goal={view.card?.goal} steps={view.card?.goal_steps ?? []} open={view.recap?.open ?? []} watch={view.card?.watch ?? null} watched={Boolean(view.card?.watched)} />;
-  if (drawer === 'clues') return <CluesBody view={view} />;
+  if (drawer === 'clues') return <CluesBody view={view} onTell={onTell} />;
   if (drawer === 'map') return <GoSomewhere view={view} />;
   if (drawer === 'people') return <PeopleBody view={view} />;
   return (
@@ -413,14 +589,15 @@ function GoSomewhere({ view }: { view: PlayerView }) {
         <PlacePanel name={chosen.name} info={chosen.public_info} here={chosen.id === hereId} canGo={playing}
           people={cast.filter((c) => positions[c.id] === chosen.id && c.id !== view.me.id).map((c) => c.name)}
           trip={tripFrom(view, hereId, chosen.id)}
-          onGo={async () => { if (await act('go', { token: tokenOf(), place: chosen.id })) setPick(null); }} />
+          onGo={async () => { if (await act('go', { token: tokenOf(), place: chosen.id })) setPick(null); }}
+          onInvite={(view.cast?.players ?? []).length > 1 ? async () => { if (await act('invite', { token: tokenOf(), place: chosen.id })) setPick(null); } : undefined} />
       ) : <Muted className="text-xs">Tap a place to see who is there{playing ? ' and go there. Going is free; everyone sees you go' : ''}.</Muted>}
       {view.meeting && <Muted className="text-xs">A meeting is on. Moves wait until it ends.</Muted>}
     </div>
   );
 }
 
-export function CluesBody({ view }: { view: PlayerView }) {
+export function CluesBody({ view, onTell = () => {} }: { view: PlayerView; onTell?: (line: string) => void }) {
   const key = `detective-notes-${view.gameId}`;
   const [notes, setNotes] = useState(() => storage.get(key) ?? '');
   const shared = new Set((view.sharedClues ?? []).map((c: { id: string }) => c.id));
@@ -436,7 +613,12 @@ export function CluesBody({ view }: { view: PlayerView }) {
             : c.told ? (
               <span className="flex flex-wrap items-baseline gap-x-3 text-xs text-muted-foreground">You told the room in your own words.
                 <button className="hover:text-foreground" onClick={() => act('share', { token: tokenOf(), clueId: c.id })}>Show all of it</button></span>
-            ) : <Button size="sm" variant="secondary" className="self-start" onClick={() => act('share', { token: tokenOf(), clueId: c.id })}>Show everyone</Button>}
+            ) : (
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <Button size="sm" variant="secondary" onClick={() => act('share', { token: tokenOf(), clueId: c.id })}>Show everyone</Button>
+                <button className="text-xs text-muted-foreground hover:text-foreground" onClick={() => onTell(`I found ${c.name.replace(/^(a|an|the)\s+/i, '').toLowerCase()}: ${c.shows}`)}>Tell it my way</button>
+              </span>
+            )}
         </div>
       )) : <Muted>Nothing yet. Acts find clues: search a place, look closely at something.</Muted>}
       <Label>Shown to everyone</Label>
@@ -448,10 +630,13 @@ export function CluesBody({ view }: { view: PlayerView }) {
   );
 }
 
-// Start from your story: who you are, then a nudge to say your first line to the room.
-function Intro({ view, onPick, onClose }: { view: PlayerView; onPick: (line: string) => void; onClose: () => void }) {
+// Start from your story: who you are, where you are right now, and what to try first. An old world with no
+// first lead falls back to a first line for the room.
+function Intro({ view, onPick, onTry, onClose }: { view: PlayerView; onPick: (line: string) => void; onTry: (idea: string) => void; onClose: () => void }) {
   const card = view.card!;
-  const lines = introLines({ name: card.name, role: card.role, intro_line: card.intro_line ?? '', hook: card.hook });
+  const lead = (view.thread ?? []).find((m) => m.from === 'gm');
+  const ideas = lead?.ideas ?? [];
+  const lines = ideas.length ? [] : introLines({ name: card.name, role: card.role, intro_line: card.intro_line ?? '', hook: card.hook });
   return (
     <motion.div className="fixed inset-0 z-50 flex items-end bg-black/60" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <motion.section role="dialog" aria-label="Your story so far" initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }}
@@ -461,11 +646,25 @@ function Intro({ view, onPick, onClose }: { view: PlayerView; onPick: (line: str
         {card.role && <Muted>{card.role}</Muted>}
         <p className="leading-relaxed">{card.backstory || card.public_info}</p>
         {card.hook && <p className="rounded-xl bg-card p-3 leading-relaxed">{card.hook}</p>}
-        <Label className="mt-2">Introduce yourself to the room</Label>
-        <div className="flex flex-col gap-2">
-          {lines.map((l) => <Button key={l} variant="secondary" className="h-auto justify-start py-3 text-left whitespace-normal" onClick={() => onPick(l)}>{l}</Button>)}
-        </div>
-        <Muted className="text-xs">Tap one to start, then change it as you like. Your card is always under Me.</Muted>
+        {ideas.length > 0 ? (
+          <>
+            <Label className="mt-2">Right now</Label>
+            <div className="flex flex-col gap-1">{(lead?.lines ?? []).map((l, i) => <p key={i} className="leading-relaxed">{l.text}</p>)}</div>
+            <Label className="mt-2">Try first</Label>
+            <div className="flex flex-col gap-2">
+              {ideas.map((t) => <Button key={t} variant="secondary" className="h-auto justify-start py-3 text-left whitespace-normal" onClick={() => onTry(t)}>{t}</Button>)}
+            </div>
+            <Muted className="text-xs">Tap one and send it to the GM, or write your own. Your card is always under Me.</Muted>
+          </>
+        ) : (
+          <>
+            <Label className="mt-2">Introduce yourself to the room</Label>
+            <div className="flex flex-col gap-2">
+              {lines.map((l) => <Button key={l} variant="secondary" className="h-auto justify-start py-3 text-left whitespace-normal" onClick={() => onPick(l)}>{l}</Button>)}
+            </div>
+            <Muted className="text-xs">Tap one to start, then change it as you like. Your card is always under Me.</Muted>
+          </>
+        )}
         <Button variant="ghost" onClick={onClose}>Just look around first</Button>
       </motion.section>
     </motion.div>

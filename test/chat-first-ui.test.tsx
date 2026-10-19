@@ -18,10 +18,23 @@ const text = (html) => html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").rep
 const phone = (game, pid, now = 2_000) => text(renderToStaticMarkup(h(PhonePlaying, { view: G.playerView(game, pid, now), dots: new Set(['clues']), clearDot: () => {} })));
 const table = (game, host = 'h') => text(renderToStaticMarkup(h(TablePlaying, { view: G.tableView(game, 2_000), host, act: async () => null, readNow: () => {}, onNewGame: () => {} } as never)));
 
+// The chat layout is a per-phone choice kept in local storage.
+function withLayout<T>(layout: string, run: () => T): T {
+  const store = new Map([['detective-chat-layout', layout]]);
+  const before = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { value: { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => store.set(k, v), removeItem: (k: string) => store.delete(k) }, configurable: true, writable: true });
+  try {
+    return run();
+  } finally {
+    if (before) Object.defineProperty(globalThis, 'localStorage', before);
+    else delete (globalThis as Record<string, unknown>).localStorage;
+  }
+}
+
 describe('the chat-first phone', () => {
   test('should put the chat first with one composer for the room or the GM, and drawers for the rest', () => {
     const out = phone(playing(), 'p2');
-    for (const t of ['To the room', 'Private, to the GM', 'Me', 'Goals', 'Clues', 'Map', 'People', 'Case file', 'Send']) assert.ok(out.includes(t), t);
+    for (const t of ['Room', 'Private', 'To', 'Everyone', 'GM answers', 'Me', 'Goals', 'Clues', 'Map', 'People', 'Case file', 'Send']) assert.ok(out.includes(t), t);
     assert.doesNotMatch(out, /acts? left/);
     assert.match(out, /Talk and act as much as you like\.|Everyone hears it\. Free\./);
     assert.match(out, /Everyone hears it\. Free\./);
@@ -31,10 +44,11 @@ describe('the chat-first phone', () => {
     const game = playing();
     G.beginAsk(game, 'p2', { kind: 'chat', text: 'MY-PRIVATE-MOVE' });
     G.completeAsk(game, 'p2', { answer: 'PRIVATE-ANSWER', clues_found: [], suspicion_change: 0, public_event: '', clues_destroyed: [], messages_to_players: [] }, 1_500);
-    const out = phone(game, 'p2');
+    assert.doesNotMatch(phone(game, 'p2'), /MY-PRIVATE-MOVE/, 'the Room tab shows only what the room heard');
+    const out = withLayout('stream', () => phone(game, 'p2'));
     assert.match(out, /You · only the GM sees MY-PRIVATE-MOVE/);
     assert.match(out, /GM · only you PRIVATE-ANSWER/);
-    assert.ok(!phone(game, 'p3').includes('MY-PRIVATE-MOVE'));
+    assert.ok(!withLayout('stream', () => phone(game, 'p3')).includes('MY-PRIVATE-MOVE'));
     assert.match(out, /Round 1 · Phase name 1/);
   });
 
@@ -68,7 +82,7 @@ describe('the chat-first phone', () => {
   test('should pin the vote with its brief above the chat', () => {
     const game = playing();
     G.beginRoundVote(game, 1_500);
-    const out = phone(game, 'p2');
-    assert.ok(out.indexOf('QUESTION-1') < out.indexOf('To the room'));
+    const out = renderToStaticMarkup(h(PhonePlaying, { view: G.playerView(game, 'p2', 2_000), dots: new Set(['clues']), clearDot: () => {} }));
+    assert.ok(out.indexOf('QUESTION-1') < out.indexOf('Who hears it'));
   });
 });

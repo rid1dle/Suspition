@@ -49,7 +49,12 @@ What was rejected and what was accepted, one line each. Add new verdicts the sam
 - Waiting screens say what is really happening, with an honest time ("about 16 minutes for 10 players").
 
 **The phone (chat first)**
-- One screen: the chat, in story order. One composer: "To the room" or "Private, to the GM".
+- Private and public apart: one mixed stream was rejected after a two-player game ("allow separation of private from public"). Accepted: chat tabs in the top bar, Room | Private by default, with Room | GM | People and One stream as a per-phone choice under Me. One composer with a To picker (Everyone or one person out loud; the GM or one player in private). The GM answers in the room unless switched off; it joins a message between players only when asked in.
+- Players message each other; the GM reads it to keep the story whole but stays quiet unless asked in.
+- Anything you found in private can go to the room: "Tell the room" drops a ready first-person line into the box to cut before sending; saying a find in your own words counts as telling it, and the clue no longer asks to be announced.
+- "Let's all go there" is a card for everyone else (Go with them / Not now), from the map's "Ask everyone to come" or said out loud.
+- The room hears characters, never the friends playing them: "Kabir said", not "Himanshu said".
+- The first sheet shows where you are right now and what to try first (sent to the GM), not lines to introduce yourself to people who already know you.
 - Whatever needs you now (a move to confirm, a vote, a meeting, your hot seat, your moment) sits in a tray right above the composer, not at the top of the page where the chat scrolls it away.
 - Drawers in the top bar (Me, Goals, Clues, Map, People, Case file) instead of tabs of big panels.
 - No limits shown as counters: talking and acting are free.
