@@ -61,6 +61,6 @@ describe('difficulty', () => {
     const html = renderToStaticMarkup(<Setup view={{ players: [], surprise: null } as any} host act={() => {}} /> as any).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
     assert.match(html, /How hard\?/);
     for (const label of ['Easy', 'Normal', 'Hard']) assert.match(html, new RegExp(`\\b${label}\\b`));
-    assert.match(html, /Normal: the killer takes 3 clues from 2 rounds to name\./);
+    assert.match(html, /Normal: the culprit takes 3 clues from 2 rounds to name\./);
   });
 });

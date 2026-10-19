@@ -65,13 +65,13 @@ const SETTINGS = ['A 1950s Bombay hotel party', 'A snowed-in ski lodge', 'A 1920
 const TONES: [string, string][] = [['cozy', 'Cozy'], ['tense', 'Tense'], ['dark', 'Dark'], ['funny', 'Funny']];
 const LENGTHS: [string, string, string][] = [['short', 'Short', '3 rounds, ~30 min'], ['standard', 'Normal', '4 rounds, ~1 hour'], ['long', 'Long', '5 rounds, ~1.5 hours']];
 
-function Chips<T extends string | number>({ options, value, onPick }: { options: [T, ReactNode][]; value: T; onPick: (v: T) => void }) {
+function Chips<T extends string | number>({ options, value, onPick, small = false }: { options: [T, ReactNode][]; value: T; onPick: (v: T) => void; small?: boolean }) {
   return (
-    <ToggleGroup type="single" spacing={2} value={String(value)} className="flex-wrap"
+    <ToggleGroup type="single" spacing={small ? 1 : 2} value={String(value)} className="flex-wrap"
       onValueChange={(picked) => { const hit = options.find(([v]) => String(v) === picked); if (hit) onPick(hit[0]); }}>
       {options.map(([v, l]) => (
         <ToggleGroupItem key={String(v)} value={String(v)}
-          className="h-auto rounded-full border border-border bg-muted/40 px-3.5 py-1.5 hover:border-primary active:scale-95 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">{l}</ToggleGroupItem>
+          className={`h-auto rounded-full border border-border bg-muted/40 hover:border-primary active:scale-95 data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground ${small ? 'min-w-9 px-2.5 py-1 text-sm' : 'px-3.5 py-1.5'}`}>{l}</ToggleGroupItem>
       ))}
     </ToggleGroup>
   );
@@ -87,6 +87,28 @@ function Field({ label, note, children }: { label: string; note?: string; childr
   );
 }
 
+// One choice on one line: the question on the left, the answers on the right; on a narrow screen they stack.
+function Row({ label, note, children }: { label: string; note?: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-[11rem_1fr] sm:items-center">
+      <span className="text-sm font-medium">{label}</span>
+      <div className="flex flex-col gap-1">
+        {children}
+        {note && <Muted className="text-xs">{note}</Muted>}
+      </div>
+    </div>
+  );
+}
+
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-4 rounded-2xl bg-card p-6">
+      <h2 className="font-heading text-2xl">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
 function Players({ view }: { view: TableProps['view'] }) {
   if (!view.players.length) return <Muted>Nobody yet</Muted>;
   return (
@@ -99,23 +121,24 @@ function Players({ view }: { view: TableProps['view'] }) {
   );
 }
 
-function JoinCard({ view }: { view: TableProps['view'] }) {
+function JoinCard({ view, children }: { view: TableProps['view']; children?: ReactNode }) {
   const [joinUrl, setJoinUrl] = useState('');
   useEffect(() => { fetch('/api/info').then((r) => r.json()).then((d) => setJoinUrl(d.joinUrl)).catch(() => {}); }, []);
   return (
-    <section className="flex flex-col gap-4 rounded-2xl bg-card p-6">
+    <section data-join className="flex flex-col gap-4 rounded-2xl bg-card p-6 lg:sticky lg:top-6">
       <h2 className="font-heading text-2xl">Join on your phone</h2>
-      {joinUrl && <div className="self-start rounded-xl bg-white p-3"><QRCodeSVG value={joinUrl} size={200} /></div>}
+      {joinUrl && <div className="self-start rounded-xl bg-white p-3"><QRCodeSVG value={joinUrl} size={180} /></div>}
       <Muted>Same Wi-Fi. Then open:<br /><b className="text-foreground">{joinUrl}</b></Muted>
       <Label>Players here</Label>
       <Players view={view} />
+      {children}
     </section>
   );
 }
 
 export function Setup(props: TableProps) {
   const { view, host, act } = props;
-  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, culpritWho: 'gm' as 'gm' | 'player' | 'npc', culpritKnows: 'gm' as 'gm' | 'start' | 'later', replays: 2, testGame: false, notes: '' });
+  const [form, setForm] = useState({ setting: '', artStyle: 'moody-flat', tone: 'tense', length: 'standard', roundStyle: 'hotseats', difficulty: 'normal' as keyof typeof DIFFICULTY_NOTES, hints: 3, overrides: 3, npcs: 3, npcRole: 'mixed', culprits: 'gm' as 'gm' | 1 | 2, culpritWho: 'gm' as 'gm' | 'player' | 'npc', culpritKnows: 'gm' as 'gm' | 'start' | 'later', testGame: false, notes: '' });
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) => setForm((f) => ({ ...f, [k]: v }));
   const n = view.players.length;
   const enough = n >= 1;
@@ -126,70 +149,79 @@ export function Setup(props: TableProps) {
   const culprits = form.culprits === 2 && !twoOk ? 'gm' : form.culprits;
   // Hot seats need others to question you.
   const roundStyle = n < 3 ? 'classic' : form.roundStyle;
+  const start = (
+    <div className="flex flex-col gap-2 border-t border-border pt-4">
+      <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', { ...form, culprits, culpritWho: who, roundStyle })}>Make our mystery</Button>
+      <Muted className="text-xs">{!enough ? 'Need 1 player or more (0 now).' : n === 1 ? '1 player. You get a character.' : `${n} players. Each one gets a character.`}</Muted>
+    </div>
+  );
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 pt-8">
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 pt-8 pb-24">
       <Header {...props} title="Suspition" sub="A mystery game for this room" />
       {!host && <p className="rounded-lg bg-muted p-3 text-sm">View only. To run the game, open the table link from the terminal.</p>}
-      <div className="grid gap-6 lg:grid-cols-[minmax(280px,1fr)_minmax(320px,1.4fr)]">
-        <JoinCard view={view} />
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(280px,1fr)_minmax(320px,1.6fr)]">
+        <JoinCard view={view}>{host && start}</JoinCard>
         {host && (
-          <section className="flex flex-col gap-5 rounded-2xl bg-card p-6">
-            <h2 className="font-heading text-2xl">Set up the game</h2>
-            <Field label="Where is it?">
-              <Input value={form.setting} maxLength={200} placeholder="Leave empty for a surprise" onChange={(e) => set('setting', e.target.value)} />
-              <SurpriseLine setting={form.setting} surprise={view.surprise} onShuffle={() => act('surprise')} />
-              <div className="flex flex-wrap gap-2">{SETTINGS.map((s) => <button key={s} onClick={() => set('setting', s)} className="rounded-full bg-muted/50 px-3 py-1 text-xs hover:text-primary">{s}</button>)}</div>
-            </Field>
-            <Field label="Art style" note="How the GM draws this world's pictures. Mix draws each one in a new style.">
-              <ArtStylePicker value={form.artStyle} onPick={(v) => set('artStyle', v)} />
-            </Field>
-            <Field label="Mood"><Chips options={TONES} value={form.tone} onPick={(v) => set('tone', v)} /></Field>
-            <Field label="How long?"><Chips options={LENGTHS.map(([v, l, d]) => [v, <span key={v}>{l} <span className="opacity-70">{d}</span></span>] as [string, ReactNode])} value={form.length}
-              onPick={(v) => set('length', v)} /></Field>
-            <Field label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
-              <Chips options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
-            </Field>
-            <Field label="Who did it?" note={n === 1 ? 'Playing alone, a culprit among you never knows at the start: the clues lead you there.' : 'Let the GM decide can be any of these, and the GM never says which.'}>
-              <Chips options={([['gm', 'Let the GM decide'], ['player', 'One of us'], ...(npcOk ? [['npc', 'A GM character']] : [])] as ['gm' | 'player' | 'npc', ReactNode][])} value={who} onPick={(v) => set('culpritWho', v)} />
-            </Field>
-            {n >= 2 && who !== 'npc' && (
-              <Field label="Does the culprit know?" note="They find out later: their card says they are innocent until it comes back to them near the end.">
-                <Chips options={[['gm', 'Let the GM decide'], ['start', 'From the start'], ['later', 'They find out later']] as ['gm' | 'start' | 'later', ReactNode][]} value={form.culpritKnows} onPick={(v) => set('culpritKnows', v)} />
+          <div className="flex flex-col gap-6">
+            <Group title="The story">
+              <Field label="Where is it?">
+                <Input value={form.setting} maxLength={200} placeholder="Leave empty for a surprise" onChange={(e) => set('setting', e.target.value)} className="h-11 text-base" />
+                <SurpriseLine setting={form.setting} surprise={view.surprise} onShuffle={() => act('surprise')} />
+                <div className="flex flex-wrap gap-2">{SETTINGS.map((s) => <button key={s} onClick={() => set('setting', s)} className="rounded-full bg-muted/50 px-3 py-1 text-xs hover:text-primary">{s}</button>)}</div>
               </Field>
-            )}
-            <Field label="How many culprits?" note="The room sees this choice. With Let the GM decide, nobody knows how many until the final vote. Two need 6 players, or 2 GM characters when a GM character did it.">
-              <Chips options={([['gm', 'Let the GM decide'], [1, '1'], ...(twoOk ? [[2, '2']] : [])] as ['gm' | 1 | 2, ReactNode][])} value={culprits} onPick={(v) => set('culprits', v)} />
-            </Field>
-            {n >= 3 && (
-              <Field label="Round style" note={form.roundStyle === 'hotseats' ? 'Players take turns in the hot seat, point at suspects, and vote who the room looks at.' : 'Each round ends with a group quiz; a wrong answer replays the round.'}>
-                <Chips options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle}
-                  onPick={(v) => set('roundStyle', v)} />
-              </Field>
-            )}
-            {roundStyle === 'classic' && (
-              <Field label="Got a round wrong? Play it again" note="A round you vote wrong is played again, with a clearer job.">
-                <Chips options={[[0, 'Never'], [1, 'Once'], [2, 'Up to twice']]} value={form.replays} onPick={(v) => set('replays', v)} />
-              </Field>
-            )}
-            <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Group hints"><Chips options={[1, 2, 3, 4, 5].map((n) => [n, n] as [number, ReactNode])} value={form.hints} onPick={(v) => set('hints', v)} /></Field>
-              <Field label="Overrides per player" note="Lets a player stay quiet or say a moment their way.">
-                <Chips options={[0, 1, 2, 3, 4, 5].map((n) => [n, n] as [number, ReactNode])} value={form.overrides} onPick={(v) => set('overrides', v)} />
-              </Field>
-            </div>
-            <Field label="People the GM plays" note="Fewer is easier to follow. Background only means the story is all about the players.">
-              <Chips options={[0, 1, 2, 3, 4, 5, 6].map((n) => [n, n] as [number, ReactNode])} value={form.npcs} onPick={(v) => set('npcs', v)} />
-              <Chips options={[['mixed', 'Some matter to the case'], ['background', 'Background only']]} value={form.npcRole} onPick={(v) => set('npcRole', v)} />
-            </Field>
-            <Field label="Test game" note="A test game is saved but never teaches the game about anyone.">
-              <Chips options={[['no', 'No, a real game'], ['yes', 'Yes, just testing']]} value={form.testGame ? 'yes' : 'no'} onPick={(v) => set('testGame', v === 'yes')} />
-            </Field>
-            <Field label="Anything the GM should know?">
-              <Textarea value={form.notes} maxLength={500} placeholder="Jokes, things you like, things to avoid" onChange={(e) => set('notes', e.target.value)} className="min-h-20" />
-            </Field>
-            <Button size="lg" className="h-12 text-lg" disabled={!enough} onClick={() => act('setup', { ...form, culprits, culpritWho: who, roundStyle })}>Make our mystery</Button>
-            <Muted className="text-xs">{!enough ? 'Need 1 player or more (0 now).' : n === 1 ? '1 player. You get a character.' : `${n} players. Each one gets a character.`}</Muted>
-          </section>
+              <div className="grid gap-5 md:grid-cols-3">
+                <Field label="Mood"><Chips small options={TONES} value={form.tone} onPick={(v) => set('tone', v)} /></Field>
+                <Field label="How long?" note={LENGTHS.find(([v]) => v === form.length)?.[2]}>
+                  <Chips small options={LENGTHS.map(([v, l]) => [v, l] as [string, ReactNode])} value={form.length} onPick={(v) => set('length', v)} />
+                </Field>
+                <Field label="How hard?" note={DIFFICULTY_NOTES[form.difficulty]}>
+                  <Chips small options={[['easy', 'Easy'], ['normal', 'Normal'], ['hard', 'Hard']] as [keyof typeof DIFFICULTY_NOTES, ReactNode][]} value={form.difficulty} onPick={(v) => set('difficulty', v)} />
+                </Field>
+              </div>
+            </Group>
+            <Group title="The culprit">
+              <Row label="Who did it?" note={n === 1 ? 'Playing alone, a culprit among you never knows at the start: the clues lead you there.' : 'Let the GM decide can be any of these, and the GM never says which.'}>
+                <Chips small options={([['gm', 'Let the GM decide'], ['player', 'One of us'], ...(npcOk ? [['npc', 'A GM character']] : [])] as ['gm' | 'player' | 'npc', ReactNode][])} value={who} onPick={(v) => set('culpritWho', v)} />
+              </Row>
+              {n >= 2 && who !== 'npc' && (
+                <Row label="Does the culprit know?" note={form.culpritKnows === 'later' ? 'Their card says they are innocent until it comes back to them near the end.' : undefined}>
+                  <Chips small options={[['gm', 'Let the GM decide'], ['start', 'From the start'], ['later', 'They find out later']] as ['gm' | 'start' | 'later', ReactNode][]} value={form.culpritKnows} onPick={(v) => set('culpritKnows', v)} />
+                </Row>
+              )}
+              <Row label="How many culprits?" note="The room sees this choice. With Let the GM decide, nobody knows how many until the final vote.">
+                <Chips small options={([['gm', 'Let the GM decide'], [1, '1'], ...(twoOk ? [[2, '2']] : [])] as ['gm' | 1 | 2, ReactNode][])} value={culprits} onPick={(v) => set('culprits', v)} />
+              </Row>
+            </Group>
+            <details data-more-options className="group rounded-2xl bg-card p-6 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between font-heading text-2xl">More options<span className="text-sm font-sans text-muted-foreground group-open:hidden">Art, rounds, hints, GM characters</span></summary>
+              <div className="mt-5 flex flex-col gap-5">
+                <Field label="Art style" note="How the GM draws this world's pictures. Mix draws each one in a new style.">
+                  <ArtStylePicker value={form.artStyle} onPick={(v) => set('artStyle', v)} />
+                </Field>
+                {n >= 3 && (
+                  <Row label="Round style" note={form.roundStyle === 'hotseats' ? 'Players take turns in the hot seat, point at suspects, and vote who the room looks at.' : 'Each round ends with a group question; a wrong answer turns the story.'}>
+                    <Chips small options={[['hotseats', 'Hot seats'], ['classic', 'Classic quiz']]} value={form.roundStyle} onPick={(v) => set('roundStyle', v)} />
+                  </Row>
+                )}
+                <Row label="Group hints"><Chips small options={[1, 2, 3, 4, 5].map((k) => [k, k] as [number, ReactNode])} value={form.hints} onPick={(v) => set('hints', v)} /></Row>
+                <Row label="Overrides per player" note="Lets a player stay quiet or say a moment their way.">
+                  <Chips small options={[0, 1, 2, 3, 4, 5].map((k) => [k, k] as [number, ReactNode])} value={form.overrides} onPick={(v) => set('overrides', v)} />
+                </Row>
+                <Row label="People the GM plays" note="Fewer is easier to follow. Background only means the story is all about the players.">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Chips small options={[0, 1, 2, 3, 4, 5, 6].map((k) => [k, k] as [number, ReactNode])} value={form.npcs} onPick={(v) => set('npcs', v)} />
+                    <Chips small options={[['mixed', 'Some matter to the case'], ['background', 'Background only']]} value={form.npcRole} onPick={(v) => set('npcRole', v)} />
+                  </div>
+                </Row>
+                <Row label="Test game" note="A test game is saved but never teaches the game about anyone.">
+                  <Chips small options={[['no', 'No, a real game'], ['yes', 'Yes, just testing']]} value={form.testGame ? 'yes' : 'no'} onPick={(v) => set('testGame', v === 'yes')} />
+                </Row>
+                <Field label="Anything the GM should know?">
+                  <Textarea value={form.notes} maxLength={500} placeholder="Jokes, things you like, things to avoid" onChange={(e) => set('notes', e.target.value)} className="min-h-20" />
+                </Field>
+              </div>
+            </details>
+          </div>
         )}
       </div>
     </main>

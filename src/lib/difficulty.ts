@@ -33,7 +33,7 @@ export function difficultyPrompt(level: unknown, innocents: number, rounds: numb
 }
 
 export const DIFFICULTY_NOTES: Record<Difficulty, string> = {
-  easy: 'Easy: the killer takes 2 clues to name.',
-  normal: 'Normal: the killer takes 3 clues from 2 rounds to name.',
-  hard: 'Hard: the killer takes 4 clues from 3 rounds, and no hint names anyone.',
+  easy: 'Easy: the culprit takes 2 clues to name.',
+  normal: 'Normal: the culprit takes 3 clues from 2 rounds to name.',
+  hard: 'Hard: the culprit takes 4 clues from 3 rounds, and no hint names anyone.',
 };

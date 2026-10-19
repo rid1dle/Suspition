@@ -115,8 +115,8 @@ export function applySetup(game, input = {}) {
   if (!Number.isInteger(overrides) || overrides < 0 || overrides > 5) fail('Overrides must be between 0 and 5.');
   const npcs = input.npcs === undefined ? 3 : Number(input.npcs);
   if (!Number.isInteger(npcs) || npcs < 0 || npcs > 6) fail('GM characters must be between 0 and 6.');
-  const replays = input.replays === undefined ? 2 : Number(input.replays);
-  if (!Number.isInteger(replays) || replays < 0 || replays > MAX_REPLAYS) fail(`Replays must be between 0 and ${MAX_REPLAYS}.`);
+  // A round is never played again: a wrong answer already turns the story, and the room gets a round more if it falls behind.
+  const replays = 0;
   // Hot seats need others to question you: under 3 players the rounds are classic.
   const roundStyle = input.roundStyle === 'hotseats' && game.players.length >= 3 ? 'hotseats' : 'classic';
   const npcRole = input.npcRole ?? 'mixed';
