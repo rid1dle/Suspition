@@ -68,6 +68,7 @@ describe('the check before GM characters speak', () => {
     assert.match(check.prompt, /Polishing glasses/);
     assert.doesNotMatch(check.prompt, /TRUTH-SUMMARY/);
     assert.match(check.prompt, /Where were you\?/);
+    assert.deepEqual(game.state.voiceDrops, [{ speaker: 'The Butler', sentence: 'Asha took the key.', why: 'he did not see it' }]);
   });
 
   test('should check an answer out loud the same way', async () => {

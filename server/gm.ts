@@ -391,7 +391,11 @@ export class GM {
         timeoutMs: 45_000,
       }, this.readLimiter);
       const { lines: kept, dropped } = dropSpoken(game, lines, out?.unsupported);
-      if (dropped) this.log(`gm voices: ${dropped} sentence${dropped === 1 ? '' : 's'} a character could not know, dropped`);
+      if (dropped) {
+        // The terminal hears only how many (a line can name the culprit); the saved game keeps them to review.
+        this.log(`gm voices: ${dropped} sentence${dropped === 1 ? '' : 's'} a character could not know, dropped`);
+        if (game.state) game.state.voiceDrops = [...(game.state.voiceDrops ?? []), ...(out.unsupported ?? []).map((u) => ({ speaker: String(u?.speaker ?? ''), sentence: String(u?.sentence ?? ''), why: String(u?.why ?? '') }))].slice(-200);
+      }
       return kept;
     } catch (err) {
       this.log(`gm voices skipped: ${err.message}`);
