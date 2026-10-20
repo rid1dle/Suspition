@@ -73,11 +73,15 @@ A second judge grades the story itself, next to the old judge. Runs: `scripts/st
 
 **After run 4:** any count of the game's rounds ("The game has four rounds") and "he says" about another player are dropped.
 
-## Still open
+**After run 4, the last three:**
+- **GM characters say only what they can know.** A short check before their lines go out sees only what each speaker can know: their sheet as gated this round, what they learned and said, their own night, what they hold, what everyone has seen, and what the player just said. It never sees the truth. Code drops only the sentences it names.
+  - Replayed live on run 4 (`dataset/research/2026-10-20/voice-replay.mts`): 5 of 6 lines that were later taken back were caught, and 8 of 8 ordinary lines passed.
+  - The miss was "held the key all January" against a sheet that says "in January".
+  - Each check takes 3 to 8 s, and runs only when a GM character speaks.
+- **A taken thing goes with its taker.** Answers list `clues_taken`. A carried thing is where its carrier is, nobody else finds it where it was, and the GM is told who carries what.
+- **Public means seen.** A canon fact the continuity check marks public stays public only when what the room saw already carries most of it. A private scene had been marked public, and out-loud answers described it.
 
-- **GM characters say what their sheet does not let them know, then take it back** ("The note was torn off his pad", "I spoke too fast"). This shows in every run, 6 or more times a game. Their places are now kept, which removes one cause. The other is that the answering GM sees the whole truth. A code check against each character's sheet before they speak is the next step.
-- **Objects in two places.** A passport one player took turned up in the desk for the next. Canon records who took what, but nothing checks a found object against it.
-- **A private find quoted in public.** A photo only one player saw was described in public answers.
+## Still open
 
 - **The deepest layers do not surface.** Ten bots with three moves a round reach maybe half of a ten-player world: split diaries, trust notes and letters stayed unfound. Real players may dig differently. Watch it in the next human game before cutting content.
 - **Testimony versus whereabouts.** A witness's clue described a room she was not in. There is no code check yet.
