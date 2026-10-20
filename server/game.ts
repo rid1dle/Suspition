@@ -1201,6 +1201,10 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
 
 // A GM reply as a page of a novel: narration (no speaker) and GM characters' spoken words.
 // The GM never speaks for a human player: the asker's own lines become "You say", anyone else's are dropped.
+// The story never counts the game's rounds ("This is the first round of four."): that sentence is dropped.
+const ROUND_TALK = /\b(first|second|third|fourth|fifth|last|final|next)\s+round\b|\bround\s+(one|two|three|four|five|\d)\b|\bof\s+(two|three|four|five|six|\d+)\s+rounds?\b|\brounds?\s+(left|to go)\b/i;
+export const withoutRoundTalk = (text) => sentences(text).filter((t) => !ROUND_TALK.test(t)).join(' ');
+
 export function novelLines(game, raw, { you = null, unpuppet = (t) => t, unpuppetSpeech = (t) => t } = {}) {
   const myName = game.scenario.players.find((p) => p.id === you)?.character_name?.toLowerCase();
   const players = new Set(game.scenario.players.map((p) => p.character_name.toLowerCase()));
@@ -1214,6 +1218,7 @@ export function novelLines(game, raw, { you = null, unpuppet = (t) => t, unpuppe
       return { speaker: (names[who] ?? who).slice(0, 40), text: String(l?.text ?? '').trim().replace(/^["“]|["”]$/g, '') };
     })
     .map((l) => ({ ...l, text: l.speaker ? unpuppetSpeech(l.text) : unpuppet(l.text) }))
+    .map((l) => ({ ...l, text: withoutRoundTalk(l.text) }))
     .filter((l) => l.text)
     .flatMap((l) => {
       const who = l.speaker.toLowerCase();
@@ -1643,7 +1648,9 @@ export function nextPhaseInfo(game) {
   }
   if (isLastPhase(game)) return null;
   const index = game.state.phaseIndex + 1;
-  return { ...game.scenario.phases[index], stage: storyStage(game, index), ...storyDue(game.scenario, index + 1) };
+  const herrings = herringsUnseen(game, index);
+  const last = index === game.scenario.phases.length - 1;
+  return { ...game.scenario.phases[index], stage: storyStage(game, index), ...storyDue(game.scenario, index + 1), ...(herrings.length ? { herrings } : {}), ...(last ? { last: true } : {}) };
 }
 
 // A clue that is a thing with its own words: what players read, beside the plain fact it shows.
@@ -1665,6 +1672,18 @@ function storyDue(s, round) {
   const plans = (s.npcs ?? []).flatMap((n) => (n.agenda?.plan ?? []).filter((p) => Number(p?.round) === round).map((p) => `${n.name}: ${p.does}`));
   const pay = (s.setups ?? []).filter((x) => setupPaidRound(s, x?.paid_by) === round).map((x) => x.detail);
   return { ...(plans.length ? { plans } : {}), ...(pay.length ? { pay_now: pay } : {}) };
+}
+
+// The room's suspicion needs somewhere to go: red herrings whose clues are open but nobody has found, before the last round.
+function herringsUnseen(game, index) {
+  const st = game.state;
+  const sc = game.scenario;
+  if (index >= sc.phases.length - 1) return [];
+  const seen = new Set([...Object.values(st.found ?? {}).flat(), ...(st.shared ?? []).map((x) => x.clueId)]);
+  const name = (id) => sc.clues.find((c) => c.id === id)?.name;
+  return (sc.red_herrings ?? [])
+    .filter((h) => (h.clue_ids ?? []).length && (h.clue_ids ?? []).every((id) => !seen.has(id)) && (h.clue_ids ?? []).every((id) => (Number(sc.clues.find((c) => c.id === id)?.reveal_round) || 1) <= index + 1))
+    .map((h) => (h.clue_ids ?? []).map(name).filter(Boolean).join(' and '));
 }
 
 export function beginPhaseChange(game) {
@@ -1887,6 +1906,12 @@ function watchResult(game, pid, s) {
   return { max: MAX_POINTS + 1, stopped: Boolean(s.stopped), watch_guess_right: game.state.submissions?.[pid]?.watch_guess === w.owner };
 }
 
+// A goal whose last step was done in play is met, whatever the scorer read or the story changed after.
+function goalMetInPlay(game, pid) {
+  const steps = game.scenario.players.find((c) => c.id === pid)?.goal_steps ?? [];
+  return steps.length > 0 && (game.state.goalSteps?.[pid] ?? []).includes(steps.length - 1);
+}
+
 export function applyScore(game, verdict, score) {
   const byId = Object.fromEntries((score.players ?? []).map((p) => [p.player_id, p]));
   game.state.result = {
@@ -1900,7 +1925,7 @@ export function applyScore(game, verdict, score) {
         culprit_correct: verdict.correct_player_ids.includes(p.id),
         method_score: clamp(Number(s.method_score) || 0, 0, 2),
         motive_score: clamp(Number(s.motive_score) || 0, 0, 2),
-        goal_achieved: Boolean(s.goal_achieved),
+        goal_achieved: Boolean(s.goal_achieved) || goalMetInPlay(game, p.id),
         ...watchResult(game, p.id, s),
         goal_outcome: String(s.goal_outcome ?? ''),
         comment: String(s.comment ?? ''),
