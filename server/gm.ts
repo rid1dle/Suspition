@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, worldFixPrompt, CRAFT_SCHEMA, STORY_DRESS, dressPrompt, VOICE_CHECK_SCHEMA, VOICE_CHECK_SYSTEM, voiceCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
+import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, worldFixPrompt, HUNT_SCHEMA, HUNT_SYSTEM, HUNT_KINDS, HUNT_LEAD, huntPrompt, CRAFT_SCHEMA, STORY_DRESS, dressPrompt, VOICE_CHECK_SCHEMA, VOICE_CHECK_SYSTEM, voiceCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
 import { theoryPrompt } from './theory.ts';
 import { bendPrompt } from './bend.ts';
 import { continuityPrompt } from './continuity.ts';
@@ -171,8 +171,9 @@ const repeatNote = (before) => (before ? `This was already asked and answered. E
 const REWRITE_ONLY = /players must be exactly|^Need exactly|culprits (among the players )?must be exactly|^Exactly \d+ culprit|is not a character|Duplicate .* ids/;
 
 export class GM {
-  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'sonnet', setupEffort, maxParallel = 4, log = () => {}, random = Math.random }) {
+  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'sonnet', setupEffort, maxParallel = 4, log = () => {}, random = Math.random, hunt = false }) {
     this.workDir = workDir;
+    this.hunt = hunt;
     this.readerModel = readerModel;
     this.random = random;
     this.run = run;
@@ -271,7 +272,9 @@ export class GM {
         const repair = await this.checkStory(scenario, storyIssues(scenario, issueRules), check.problems);
         if (repair) this.applyCheck(scenario, { ...repair, verdict: repair.verdict === 'ok' ? 'ok' : 'patch' }, rules);
       }
-      return this.finishWorld(scenario, onProgress, issueRules);
+      await this.finishWorld(scenario, onProgress, issueRules);
+      if (this.hunt) await this.huntWorld(scenario, rules, issueRules);
+      return scenario;
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
   }
@@ -319,16 +322,34 @@ export class GM {
     return scenario;
   }
 
+  // A reader that only hunts reads the finished world the way the reviewer reads it after play; one repair patches
+  // what it found. A failed or slow hunt or repair leaves the world as it was.
+  async huntWorld(scenario, rules, issueRules) {
+    let found;
+    try {
+      found = await this.call('hunt', { system: HUNT_SYSTEM, prompt: huntPrompt(scenario), schema: HUNT_SCHEMA, model: this.setupModel, effort: 'medium', timeoutMs: 420_000 });
+    } catch (err) {
+      this.log(`gm hunt skipped: ${err.message}`);
+      return;
+    }
+    const items = Object.entries(HUNT_KINDS).flatMap(([key, label]) => (Array.isArray(found?.[key]) ? found[key] : []).map((x) => ({ key, what: `${label}: ${String(x).trim()}` })));
+    const counts = Object.keys(HUNT_KINDS).map((k) => [k, items.filter((i) => i.key === k).length]).filter(([, n]) => n);
+    this.log(`gm hunt: ${counts.length ? counts.map(([k, n]) => `${k} ${n}`).join(', ') : 'nothing'}`);
+    if (!items.length) return;
+    const repair = await this.checkStory(scenario, storyIssues(scenario, issueRules), items, HUNT_LEAD);
+    if (repair) this.applyCheck(scenario, { ...repair, verdict: repair.verdict === 'ok' ? 'ok' : 'patch' }, rules, issueRules);
+  }
+
   // One GM read of the whole world against a fixed checklist. A failed, slow or empty check changes nothing.
-  async checkStory(scenario, issues, unpatched = []) {
+  async checkStory(scenario, issues, unpatched = [], lead = undefined) {
     try {
       const result = await this.call(unpatched.length ? 'story repair' : 'story check', {
         system: GENERATION_SYSTEM,
-        prompt: storyCheckPrompt(scenario, issues, unpatched),
+        prompt: storyCheckPrompt(scenario, issues, unpatched, lead),
         schema: STORY_CHECK_SCHEMA,
         model: this.setupModel,
         effort: 'medium',
-        timeoutMs: 180_000,
+        timeoutMs: unpatched.length ? 420_000 : 180_000,
       });
       if (!['ok', 'patch', 'rewrite'].includes(result?.verdict)) throw new Error('no verdict');
       return { verdict: result.verdict, problems: Array.isArray(result.problems) ? result.problems : [], patches: Array.isArray(result.patches) ? result.patches : [] };
@@ -338,8 +359,8 @@ export class GM {
     }
   }
 
-  applyCheck(scenario, check, rules) {
-    const out = check.verdict === 'ok' ? { applied: 0, skipped: [] } : applyStoryPatches(scenario, check.patches, rules);
+  applyCheck(scenario, check, rules, issueRules = null) {
+    const out = check.verdict === 'ok' ? { applied: 0, skipped: [] } : applyStoryPatches(scenario, check.patches, rules, issueRules);
     this.log(`gm story check: ${check.verdict}, ${out.applied} patches, ${out.skipped.length} skipped`);
     return out;
   }

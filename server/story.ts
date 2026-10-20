@@ -187,8 +187,12 @@ export const issueCounts = (issues) => {
 const STORY_PATHS = [
   /^clues\.\d+\.(shows|does_not_prove|where|reveal_round|text|form|author|written_at|from_step|pairs_with)$/,
   /^players\.\d+\.(private_info|public_info|starting_knowledge|goal|goal_where|watch_threat|watch_stake)$/,
-  /^npcs\.\d+\.(knows|secrets|lies|reveals_freely|reveals_under_pressure|agenda)$/,
+  /^npcs\.\d+\.(knows|secrets|lies|reveals_freely|reveals_under_pressure|agenda|public_info)$/,
   /^why_tonight$/,
+  /^opening_scene$/,
+  /^(background|key_objects)$/,
+  /^locations\.\d+\.public_info$/,
+  /^phases\.\d+\.planned_beat$/,
   /^truth\.timeline$/,
   /^(setups|reframes|world_rules|lies_caught)$/,
   /^hint_ladder\.\d+\.text$/,
@@ -197,7 +201,7 @@ const STORY_PATHS = [
   /^suspects$/,
   /^red_herrings$/,
 ];
-const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings', 'truth.culprit_ids', 'truth.timeline', 'setups', 'reframes', 'world_rules', 'lies_caught']);
+const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings', 'truth.culprit_ids', 'truth.timeline', 'setups', 'reframes', 'world_rules', 'lies_caught', 'background', 'key_objects']);
 const OBJECT_KEYS = new Set(['agenda']);
 const INTEGER_KEYS = new Set(['reveal_round', 'answer_index']);
 
@@ -283,12 +287,13 @@ const inPlace = (scenario) => ({
   },
 });
 
-// The consistency check's patches, to the allowed fields only.
-export function applyStoryPatches(scenario, patches, rules) {
+// The consistency check's patches, to the allowed fields only. With issueRules, a patch that adds a giveaway is undone too.
+export function applyStoryPatches(scenario, patches, rules, issueRules = null) {
   // A culprit who does not know it keeps an innocent's card: no check may write their crime onto it.
   const unaware = (path) => { const m = /^players\.(\d+)\./.exec(path); return Boolean(m && scenario.players?.[Number(m[1])]?.unaware); };
   const allowed = (path) => STORY_PATHS.some((re) => re.test(path)) && !unaware(path);
-  return guardedPatches(inPlace(scenario), patches, (p) => applyPatches(scenario, [p], allowed), () => structuralCount(scenario, rules));
+  const giveaways = () => (issueRules ? storyIssues(scenario, issueRules).filter((i) => i.startsWith('giveaway')).length : 0);
+  return guardedPatches(inPlace(scenario), patches, (p) => applyPatches(scenario, [p], allowed), () => structuralCount(scenario, rules) + giveaways());
 }
 
 // A value shaped like the field it replaces: a number, a yes or no, a list or an object stay what they were.

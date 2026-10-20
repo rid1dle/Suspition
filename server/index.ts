@@ -151,6 +151,7 @@ async function main() {
     setupEffort: process.env.DETECTIVE_SETUP_EFFORT || 'medium',
     playModel: process.env.DETECTIVE_PLAY_MODEL || undefined,
     readerModel: process.env.DETECTIVE_READER_MODEL || 'sonnet',
+    hunt: true,
     log,
   });
   const datasetDir = process.env.DETECTIVE_DATASET_DIR ? resolve(process.env.DETECTIVE_DATASET_DIR) : join(ROOT, 'dataset');

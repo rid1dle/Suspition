@@ -843,7 +843,7 @@ export const STORY_CHECK_SCHEMA = obj({
 });
 
 // The world is checked against a fixed list before anyone plays it; small holes are patched in the fields below only.
-export function storyCheckPrompt(scenario, issues = [], unpatched = []) {
+export function storyCheckPrompt(scenario, issues = [], unpatched = [], lead = 'A first check found these problems and said it could not patch them.') {
   return `You check a mystery for holes before anyone plays it. The world below is final unless you find a problem. Check each item and report every problem you find:
 1. Whereabouts: anyone at the crime place at the crime time who would have seen it.
 2. Every clue and every hidden fact has an event in the truth that made it.
@@ -861,7 +861,7 @@ export function storyCheckPrompt(scenario, issues = [], unpatched = []) {
 14. Physical sense: how long things take (a drug, a walk, a fire), what survives water, fire or handling, what a lock, seal or tool can and cannot do. Fix anything a careful reader would not believe.
 The code already found these problems: ${issues.length ? `\n- ${issues.join('\n- ')}` : 'none'}
 Fix small problems with patches to the allowed fields only. Choose rewrite only when the story cannot be fixed with patches.${unpatched.length ? `
-A first check found these problems and said it could not patch them. The world cannot be written again now: fix each one with patches to the allowed fields, as well as you can, and choose patch.${unpatched.map((p) => `\n- ${String(p?.what ?? '').trim()} Fix: ${String(p?.fix ?? '').trim()}`).join('')}` : ''}
+${lead} The world cannot be written again now: fix each one with patches to the allowed fields, as well as you can, and choose patch. A thing set up and never used gets a use (a clue's text, a round's planned_beat, a GM character's plan) or is cut from where it is shown.${unpatched.map((p) => `\n- ${String(p?.what ?? '').trim()}${String(p?.fix ?? '').trim() ? ` Fix: ${String(p.fix).trim()}` : ''}`).join('')}` : ''}
 
 verdict: ok when nothing needs fixing, patch when your patches fix everything, rewrite when they cannot. problems: each problem you found, in a few plain words, and its fix.
 patches: path uses dots and list positions from 0 (clues.3.shows). value is always a string. Only these paths are used; any other is ignored:
@@ -873,11 +873,36 @@ patches: path uses dots and list positions from 0 (clues.3.shows). value is alwa
 - truth.whereabouts, suspects, red_herrings, truth.timeline, setups, reframes, world_rules, lies_caught (value is the whole new list, as JSON)
 - clues.N.text, clues.N.form, clues.N.author, clues.N.written_at, clues.N.from_step, clues.N.pairs_with
 - npcs.N.agenda (value is the whole agenda, as JSON), why_tonight
+- opening_scene, locations.N.public_info, npcs.N.public_info, phases.N.planned_beat, background and key_objects (value is the whole new list, as JSON)
 
 ${PLAIN_STYLE}
 
 THE MYSTERY:
 ${JSON.stringify(scenario)}`;
+}
+
+// A reader who only hunts: it reads the finished world the way a reviewer reads it after play, and fixes nothing.
+export const HUNT_SCHEMA = obj({ holes: strArr, contradictions: strArr, unpaid_setups: strArr, unplanted_payoffs: strArr, dead_branches: strArr });
+export const HUNT_LEAD = 'These problems were found and are not fixed yet.';
+export const HUNT_KINDS = { holes: 'Hole', contradictions: 'Contradiction', unpaid_setups: 'Set up and never used', unplanted_payoffs: 'Used and never planted', dead_branches: 'Leads nowhere' };
+
+export const HUNT_SYSTEM = `You are a strict story editor. You read a party mystery world before anyone plays it, the way a reviewer will read it after play, and list every flaw a careful reader would find. Plain, simple English, one line per item.
+- holes: an event with no cause, a thing whose route is never explained (where money, an object or a page went, why someone carried something), a plan that cannot work with another plan, a person's night that does not add up.
+- contradictions: two parts of the world that disagree (quote both).
+- unpaid_setups: anything the world makes look important (an object, a code word, a line in a clue, a person, a place, a threat, an animal or a coming arrival) that no clue, deduction, reveal or round plan ever uses.
+- unplanted_payoffs: a fact the solution or the reveal uses that no clue or card lets players see.
+- dead_branches: events, people or goals with no link to the crime or to anyone's goal.`;
+
+export function huntPrompt(sc) {
+  const world = {
+    title: sc.title, case_question: sc.case_question, background: sc.background, opening_scene: sc.opening_scene, key_objects: sc.key_objects,
+    truth: sc.truth, why_tonight: sc.why_tonight, suspects: sc.suspects, red_herrings: sc.red_herrings, twists: sc.twists,
+    false_solution: sc.false_solution, setups: sc.setups, reframes: sc.reframes, world_rules: sc.world_rules,
+    cards: sc.players.map((c) => ({ id: c.id, name: c.character_name, side: c.side, goal: c.goal, public_info: c.public_info, private_info: c.private_info, night: c.night ?? null })),
+    gm_characters: sc.npcs, places: sc.locations.map((l) => ({ id: l.id, name: l.name, public_info: l.public_info })),
+    clues: sc.clues, key_deductions: sc.key_deductions, rounds: sc.phases,
+  };
+  return `THE WORLD:\n${JSON.stringify(world)}`;
 }
 
 // A draft that broke a few rules is patched instead of written again (a 10-player world takes 15 minutes).
