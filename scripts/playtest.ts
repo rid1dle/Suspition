@@ -39,7 +39,7 @@ async function answerLobby(app, bot) {
   }
 }
 
-export async function runPlaytest({ gm, botCall, judgeCall, storyJudgeCall = null, bots, outDir, setting = '', length = 'short', culprits = 'gm', actionsPerRound = 2, people = new MemoryPeople(), log = console.log }) {
+export async function runPlaytest({ gm, botCall, judgeCall, storyJudgeCall = null, bots, outDir, setting = '', length = 'short', culprits = 'gm', actionsPerRound = 2, npcs = 2, npcRole = 'background', people = new MemoryPeople(), log = console.log }) {
   const appLog = [];
   const app = await new App({ gm, store: new Store(await mkdtemp(join(tmpdir(), 'playtest-'))), people, log: (line) => appLog.push(`${new Date().toISOString()} ${line}`) }).init();
   const host = app.game.hostToken;
@@ -52,9 +52,15 @@ export async function runPlaytest({ gm, botCall, judgeCall, storyJudgeCall = nul
   log(`Bots: ${bots.map((b) => `${b.name} (${b.role})`).join(', ')}`);
 
   log('The GM is writing the world. This takes a few minutes.');
-  await app.setup(host, { setting, tone: 'tense', length, hints: 2, overrides: 2, npcs: 2, npcRole: 'background', culprits });
+  await app.setup(host, { setting, tone: 'tense', length, hints: 2, overrides: 2, npcs, npcRole, culprits });
   await app.idle();
-  if (app.game.status !== 'reading') throw new Error(`The world could not be written: ${app.game.error ?? app.game.status}`);
+  if (app.game.status !== 'reading') {
+    const dir = join(outDir, `failed-${new Date().toISOString().replace(/[:.]/g, '-')}`);
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, 'server.log'), `${appLog.join('\n')}\n`);
+    log(appLog.filter((l) => /failed|invalid|broke|skipped/.test(l)).join('\n'));
+    throw new Error(`The world could not be written: ${app.game.error ?? app.game.status}`);
+  }
   log(`World ready: ${app.game.scenario.players.length} players, ${app.game.scenario.phases.length} rounds.`);
 
   for (let i = 0; i < briefingSteps(app.game).length; i += 1) await app.brief(host, 1);

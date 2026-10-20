@@ -78,7 +78,7 @@ async function main() {
   const only = Number(process.argv[process.argv.indexOf('--only') + 1]) || 0;
   const chosen = games.map((g, i) => ({ ...g, i })).filter((g) => !only || g.i + 1 === only);
   const results = await Promise.allSettled(chosen.map((g) => runPlaytest({
-    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, storyJudgeCall, outDir: out, setting: g.setting, culprits: g.culprits, length: 'standard', actionsPerRound: chaos ? 3 : 2, people: new MemoryPeople(),
+    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, storyJudgeCall, outDir: out, setting: g.setting, culprits: g.culprits, length: 'standard', actionsPerRound: chaos ? 3 : 2, ...(chaos ? { npcs: 3, npcRole: 'mixed' } : {}), people: new MemoryPeople(),
     bots: g.bots.map((p) => ({ ...p, username: p.name.toLowerCase(), samples: [], about: [] })),
     log: (l) => console.log(`[game ${g.i + 1}] ${l}`),
   })));
