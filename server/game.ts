@@ -2774,13 +2774,16 @@ export function shareClue(game, playerId, clueId, now = Date.now()) {
   if (st.shared.some((x) => x.clueId === clueId)) fail('Everyone can already see that clue.', 409);
   const clue = game.scenario.clues.find((c) => c.id === clueId);
   const name = nameOf(game, playerId);
-  st.shared.push({ clueId, by: playerId, at: now });
+  // A clue that was destroyed is told from memory; one the story turns on shows only its remains.
+  const lost = st.destroyed.includes(clueId) ? 'destroyed' : (st.damaged ?? []).includes(clueId) ? 'damaged' : null;
+  st.shared.push({ clueId, by: playerId, at: now, ...(lost ? { lost } : {}) });
   const round = st.roundNumber ?? st.phaseIndex + 1;
   if ((st.shareRewarded ??= {})[playerId] !== round) {
     st.shareRewarded[playerId] = round;
     recordPlay(game, playerId, { points: 1, skill: 'teamwork', why: `Showed everyone ${clue.name}.` }, null, 'out loud');
   }
-  addEvent(game, `${name} shows a clue. ${clue.name}: ${clue.shows}`, 'clue', now, { by: name, name: clue.name });
+  const how = lost === 'destroyed' ? 'tells the room what a lost clue showed' : lost === 'damaged' ? 'shows what is left of a clue' : 'shows a clue';
+  addEvent(game, `${name} ${how}. ${clue.name}: ${clue.shows}`, 'clue', now, { by: name, name: clue.name, ...(lost ? { lost } : {}) });
   addFacts(game, mentions(game, `${clue.name} ${clue.shows}`).map((id) => ({ person: id, fact: `Clue, ${clue.name}: ${clue.shows}` })), 'clue', now);
 }
 
@@ -3143,7 +3146,8 @@ export function publicKnowledge(game) {
     canon: (game.state.canon ?? []).filter((c) => c.public).map((c) => c.fact),
     shared_clues: game.state.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
-      return `${c.name}: ${c.shows}${String(c.text ?? '').trim() ? ` Its own words: "${c.text}"` : ''}`;
+      const gone = x.lost === 'destroyed' ? ` (destroyed: known only from what ${nameOf(game, x.by)} remembers)` : x.lost === 'damaged' ? ' (only its remains are left)' : '';
+      return `${c.name}${gone}: ${c.shows}${String(c.text ?? '').trim() ? ` Its own words: "${c.text}"` : ''}`;
     }),
   };
 }
@@ -3308,7 +3312,7 @@ function publicCore(game, now) {
     roundResults: st?.roundResults ?? [],
     sharedClues: st ? st.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
-      return { id: x.clueId, name: c.name, shows: c.shows, ...artifactOf(c), by: x.check ? 'a check' : nameOf(game, x.by) };
+      return { id: x.clueId, name: c.name, shows: c.shows, ...artifactOf(c), by: x.check ? 'a check' : nameOf(game, x.by), ...(x.lost ? { lost: x.lost } : {}) };
     }) : [],
     illustration: st?.illustration ?? null,
     calling: st ? (st.moments ?? []).filter((m) => m.status === 'called').map((m) => game.players.find((p) => p.id === m.player_id)?.name) : [],

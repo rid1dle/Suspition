@@ -12,7 +12,8 @@ export function feedItem(e) {
     const m = /^(.*?) shows a clue\. (.*?):/.exec(e.text);
     const by = e.by ?? m?.[1];
     const name = e.name ?? m?.[2];
-    return { kind: 'clue', text: by && name ? `${by} showed a clue: ${name}` : e.text, tab: 'clues' };
+    const did = e.lost === 'destroyed' ? 'told the room about a lost clue' : e.lost === 'damaged' ? 'showed what is left of a clue' : 'showed a clue';
+    return { kind: 'clue', text: by && name ? `${by} ${did}: ${name}` : e.text, tab: 'clues' };
   }
   if (e.kind === 'timeline') return { kind: 'timeline', text: e.text, tab: 'timeline' };
   if (e.kind === 'qa') return { kind: 'qa', text: e.text, ask: askLine(e.by, e.q), lines: e.lines };

@@ -56,13 +56,15 @@ export function ClueText({ shows, artifact }: { shows: string; artifact?: Artifa
   );
 }
 
-export function SharedClues({ clues }: { clues: { id?: string; name: string; by: string; shows: string; artifact?: Artifact }[] | null | undefined }) {
+const LOST = { destroyed: ', destroyed, told from memory', damaged: ', only what is left' } as const;
+
+export function SharedClues({ clues }: { clues: { id?: string; name: string; by: string; shows: string; artifact?: Artifact; lost?: keyof typeof LOST }[] | null | undefined }) {
   if (!clues?.length) return <Muted>No clues shared yet. Find one, then tap &ldquo;Show everyone&rdquo;.</Muted>;
   return (
     <div className="flex flex-col gap-3">
       {clues.map((c, i) => (
         <div key={c.id ?? i} className="flex flex-col gap-1 rounded-lg bg-muted/60 p-3">
-          <span><b>{c.name}</b> <span className="text-xs text-muted-foreground">from {c.by}</span></span>
+          <span><b>{c.name}</b> <span className="text-xs text-muted-foreground">from {c.by}{c.lost ? LOST[c.lost] : ''}</span></span>
           <ClueText shows={c.shows} artifact={c.artifact} />
         </div>
       ))}
