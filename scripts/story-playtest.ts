@@ -49,6 +49,19 @@ export const CHAOS = [
   { name: 'Ishaan', role: 'bender', trait: 'restless, acts first', motive: 'Change the world: move GM characters, start events, take things, and see if the story keeps up.' },
 ];
 
+// The story playtest: eight people who play for real (no breakers or flatterers), to measure how gripping
+// the story is. The chaos cast tests the guardrails; its saboteurs make any game read flat.
+export const STORY_CAST = [
+  { name: 'Asha', role: 'social', trait: 'organiser, messages everyone', motive: 'Trade what you find with the people you trust, and get them to come places with you.' },
+  { name: 'Kabir', role: 'bender', trait: 'storyteller, loves inventing', motive: 'Make your own character\'s past matter to the case, by digging into it and what it touches.' },
+  { name: 'Meera', role: 'bluffer', trait: 'cool, confident liar', motive: 'Protect your own secret with stories that fit the facts, while still helping find who did it.' },
+  { name: 'Zoya', role: 'driver', trait: 'dramatic accuser', motive: 'Build a theory from the evidence and push the room to test it.' },
+  { name: 'Dev', role: 'fair', trait: 'methodical, writes notes', motive: 'Solve it properly from the evidence alone.' },
+  { name: 'Nisha', role: 'social', trait: 'quiet, watches who talks to whom', motive: 'Ask specific people specific questions in private and catch the ones whose stories change.' },
+  { name: 'Rohan', role: 'fair', trait: 'competitive', motive: 'Reach your secret goal and name the culprit before anyone else.' },
+  { name: 'Pari', role: 'driver', trait: 'curious, wanders everywhere', motive: 'Search every place, follow whoever moves, and read every document you can find.' },
+];
+
 async function main() {
   const out = resolve(process.argv[2] ?? join(tmpdir(), 'story-playtest'));
   await mkdir(out, { recursive: true });
@@ -70,7 +83,8 @@ async function main() {
   const judgeCall = ({ system, prompt }) => botGm.call('judge', { system, prompt, schema: JUDGE_SCHEMA, timeoutMs: 900_000 });
   const storyJudgeCall = ({ system, prompt, schema }) => botGm.call('story judge', { system, prompt, schema, timeoutMs: 900_000 });
   const chaos = process.argv.includes('--chaos');
-  const games = chaos ? [{ setting: process.env.CHAOS_SETTING ?? '', culprits: 'gm', bots: CHAOS }] : [
+  const story = process.argv.includes('--story');
+  const games = story ? [{ setting: process.env.CHAOS_SETTING ?? '', culprits: 'gm', bots: STORY_CAST }] : chaos ? [{ setting: process.env.CHAOS_SETTING ?? '', culprits: 'gm', bots: CHAOS }] : [
     { setting: 'a monsoon wedding in an old haveli', culprits: 2, bots: PERSONAS.slice(0, 10) },
     { setting: 'a night train stuck in the snow', culprits: 'gm', bots: PERSONAS.slice(10, 20) },
   ];
@@ -78,7 +92,7 @@ async function main() {
   const only = Number(process.argv[process.argv.indexOf('--only') + 1]) || 0;
   const chosen = games.map((g, i) => ({ ...g, i })).filter((g) => !only || g.i + 1 === only);
   const results = await Promise.allSettled(chosen.map((g) => runPlaytest({
-    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, storyJudgeCall, outDir: out, setting: g.setting, culprits: g.culprits, length: 'standard', actionsPerRound: chaos ? 3 : 2, ...(chaos ? { npcs: 3, npcRole: 'mixed' } : {}), people: new MemoryPeople(),
+    gm: makeGm(`game${g.i + 1}`), botCall, judgeCall, storyJudgeCall, outDir: out, setting: g.setting, culprits: g.culprits, length: 'standard', actionsPerRound: chaos || story ? 3 : 2, ...(chaos || story ? { npcs: 3, npcRole: 'mixed' } : {}), people: new MemoryPeople(),
     bots: g.bots.map((p) => ({ ...p, username: p.name.toLowerCase(), samples: [], about: [] })),
     log: (l) => console.log(`[game ${g.i + 1}] ${l}`),
   })));

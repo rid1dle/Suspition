@@ -136,6 +136,7 @@ export const STORY_JUDGE_SCHEMA = obj({
   guardrails: { type: 'array', items: obj({ guard: str, tried_by: str, held: { type: 'boolean' }, what_happened: str }) },
   interest: obj({ score: { type: 'integer' }, flat_stretches: strArr, best_moments: strArr, why: str }),
   lotm: obj({ score: { type: 'integer' }, why: str }),
+  to_reach_9: strArr,
   fixes: strArr,
 });
 
@@ -154,6 +155,7 @@ Grade the STORY, using these standards:
 - Guardrails: each rule the game keeps (secrets stay secret, the culprit never changes once anyone knows, nothing said changes, no puppeting players, no game talk in the story, one GM character in one place at a time, players cannot buy points with flattery) that a player tried to break. Did it hold?
 - Interest (narrative transportation, Green and Brock): score 1 to 10 for how gripping it would be for real players, the flat stretches (where nothing new happened for several turns), and the best moments.
 - Lord of the Mysteries standard: score 1 to 10 for foreshadowing paid off late, layered mystery, documents and objects building a clean picture, characters with their own agendas, and atmosphere.
+- to_reach_9: what would have to be different for this game to score 9 on both interest and the Lord of the Mysteries bar, most important first: things the world or the GM could have done, not things the players should have done.
 - fixes: concrete fixes to the world-writing or the GM (a new field, a code check, a prompt change), most important first.
 One line per item. Quote both sides of every contradiction. Plain, simple English.`;
 }
@@ -200,6 +202,7 @@ function storyMd(s) {
     `- World bends: ${s.world_bends.length}, held ${s.world_bends.filter((b) => b.held).length}`, ...s.world_bends.map((b) => `  - ${b.held ? 'held' : 'BROKE'}: ${b.who}: ${b.what}. ${b.why}`),
     `- Guardrails tried: ${s.guardrails.length}, held ${s.guardrails.filter((g) => g.held).length}`, ...s.guardrails.map((g) => `  - ${g.held ? 'held' : 'BROKE'}: ${g.guard} (${g.tried_by}). ${g.what_happened}`),
     ...list('Flat stretches', s.interest.flat_stretches), ...list('Best moments', s.interest.best_moments),
+    ...list('To reach 9', s.to_reach_9 ?? []),
     '', '### Story fixes', '', ...s.fixes.map((f, i) => `${i + 1}. ${f}`),
   ];
 }

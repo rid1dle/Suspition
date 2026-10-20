@@ -8,10 +8,12 @@ export { ARTIFACT_FORMS, WRITTEN_FORMS };
 
 const CHANCE = /\b(chance|accident|accidentally|coincidence|by luck|luckily|happened to)\b/i;
 const MIN_SETUPS = 4;
-const MIN_REFRAMES = 2;
+const MIN_REFRAMES = 3;
 
 const wordsOf = (t) => String(t ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
 const SMALL = new Set(['the', 'a', 'an', 'of', 'and', 'old', 'new']);
+// Words every goal uses that say nothing about what it is about.
+const GOAL_WORDS = new Set(['before', 'final', 'vote', 'make', 'sure', 'nobody', 'anyone', 'everyone', 'room', 'tonight', 'avoid', 'named', 'keep', 'from', 'that', 'this', 'your', 'with', 'into', 'without', 'being', 'their', 'them', 'they', 'what', 'about', 'game']);
 
 // A world written before these fields existed (no setups list) skips every check.
 export function craftIssues(s) {
@@ -81,6 +83,36 @@ export function craftIssues(s) {
     else if (roundOfClue(x.flipped_by) <= seenRound(x.seen_in)) out.push(`reframe: reframes[${i}] is flipped by ${x.flipped_by} (round ${roundOfClue(x.flipped_by)}), not after it is seen (round ${seenRound(x.seen_in)}); flip it with a later clue.`);
   });
 
+  // The turns are spread: in at least 2 rounds, one of them in the last two.
+  const flips = [...new Set(reframes.filter((x) => clue[x?.flipped_by]).map((x) => roundOfClue(x.flipped_by)))];
+  if (rounds >= 3 && reframes.length && flips.length < 2) out.push(`reframe: every reframe turns in round ${flips[0] ?? '?'}; spread them over at least 2 rounds so the game keeps turning.`);
+  if (rounds >= 3 && reframes.length && !flips.some((r) => r >= rounds - 1)) out.push(`reframe: no reframe turns in the last two rounds; flip one there, with a clue that opens late.`);
+
+  // A false solution the room believes by the middle, broken later, so the true answer is never plain early.
+  if (Array.isArray(s.setups)) {
+    const f = s.false_solution ?? {};
+    const mid = Math.ceil(rounds / 2);
+    const built = (f.built_from ?? []).filter((id) => clue[id]);
+    const people = new Set([...(s.players ?? []), ...(s.npcs ?? [])].map((p) => p.id));
+    if (!people.has(f.points_at) || (s.truth?.culprit_ids ?? []).includes(f.points_at)) out.push(`false: false_solution.points_at (${f.points_at ?? ''}) must be an innocent person's id.`);
+    if (built.length < 2) out.push('false: false_solution.built_from needs 2 or more real clue ids that make the wrong answer convincing.');
+    else if (built.some((id) => roundOfClue(id) > mid)) out.push(`false: false_solution is built from clues that open after round ${mid}; the room must believe it by the middle.`);
+    if (!clue[f.broken_by]) out.push(`false: false_solution.broken_by (${f.broken_by ?? ''}) is not a clue id.`);
+    else {
+      const breaks = roundOfClue(f.broken_by);
+      if (built.length && breaks <= Math.max(...built.map(roundOfClue))) out.push(`false: false_solution is broken in round ${breaks}, before or with the clues that build it; break it later.`);
+      const culpritDeductions = (s.key_deductions ?? []).filter((k) => k.about === 'culprit' && (k.clue_ids ?? []).some((id) => clue[id]));
+      if (culpritDeductions.length && culpritDeductions.every((k) => Math.max(...k.clue_ids.filter((id) => clue[id]).map(roundOfClue)) < breaks)) out.push(`false: the case against the culprit is complete before the false solution breaks (round ${breaks}); hold one culprit clue until then or later.`);
+    }
+  }
+
+  // Secret goals move the main story: what a player chases is itself evidence or sits where evidence is.
+  const evidence = new Set(clues.flatMap((c) => wordsOf(`${c.name} ${c.text ?? ''} ${c.shows}`)).filter((w) => w.length >= 4 && !SMALL.has(w)));
+  const names = new Set([...(s.players ?? []).map((p) => p.character_name), ...(s.npcs ?? []).map((n) => n.name), ...(s.locations ?? []).map((l) => l.name)].flatMap(wordsOf));
+  const goals = (s.players ?? []).filter((p) => String(p.goal ?? '').trim());
+  const joined = goals.filter((p) => wordsOf(p.goal).filter((w) => w.length >= 4 && !names.has(w) && !GOAL_WORDS.has(w)).some((w) => evidence.has(w)));
+  if (goals.length >= 2 && joined.length * 2 < goals.length) out.push(`goal: only ${joined.length} of ${goals.length} secret goals touch a clue; make the thing each player wants to get, hide or show part of the evidence.`);
+
   // Every GM character who matters is up to something, round by round.
   (s.npcs ?? []).forEach((n, i) => {
     if (n?.importance !== 'important') return;
@@ -145,6 +177,11 @@ export function applyDress(s, dress) {
     const c = (s.clues ?? []).find((x) => x.id === d?.id);
     if (!c || !String(d.text ?? '').trim()) continue;
     Object.assign(c, { form: ARTIFACT_FORMS.includes(d.form) ? d.form : 'object', author: String(d.author ?? ''), written_at: String(d.written_at ?? ''), text: String(d.text), ...(String(d.pairs_with ?? '').trim() ? { pairs_with: String(d.pairs_with).trim() } : {}) });
+    n += 1;
+  }
+  if (dress.false_solution && typeof dress.false_solution === 'object' && String(dress.false_solution.believed ?? '').trim()) {
+    const f = dress.false_solution;
+    s.false_solution = { believed: String(f.believed), points_at: String(f.points_at ?? ''), built_from: (f.built_from ?? []).map(String), broken_by: String(f.broken_by ?? '') };
     n += 1;
   }
   for (const key of ['setups', 'reframes', 'world_rules', 'lies_caught']) {

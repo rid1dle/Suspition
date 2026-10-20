@@ -18,6 +18,7 @@ const dress = {
   reframes: [{ detail: 'The quiet dog.', seen_in: 'opening_scene', first_reading: 'Calm.', true_reading: 'It knew them.', flipped_by: 'c2' }],
   world_rules: [{ rule: 'The gate locks at ten.', cost: 'Nobody gets in after.', shown_by: 'background', used_in: 'k1' }],
   lies_caught: [{ npc_id: 'n1', lie: 'Never left the pantry.', caught_by: 'c2' }],
+  false_solution: { believed: 'Character 2 took it.', points_at: 'p2', built_from: ['c1', 'c3'], broken_by: 'c2' },
   agendas: [
     { npc_id: 'n1', wants: 'Hide his drinking.', plan: [{ round: 1, does: 'Moves the bottles.' }, { round: 2, does: '' }], leaves: 'c2' },
     { npc_id: 'n2', wants: 'Grieve.', plan: [{ round: 1, does: 'Cries.' }], leaves: '' },
@@ -29,7 +30,7 @@ describe('the story layer is written on the finished world', () => {
     assert.equal('setups' in SCENARIO_SCHEMA.properties, false);
     assert.equal('text' in SCENARIO_SCHEMA.properties.clues.items.properties, false);
     assert.equal('agenda' in SCENARIO_SCHEMA.properties.npcs.items.properties, false);
-    for (const k of ['clues', 'setups', 'reframes', 'world_rules', 'agendas']) assert.ok(CRAFT_SCHEMA.properties[k], k);
+    for (const k of ['clues', 'setups', 'reframes', 'world_rules', 'agendas', 'false_solution']) assert.ok(CRAFT_SCHEMA.properties[k], k);
     assert.match(GENERATION_SYSTEM, /Cause and effect/);
     assert.match(STORY_DRESS, /Never change a fact of the world/);
   });
@@ -48,6 +49,7 @@ describe('the story layer is written on the finished world', () => {
     assert.equal(s.clues[1].pairs_with, 'c3');
     assert.equal('pairs_with' in s.clues[0], false, 'no half for a whole thing');
     assert.equal(s.lies_caught[0].caught_by, 'c2');
+    assert.deepEqual(s.false_solution, { believed: 'Character 2 took it.', points_at: 'p2', built_from: ['c1', 'c3'], broken_by: 'c2' });
     assert.deepEqual(s.npcs[0].agenda.plan, [{ round: 1, does: 'Moves the bottles.' }]);
     assert.equal('agenda' in s.npcs[1], false);
   });

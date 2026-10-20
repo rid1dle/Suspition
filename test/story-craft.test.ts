@@ -42,6 +42,9 @@ function craftWorld() {
   s.clues[2].pairs_with = 'c5';
   s.clues[4].pairs_with = 'c3';
   s.lies_caught = [];
+  s.reframes.push({ detail: 'The butler logs every key.', seen_in: 'c3', first_reading: 'A careful man.', true_reading: 'His log shows the keys out.', flipped_by: 'c2' });
+  s.false_solution = { believed: 'Character 2 took the will for the money.', points_at: 'p2', built_from: ['c1', 'c3'], broken_by: 'c2' };
+  s.players.forEach((p, i) => (p.goal = ['Burn the will before dawn.', 'Find the glove before the lawyer.', 'Hide the telegram from everyone.', 'Read the ledger before the vote.'][i]));
   return s;
 }
 
@@ -120,6 +123,7 @@ describe('story craft checks', () => {
   test('should want two reframes, each flipped by a clue found after the detail is seen', () => {
     const s = craftWorld();
     s.reframes[0].flipped_by = 'c1';
+    s.reframes.pop();
     s.reframes.pop();
     const out = craftIssues(s);
     assert.ok(about(out, '1 reframe').length === 1);
@@ -273,5 +277,54 @@ describe('lies that can be caught, and a document in two halves', () => {
     t.clues[4].where = 'n1';
     t.clues[4].reveal_round = 1;
     assert.equal(about(craftIssues(t), 'c3 and c5 are halves found in the same place and round').length, 1);
+  });
+});
+
+describe('a story that keeps turning', () => {
+  test('should want the turns spread over rounds, one of them late', () => {
+    const s = craftWorld();
+    for (const r of s.reframes) r.flipped_by = 'c2';
+    assert.equal(about(craftIssues(s), 'every reframe turns in round 2').length, 1);
+    const t = craftWorld();
+    t.reframes = t.reframes.map((r) => ({ ...r, flipped_by: 'c3', seen_in: 'opening_scene' }));
+    assert.equal(about(craftIssues(t), 'no reframe turns in the last two rounds').length, 1);
+  });
+
+  test('should want a false solution about an innocent, believed by the middle and broken later', () => {
+    const s = craftWorld();
+    delete s.false_solution;
+    assert.ok(about(craftIssues(s), 'false_solution').length >= 1);
+    const t = craftWorld();
+    t.false_solution.points_at = 'p1';
+    assert.equal(about(craftIssues(t), "must be an innocent person's id").length, 1);
+    const u = craftWorld();
+    u.false_solution.built_from = ['c1', 'c4'];
+    assert.equal(about(craftIssues(u), 'open after round 2').length, 1);
+    const v = craftWorld();
+    v.false_solution.broken_by = 'c3';
+    assert.equal(about(craftIssues(v), 'broken in round 1, before or with the clues').length, 1);
+  });
+
+  test('should flag a case against the culprit that is complete before the false solution breaks', () => {
+    const s = craftWorld();
+    s.false_solution.broken_by = 'c5';
+    assert.equal(about(craftIssues(s), 'complete before the false solution breaks (round 3)').length, 1);
+  });
+
+  test('should want most secret goals to touch a clue', () => {
+    const s = craftWorld();
+    s.players.forEach((p) => (p.goal = 'Make sure nobody names you in the final vote.'));
+    assert.equal(about(craftIssues(s), 'secret goals touch a clue').length, 1);
+  });
+
+  test('should line up the turns and the false solution at each round change', () => {
+    const game = gameInReading(4);
+    const w = craftWorld();
+    Object.assign(game.scenario, { setups: w.setups, reframes: w.reframes, false_solution: w.false_solution, clues: w.clues });
+    G.startPlay(game, 1_000);
+    const next = G.nextPhaseInfo(game);
+    assert.match(next.flip_now.join(' '), /The butler logs every key/);
+    assert.match(next.false_solution, /this is the round it breaks\. Put Ledger within reach/);
+    assert.match(phasePrompt({ snapshot: {}, nextPhase: next, lastRound: null }), /Turns due this round[^]*The false solution: this is the round it breaks/);
   });
 });
