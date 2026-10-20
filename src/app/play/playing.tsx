@@ -142,7 +142,7 @@ function TopBar({ view, onOpenCard, dots, onDrawer, children }: { view: PlayerVi
     <header className="sticky top-[env(safe-area-inset-top,0px)] z-30 flex flex-col gap-2 border-b border-border bg-background px-4 pt-3 pb-2">
       <CallBanner text={callFor(view as Parameters<typeof callFor>[0])} onShow={() => window.scrollTo({ top: 0 })} />
       <div className="flex items-baseline justify-between gap-3">
-        <span className="truncate font-heading text-primary">{view.phase ? `Round ${view.phase.number} of ${view.phase.count}: ${view.phase.name}` : ''}</span>
+        <span className="truncate font-heading text-primary">{view.phase ? `Round ${view.phase.number}${view.phase.number === view.phase.count ? ', the last' : ''}: ${view.phase.name}` : ''}</span>
         {timer && <span className={`font-mono tabular-nums ${timer.low ? 'text-destructive' : ''}`}>{timer.text}</span>}
       </div>
       <div className="flex flex-wrap justify-between gap-x-3 text-xs text-muted-foreground">
@@ -368,7 +368,7 @@ function Stream({ items, empty, onGo, onTell }: { items: ChatItem[]; empty: stri
 
 function ChatLine({ item, latest, onGo, onTell }: { item: ChatItem; latest: boolean; onGo: (d: Drawer) => void; onTell: (line: string) => void }) {
   const fade = latest ? { initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 } } : {};
-  if (item.kind === 'round-start') return <div className="mt-3 flex items-center gap-2 text-xs tracking-wide text-primary uppercase"><span className="h-px flex-1 bg-border" />{item.text.replace(/^Round (\d+) of \d+: /, 'Round $1 · ')}<span className="h-px flex-1 bg-border" /></div>;
+  if (item.kind === 'round-start') return <div className="mt-3 flex items-center gap-2 text-xs tracking-wide text-primary uppercase"><span className="h-px flex-1 bg-border" />{item.text.replace(/^Round (\d+)(?: of \d+)?(, the last)?: /, 'Round $1$2 · ')}<span className="h-px flex-1 bg-border" /></div>;
   if (item.dm) return <DmLine item={item} latest={latest} fade={fade} />;
   if (item.side === 'me') return <PrivateLine item={item} latest={latest} fade={fade} onTell={onTell} />;
   if (item.kind === 'opening') return <motion.div {...fade} className="rounded-2xl bg-card p-4"><Label>The story so far</Label><p className="mt-1">{item.text}</p></motion.div>;

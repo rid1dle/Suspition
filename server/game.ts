@@ -775,7 +775,8 @@ function announceRound(game, index, now, again = false) {
   if (q) addEvent(game, `This round's goal: ${q.question}`, 'goal', now);
 }
 
-const phaseLine = (game, i, again = false) => `Round ${game.state.roundNumber ?? i + 1} of ${totalRounds(game)}: ${game.scenario.phases[i].name}${again ? ' (second try)' : ''}`;
+// No total: the story may add a round, and a total that grows would announce it. The last round says so.
+const phaseLine = (game, i, again = false) => `Round ${game.state.roundNumber ?? i + 1}${i === game.scenario.phases.length - 1 ? ', the last' : ''}: ${game.scenario.phases[i].name}${again ? ' (second try)' : ''}`;
 
 function setJob(game, result) {
   const objective = String(result.job ?? '').trim();

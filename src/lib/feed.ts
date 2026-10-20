@@ -27,7 +27,7 @@ export function roundGroups(events) {
     const key = e.phase ?? -1;
     if (!groups.has(key)) groups.set(key, { phase: key, title: key < 0 ? 'Before round 1' : `Round ${key + 1}`, items: [] });
     const g = groups.get(key);
-    if (e.kind === 'phase' && /^Round \d+/.test(e.text)) g.title = e.text.replace(/^Round (\d+) of \d+: /, 'Round $1 · ');
+    if (e.kind === 'phase' && /^Round \d+/.test(e.text)) g.title = e.text.replace(/^Round (\d+)(?: of \d+)?(, the last)?: /, 'Round $1$2 · ');
     const item = feedItem(e);
     if (item) g.items.push(item);
   }

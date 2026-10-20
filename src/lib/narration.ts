@@ -11,7 +11,7 @@ export function narrationFor(prev, next) {
   const before = prev.events?.length ?? 0;
   for (const e of (next.events ?? []).slice(before)) {
     if (['opening', 'qa', 'said'].includes(e.kind) || SKIP.test(e.text)) continue;
-    lines.push(e.kind === 'phase' ? e.text.replace(/^Round (\d+) of (\d+): /, 'Round $1 of $2. ') : e.text);
+    lines.push(e.kind === 'phase' ? e.text.replace(/^Round (\d+) of (\d+): /, 'Round $1 of $2. ').replace(/^Round (\d+)(, the last)?: /, 'Round $1$2. ') : e.text);
   }
   if (next.status === 'reveal' && prev.status !== 'reveal' && next.reveal) {
     const win = next.reveal.verdict.winner === 'investigators';

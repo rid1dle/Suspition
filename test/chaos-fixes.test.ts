@@ -80,3 +80,26 @@ describe('GM rules from the chaos playtest', () => {
     assert.match(JSON.stringify(G.publicKnowledge(game)), /Its own words: \\"Torn at the thumb/);
   });
 });
+
+import { narrationFor } from '../src/lib/narration.ts';
+
+describe('round headings with no total', () => {
+  test('should say the round number, and only the last round says it is the last', () => {
+    const game = gameInReading(4);
+    G.startPlay(game, 1_000);
+    assert.equal(game.state.events.find((e) => e.kind === 'phase').text, 'Round 1: Phase name 1');
+    for (const at of [2_000, 3_000]) {
+      G.beginPhaseChange(game);
+      G.completePhase(game, { public_event: 'x', messages_to_players: [], clues_destroyed: [], suspicion_change: 0 }, at);
+    }
+    assert.equal(game.state.events.filter((e) => e.kind === 'phase')[1].text, 'Round 2: Phase name 2');
+    assert.match(game.state.events.filter((e) => e.kind === 'phase').at(-1).text, /^Round 3, the last: /);
+  });
+
+  test('should read both new headings aloud and keep old games readable', () => {
+    const base = { events: [] };
+    const withEvent = (text) => ({ events: [{ at: 1, phase: 0, kind: 'phase', text }] });
+    assert.deepEqual(narrationFor(base, withEvent('Round 3, the last: Dawn')), ['Round 3, the last. Dawn']);
+    assert.deepEqual(narrationFor(base, withEvent('Round 2 of 4: Midnight')), ['Round 2 of 4. Midnight']);
+  });
+});

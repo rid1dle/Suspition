@@ -111,7 +111,7 @@ describe('asking the GM', () => {
     G.completePhase(game, emptyPhase, 2_000);
     assert.equal(game.state.phaseIndex, 1);
     assert.equal(game.state.phaseEndsAt, 2_000 + 10 * 60_000);
-    assert.deepEqual(game.state.events.slice(-3).map((e) => e.text), ['Round 2 of 3: Phase name 2', 'Something changed.', 'New on the timeline: 9:30, TL-ROUND2']);
+    assert.deepEqual(game.state.events.slice(-3).map((e) => e.text), ['Round 2: Phase name 2', 'Something changed.', 'New on the timeline: 9:30, TL-ROUND2']);
   });
 
   test('should block questions while the phase is changing', () => {
@@ -1054,7 +1054,7 @@ describe('playing a round again when the group got it wrong', () => {
     change(game);
     assert.equal(game.state.phaseIndex, 0);
     assert.deepEqual([G.tableView(game).phase.number, G.tableView(game).phase.count], [2, 4]);
-    assert.ok(game.state.events.some((e) => /^Round 2 of 4: .* \(second try\)$/.test(e.text)));
+    assert.ok(game.state.events.some((e) => /^Round 2: .* \(second try\)$/.test(e.text)));
     assert.equal(G.needsRoundVote(game), true);
   });
 
