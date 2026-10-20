@@ -66,6 +66,7 @@ describe('continuity during play', () => {
 
   test('should add canon that later GM prompts carry', () => {
     const game = playing();
+    game.state.events.push({ at: 1_500, phase: 0, kind: 'event', text: 'At 11:10 the generator door was locked.' });
     const out = applyContinuity(game, { ...empty, canon_add: [{ fact: 'The generator door was locked at 11:10.', about: ['n1', 'zz'], public: true }, { fact: 'Only Player2 heard the bell.', about: ['p2'], public: false }] }, 2_000);
     assert.equal(out.canon, 2);
     assert.deepEqual(game.state.canon[0], { fact: 'The generator door was locked at 11:10.', about: ['n1'], public: true, round: 1, at: 2_000 });

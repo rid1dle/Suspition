@@ -809,6 +809,8 @@ const recapStem = (w) => w.replace(/(ing|ed|es|s)$/, '').replace(/([b-df-hj-np-t
 const TELLING = new Set(['says', 'said', 'tells', 'told', 'thinks', 'think', 'seems', 'now', 'been', 'heard', 'knows']);
 const RECAP_KNOWN = 0.7;
 export const recapCheck = (game, lines) => { const words = knownWords(game); return lines.filter((t) => knownLine(words, t)); };
+// True when what everyone has seen or heard already carries most of this line.
+export const roomKnows = (game, line) => knownLine(knownWords(game), line);
 function knownLine(words, line) {
   const key = [...new Set(wordsOf(line).filter((w) => w.length >= 4 && !STOP.has(w) && !TELLING.has(w)).map(recapStem))];
   const known = (w) => words.has(w) || (w.length >= 5 && [...words].some((k) => k.length > w.length && k.includes(w)));
@@ -1328,7 +1330,9 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   let tripRewarded = false;
   for (const id of result.clues_found ?? []) {
     const clue = game.scenario.clues.find((c) => c.id === id);
-    if (!clueIds.has(id) || st.destroyed.includes(id) || st.found[playerId].includes(id)) continue;
+    // A thing another player carries off is no longer where it was: nobody else finds it there.
+    const carrier = st.carried?.[id];
+    if (!clueIds.has(id) || st.destroyed.includes(id) || st.found[playerId].includes(id) || (carrier && carrier !== playerId)) continue;
     // A find somewhere else is the trip: the character is now where the clue is.
     const there = placeFor(game, clue) ?? st.at[playerId];
     if (there) st.at[playerId] = there;
@@ -1339,6 +1343,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
       recordPlay(game, playerId, { points: 1, skill: 'searching', why: `Went to the ${String(placeOf(game, playerId)).replace(/^the\s+/i, '')} and found ${clue.name}.` }, null, 'private');
     }
   }
+  takeClues(game, playerId, result.clues_taken);
   const own = game.scenario.players.find((p) => p.id === playerId);
   const fact = result.hidden_fact_revealed;
   if (fact && own.hidden_facts.some((h) => h.id === fact) && !st.revealed[playerId].includes(fact)) {
@@ -1453,6 +1458,9 @@ export function placeOf(game, pid) {
 
 // Where a clue is: its place, or where the person holding it is. Older worlds wrote free text: null.
 function placeFor(game, clue) {
+  // A thing someone took is wherever they are now.
+  const carrier = game.state.carried?.[clue?.id];
+  if (carrier) return game.state.at?.[carrier] ?? game.state.positions[carrier] ?? null;
   const where = String(clue?.where ?? '').trim();
   const sc = game.scenario;
   if (sc.locations.some((l) => l.id === where)) return where;
@@ -2878,6 +2886,83 @@ export function charactersAsked(game, text, read = null) {
 }
 
 // Where each GM character is, and who they are talking with right now (their last words within a few minutes of play).
+// What a player took with them: only a thing they have found, not destroyed and not already in someone else's hands.
+export function takeClues(game, playerId, ids) {
+  const st = game.state;
+  st.carried ??= {};
+  let n = 0;
+  for (const id of Array.isArray(ids) ? ids : []) {
+    if (!(st.found?.[playerId] ?? []).includes(id) || st.destroyed.includes(id) || (st.carried[id] && st.carried[id] !== playerId)) continue;
+    st.carried[id] = playerId;
+    n += 1;
+  }
+  return n;
+}
+
+// Who carries what, for the GM: a carried thing is with its carrier, never back where it was found.
+export function thingsCarried(game) {
+  return Object.entries(game.state.carried ?? {}).filter(([id]) => !game.state.destroyed.includes(id)).map(([id, pid]) => ({ thing: game.scenario.clues.find((c) => c.id === id)?.name ?? id, clue_id: id, carried_by: nameOf(game, pid) }));
+}
+
+// What a GM character can know, for the check before they speak: their sheet as gated this round, what they learned,
+// what they said, where they were and what they did on the night, what they hold, and what this scene told them.
+export function voiceSheets(game, ids) {
+  const st = game.state;
+  const sc = game.scenario;
+  const said = gmCharacterSaid(game);
+  const placeName = (id) => sc.locations.find((l) => l.id === id)?.name ?? '';
+  return ids.map((id) => {
+    const n = sc.npcs.find((x) => x.id === id);
+    return {
+      name: n.name,
+      role: n.role_title,
+      public_info: n.public_info,
+      knows: gatedSheet(game, n.knows),
+      secrets: n.secrets,
+      lies_they_tell: n.lies,
+      reveals_freely: gatedSheet(game, n.reveals_freely),
+      reveals_under_pressure: gatedSheet(game, n.reveals_under_pressure),
+      wants_tonight: n.agenda?.wants ?? '',
+      their_own_night: (sc.truth?.whereabouts ?? []).filter((w) => w.character_id === id).map((w) => `${w.time}: ${placeName(w.location_id)}, ${w.doing}`),
+      says_they_were: n.alibi ?? [],
+      has_learned: (st.knowledge ?? []).filter((k) => k.character_id === id).map((k) => k.fact),
+      has_said: (said[n.name] ?? []).map((x) => x.text),
+      holds: sc.clues.filter((c) => c.where === id && !st.destroyed.includes(c.id)).map((c) => `${c.name}: ${c.text || c.shows}`),
+      is_now_at: placeName(st.positions?.[id]),
+    };
+  });
+}
+
+// GM characters speaking in an answer's lines, by id (speaker is an id or a name).
+export function speakingCharacters(game, lines) {
+  const sc = game.scenario;
+  const ids = new Set();
+  for (const l of Array.isArray(lines) ? lines : []) {
+    const who = String(l?.speaker ?? '').trim().toLowerCase();
+    const n = who && sc.npcs.find((x) => x.id.toLowerCase() === who || x.name.toLowerCase() === who);
+    if (n) ids.add(n.id);
+  }
+  return [...ids];
+}
+
+// Drops the flagged sentences from GM characters' lines; a line left empty goes.
+export function dropSpoken(game, lines, flagged) {
+  const norm = (t) => String(t ?? '').toLowerCase().replace(/["“”'‘’]/g, '').replace(/\s+/g, ' ').trim();
+  const bad = (flagged ?? []).map((f) => norm(f?.sentence)).filter((t) => t.length >= 8);
+  if (!bad.length) return { lines, dropped: 0 };
+  let dropped = 0;
+  const out = (lines ?? []).flatMap((l) => {
+    if (!speakingCharacters(game, [l]).length) return [l];
+    const kept = sentences(l.text).filter((t) => {
+      const hit = bad.some((b) => norm(t).includes(b) || b.includes(norm(t)));
+      if (hit) dropped += 1;
+      return !hit;
+    });
+    return kept.length ? [{ ...l, text: kept.join(' ') }] : [];
+  });
+  return { lines: out, dropped };
+}
+
 // A GM character who walks off in an answer is somewhere else for every later answer.
 export function moveGmCharacters(game, moves) {
   const st = game.state;
@@ -3021,6 +3106,7 @@ export function snapshotForGM(game) {
     overrides_left: st.overridesLeft,
     what_gm_characters_have_said: gmCharacterSaid(game),
     gm_characters_now: gmCharactersNow(game),
+    things_carried: thingsCarried(game),
     players_told_each_other: (st.dms ?? []).filter((m) => m.from !== 'gm').slice(-20).map((m) => `${nameOf(game, m.from)} to ${nameOf(game, m.to)}, privately: ${quoteRaw(m.text)}`),
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     canon: (st.canon ?? []).map((c) => ({ fact: c.fact, round: c.round })),

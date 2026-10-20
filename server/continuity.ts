@@ -1,5 +1,5 @@
 // @ts-nocheck -- legacy JS, typed file by file later
-import { roundNumber, totalRounds, roundCap, addRound, namesCulprit, mentions, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts } from './game.ts';
+import { roundNumber, totalRounds, roundCap, addRound, namesCulprit, mentions, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts, roomKnows } from './game.ts';
 import { applyPatches, guardedPatches } from './story.ts';
 import { CONTINUITY_RULES, FAIR_PLAY, PLAIN_STYLE } from './prompts.ts';
 
@@ -92,7 +92,8 @@ export function addCanon(game, items, now) {
     const fact = String(item?.fact ?? '').replace(/\s+/g, ' ').trim().slice(0, 240);
     // Settled facts are about the world. Votes, rounds and the game itself never become part of the story.
     if (!fact || st.canon.some((c) => c.fact === fact) || GAME_TALK.test(fact)) continue;
-    st.canon.push({ fact, about: (item.about ?? []).filter((id) => ids.has(id)), public: item.public === true, round: roundNumber(game), at: now });
+    // Public only when what the room saw already carries it: a private scene marked public would hand it to every out-loud answer.
+    st.canon.push({ fact, about: (item.about ?? []).filter((id) => ids.has(id)), public: item.public === true && roomKnows(game, fact), round: roundNumber(game), at: now });
     added += 1;
   }
   // Over the cap, the two shortest neighbours merge, so no single line grows without end.
