@@ -883,7 +883,7 @@ ${JSON.stringify(scenario)}`;
 
 // A reader who only hunts: it reads the finished world the way a reviewer reads it after play, and fixes nothing.
 export const HUNT_SCHEMA = obj({ holes: strArr, contradictions: strArr, unpaid_setups: strArr, unplanted_payoffs: strArr, dead_branches: strArr });
-export const HUNT_LEAD = 'These problems were found and are not fixed yet.';
+export const HUNT_LEAD = 'These problems were found and are not fixed yet. When a fix changes a fact, change every place that states it in the same answer: a clue\'s shows and text, the cards, the GM characters\' sheets and the truth.';
 export const HUNT_KINDS = { holes: 'Hole', contradictions: 'Contradiction', unpaid_setups: 'Set up and never used', unplanted_payoffs: 'Used and never planted', dead_branches: 'Leads nowhere' };
 
 export const HUNT_SYSTEM = `You are a strict story editor. You read a party mystery world before anyone plays it, the way a reviewer will read it after play, and list every flaw a careful reader would find. Plain, simple English, one line per item.

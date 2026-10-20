@@ -58,6 +58,7 @@ describe('a reader hunts the finished world for holes before play', () => {
     assert.equal(repairs.length, 1);
     assert.match(repairs[0].prompt, /- Hole: The money is never found\./);
     assert.match(repairs[0].prompt, /- Set up and never used: The elephants in the tea rows\./);
+    assert.match(repairs[0].prompt, /change every place that states it/);
   });
 
   test('should apply the repair patches to the world', async () => {
