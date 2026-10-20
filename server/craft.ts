@@ -100,6 +100,13 @@ export function craftIssues(s) {
     else if (seenRound(r.shown_by) > roundOfDeduction(r.used_in)) out.push(`rule: world_rules[${i}] is shown in round ${seenRound(r.shown_by)}, after ${r.used_in} needs it (round ${roundOfDeduction(r.used_in)}); show it earlier.`);
   });
 
+  // Fair proof: what ties the culprit to the crime or the motive can be found without searching the culprit.
+  const culprits = new Set(s.truth?.culprit_ids ?? []);
+  (s.key_deductions ?? []).forEach((k, i) => {
+    const own = (k.clue_ids ?? []).filter((id) => clue[id]);
+    if (['culprit', 'motive'].includes(k.about) && own.length && own.every((id) => culprits.has(clue[id].where))) out.push(`proof: key_deductions[${i}] (${k.id}) rests only on clues the culprit carries; put one where players can find it without searching them.`);
+  });
+
   // A round's beat is an event, never a clue handed to the whole room.
   (s.phases ?? []).forEach((ph, i) => {
     for (const c of clues) {

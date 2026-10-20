@@ -1032,7 +1032,7 @@ const SUPPOSING = /\b(?:if|whatever|unless|whether|when)\s+(?:\w+\s+)?$/i;
 const TOLD_YOU = /\b(?:you|you've|you have|you had)\s+(?:already\s+)?(?:told|said|mentioned|claimed|swore|admitted|promised|confessed|insisted)\b(?:\s+(?:to\s+)?(?:us|me|everyone|them|him|her))?|\bas you (?:said|say|told us|told me)\b/i;
 
 const ACT_VERBS = new Set(['went', 'goes', 'go', 'walked', 'walks', 'ran', 'runs', 'rushed', 'rushes', 'entered', 'enters', 'left', 'leaves', 'took', 'takes', 'hid', 'hides', 'grabbed', 'grabs', 'opened', 'opens', 'locked', 'locks', 'unlocked', 'followed', 'follows', 'slipped', 'slips', 'sneaked', 'sneaks', 'snuck', 'picked', 'picks', 'came', 'comes', 'returned', 'returns', 'climbed', 'climbs', 'carried', 'carries', 'dropped', 'drops', 'stole', 'steals', 'burned', 'burns', 'broke', 'breaks', 'pushed', 'pushes', 'jumped', 'jumps', 'moved', 'moves', 'stood', 'stands', 'sat', 'sits', 'waited', 'waits', 'stayed', 'stays', 'touched', 'touches', 'searched', 'searches', 'hurried', 'hurries']);
-const GESTURES = new Set(['flinches', 'flinched', 'flinch', 'smiles', 'smiled', 'frowns', 'frowned', 'shrugs', 'shrugged', 'nods', 'nodded', 'blushes', 'blushed', 'sighs', 'sighed', 'pales', 'paled', 'trembles', 'trembled', 'freezes', 'froze', 'stiffens', 'stiffened', 'glares', 'glared', 'winces', 'winced', 'gasps', 'gasped', 'laughs', 'laughed', 'cries', 'cried', 'stares', 'stared', 'looks', 'looked', 'turns', 'turned', 'shakes', 'shook', 'grins', 'grinned', 'swallows', 'swallowed']);
+const GESTURES = new Set(['flinches', 'flinched', 'flinch', 'smiles', 'smiled', 'frowns', 'frowned', 'shrugs', 'shrugged', 'nods', 'nodded', 'blushes', 'blushed', 'sighs', 'sighed', 'pales', 'paled', 'trembles', 'trembled', 'freezes', 'froze', 'stiffens', 'stiffened', 'glares', 'glared', 'winces', 'winced', 'gasps', 'gasped', 'laughs', 'laughed', 'cries', 'cried', 'stares', 'stared', 'looks', 'looked', 'turns', 'turned', 'shakes', 'shook', 'grins', 'grinned', 'swallows', 'swallowed', 'lean', 'leans', 'leaned', 'leant', 'look', 'glance', 'glances', 'glanced', 'peer', 'peers', 'peered', 'nod', 'smile', 'turn', 'step', 'steps', 'stepped', 'listen', 'listens', 'listened', 'watches', 'whispers', 'whispered', 'gasp', 'shrug']);
 const SAW = new Set(['saw', 'seen', 'watched', 'spotted', 'noticed']);
 const CLAUSE = new Set(['and', 'then', 'but', 'while', 'when', 'as', 'so', 'until', 'because', 'before', 'after', 'once', 'now']);
 const PLACE_PREPS = new Set(['in', 'at', 'by', 'near', 'inside', 'outside', 'behind', 'on', 'under', 'beside']);
@@ -1095,7 +1095,10 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
   const leadOf = (words) => people.find((p) => (p.full.length && p.full.every((w, k) => words[k] === w)) || (p.names.has(words[0]) && owners[words[0]] === 1)) ?? null;
   const sentences = String(text ?? '').split(/(?<=[.!?])\s+/).filter(Boolean);
   // A name opening the sentence and followed by a comma addresses that person ("Rishabh, the cook said...").
-  const vocative = (p, sentence) => /^[^,.!?]{1,40},/.test(sentence.trim()) && leadOf(wordsOf(sentence))?.id === p.id;
+  const vocative = (p, sentence) => {
+    const head = wordsOf(sentence.trim().split(',')[0]);
+    return /^[^,.!?]{1,40},/.test(sentence.trim()) && leadOf(head)?.id === p.id && (head.length === 1 || (p.full.length === head.length && p.full.every((w, k) => head[k] === w)));
+  };
   const quotesOf = (sentence) => [...sentence.matchAll(/["“]([^"”]{3,})["”]/g)].map((m) => m[1].toLowerCase());
   const realQuote = (p, sentence) => {
     const said = saidOutLoud(game, p.id);
@@ -1133,10 +1136,16 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
       const claims = at.some(([start, end]) => {
         if (words.slice(Math.max(0, start - 2), start).some((w) => SAW.has(w))) return true;
         if (!(clauseStart[start] || CLAUSE.has(words[start - 1]))) return false;
-        let next = words.slice(end + 1, end + 4);
+        let after = end + 1;
+        // "Meera and Nisha look up": both names share the verb.
+        if (words[after] === 'and') {
+          const other = people.find((x) => x.player && x.id !== p.id && ((x.full.length && x.full.every((f, k) => words[after + 1 + k] === f)) || (x.names.has(words[after + 1]) && owners[words[after + 1]] === 1)));
+          if (other) after += 1 + (other.full.every((f, k) => words[after + 1 + k] === f) ? other.full.length : 1);
+        }
+        let next = words.slice(after, after + 3);
         if (next[0] === 's') return false;
         if (/ly$/.test(next[0] ?? '')) next = next.slice(1);
-        return ACT_VERBS.has(next[0]) || GESTURES.has(next[0]) || (['was', 'were'].includes(next[0]) && PLACE_PREPS.has(next[1]));
+        return ACT_VERBS.has(next[0]) || GESTURES.has(next[0]) || (['was', 'were', 'is', 'are'].includes(next[0]) && PLACE_PREPS.has(next[1]));
       });
       return claims && !backed(game, p.id, sentence, backing[p.id] ?? []);
     });
@@ -2344,7 +2353,11 @@ function resolveSpotlight(game, vote, q, picked, counts, now) {
     return result;
   }
   st.revealsUsed ??= {};
-  const used = st.revealsUsed[target.id] ?? 0;
+  // A line that retells a clue nobody has found is skipped, for anyone the room looks at, so skipping says nothing.
+  const found = new Set([...Object.values(st.found ?? {}).flat(), ...st.shared.map((x) => x.clueId)]);
+  const hidden = game.scenario.clues.filter((c) => !found.has(c.id));
+  let used = st.revealsUsed[target.id] ?? 0;
+  while ((target.reveals ?? [])[used] && hidden.some((c) => retells(target.reveals[used], c.shows))) used += 1;
   const line = (target.reveals ?? [])[used] ?? null;
   if (line) {
     st.revealsUsed[target.id] = used + 1;
@@ -2897,7 +2910,7 @@ export function publicKnowledge(game) {
     canon: (game.state.canon ?? []).filter((c) => c.public).map((c) => c.fact),
     shared_clues: game.state.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
-      return `${c.name}: ${c.shows}`;
+      return `${c.name}: ${c.shows}${String(c.text ?? '').trim() ? ` Its own words: "${c.text}"` : ''}`;
     }),
   };
 }

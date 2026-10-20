@@ -39,7 +39,8 @@ export function scoreMove(play: Play | null | undefined, read: ReadFlags, { from
 // A move that also tried to steer the GM keeps the credit for what it did in the story, plus a separate demerit.
 export function scoreMoves(play: Play | null | undefined, read: ReadFlags, opts: ScoreOpts = {}): Move[] {
   if (!read?.sways_gm) return [scoreMove(play, read, opts)];
-  const real = scoreMove(play, { ...read, sways_gm: false }, opts);
+  // The demerit covers the whole attempt: a claim inside the same message never costs a second point.
+  const real = scoreMove(play, { ...read, sways_gm: false, claims: [] }, opts);
   const penalty = { ...scoreMove(play, read, opts), why: 'Talking to the game master instead of the story costs a point.' };
   return real.points > 0 ? [real, penalty] : [penalty];
 }
