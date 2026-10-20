@@ -1696,6 +1696,7 @@ export function setupPaidRound(s, ref) {
 function storyDue(s, round) {
   const plans = (s.npcs ?? []).flatMap((n) => (n.agenda?.plan ?? []).filter((p) => Number(p?.round) === round).map((p) => `${n.name}: ${p.does}`));
   const pay = (s.setups ?? []).filter((x) => setupPaidRound(s, x?.paid_by) === round).map((x) => x.detail);
+  const secrets = (s.npcs ?? []).filter((n) => Number(n.agenda?.cracks?.round) === round).map((n) => `${n.name}: ${n.agenda.cracks.how}`);
   const clueRound = (id) => Number(s.clues?.find((c) => c.id === id)?.reveal_round) || 1;
   const named = (id) => s.clues?.find((c) => c.id === id)?.name ?? id;
   const flips = (s.reframes ?? []).filter((x) => s.clues?.some((c) => c.id === x?.flipped_by) && clueRound(x.flipped_by) === round).map((x) => `"${x.detail}" seems ${x.first_reading} ${named(x.flipped_by)} shows ${x.true_reading}`);
@@ -1707,7 +1708,7 @@ function storyDue(s, round) {
     if (round <= built) falseNow = `the room should come to believe "${f.believed}" by round ${built}. Keep ${f.built_from.map(named).join(' and ')} within reach, and let it look convincing; never hint that it is wrong.`;
     else if (round === breaks) falseNow = `this is the round it breaks. Put ${named(f.broken_by)} within reach of someone chasing that answer, so finding it cracks "${f.believed}" open and the true answer starts to show.`;
   }
-  return { ...(plans.length ? { plans } : {}), ...(pay.length ? { pay_now: pay } : {}), ...(flips.length ? { flip_now: flips } : {}), ...(falseNow ? { false_solution: falseNow } : {}) };
+  return { ...(plans.length ? { plans } : {}), ...(secrets.length ? { secrets_out: secrets } : {}), ...(pay.length ? { pay_now: pay } : {}), ...(flips.length ? { flip_now: flips } : {}), ...(falseNow ? { false_solution: falseNow } : {}) };
 }
 
 // The room's suspicion needs somewhere to go: red herrings whose clues are open but nobody has found, before the last round.

@@ -215,6 +215,9 @@ export function applyDress(s, dress) {
     const npc = (s.npcs ?? []).find((x) => x.id === a?.npc_id);
     if (!npc || npc.importance !== 'important') continue;
     npc.agenda = { wants: String(a.wants ?? ''), plan: (a.plan ?? []).filter((p) => p && String(p.does ?? '').trim()), leaves: String(a.leaves ?? '') };
+    // A secret that cracks in round 1 is no secret, and one past the last round never comes out.
+    const crack = Number(a.cracks?.round);
+    if (Number.isInteger(crack) && crack >= 2 && crack <= (s.phases?.length ?? 1) && String(a.cracks?.how ?? '').trim()) npc.agenda.cracks = { round: crack, how: String(a.cracks.how).trim() };
     n += 1;
   }
   return n;
