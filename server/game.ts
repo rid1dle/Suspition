@@ -1815,7 +1815,7 @@ function surfaceTurns(game, now) {
     st.found[to].push(clue.id);
     given.add(to);
     st.turnsSurfaced = [...(st.turnsSurfaced ?? []), { clueId: clue.id, to, at: now }];
-    whisper(game, [{ player_id: to, text: `You come across something: ${clue.name}. ${clue.text ? `"${clue.text}"` : clue.shows} Show it to the room if it matters.` }], now);
+    whisper(game, [...carrierNote(game, clue, to), { player_id: to, text: `You come across something: ${clue.name}. ${clue.text ? `"${clue.text}"` : clue.shows} Show it to the room if it matters.` }], now);
   }
 }
 
@@ -2608,8 +2608,29 @@ function surfaceGaps(game, now) {
     openNow(game, clue);
     st.found[to].push(clue.id);
     given.add(to);
-    whisper(game, [{ player_id: to, text: `You come across something: ${clue.name}. ${clue.shows} Show it to the room if it matters.` }], now);
+    whisper(game, [...carrierNote(game, clue, to), { player_id: to, text: `You come across something: ${clue.name}. ${clue.shows} Show it to the room if it matters.` }], now);
   }
+}
+
+// A find handed to a player who is not where it lies needs a way to reach them: a GM character brings it and comes
+// to them. Never someone the clue points at, and chosen the same way whoever the culprit is.
+function carrierNote(game, clue, to) {
+  const st = game.state;
+  const sc = game.scenario;
+  const here = placeFor(game, clue);
+  const at = (id) => st.at?.[id] ?? st.positions?.[id];
+  if (!here || at(to) === here) return [];
+  const pointed = new Set([
+    ...(sc.suspects ?? []).filter((x) => (x.pointer_clue_ids ?? []).includes(clue.id)).map((x) => x.character_id),
+    ...(sc.red_herrings ?? []).filter((x) => (x.clue_ids ?? []).includes(clue.id)).map((x) => x.points_at),
+  ]);
+  const placed = (n) => sc.locations.some((l) => l.id === at(n.id));
+  const free = (sc.npcs ?? []).filter((n) => placed(n) && !pointed.has(n.id));
+  const npc = free.find((n) => at(n.id) === here) ?? free.find((n) => n.id === clue.where) ?? free[0];
+  if (!npc) return [];
+  st.at = { ...(st.at ?? {}), [npc.id]: at(to) };
+  const place = sc.locations.find((l) => l.id === here)?.name;
+  return [{ player_id: to, text: `${npc.name} comes over with something for you${place ? `, picked up in the ${place}` : ''}.` }];
 }
 
 // Past half way, a player whose goal has not moved gets a way in: from the round GM, or plainly from the game.
