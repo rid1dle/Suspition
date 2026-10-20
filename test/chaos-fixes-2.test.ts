@@ -140,3 +140,22 @@ describe('the third chaos playtest', () => {
 function emptyAskResult() {
   return { answer: 'An answer.', clues_found: [], suspicion_change: 0, public_event: '', hidden_fact_revealed: '', clues_destroyed: [], messages_to_players: [] };
 }
+
+// From the fourth chaos playtest.
+describe('the fourth chaos playtest', () => {
+  test('should drop any count of the game rounds', () => {
+    assert.equal(G.withoutRoundTalk('The game has four rounds. This round asks only when Vollan died.'), '');
+    assert.equal(G.withoutRoundTalk('Five rounds, sahib, then we vote.'), '');
+    assert.equal(G.withoutRoundTalk('The guns fired one round each.'), 'The guns fired one round each.');
+    assert.equal(G.withoutRoundTalk('He paid for this round of tea.'), 'He paid for this round of tea.');
+  });
+
+  test('should drop "he says" about another player after they were named', () => {
+    const game = gameInReading(3, 1_000);
+    G.startPlay(game, 1_000);
+    game.scenario.players[1].character_name = 'Ishaan Khanna';
+    game.players[1].name = 'Ishaan';
+    const out = G.dropPuppeting(game, 'p1', 'Ishaan Khanna found the body. He says he went to climb the tower.');
+    assert.equal(out.text, 'Ishaan Khanna found the body.');
+  });
+});

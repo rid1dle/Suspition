@@ -1186,6 +1186,8 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
     let next = words.slice(1, 4);
     if (/ly$/.test(next[0] ?? '')) next = next.slice(1);
     const claims = ACT_VERBS.has(next[0]) || GESTURES.has(next[0]) || (['was', 'were'].includes(next[0]) && PLACE_PREPS.has(next[1]));
+    // "Ishaan found the body. He says he went to climb the tower.": a report of what that player said.
+    if (REPORT_VERBS.has(next[0]) && !realQuote(p, sentence)) return true;
     return claims && !backed(game, p.id, sentence, backing[p.id] ?? []);
   };
   const kept = sentences.filter((sentence) => {
@@ -1207,7 +1209,7 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
 // The story never counts the game's rounds ("This is the first round of four."): that sentence is dropped.
 // Nor does it talk about the game itself ("I am not a judge of this game", "the game master says").
 const GAME_TALK_LINE = /\b(the )?game master\b|\bthe gm\b|\b(judge|rules?|points?) of this game\b|\bthis game is (rigged|fixed|fair)\b/i;
-const ROUND_TALK = /\b(first|second|third|fourth|fifth|last|final|next)\s+round\b|\bround\s+(one|two|three|four|five|\d)\b|\bof\s+(two|three|four|five|six|\d+)\s+rounds?\b|\brounds?\s+(left|to go)\b/i;
+const ROUND_TALK = /\b(first|second|third|fourth|fifth|last|final|next)\s+round\b|\bround\s+(one|two|three|four|five|\d)\b|\b(two|three|four|five|six|\d+)\s+rounds\b|\brounds?\s+(left|to go)\b|\bthe game has\b|\bthis round\b(?! of)/i;
 export const withoutRoundTalk = (text) => sentences(text).filter((t) => !ROUND_TALK.test(t) && !GAME_TALK_LINE.test(t)).join(' ');
 
 export function novelLines(game, raw, { you = null, unpuppet = (t) => t, unpuppetSpeech = (t) => t } = {}) {
