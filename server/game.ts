@@ -1033,7 +1033,9 @@ const SUPPOSING = /\b(?:if|whatever|unless|whether|when)\s+(?:\w+\s+)?$/i;
 const TOLD_YOU = /\b(?:you|you've|you have|you had)\s+(?:already\s+)?(?:told|said|mentioned|claimed|swore|admitted|promised|confessed|insisted)\b(?:\s+(?:to\s+)?(?:us|me|everyone|them|him|her))?|\bas you (?:said|say|told us|told me)\b/i;
 
 const ACT_VERBS = new Set(['went', 'goes', 'go', 'walked', 'walks', 'ran', 'runs', 'rushed', 'rushes', 'entered', 'enters', 'left', 'leaves', 'took', 'takes', 'hid', 'hides', 'grabbed', 'grabs', 'opened', 'opens', 'locked', 'locks', 'unlocked', 'followed', 'follows', 'slipped', 'slips', 'sneaked', 'sneaks', 'snuck', 'picked', 'picks', 'came', 'comes', 'returned', 'returns', 'climbed', 'climbs', 'carried', 'carries', 'dropped', 'drops', 'stole', 'steals', 'burned', 'burns', 'broke', 'breaks', 'pushed', 'pushes', 'jumped', 'jumps', 'moved', 'moves', 'stood', 'stands', 'sat', 'sits', 'waited', 'waits', 'stayed', 'stays', 'touched', 'touches', 'searched', 'searches', 'hurried', 'hurries']);
-const GESTURES = new Set(['flinches', 'flinched', 'flinch', 'smiles', 'smiled', 'frowns', 'frowned', 'shrugs', 'shrugged', 'nods', 'nodded', 'blushes', 'blushed', 'sighs', 'sighed', 'pales', 'paled', 'trembles', 'trembled', 'freezes', 'froze', 'stiffens', 'stiffened', 'glares', 'glared', 'winces', 'winced', 'gasps', 'gasped', 'laughs', 'laughed', 'cries', 'cried', 'stares', 'stared', 'looks', 'looked', 'turns', 'turned', 'shakes', 'shook', 'grins', 'grinned', 'swallows', 'swallowed', 'lean', 'leans', 'leaned', 'leant', 'look', 'glance', 'glances', 'glanced', 'peer', 'peers', 'peered', 'nod', 'smile', 'turn', 'step', 'steps', 'stepped', 'listen', 'listens', 'listened', 'watches', 'whispers', 'whispered', 'gasp', 'shrug']);
+const GESTURES = new Set(['flinches', 'flinched', 'flinch', 'smiles', 'smiled', 'frowns', 'frowned', 'shrugs', 'shrugged', 'nods', 'nodded', 'blushes', 'blushed', 'sighs', 'sighed', 'pales', 'paled', 'trembles', 'trembled', 'freezes', 'froze', 'stiffens', 'stiffened', 'glares', 'glared', 'winces', 'winced', 'gasps', 'gasped', 'laughs', 'laughed', 'cries', 'cried', 'stares', 'stared', 'looks', 'looked', 'turns', 'turned', 'shakes', 'shook', 'grins', 'grinned', 'swallows', 'swallowed', 'lean', 'leans', 'leaned', 'leant', 'look', 'glance', 'glances', 'glanced', 'peer', 'peers', 'peered', 'nod', 'smile', 'turn', 'step', 'steps', 'stepped', 'listen', 'listens', 'listened', 'watches', 'watched', 'whispers', 'whispered', 'gasp', 'shrug']);
+// "Leela is standing very still": a posture after is/was says what that person is doing.
+const POSTURES = new Set(['standing', 'kneeling', 'sitting', 'watching', 'waiting', 'leaning', 'staring', 'looking', 'listening', 'hiding', 'crouching', 'pacing', 'shaking', 'smiling', 'frowning']);
 const SAW = new Set(['saw', 'seen', 'watched', 'spotted', 'noticed']);
 const CLAUSE = new Set(['and', 'then', 'but', 'while', 'when', 'as', 'so', 'until', 'because', 'before', 'after', 'once', 'now']);
 const PLACE_PREPS = new Set(['in', 'at', 'by', 'near', 'inside', 'outside', 'behind', 'on', 'under', 'beside']);
@@ -1146,6 +1148,7 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
         let next = words.slice(after, after + 3);
         if (next[0] === 's') return false;
         if (/ly$/.test(next[0] ?? '')) next = next.slice(1);
+        if (['was', 'were', 'is', 'are'].includes(next[0]) && (/ly$/.test(next[1] ?? '') ? POSTURES.has(next[2]) : POSTURES.has(next[1]))) return true;
         return ACT_VERBS.has(next[0]) || GESTURES.has(next[0]) || (['was', 'were', 'is', 'are'].includes(next[0]) && PLACE_PREPS.has(next[1]));
       });
       return claims && !backed(game, p.id, sentence, backing[p.id] ?? []);
@@ -1202,8 +1205,10 @@ export function dropPuppeting(game, actorId, text, { to = null, others = false, 
 // A GM reply as a page of a novel: narration (no speaker) and GM characters' spoken words.
 // The GM never speaks for a human player: the asker's own lines become "You say", anyone else's are dropped.
 // The story never counts the game's rounds ("This is the first round of four."): that sentence is dropped.
+// Nor does it talk about the game itself ("I am not a judge of this game", "the game master says").
+const GAME_TALK_LINE = /\b(the )?game master\b|\bthe gm\b|\b(judge|rules?|points?) of this game\b|\bthis game is (rigged|fixed|fair)\b/i;
 const ROUND_TALK = /\b(first|second|third|fourth|fifth|last|final|next)\s+round\b|\bround\s+(one|two|three|four|five|\d)\b|\bof\s+(two|three|four|five|six|\d+)\s+rounds?\b|\brounds?\s+(left|to go)\b/i;
-export const withoutRoundTalk = (text) => sentences(text).filter((t) => !ROUND_TALK.test(t)).join(' ');
+export const withoutRoundTalk = (text) => sentences(text).filter((t) => !ROUND_TALK.test(t) && !GAME_TALK_LINE.test(t)).join(' ');
 
 export function novelLines(game, raw, { you = null, unpuppet = (t) => t, unpuppetSpeech = (t) => t } = {}) {
   const myName = game.scenario.players.find((p) => p.id === you)?.character_name?.toLowerCase();
@@ -1325,7 +1330,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
     const there = placeFor(game, clue) ?? st.at[playerId];
     if (there) st.at[playerId] = there;
     st.found[playerId].push(id);
-    if (!tripRewarded && there && there !== from) {
+    // The trip earns a point only when the GM did not already score this move for the find.
+    if (!tripRewarded && there && there !== from && !(Number(result.play?.points) > 0)) {
       tripRewarded = true;
       recordPlay(game, playerId, { points: 1, skill: 'searching', why: `Went to the ${String(placeOf(game, playerId)).replace(/^the\s+/i, '')} and found ${clue.name}.` }, null, 'private');
     }

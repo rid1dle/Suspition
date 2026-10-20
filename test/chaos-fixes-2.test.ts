@@ -88,3 +88,55 @@ describe('GM rules from the second chaos playtest', () => {
     assert.match(readerSystem({}), /"while nobody is watching"[^]*never a claim/);
   });
 });
+
+// From the third chaos playtest.
+describe('the third chaos playtest', () => {
+  const named = () => {
+    const game = gameInReading(3, 1_000);
+    G.startPlay(game, 1_000);
+    const names = [['Kiran', 'Kiran Shah'], ['Leela', 'Leela Mwangi'], ['Sanjay', 'Sanjay Desai']];
+    game.players.forEach((p, i) => (p.name = names[i][0]));
+    game.scenario.players.forEach((c, i) => (c.character_name = names[i][1]));
+    return game;
+  };
+  const drops = (text: string) => G.dropPuppeting(named(), 'p1', text).dropped;
+
+  test('should drop another player standing still, watching or kneeling', () => {
+    assert.equal(drops('Across the study, Leela is standing very still, watching the drawer.'), 1);
+    assert.equal(drops('Leela watched your hand the whole time.'), 1);
+    assert.equal(drops('Sanjay was kneeling by the stove.'), 1);
+    assert.equal(drops('Leela is the vet.'), 0);
+  });
+
+  test('should drop a GM character talking about the game itself', () => {
+    assert.equal(G.withoutRoundTalk('I am a lawyer, not a judge of this game. Ask Baraka.'), 'Ask Baraka.');
+    assert.equal(G.withoutRoundTalk('The game master says no.'), '');
+    assert.equal(G.withoutRoundTalk('They played a game of rummy until eleven.'), 'They played a game of rummy until eleven.');
+  });
+
+  test('should pay a find once: no trip point when the GM already scored the move', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'I search the ballroom' });
+    G.completeAsk(game, 'p2', { ...emptyAskResult(), clues_found: ['c1'], play: { points: 2, skill: 'searching', why: 'Found it.' } }, 2_000);
+    assert.deepEqual(game.state.play.p2.map((m) => m.points), [2]);
+  });
+
+  test('should still give the trip point when the GM gave nothing for it', () => {
+    const game = gameInReading(3);
+    G.startPlay(game, 1_000);
+    G.beginAsk(game, 'p2', { kind: 'question', text: 'I search the ballroom' });
+    G.completeAsk(game, 'p2', { ...emptyAskResult(), clues_found: ['c1'], play: { points: 0, skill: 'none', why: '' } }, 2_000);
+    assert.ok(game.state.play.p2.some((m) => m.points === 1 && /Went to the/.test(m.why)));
+  });
+
+  test('should score a culprit lie to a character as bluffing and say remember only for what was seen', () => {
+    assert.match(playSystem(makeScenario(4)), /A lie told to a person in the story[^]*never -1/);
+    assert.match(scorePrompt({ snapshot: {}, submissions: [], verdict: {} }), /Say "remember" only for what players really saw/);
+    assert.match(readerSystem({}), /Repeating what the GM already told them/);
+  });
+});
+
+function emptyAskResult() {
+  return { answer: 'An answer.', clues_found: [], suspicion_change: 0, public_event: '', hidden_fact_revealed: '', clues_destroyed: [], messages_to_players: [] };
+}
