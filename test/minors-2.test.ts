@@ -57,7 +57,7 @@ describe('big groups', () => {
       };
       await new GM({ workDir: tmpdir(), run }).generate(g).catch(() => {});
     }
-    assert.equal(timeouts[4], 900_000);
-    assert.ok(timeouts[10] >= 1_200_000, String(timeouts[10]));
+    assert.equal(timeouts[4], 1_200_000);
+    assert.ok(timeouts[10] > timeouts[4], String(timeouts[10]));
   });
 });

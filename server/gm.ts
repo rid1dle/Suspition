@@ -213,20 +213,32 @@ export class GM {
     let errors = [];
     const issueRules = { players: game.players, difficulty: game.setup.difficulty, rounds: rules.phases };
     const retryWith = (problems) => `${generationPrompt(game, twists, culprits, storyType, plan, watchers)}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
+    let effort = this.setupEffort;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       onProgress({ kind: 'attempt', attempt, broke: errors.length });
-      const scenario = await this.call(`generate#${attempt}`, {
-        onProgress,
-        system: GENERATION_SYSTEM,
-        prompt,
-        schema: SCENARIO_SCHEMA,
-        model: this.setupModel,
-        effort: this.setupEffort,
-        // A bigger group is a bigger world: 15 minutes for up to 6 players, 90 s more for each one after,
-        // and a draft that has started writing gets 8 minutes from then to finish.
-        timeoutMs: 900_000 + 90_000 * Math.max(0, game.players.length - 6),
-        writeGraceMs: 480_000,
-      });
+      let scenario;
+      try {
+        scenario = await this.call(`generate#${attempt}`, {
+          onProgress,
+          system: GENERATION_SYSTEM,
+          prompt,
+          schema: SCENARIO_SCHEMA,
+          model: this.setupModel,
+          effort,
+          // A bigger group is a bigger world: 20 minutes to think for up to 6 players, 90 s more for each one
+          // after, and a draft that has started writing gets 8 minutes from then to finish.
+          timeoutMs: 1_200_000 + 90_000 * Math.max(0, game.players.length - 6),
+          writeGraceMs: 480_000,
+        });
+      } catch (err) {
+        // A draft that thought past its time is tried once more, thinking less, rather than lost.
+        if (attempt === 1 && /took longer/.test(err.message)) {
+          this.log(`gm generate#${attempt} ran out of time, trying again with less thinking`);
+          effort = 'low';
+          continue;
+        }
+        throw err;
+      }
       onProgress({ kind: 'checking' });
       resolveStoryIds(scenario);
       errors = validateScenario(scenario, rules);

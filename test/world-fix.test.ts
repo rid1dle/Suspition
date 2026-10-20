@@ -97,3 +97,25 @@ describe('fix patches', () => {
     assert.match(p, /Never change who the culprits are/);
   });
 });
+
+describe('a draft that runs out of time', () => {
+  test('should try once more, thinking less, instead of failing the game', async () => {
+    const efforts = [];
+    const gm = new GM({ workDir, random: () => 0, setupEffort: 'medium', run: async ({ prompt, effort }) => {
+      if (/^Design a mystery/.test(prompt)) {
+        efforts.push(effort);
+        if (efforts.length === 1) throw new Error('GM took longer than 1200s.');
+        return makeScenario(3, { phases: 3, hints: 2 });
+      }
+      return { verdict: 'ok', problems: [], patches: [] };
+    } });
+    const s = await gm.generate(game());
+    assert.equal(s.players.length, 3);
+    assert.deepEqual(efforts, ['medium', 'low']);
+  });
+
+  test('should still fail on an error that is not about time', async () => {
+    const gm = new GM({ workDir, random: () => 0, run: async () => { throw new Error('Usage limit reached'); } });
+    await assert.rejects(() => gm.generate(game()), /Usage limit/);
+  });
+});
