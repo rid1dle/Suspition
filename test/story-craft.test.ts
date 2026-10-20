@@ -6,7 +6,7 @@ import { makeScenario } from './fixtures.ts';
 import * as G from '../server/game.ts';
 import { resolveStoryIds } from '../server/game.ts';
 import { phasePrompt, playSystem, scorePrompt } from '../server/prompts.ts';
-import { gameInReading } from './fixtures.ts';
+import { gameInReading, emptyPhase } from './fixtures.ts';
 
 // A small world that meets every story-craft rule: each test breaks one.
 function craftWorld() {
@@ -327,5 +327,47 @@ describe('a story that keeps turning', () => {
     assert.match(next.flip_now.join(' '), /The butler logs every key/);
     assert.match(next.false_solution, /this is the round it breaks\. Put Ledger within reach/);
     assert.match(phasePrompt({ snapshot: {}, nextPhase: next, lastRound: null }), /Turns due this round[^]*The false solution: this is the round it breaks/);
+  });
+});
+
+// From the third story playtest: the culprit was plain from round 2, because the other key holders were
+// cleared early; and the last round only broke an alibi.
+describe('the culprit stays hidden until late', () => {
+  test('should want two innocents still open after the second-to-last round', () => {
+    const s = craftWorld();
+    s.clues.push({ id: 'c6', name: 'Alibi', where: 'l1', shows: 'They were away.', does_not_prove: '', importance: 'useful', can_be_destroyed: false, reveal_round: 1, form: 'record', author: 'x', written_at: '', text: 'x', from_step: 't1' });
+    s.suspects[1].cleared_by_clue_ids = ['c6'];
+    s.suspects[2].cleared_by_clue_ids = ['c6'];
+    assert.equal(about(craftIssues(s), 'pool: only 1 innocent still uncleared after round 1').length, 1);
+  });
+
+  test('should not clear the false solution before it breaks', () => {
+    const s = craftWorld();
+    s.clues.push({ id: 'c6', name: 'Alibi', where: 'l1', shows: 'They were away.', does_not_prove: '', importance: 'useful', can_be_destroyed: false, reveal_round: 1, form: 'record', author: 'x', written_at: '', text: 'x', from_step: 't1' });
+    s.suspects[1].cleared_by_clue_ids = ['c6'];
+    assert.equal(about(craftIssues(s), "the false solution's target (p2) is cleared in round 1, before it breaks in round 2").length, 1);
+  });
+
+  test('should want a turn in the last round', () => {
+    const s = craftWorld();
+    s.reframes = s.reframes.filter((r) => !['c4', 'c5'].includes(r.flipped_by));
+    s.reframes.push({ detail: 'x', seen_in: 'background', first_reading: 'a', true_reading: 'b', flipped_by: 'c3' });
+    assert.equal(about(craftIssues(s), 'nothing turns in the last round (3)').length, 1);
+  });
+
+  test('should ask the writer to keep the pool open and give the atmosphere a job', async () => {
+    const { GENERATION_SYSTEM, STORY_DRESS } = await import('../server/prompts.ts');
+    assert.match(GENERATION_SYSTEM, /Keep the pool open: at least 2 innocent suspects stay uncleared/);
+    assert.match(STORY_DRESS, /Atmosphere has a job/);
+  });
+
+  test('should never hand the clue that breaks the false solution to its own target', () => {
+    const game = gameInReading(4);
+    game.scenario.false_solution = { believed: 'x', points_at: 'p2', built_from: ['c1'], broken_by: 'c3' };
+    G.startPlay(game, 1_000);
+    for (const id of ['p3', 'p4']) game.state.found[id] = ['c2', 'c2', 'c2'];
+    G.beginPhaseChange(game);
+    G.completePhase(game, emptyPhase, 2_000);
+    assert.notEqual(game.state.turnsSurfaced[0].to, 'p2');
   });
 });

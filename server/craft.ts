@@ -114,6 +114,20 @@ export function craftIssues(s) {
     else if (own.every((c) => clue[c].can_be_destroyed)) out.push(`proof: every clue pointing at culprit ${id} can be destroyed; make one of them a thing that survives.`);
   }
 
+  // The pool stays open: two innocents still uncleared after the second-to-last round's clues, and the false
+  // solution's target never cleared before it breaks. Otherwise elimination names the culprit early.
+  if (rounds >= 3) {
+    const culpritsSet = new Set(s.truth?.culprit_ids ?? []);
+    const clearedBy = (x) => Math.min(...(x?.cleared_by_clue_ids ?? []).filter((id) => clue[id]).map(roundOfClue), Infinity);
+    const innocents = (s.suspects ?? []).filter((x) => x && !culpritsSet.has(x.character_id));
+    const open = innocents.filter((x) => clearedBy(x) >= rounds - 1);
+    if (innocents.length >= 2 && open.length < 2) out.push(`pool: only ${open.length} innocent${open.length === 1 ? '' : 's'} still uncleared after round ${rounds - 2}; keep at least 2 suspects open until round ${rounds - 1} or later (move a clearing clue later) so the culprit is not plain early.`);
+    const target = (s.suspects ?? []).find((x) => x?.character_id === s.false_solution?.points_at);
+    const breaks = clue[s.false_solution?.broken_by] ? roundOfClue(s.false_solution.broken_by) : null;
+    if (target && breaks && clearedBy(target) < breaks) out.push(`pool: the false solution's target (${target.character_id}) is cleared in round ${clearedBy(target)}, before it breaks in round ${breaks}; clear them with the breaking clue or later.`);
+  }
+  if (rounds >= 3 && reframes.length && !reframes.some((x) => clue[x?.flipped_by] && roundOfClue(x.flipped_by) === rounds)) out.push(`reframe: nothing turns in the last round (${rounds}); flip one there, ideally about a culprit, so the end is a turn and not only a broken alibi.`);
+
   // Secret goals move the main story: what a player chases is itself evidence or sits where evidence is.
   const evidence = new Set(clues.flatMap((c) => wordsOf(`${c.name} ${c.text ?? ''} ${c.shows}`)).filter((w) => w.length >= 4 && !SMALL.has(w)));
   const names = new Set([...(s.players ?? []).map((p) => p.character_name), ...(s.npcs ?? []).map((n) => n.name), ...(s.locations ?? []).map((l) => l.name)].flatMap(wordsOf));

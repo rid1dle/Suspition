@@ -1806,7 +1806,8 @@ function surfaceTurns(game, now) {
     .slice(0, TURNS_PER_ROUND);
   const given = new Set();
   for (const clue of due) {
-    const pool = innocentIds(game).filter((id) => st.found[id] && !given.has(id));
+    // Never to the false solution's own target: the clue that clears them reaches someone who suspected them.
+    const pool = innocentIds(game).filter((id) => st.found[id] && !given.has(id) && !(clue.id === sc.false_solution?.broken_by && id === sc.false_solution?.points_at));
     const here = placeFor(game, clue);
     const to = pool.find((id) => (st.at?.[id] ?? st.positions[id]) === here) ?? pool.sort((a, b) => st.found[a].length - st.found[b].length)[0];
     if (!to) break;
