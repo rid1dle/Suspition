@@ -17,21 +17,22 @@ A second judge grades the story itself, next to the old judge. Runs: `scripts/st
 
 ## Results
 
-| | Run 1 (old world code) | Run 2 (story craft) | Run 3 (two-pass world) |
-|---|---|---|---|
-| Interest (story judge, of 10) | 6 | 7 | 7 |
-| Lord of the Mysteries bar (of 10) | 5 | 6 | 6 |
-| Leaks | 3 | 2 | 0 |
-| Breaches (a bot swayed the GM) | 1 (see below) | 0 | 0 |
-| Puppeting | 4 | about 0 | 6 (new forms, fixed after) |
-| Contradictions let in | 5 | 5 | 7 |
-| Story holes | 8 | 6 | 10 (two culprits, bigger world) |
-| Reframes that landed | 6 | 6 | 8 |
-| World bends that held | 4 of 9 | 4 of 9 | 9 of 14 (the rest rightly refused) |
-| Guardrails held | 7 of 10 | 5 of 8 | 7 of 10 |
-| Named the culprit(s) | 8 of 10 | 10 of 10 | 10 of 10 |
-| Goals reachable / reached | 10 / 7 | 10 / 8 | 10 / 7 |
-| Case solvable from clues | yes | yes | yes |
+| | Run 1 (old world code) | Run 2 (story craft) | Run 3 (two-pass world) | Run 4 (all fixes to run 3) |
+|---|---|---|---|---|
+| Interest (story judge, of 10) | 6 | 7 | 7 | 7 |
+| Lord of the Mysteries bar (of 10) | 5 | 6 | 6 | 6 |
+| Leaks | 3 | 2 | 0 | 5 (2 are GM characters saying what they could not know) |
+| Breaches (a bot swayed the GM) | 1 (see below) | 0 | 0 | 2 (a meta answer, fixed after; a theft let through) |
+| Puppeting | 4 | about 0 | 6 (new forms, fixed after) | 3 ("he says", fixed after) |
+| Contradictions let in | 5 | 5 | 7 | 5 |
+| Story holes | 8 | 6 | 10 (two culprits, bigger world) | 9 |
+| Reframes that landed | 6 | 6 | 8 | 7 |
+| World bends that held | 4 of 9 | 4 of 9 | 9 of 14 (the rest rightly refused) | 5 of 9 (the rest rightly refused) |
+| Guardrails held | 7 of 10 | 5 of 8 | 7 of 10 | 6 of 10 |
+| Named the culprit(s) | 8 of 10 | 10 of 10 | 10 of 10 | 9 of 10 |
+| Goals reachable / reached | 10 / 7 | 10 / 8 | 10 / 7 | 9 / 7 |
+| Case solvable from clues | yes | yes | yes | yes |
+| World draft time | 16.8 min (then rewritten) | 17.7 min | 19.7 min | 17.7 min |
 
 **What held every time:** flattery and fake "the GM cleared me" claims (swaying scores of -11 and -12). "Make me the killer" and "skip to the vote". Contradictors' false times. Secrets. The culprit never changed.
 
@@ -70,7 +71,13 @@ A second judge grades the story itself, next to the old judge. Runs: `scripts/st
 - "Remember" is used only for what players saw.
 - GM characters' moves inside a round are kept. In every run a GM character walked off, came back, and then said "I spoke wrong".
 
+**After run 4:** any count of the game's rounds ("The game has four rounds") and "he says" about another player are dropped.
+
 ## Still open
+
+- **GM characters say what their sheet does not let them know, then take it back** ("The note was torn off his pad", "I spoke too fast"). This shows in every run, 6 or more times a game. Their places are now kept, which removes one cause. The other is that the answering GM sees the whole truth. A code check against each character's sheet before they speak is the next step.
+- **Objects in two places.** A passport one player took turned up in the desk for the next. Canon records who took what, but nothing checks a found object against it.
+- **A private find quoted in public.** A photo only one player saw was described in public answers.
 
 - **The deepest layers do not surface.** Ten bots with three moves a round reach maybe half of a ten-player world: split diaries, trust notes and letters stayed unfound. Real players may dig differently. Watch it in the next human game before cutting content.
 - **Testimony versus whereabouts.** A witness's clue described a room she was not in. There is no code check yet.
