@@ -1791,7 +1791,7 @@ export function storyBeams(sc) {
   return [...new Set([sc?.false_solution?.broken_by, ...(sc?.reframes ?? []).map((r) => r?.flipped_by), ...(sc?.setups ?? []).map((x) => x?.paid_by)].filter((id) => clueIds.has(id)))];
 }
 
-const TURNS_PER_ROUND = 2;
+const TURNS_PER_ROUND = 3;
 
 // A turn whose round has passed with its clue still unfound reaches an innocent player as their own find,
 // one round late at worst: the one standing where it is, else the one who has found least. Never to the room.
@@ -1799,7 +1799,7 @@ function surfaceTurns(game, now) {
   const st = game.state;
   const sc = game.scenario;
   const found = foundByRoom(game);
-  const order = [sc.false_solution?.broken_by, ...(sc.reframes ?? []).map((r) => r?.flipped_by)].filter(Boolean);
+  const order = [sc.false_solution?.broken_by, ...(sc.reframes ?? []).map((r) => r?.flipped_by), ...(sc.setups ?? []).map((x) => x?.paid_by)].filter(Boolean);
   const due = [...new Set(order)]
     .map((id) => sc.clues.find((c) => c.id === id))
     .filter((c) => c && !found.has(c.id) && !st.destroyed.includes(c.id) && !st.carried?.[c.id] && (Number(c.reveal_round) || 1) <= st.phaseIndex)
@@ -2939,6 +2939,27 @@ export function charactersAsked(game, text, read = null) {
 }
 
 // Where each GM character is, and who they are talking with right now (their last words within a few minutes of play).
+// The earlier question this one repeats, with its answer: most of its longer words were asked before.
+// Out loud: any question to the room; in private: this player's own earlier messages.
+export function askedBefore(game, text, { playerId = null, out_loud = false } = {}) {
+  const st = game.state;
+  const key = (t) => [...new Set(wordsOf(t).filter((w) => w.length >= 4 && !STOP.has(w)).map(stem))];
+  const mine = key(text);
+  if (mine.length < 2) return null;
+  const like = (q) => { const k = new Set(key(q)); return mine.filter((w) => k.has(w)).length / mine.length >= 0.6; };
+  if (out_loud) {
+    const e = [...(st.events ?? [])].reverse().find((x) => x.kind === 'qa' && like(x.q));
+    return e ? { asked: e.q, answered: e.text } : null;
+  }
+  const thread = st.threads?.[playerId] ?? [];
+  for (let i = thread.length - 1; i >= 0; i -= 1) {
+    if (thread[i].from !== 'you' || !like(thread[i].text)) continue;
+    const reply = thread.slice(i + 1).find((m) => m.from === 'gm');
+    if (reply) return { asked: thread[i].text, answered: reply.text };
+  }
+  return null;
+}
+
 // What a player took with them: only a thing they have found, not destroyed and not already in someone else's hands.
 export function takeClues(game, playerId, ids) {
   const st = game.state;
@@ -2986,14 +3007,16 @@ export function voiceSheets(game, ids) {
   });
 }
 
-// GM characters speaking in an answer's lines, by id (speaker is an id or a name).
-export function speakingCharacters(game, lines) {
+// GM characters speaking in an answer's lines, by id (speaker is an id or a name); with narration, also those it names.
+export function speakingCharacters(game, lines, { named = false } = {}) {
   const sc = game.scenario;
+  const npcs = new Set(sc.npcs.map((n) => n.id));
   const ids = new Set();
   for (const l of Array.isArray(lines) ? lines : []) {
     const who = String(l?.speaker ?? '').trim().toLowerCase();
     const n = who && sc.npcs.find((x) => x.id.toLowerCase() === who || x.name.toLowerCase() === who);
     if (n) ids.add(n.id);
+    if (named && !who) for (const id of mentions(game, l?.text ?? '')) if (npcs.has(id)) ids.add(id);
   }
   return [...ids];
 }
@@ -3001,11 +3024,11 @@ export function speakingCharacters(game, lines) {
 // Drops the flagged sentences from GM characters' lines; a line left empty goes.
 export function dropSpoken(game, lines, flagged) {
   const norm = (t) => String(t ?? '').toLowerCase().replace(/["“”'‘’]/g, '').replace(/\s+/g, ' ').trim();
-  const bad = (flagged ?? []).map((f) => norm(f?.sentence)).filter((t) => t.length >= 8);
+  const bad = (flagged ?? []).filter((f) => f?.could_know !== true).map((f) => norm(f?.sentence)).filter((t) => t.length >= 8);
   if (!bad.length) return { lines, dropped: 0 };
   let dropped = 0;
   const out = (lines ?? []).flatMap((l) => {
-    if (!speakingCharacters(game, [l]).length) return [l];
+    if (!speakingCharacters(game, [l], { named: true }).length) return [l];
     const kept = sentences(l.text).filter((t) => {
       const hit = bad.some((b) => norm(t).includes(b) || b.includes(norm(t)));
       if (hit) dropped += 1;

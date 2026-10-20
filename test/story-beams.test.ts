@@ -56,12 +56,13 @@ describe('a turn that nobody found still lands', () => {
     assert.equal(game.state.shared.length, 0, 'never shown to the room');
   });
 
-  test('should hand at most two turns a round, the false solution first', () => {
+  test('should hand at most three turns a round, the false solution first, then reframes, then setups', () => {
     const game = storyGame();
-    game.scenario.reframes.push({ detail: 'x', seen_in: 'background', first_reading: 'a', true_reading: 'b', flipped_by: 'c2' });
     game.scenario.clues[1].reveal_round = 1;
+    game.scenario.clues.push({ id: 'c4', name: 'Match', where: 'l1', shows: 'A burnt match.', does_not_prove: '', importance: 'useful', can_be_destroyed: true, reveal_round: 1 });
+    game.scenario.setups.push({ id: 's2', detail: 'The match.', shown_in: 'background', shown_round: 0, paid_by: 'c4', how_paid: 'x' });
     changeRound(game);
-    assert.deepEqual(game.state.turnsSurfaced.map((t) => t.clueId), ['c3', 'c1']);
+    assert.deepEqual(game.state.turnsSurfaced.map((t) => t.clueId), ['c3', 'c1', 'c2']);
   });
 
   test('should leave a turn alone when the room already found it, or its round has not come', () => {
