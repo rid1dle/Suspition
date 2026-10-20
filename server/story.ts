@@ -290,3 +290,50 @@ export function applyStoryPatches(scenario, patches, rules) {
   const allowed = (path) => STORY_PATHS.some((re) => re.test(path)) && !unaware(path);
   return guardedPatches(inPlace(scenario), patches, (p) => applyPatches(scenario, [p], allowed), () => structuralCount(scenario, rules));
 }
+
+// A value shaped like the field it replaces: a number, a yes or no, a list or an object stay what they were.
+function typedLike(existing, value) {
+  const parsed = () => (typeof value === 'string' ? JSON.parse(value) : value);
+  if (typeof existing === 'number') {
+    const n = Number(value);
+    if (!Number.isFinite(n)) throw new Error('needs a number');
+    return n;
+  }
+  if (typeof existing === 'boolean') {
+    if (!['true', 'false', true, false].includes(value)) throw new Error('needs true or false');
+    return value === true || value === 'true';
+  }
+  if (Array.isArray(existing)) {
+    const list = parsed();
+    if (!Array.isArray(list)) throw new Error('needs a list');
+    return list;
+  }
+  if (existing && typeof existing === 'object') {
+    const o = parsed();
+    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('needs an object');
+    return o;
+  }
+  if (existing === undefined && typeof value === 'string' && /^\s*[[{]/.test(value)) return JSON.parse(value);
+  return String(value ?? '');
+}
+
+// Patches for a draft that broke a few rules: any field, typed like what it replaces, a new list item at the end.
+// A patch that leaves the world more broken is undone alone.
+export function applyFixPatches(scenario, patches, rules) {
+  const apply = (patch) => {
+    const path = String(patch?.path ?? '').trim();
+    const parts = path.split('.');
+    const key = parts.pop();
+    const parent = parts.reduce((o, k) => (o == null ? o : o[/^\d+$/.test(k) ? Number(k) : k]), scenario);
+    const index = /^\d+$/.test(key ?? '') ? Number(key) : null;
+    if (!path || !parent || typeof parent !== 'object' || (Array.isArray(parent) && (index === null || index > parent.length))) return { applied: 0, skipped: [`${path || '(empty)'}: no such place`] };
+    const slot = Array.isArray(parent) ? index : key;
+    try {
+      parent[slot] = typedLike(parent[slot] ?? (Array.isArray(parent) ? parent[0] : undefined), patch.value);
+      return { applied: 1, skipped: [] };
+    } catch (err) {
+      return { applied: 0, skipped: [`${path}: ${err.message}`] };
+    }
+  };
+  return guardedPatches(inPlace(scenario), patches, apply, () => structuralCount(scenario, rules));
+}

@@ -3,11 +3,11 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
+import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, worldFixPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
 import { theoryPrompt } from './theory.ts';
 import { bendPrompt } from './bend.ts';
 import { continuityPrompt } from './continuity.ts';
-import { storyIssues, issueCounts, applyStoryPatches } from './story.ts';
+import { storyIssues, issueCounts, applyStoryPatches, applyFixPatches } from './story.ts';
 import { validateScenario, resolveStoryIds, placeOf, currentPlace, walkBetween, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore, speakerFinds } from './game.ts';
 import { TopLevelTracker } from './progress.ts';
 import { READER_SCHEMA, FINAL_READER_SCHEMA, readerSystem, readerPrompt, readerContext, cleanRead, formForGM, quoteRaw } from './reader.ts';
@@ -149,6 +149,9 @@ class Limiter {
   }
 }
 
+// Problems a patch cannot fix: the wrong players, cast size, rounds or culprits mean writing the world again.
+const REWRITE_ONLY = /players must be exactly|^Need exactly|culprits (among the players )?must be exactly|^Exactly \d+ culprit|is not a character|Duplicate .* ids/;
+
 export class GM {
   constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'sonnet', setupEffort, maxParallel = 4, log = () => {}, random = Math.random }) {
     this.workDir = workDir;
@@ -207,6 +210,12 @@ export class GM {
       onProgress({ kind: 'checking' });
       resolveStoryIds(scenario);
       errors = validateScenario(scenario, rules);
+      if (errors.length && errors.length <= 6 && !errors.some((e) => REWRITE_ONLY.test(e))) {
+        this.log(`gm generate#${attempt} invalid: ${errors.length} problem${errors.length === 1 ? '' : 's'}, patching`);
+        await this.fixWorld(scenario, errors, rules);
+        resolveStoryIds(scenario);
+        errors = validateScenario(scenario, rules);
+      }
       if (errors.length) {
         // The errors can name who is innocent; the terminal only hears how many. The GM gets them in full.
         this.log(`gm generate#${attempt} invalid: ${errors.length} problem${errors.length === 1 ? '' : 's'}`);
@@ -231,6 +240,24 @@ export class GM {
       return this.finishWorld(scenario, onProgress, issueRules);
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
+  }
+
+  // A few broken rules are patched in place; a failed or empty fix changes nothing and the draft is written again.
+  async fixWorld(scenario, errors, rules) {
+    try {
+      const result = await this.call('fix', {
+        system: GENERATION_SYSTEM,
+        prompt: worldFixPrompt(scenario, errors),
+        schema: STORY_CHECK_SCHEMA,
+        model: this.setupModel,
+        effort: 'medium',
+        timeoutMs: 240_000,
+      });
+      const out = applyFixPatches(scenario, result?.patches ?? [], rules);
+      this.log(`gm fix: ${out.applied} patches, ${out.skipped.length} skipped`);
+    } catch (err) {
+      this.log(`gm fix skipped: ${err.message}`);
+    }
   }
 
   // The card check writes alibis, reveals and nights after the story check; its result is checked again (counts only).

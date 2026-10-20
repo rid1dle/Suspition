@@ -809,6 +809,21 @@ THE MYSTERY:
 ${JSON.stringify(scenario)}`;
 }
 
+// A draft that broke a few rules is patched instead of written again (a 10-player world takes 15 minutes).
+export function worldFixPrompt(scenario, errors = []) {
+  return `A draft of this mystery breaks these rules:
+- ${errors.join('\n- ')}
+
+Fix exactly these with patches, changing as little as possible and keeping everything else consistent. Never change who the culprits are.
+path uses dots and list positions from 0 (key_deductions.2.clue_ids). A new list item goes at the next free position (hint_ladder.4). value is a string; for a number, a list or an object, write it as JSON.
+verdict: patch when your patches fix every problem, rewrite when they cannot. problems: each problem and its fix, in a few plain words.
+
+${PLAIN_STYLE}
+
+THE MYSTERY:
+${JSON.stringify(scenario)}`;
+}
+
 export const CONTINUITY_SCHEMA = obj({
   problems: { type: 'array', items: obj({ what: str, kind: { type: 'string', enum: ['contradiction', 'truth', 'ignored', 'broken', 'agency'] } }) },
   canon_add: { type: 'array', items: obj({ fact: str, about: strArr, public: { type: 'boolean' } }) },
