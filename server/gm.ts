@@ -211,7 +211,7 @@ export class GM {
       resolveStoryIds(scenario);
       errors = validateScenario(scenario, rules);
       if (errors.length && errors.length <= 6 && !errors.some((e) => REWRITE_ONLY.test(e))) {
-        this.log(`gm generate#${attempt} invalid: ${errors.length} problem${errors.length === 1 ? '' : 's'}, patching`);
+        this.log(`gm generate#${attempt} broke ${errors.length} rule${errors.length === 1 ? '' : 's'}, patching`);
         await this.fixWorld(scenario, errors, rules);
         resolveStoryIds(scenario);
         errors = validateScenario(scenario, rules);
