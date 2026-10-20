@@ -1256,6 +1256,7 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const ask = st.pending[playerId];
   if (!ask) fail('No request is waiting for an answer.', 409);
   delete st.pending[playerId];
+  moveGmCharacters(game, result.gm_characters_moved);
   const kind = ask.kind === 'chat' ? (ANSWER_KINDS.includes(result.kind) ? result.kind : 'question') : ask.kind;
   const thread = st.threads[playerId];
   thread.push({ from: 'you', kind, text: ask.text, ...(ask.read ? { read: ask.read } : {}), at: now });
@@ -2875,6 +2876,20 @@ export function charactersAsked(game, text, read = null) {
 }
 
 // Where each GM character is, and who they are talking with right now (their last words within a few minutes of play).
+// A GM character who walks off in an answer is somewhere else for every later answer.
+export function moveGmCharacters(game, moves) {
+  const st = game.state;
+  const npcs = new Set(game.scenario.npcs.map((n) => n.id));
+  const places = new Set(game.scenario.locations.map((l) => l.id));
+  let n = 0;
+  for (const m of Array.isArray(moves) ? moves : []) {
+    if (!npcs.has(m?.character_id) || !places.has(m?.location_id)) continue;
+    st.positions[m.character_id] = m.location_id;
+    n += 1;
+  }
+  return n;
+}
+
 export function gmCharactersNow(game) {
   const st = game.state;
   const lines = gmCharacterLines(game);

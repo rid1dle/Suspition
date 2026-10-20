@@ -518,8 +518,9 @@ export class App {
         if (await this.goFirst(game, p.id, words, 'out loud') === 'stay') heard = stayed(words);
         if (this.game !== game) return;
         await this.withCharacters(G.charactersAsked(game, q, heard), async () => {
-          const { lines, answer, asker_read: read, ripple, refused } = await this.gm.publicAnswer(game, q, heard, p.id);
+          const { lines, answer, asker_read: read, ripple, refused, gm_characters_moved: moved } = await this.gm.publicAnswer(game, q, heard, p.id);
           if (this.game !== game) return;
+          G.moveGmCharacters(game, moved);
           const drops = game.state.rippleDrops?.length ?? 0;
           G.completePublicAsk(game, p.id, lines?.length ? lines : answer, this.clock(), read, heard, ripple, refused);
           this.logRippleDrop(game, drops);
@@ -557,6 +558,7 @@ export class App {
         await this.withCharacters(G.charactersAsked(game, m.text, read), async () => {
           const out = await this.gm.publicAnswer(game, m.text, read, p.id, { audience: [p.id, to] });
           if (this.game !== game) return;
+          G.moveGmCharacters(game, out?.gm_characters_moved);
           G.addDmAnswer(game, p.id, to, out?.lines?.length ? out.lines : [{ speaker: '', text: String(out?.answer ?? '') }], this.clock());
         });
       } catch (err) {
