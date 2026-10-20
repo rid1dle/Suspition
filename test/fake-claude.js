@@ -14,6 +14,15 @@ process.stdin.on('end', () => {
     process.exit(3);
   }
   if (mode === 'hang') return setTimeout(() => {}, 60_000);
+  // Thinks for a while, starts writing just before the limit, then writes slowly to the end.
+  if (mode === 'slowwrite') {
+    const ev = (event) => JSON.stringify({ type: 'stream_event', event });
+    const start = ev({ type: 'content_block_start', content_block: { type: 'tool_use', name: 'StructuredOutput' } });
+    const done = JSON.stringify({ type: 'result', is_error: false, subtype: 'success', structured_output: { title: 'Written slowly' } });
+    setTimeout(() => process.stdout.write(`${start}\n`), Number(process.env.FAKE_THINK_MS ?? 150));
+    setTimeout(() => process.stdout.write(`${done}\n`), Number(process.env.FAKE_THINK_MS ?? 150) + Number(process.env.FAKE_WRITE_MS ?? 300));
+    return undefined;
+  }
   if (mode === 'stream') {
     const doc = JSON.stringify({ title: 'T', players: [{ id: 'p1' }, { id: 'p2' }], clues: [{ id: 'c1' }] });
     const ev = (event) => JSON.stringify({ type: 'stream_event', event });

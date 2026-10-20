@@ -79,7 +79,9 @@ function parseResult(out) {
   return out.structured_output;
 }
 
-export async function runClaude({ system, prompt, schema, model, effort, workDir, onProgress, timeoutMs = 180_000, bin = 'claude' }) {
+// writeGraceMs: once the answer has started streaming, it may run until at least that long after, so a long
+// world that thought most of its time is not killed while it writes (streamed calls only).
+export async function runClaude({ system, prompt, schema, model, effort, workDir, onProgress, timeoutMs = 180_000, writeGraceMs = 0, bin = 'claude' }) {
   await mkdir(workDir, { recursive: true });
   const systemFile = resolve(workDir, `.system-${randomBytes(4).toString('hex')}.txt`);
   await writeFile(systemFile, system);
@@ -87,7 +89,7 @@ export async function runClaude({ system, prompt, schema, model, effort, workDir
   const args = ['-p', '--system-prompt-file', systemFile, '--json-schema', JSON.stringify(schema), ...ISOLATION, ...output];
   if (model) args.push('--model', model);
   if (effort) args.push('--effort', effort);
-  return spawnClaude(bin, args, workDir, prompt, timeoutMs, onProgress && streamEvents(onProgress)).finally(() => unlink(systemFile).catch(() => {}));
+  return spawnClaude(bin, args, workDir, prompt, timeoutMs, onProgress && streamEvents(onProgress), writeGraceMs).finally(() => unlink(systemFile).catch(() => {}));
 }
 
 export function claudeEnv(env = process.env) {
@@ -96,18 +98,30 @@ export function claudeEnv(env = process.env) {
   return rest;
 }
 
-function spawnClaude(bin, args, workDir, prompt, timeoutMs, onLine) {
+function spawnClaude(bin, args, workDir, prompt, timeoutMs, onLine, writeGraceMs = 0) {
   return new Promise((resolve, reject) => {
     const child = spawn(bin, args, { cwd: workDir, env: claudeEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
-    const timer = setTimeout(() => {
+    const started = Date.now();
+    const stop = () => {
       child.kill('SIGTERM');
-      reject(new GMError(`GM took longer than ${Math.round(timeoutMs / 1000)}s.`));
-    }, timeoutMs);
+      reject(new GMError(`GM took longer than ${Math.round((Date.now() - started) / 1000)}s.`));
+    };
+    let timer = setTimeout(stop, timeoutMs);
+    let graced = false;
     let partial = '';
     child.stdout.on('data', (d) => {
       stdout += d;
+      // The answer started: it gets the grace from now if that ends later than the limit.
+      if (writeGraceMs && !graced && /"content_block_start"[^\n]*"tool_use"/.test(String(d))) {
+        graced = true;
+        const left = timeoutMs - (Date.now() - started);
+        if (left < writeGraceMs) {
+          clearTimeout(timer);
+          timer = setTimeout(stop, writeGraceMs);
+        }
+      }
       if (!onLine) return;
       partial += d;
       const lines = partial.split('\n');
@@ -205,8 +219,10 @@ export class GM {
         schema: SCENARIO_SCHEMA,
         model: this.setupModel,
         effort: this.setupEffort,
-        // A bigger group is a bigger world: 15 minutes for up to 6 players, 90 s more for each one after.
+        // A bigger group is a bigger world: 15 minutes for up to 6 players, 90 s more for each one after,
+        // and a draft that has started writing gets 8 minutes from then to finish.
         timeoutMs: 900_000 + 90_000 * Math.max(0, game.players.length - 6),
+        writeGraceMs: 480_000,
       });
       onProgress({ kind: 'checking' });
       resolveStoryIds(scenario);
