@@ -7,7 +7,7 @@ import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPr
 import { theoryPrompt } from './theory.ts';
 import { bendPrompt } from './bend.ts';
 import { continuityPrompt } from './continuity.ts';
-import { storyIssues, issueCounts, applyStoryPatches, applyFixPatches } from './story.ts';
+import { storyIssues, issueCounts, applyStoryPatches, applyFixPatches, placeAnswers } from './story.ts';
 import { applyDress } from './craft.ts';
 import { validateScenario, resolveStoryIds, placeOf, currentPlace, walkBetween, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore, speakerFinds, voiceSheets, speakingCharacters, dropSpoken, playerWords, askedBefore } from './game.ts';
 import { TopLevelTracker } from './progress.ts';
@@ -274,7 +274,7 @@ export class GM {
       }
       await this.finishWorld(scenario, onProgress, issueRules);
       if (this.hunt) await this.huntWorld(scenario, rules, issueRules);
-      return scenario;
+      return placeAnswers(scenario, this.random);
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
   }

@@ -149,6 +149,15 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
     }
   });
 
+  // A right option far more specific than the rest is picked for its length, not from the clues.
+  (s.phases ?? []).forEach((ph, i) => {
+    const opts = (ph?.options ?? []).map((o) => String(o ?? '').trim());
+    const right = opts[ph?.answer_index];
+    if (!ph?.question || opts.length < 2 || right === undefined) return;
+    const longestWrong = Math.max(...opts.filter((_, k) => k !== ph.answer_index).map((o) => o.length));
+    if (right.length >= 1.4 * longestWrong && right.length - longestWrong >= 10) out.push(`options: phases[${i}] (round ${i + 1}): the right option is the only specific one, so it is picked for its length; make each wrong option a theory the room could hold from what it has seen (the false solution, a red herring), as long and specific as the right one.`);
+  });
+
   out.push(...farIssues(s));
   out.push(...craftIssues(s));
   out.push(...clueWhereErrors(s).map((e) => `where: ${e}`));
@@ -174,6 +183,19 @@ function farIssues(s) {
   return out;
 }
 
+// Where the right answer sits is drawn in code: a model puts it second and makes it the longest.
+export function placeAnswers(s, random = Math.random) {
+  for (const ph of s?.phases ?? []) {
+    const n = ph?.options?.length ?? 0;
+    const from = ph?.answer_index;
+    if (!ph?.question || n < 2 || !Number.isInteger(from) || from < 0 || from >= n) continue;
+    const to = Math.min(n - 1, Math.floor(random() * n));
+    [ph.options[from], ph.options[to]] = [ph.options[to], ph.options[from]];
+    ph.answer_index = to;
+  }
+  return s;
+}
+
 // For logs the host can read: how many of each kind, never the lines (they can name the culprit).
 export const issueCounts = (issues) => {
   const counts = {};
@@ -192,7 +214,7 @@ const STORY_PATHS = [
   /^opening_scene$/,
   /^(background|key_objects)$/,
   /^locations\.\d+\.public_info$/,
-  /^phases\.\d+\.planned_beat$/,
+  /^phases\.\d+\.(planned_beat|options)$/,
   /^truth\.timeline$/,
   /^(setups|reframes|world_rules|lies_caught)$/,
   /^hint_ladder\.\d+\.text$/,
@@ -293,7 +315,25 @@ export function applyStoryPatches(scenario, patches, rules, issueRules = null) {
   const unaware = (path) => { const m = /^players\.(\d+)\./.exec(path); return Boolean(m && scenario.players?.[Number(m[1])]?.unaware); };
   const allowed = (path) => STORY_PATHS.some((re) => re.test(path)) && !unaware(path);
   const giveaways = () => (issueRules ? storyIssues(scenario, issueRules).filter((i) => i.startsWith('giveaway')).length : 0);
-  return guardedPatches(inPlace(scenario), patches, (p) => applyPatches(scenario, [p], allowed), () => structuralCount(scenario, rules) + giveaways());
+  return guardedPatches(inPlace(scenario), patches, (p) => keepRightAnswer(scenario, p) ?? applyPatches(scenario, [p], allowed), () => structuralCount(scenario, rules) + giveaways());
+}
+
+// Before play, new options for a round keep its right answer in the same words, and the answer moves with it.
+function keepRightAnswer(scenario, patch) {
+  const m = /^phases\.(\d+)\.options$/.exec(String(patch?.path ?? '').trim());
+  const ph = m && scenario.phases?.[Number(m[1])];
+  if (!ph || !Number.isInteger(ph.answer_index)) return null;
+  const right = String(ph.options?.[ph.answer_index] ?? '').trim();
+  let list;
+  try {
+    list = (typeof patch.value === 'string' ? JSON.parse(patch.value) : patch.value).map((o) => String(o ?? '').trim());
+  } catch {
+    list = null;
+  }
+  const at = Array.isArray(list) ? list.indexOf(right) : -1;
+  if (!list || list.length < 2 || list.length > 4 || at < 0) return { applied: 0, skipped: [`${patch.path}: must keep the right answer, in its own words, among 2 to 4 options`] };
+  Object.assign(ph, { options: list, answer_index: at });
+  return { applied: 1, skipped: [] };
 }
 
 // A value shaped like the field it replaces: a number, a yes or no, a list or an object stay what they were.
