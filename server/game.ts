@@ -990,8 +990,14 @@ export function keptClues(game) {
 export function destroy(game, clueIds) {
   const destroyable = new Set(game.scenario.clues.filter((c) => c.can_be_destroyed).map((c) => c.id));
   const needs = caseNeeds(game);
+  const beams = new Set(storyBeams(game.scenario));
   for (const id of clueIds ?? []) {
     if (!destroyable.has(id) || game.state.destroyed.includes(id)) continue;
+    // A clue the story turns on leaves remains that still carry its fact (a scorched corner, a smeared line).
+    if (beams.has(id)) {
+      game.state.damaged = [...new Set([...(game.state.damaged ?? []), id])];
+      continue;
+    }
     const last = needs.some((n) => n.clues.includes(id) && n.clues.every((c) => c === id || game.state.destroyed.includes(c)));
     if (!last) game.state.destroyed.push(id);
   }
@@ -1260,6 +1266,8 @@ export function completeAsk(game, playerId, result, now = Date.now()) {
   const ask = st.pending[playerId];
   if (!ask) fail('No request is waiting for an answer.', 409);
   delete st.pending[playerId];
+  // A refused move does not happen: nothing is found, destroyed, taken or seen by the room because of it.
+  if (result?.refused?.refused === true) result = { ...result, clues_found: [], clues_destroyed: [], clues_taken: [], public_event: '', hidden_fact_revealed: '', goal_steps_done: [] };
   moveGmCharacters(game, result.gm_characters_moved);
   const kind = ask.kind === 'chat' ? (ANSWER_KINDS.includes(result.kind) ? result.kind : 'question') : ask.kind;
   const thread = st.threads[playerId];
@@ -1772,7 +1780,41 @@ export function completePhase(game, result, now = Date.now()) {
   nudgeStuckGoals(game, stuck, result.messages_to_players, now);
   awaken(game, now);
   applyChecks(game, result.checks, now);
+  surfaceTurns(game, now);
   if (isLastPhase(game)) surfaceGaps(game, now);
+}
+
+// The clues the story turns on: the one that breaks the false solution, the ones that flip a reframe,
+// the ones a setup pays off in. A story that rests on them must not lose them to chance or a lighter.
+export function storyBeams(sc) {
+  const clueIds = new Set((sc?.clues ?? []).map((c) => c.id));
+  return [...new Set([sc?.false_solution?.broken_by, ...(sc?.reframes ?? []).map((r) => r?.flipped_by), ...(sc?.setups ?? []).map((x) => x?.paid_by)].filter((id) => clueIds.has(id)))];
+}
+
+const TURNS_PER_ROUND = 2;
+
+// A turn whose round has passed with its clue still unfound reaches an innocent player as their own find,
+// one round late at worst: the one standing where it is, else the one who has found least. Never to the room.
+function surfaceTurns(game, now) {
+  const st = game.state;
+  const sc = game.scenario;
+  const found = foundByRoom(game);
+  const order = [sc.false_solution?.broken_by, ...(sc.reframes ?? []).map((r) => r?.flipped_by)].filter(Boolean);
+  const due = [...new Set(order)]
+    .map((id) => sc.clues.find((c) => c.id === id))
+    .filter((c) => c && !found.has(c.id) && !st.destroyed.includes(c.id) && !st.carried?.[c.id] && (Number(c.reveal_round) || 1) <= st.phaseIndex)
+    .slice(0, TURNS_PER_ROUND);
+  const given = new Set();
+  for (const clue of due) {
+    const pool = innocentIds(game).filter((id) => st.found[id] && !given.has(id));
+    const here = placeFor(game, clue);
+    const to = pool.find((id) => (st.at?.[id] ?? st.positions[id]) === here) ?? pool.sort((a, b) => st.found[a].length - st.found[b].length)[0];
+    if (!to) break;
+    st.found[to].push(clue.id);
+    given.add(to);
+    st.turnsSurfaced = [...(st.turnsSurfaced ?? []), { clueId: clue.id, to, at: now }];
+    whisper(game, [{ player_id: to, text: `You come across something: ${clue.name}. ${clue.text ? `"${clue.text}"` : clue.shows} Show it to the room if it matters.` }], now);
+  }
 }
 
 export function proposeHint(game, playerId, now = Date.now()) {
@@ -3118,6 +3160,7 @@ export function snapshotForGM(game) {
     what_gm_characters_have_said: gmCharacterSaid(game),
     gm_characters_now: gmCharactersNow(game),
     things_carried: thingsCarried(game),
+    clues_damaged: (game.state.damaged ?? []).map((id) => game.scenario.clues.find((c) => c.id === id)?.name ?? id),
     players_told_each_other: (st.dms ?? []).filter((m) => m.from !== 'gm').slice(-20).map((m) => `${nameOf(game, m.from)} to ${nameOf(game, m.to)}, privately: ${quoteRaw(m.text)}`),
     what_gm_characters_have_learned: Object.fromEntries(game.scenario.npcs.map((n) => [n.id, (st.knowledge ?? []).filter((k) => k.character_id === n.id).map((k) => `Round ${k.round}: ${k.fact} (${k.how})`)])),
     canon: (st.canon ?? []).map((c) => ({ fact: c.fact, round: c.round })),

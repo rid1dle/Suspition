@@ -44,6 +44,7 @@ function craftWorld() {
   s.lies_caught = [];
   s.reframes.push({ detail: 'The butler logs every key.', seen_in: 'c3', first_reading: 'A careful man.', true_reading: 'His log shows the keys out.', flipped_by: 'c2' });
   s.false_solution = { believed: 'Character 2 took the will for the money.', points_at: 'p2', built_from: ['c1', 'c3'], broken_by: 'c2' };
+  s.suspects[0].pointer_clue_ids = ['c1', 'c2'];
   s.players.forEach((p, i) => (p.goal = ['Burn the will before dawn.', 'Find the glove before the lawyer.', 'Hide the telegram from everyone.', 'Read the ledger before the vote.'][i]));
   return s;
 }

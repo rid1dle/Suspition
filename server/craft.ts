@@ -106,6 +106,14 @@ export function craftIssues(s) {
     }
   }
 
+  // Every culprit has a chain of their own: two clues that point at them, one that cannot be destroyed.
+  for (const id of s.truth?.culprit_ids ?? []) {
+    const x = (s.suspects ?? []).find((y) => y?.character_id === id);
+    const own = (x?.pointer_clue_ids ?? []).filter((c) => clue[c]);
+    if (own.length < 2) out.push(`proof: culprit ${id} has ${own.length} clue${own.length === 1 ? '' : 's'} pointing at them; give each culprit 2 or more, so each can be proved, not guessed.`);
+    else if (own.every((c) => clue[c].can_be_destroyed)) out.push(`proof: every clue pointing at culprit ${id} can be destroyed; make one of them a thing that survives.`);
+  }
+
   // Secret goals move the main story: what a player chases is itself evidence or sits where evidence is.
   const evidence = new Set(clues.flatMap((c) => wordsOf(`${c.name} ${c.text ?? ''} ${c.shows}`)).filter((w) => w.length >= 4 && !SMALL.has(w)));
   const names = new Set([...(s.players ?? []).map((p) => p.character_name), ...(s.npcs ?? []).map((n) => n.name), ...(s.locations ?? []).map((l) => l.name)].flatMap(wordsOf));

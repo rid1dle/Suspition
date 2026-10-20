@@ -82,7 +82,7 @@ function patchPlan(game, patches, now) {
   return guardedPatches(target, patches, apply, () => structural(game));
 }
 
-const GAME_TALK = /\bvot(e|ed|es|ing)\b|\b(extra|another|new|added)\s+round\b|\bround\s+\d|\brounds?\s+(was|were)\s+added\b/i;
+const GAME_TALK = /can'?t happen|\bvot(e|ed|es|ing)\b|\b(extra|another|new|added)\s+round\b|\bround\s+\d|\brounds?\s+(was|were)\s+added\b/i;
 
 export function addCanon(game, items, now) {
   const st = game.state;
