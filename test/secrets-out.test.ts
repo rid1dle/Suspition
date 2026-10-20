@@ -47,3 +47,12 @@ describe('a GM character\'s own secret comes out by a planned round', () => {
     assert.match(p, /Secrets that come out this round[\s\S]*The Butler: The cook says she saw him pour it away\./);
   });
 });
+
+describe('the ending closes the human threads', () => {
+  test('should ask the reveal to say what became of each open thread', async () => {
+    const { scorePrompt } = await import('../server/prompts.ts');
+    const p = scorePrompt({ snapshot: {}, submissions: [], verdict: {} });
+    assert.match(p, /end with what became of the people/);
+    assert.match(p, /reveal_story \(100 to 200 words/);
+  });
+});
