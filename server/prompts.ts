@@ -98,7 +98,6 @@ const WORLD_SCHEMA = obj({
       start_location: str,
       icon: str,
       importance: { type: 'string', enum: ['important', 'minor'] },
-      agenda: obj({ wants: str, plan: { type: 'array', items: obj({ round: { type: 'integer', minimum: 1, maximum: 5 }, does: str }) }, leaves: str }),
     }),
   },
   locations: {
@@ -130,16 +129,9 @@ const WORLD_SCHEMA = obj({
       importance: { type: 'string', enum: ['essential', 'useful', 'misleading'] },
       can_be_destroyed: { type: 'boolean' },
       reveal_round: { type: 'integer', minimum: 1, maximum: 5 },
-      form: { type: 'string', enum: ARTIFACT_FORMS },
-      author: str,
-      written_at: str,
-      text: str,
       from_step: str,
     }),
   },
-  setups: { type: 'array', items: obj({ id: str, detail: str, shown_in: str, shown_round: { type: 'integer', minimum: 0, maximum: 5 }, paid_by: str, how_paid: str }) },
-  reframes: { type: 'array', items: obj({ detail: str, seen_in: str, first_reading: str, true_reading: str, flipped_by: str }) },
-  world_rules: { type: 'array', items: obj({ rule: str, cost: str, shown_by: str, used_in: str }) },
   key_deductions: { type: 'array', items: obj({ id: str, statement: str, clue_ids: strArr, about: { type: 'string', enum: ['culprit', 'method', 'motive', 'other'] } }) },
   suspects: { type: 'array', items: obj({ character_id: str, motive_against_victim: str, where_at_crime_time: str, alibi_witness: str, pointer_clue_ids: strArr, cleared_by_clue_ids: strArr }) },
   red_herrings: { type: 'array', items: obj({ points_at: str, clue_ids: strArr, why_convincing: str, refuted_by_clue_ids: strArr }) },
@@ -409,14 +401,37 @@ export const PLAIN_STYLE = `Writing style (the most important rule):
 // (Trabasso and van den Broek) and get lost in a world that feels real and costs something (Green and Brock).
 // Every wanted thing has a field, and server/craft.ts checks it.
 export const STORY_CRAFT_WORLD = `Story craft (this makes it a story, not only a puzzle; the code checks every point):
-- Cause and effect. Each step of truth.timeline has an id (t1, t2...), because (the id of the step that set it off, or whose want did: "Meera wants the loan forgiven") and leads_to (ids of the steps it sets off). No step leads nowhere: another step follows from it, or a clue comes from it. At most one step happens by chance. why_tonight: one sentence on whose want made this happen tonight and not another night.
-- Clues are things in the world, not summaries. form is what it is (${ARTIFACT_FORMS.join(', ')}). author is who wrote or made it, by name (empty for a mark or an absence). written_at is when (empty if unknown). text is what players read or see: the thing's own words in its writer's voice (a nervous clerk, a proud aunt), or exactly how it looks. Each thing exists for its own everyday reason, not to be a clue, and one fact hides inside it. shows stays the plain fact it proves. from_step is the truth step that made it. At least half the clues are written things (letter, diary, note, ledger, receipt, label, message, record, photo), at least one in every round. At least one clue is an absence (the dog that did not bark, a cup nobody used). Written things can name each other (a receipt names a shop, a diary names a day), so one find leads to the next.
-- Plant, then pay (Chekhov's gun). setups: at least 4 details shown on purpose that matter later, 2 or more seen by round 1 (in the background, the opening scene, a key object, a public line or an early clue). shown_in is where it is seen (background, opening_scene, a clue id or a person id); shown_round is when (0 for the start). paid_by is the clue id or key deduction id where it matters, or "round N"; how_paid says how, in one line. Every key object is a setup. Nothing is made to look important and then never used, and the answer uses nothing the players could not have seen coming.
-- Reframes: at least 2 details players see early that mean something else once a later clue turns them around (a kind act that was a cover, a quiet dog that knew the culprit). seen_in is where it is seen; first_reading is what it seems; true_reading is what it really means; flipped_by is the later clue id. One touches a culprit and one does not.
-- Everyone wants something tonight. Every important GM character has an agenda: wants (what they want tonight and their own reason, often nothing to do with the crime), plan (2 or 3 steps, one per round, that they carry out if nobody stops them; each changes the situation) and leaves (the id of a clue their plan leaves behind, or empty). A plan step never hands over a clue players could find themselves. Other people's wants are where red herrings come from. A minor GM character gets an empty agenda.
-- World rules: 1 to 3 hard rules of this world, each with a cost or limit (the gate locks at 10, the dog barks at strangers, the tide covers the path at midnight, a power works only on the living). shown_by is where players learn it (background or a clue id), before it is needed; used_in is the key deduction id that uses it. A setting with magic or powers puts its powers here.
+- Cause and effect. Each step of truth.timeline has an id (t1, t2...), because (the id of the step that set it off, or whose want did: "Meera wants the loan forgiven") and leads_to (ids of the steps it sets off). No step leads nowhere: another step follows from it, or a clue comes from it (from_step). At most one step happens by chance. why_tonight: one sentence on whose want made this happen tonight and not another night.
+- Clues come from the truth. Each clue's from_step is the truth step that made it. Write each clue as something that could be a real thing in this world: a note someone wrote, a ledger line, a label, a photo, a mark, something missing. A later pass gives each one its own words, so shows stays the plain fact.
+- Everyone wants something tonight: important GM characters have their own business tonight, often nothing to do with the crime; red herrings come from it.
 - Fair proof. The culprit is tied to the crime and to the motive by clues players can find without searching the culprit: a link to the motive is a thing that names them or is only theirs (a shared surname alone proves nothing). A trace others could also leave (prints, mud, a smell) says what makes it the culprit's (its time, blood in it, its direction).
-- Each round's planned_beat comes from someone's plan (a GM character's agenda step for that round, or what a culprit must do next) and opens a new question. It never hands a clue to the whole room.`;
+- Each round's planned_beat comes from someone's plan or what a culprit must do next, and opens a new question. It never hands a clue to the whole room.`;
+
+// The second pass: the finished world gets its story layer. Written apart so a ten-player draft stays inside its time.
+const CRAFT_SCHEMA_INNER = {
+  clues: { type: 'array', items: obj({ id: str, form: { type: 'string', enum: ARTIFACT_FORMS }, author: str, written_at: str, text: str }) },
+  setups: { type: 'array', items: obj({ id: str, detail: str, shown_in: str, shown_round: { type: 'integer', minimum: 0, maximum: 5 }, paid_by: str, how_paid: str }) },
+  reframes: { type: 'array', items: obj({ detail: str, seen_in: str, first_reading: str, true_reading: str, flipped_by: str }) },
+  world_rules: { type: 'array', items: obj({ rule: str, cost: str, shown_by: str, used_in: str }) },
+  agendas: { type: 'array', items: obj({ npc_id: str, wants: str, plan: { type: 'array', items: obj({ round: { type: 'integer', minimum: 1, maximum: 5 }, does: str }) }, leaves: str }) },
+};
+export const CRAFT_SCHEMA = obj(CRAFT_SCHEMA_INNER);
+
+export const STORY_DRESS = `You dress a finished mystery as a story. Readers remember events with a cause and a consequence and get lost in a world that feels real and costs something; the best mysteries (Lord of the Mysteries, Knives Out, Return of the Obra Dinn) hide each hard fact inside a thing with a writer and a voice, plant details early that pay off late, and turn early details around at the end. Never change a fact of the world: who did what, when, where and why stays exactly as written. Use only ids that exist.
+- clues: one entry per clue id. form is what it is (${ARTIFACT_FORMS.join(', ')}). author is who wrote or made it, by name (empty for a mark or an absence). written_at is when (empty if unknown). text is what players read or see: the thing's own words in its writer's voice (a nervous clerk, a proud aunt), or exactly how it looks, 1 to 3 short lines under 40 words. Each thing exists for its own everyday reason, not to be a clue, and the clue's plain fact (shows) hides inside it without being stated outright and without adding any new fact. At least half the clues are written things (letter, diary, note, ledger, receipt, label, message, record, photo), at least one in every round. At least one clue is an absence (the dog that did not bark, a cup nobody used). Written things can name each other (a receipt names a shop, a diary names a day), so one find leads to the next.
+- setups (Chekhov's gun): at least 4 details shown on purpose that matter later, 2 or more seen by round 1 (in the background, the opening scene, a key object, a public line or an early clue). id s1, s2... shown_in is where it is seen (background, opening_scene, a clue id or a person id); shown_round is when (0 for the start). paid_by is the clue id or key deduction id where it matters, or "round N"; how_paid says how, in one line. Every key object is a setup. Nothing made to look important goes unused.
+- reframes: at least 2 details players see early that mean something else once a later clue turns them around (a kind act that was a cover, a quiet dog that knew the culprit). seen_in is where it is seen; first_reading is what it seems; true_reading is what it really means; flipped_by is the later clue id. One touches a culprit and one does not.
+- world_rules: 1 to 3 hard rules of this world already true in it, each with a cost or limit (the gate locks at 10, the dog barks at strangers, the tide covers the path at midnight, a power works only on the living). shown_by is where players learn it (background or a clue id), before it is needed; used_in is the key deduction id that uses it.
+- agendas: one for every important GM character (npc_id). wants is what they want tonight and their own reason; plan is 2 or 3 steps, one per round, that they carry out if nobody stops them, each changing the situation and fitting their sheet; leaves is the id of a clue their plan leaves behind, or empty. A plan step never hands over a clue players could find themselves, and never reveals a secret they keep.
+
+${PLAIN_STYLE}`;
+
+export function dressPrompt(scenario) {
+  return `Dress this mystery as a story. Return the clues in their own words, the setups, reframes, world rules and the agendas of the important GM characters.
+
+THE MYSTERY:
+${JSON.stringify(scenario)}`;
+}
 
 export const GENERATION_SYSTEM = `You design one-session hidden-role mystery games for one player alone or for friends playing in the same room.
 Each player is a character inside the mystery. Some are investigators with their own secrets, one or more people are the culprits (player characters or GM characters, as the request says), and there may be a wildcard whose goal fits neither side.
@@ -454,7 +469,7 @@ Design rules:
 - Use exactly the twists listed in the request, woven into the characters and phases. Record each in twists with a description of how it works in this game.
 - Background: 5 to 8 short lines everyone reads at the start. Cover: the place and the year, why everyone is here tonight, who the victim is and what they were like, what just happened, why nobody can simply leave or call for help tonight (it can be a storm, but also a moving train, a ceremony that must finish, a promise, a locked event, a rule), and one or two things everyone in this world would know. No secrets.
 - how_we_talk: how the characters talk to each other when they are in different places (walkie-talkies, an intercom, a phone group, a speaking tube), one plain sentence that fits the setting and era. The players sit together in one real room and talk freely; this is the story's reason their characters can.
-- key_objects: 3 to 6 things that matter to the case (a candle, a ledger, a key), told to everyone at the start so they know what to look for. about is one public line on what it is, never what it proves. where is the id of the place or person that has it now; where_is_public says whether everyone is told where it is (do it for some, not all, and never for an object a culprit holds). Each one is a setup (see Story craft), and what it means is found in play.
+- key_objects: 3 to 6 things that matter to the case (a candle, a ledger, a key), told to everyone at the start so they know what to look for. about is one public line on what it is, never what it proves. where is the id of the place or person that has it now; where_is_public says whether everyone is told where it is (do it for some, not all, and never for an object a culprit holds). Each one matters to at least one clue and pays off later, and what it means is found in play.
 - Public timeline: 3 to 8 times everyone knows or can learn. reveal_round 0 means known from the start; 1 to the number of rounds means it is announced when that round starts. order sorts the whole story in time (use 10, 20, 30... so new entries fit between). Never put a secret in it.
 - Rounds (phases): one entry per round, with a short name and a planned beat (an event that changes the situation). objective says what the group should do this round, starting with a verb, under 15 words ("Find out where everyone was when the lights went out."). try gives 2 or 3 pointers under 10 words each, naming people or places to check, never the answer ("Ask the watchman about the gate."). Each round has a clear goal: question is what the group must work out this round, answerable from clues and talk in that round (for example "How did the lights go out?"). options are 3 or 4 short answers; answer_index is the right one. The last round's question must not be "who did it" (that is the final vote). reward is one new fact the group unlocks if they get it right; reward_time and reward_order place it on the timeline ('' and 0 if it has no time). wrong_nudge is one gentle line pointing them the right way if they get it wrong. reward and wrong_nudge never name a culprit or point at one person as the one who did it. The questions should build: each round's answer helps the next.
 - Character names are in-world names that fit the setting. Use the player's wish if they gave one.
@@ -465,7 +480,7 @@ Design rules:
 - geography: the shape of the place, drawn on the map. terrain is the main ground (building if the whole story is inside one building). across_m is how wide the map is in real metres: a building is 30 to 120, grounds 200 to 1500, a village 1000 to 3000, a city up to 15000. The scale must fit the story: a lodge and its boathouse are a few hundred metres apart, not 5 km. Walking takes about 1 minute per 80 metres, so travel times must fit the night: nobody walks a 40-minute path in the 10 minutes between two whereabouts. landmarks: 6 to 12 made-up things on the map (an old well, a broken statue, the north gate), ids m1, m2, ..., with x and y from 0 to 100 away from the places. Landmarks are scenery only: never a clue's where, never where a person is, never named like a place. paths: one for every pair of neighbors (from and to are location ids, or a landmark id for a path past it), with the kind that fits (road, trail, stairs, corridor, bridge, water).
 - music: the game's soundtrack, played live in the room. Pick a root, mode, tempo, instrument palette and percussion that fit this setting and tone (a cozy village fair is not a dark ship), and a motif of 5 to 8 scale degrees (0 is the root, 7 the octave) that is easy to recognise. description is one line a host could read aloud ("slow music box over a heartbeat").
 ${STORY_CRAFT_WORLD}
-- Length limits (hard): title up to 6 words. setting_summary 1 or 2 short sentences. opening_scene 40 to 70 words. public_info 1 sentence. private_info 3 to 5 short sentences. wants 1 or 2 sentences. fears 1 sentence. goal 1 sentence. goal_why 1 sentence. side_explanation 1 sentence. hidden fact 1 sentence. clue shows 1 sentence. clue text 1 to 3 short lines, under 40 words. planned_beat 1 or 2 sentences. Each hint 1 sentence. Each twist description 1 sentence. Location public_info 1 short sentence.
+- Length limits (hard): title up to 6 words. setting_summary 1 or 2 short sentences. opening_scene 40 to 70 words. public_info 1 sentence. private_info 3 to 5 short sentences. wants 1 or 2 sentences. fears 1 sentence. goal 1 sentence. goal_why 1 sentence. side_explanation 1 sentence. hidden fact 1 sentence. clue shows 1 sentence. planned_beat 1 or 2 sentences. Each hint 1 sentence. Each twist description 1 sentence. Location public_info 1 short sentence.
 
 ${PLAIN_STYLE}`;
 

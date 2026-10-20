@@ -40,6 +40,12 @@ The lesson from before still holds: a rule written as a wish is met at its cheap
 | World rules | `world_rules[]` | at least 1; used by a key deduction; shown before it is needed |
 | Beats | (existing) `phases[].planned_beat` | never retells an essential clue |
 
+- **Two passes, not one.** Putting everything in one call pushed a 10-player world past its 21-minute limit. It timed out while writing the clues. So the first draft writes the world plus cause and effect (`because`, `leads_to`, `why_tonight`, `from_step`), which must shape the truth. A second pass (`STORY_DRESS`, `CRAFT_SCHEMA`, `applyDress`) then reads the finished world and writes:
+  - each clue's form, writer, time and own words
+  - the setups, reframes and world rules
+  - the plans of the important GM characters
+
+  It may not change a fact. If it fails, the world is still playable with plain clues.
 - **The checks feed the existing story check,** which may now patch every new field.
 - **In play:**
   - A found clue is quoted in its own words.

@@ -3,11 +3,12 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, worldFixPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
+import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, worldFixPrompt, CRAFT_SCHEMA, STORY_DRESS, dressPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
 import { theoryPrompt } from './theory.ts';
 import { bendPrompt } from './bend.ts';
 import { continuityPrompt } from './continuity.ts';
 import { storyIssues, issueCounts, applyStoryPatches, applyFixPatches } from './story.ts';
+import { applyDress } from './craft.ts';
 import { validateScenario, resolveStoryIds, placeOf, currentPlace, walkBetween, snapshotForGM, nextPhaseInfo, publicKnowledge, applyAudit, peopleAsked, forScore, speakerFinds } from './game.ts';
 import { TopLevelTracker } from './progress.ts';
 import { READER_SCHEMA, FINAL_READER_SCHEMA, readerSystem, readerPrompt, readerContext, cleanRead, formForGM, quoteRaw } from './reader.ts';
@@ -227,6 +228,8 @@ export class GM {
       scenario.awaken_round = plan.awakenRound;
       scenario.watchers = watchers;
       onProgress({ kind: 'story' });
+      await this.dressWorld(scenario);
+      resolveStoryIds(scenario);
       const issues = storyIssues(scenario, issueRules);
       this.log(`gm story issues: ${issueCounts(issues)}`);
       const check = await this.checkStory(scenario, issues);
@@ -240,6 +243,23 @@ export class GM {
       return this.finishWorld(scenario, onProgress, issueRules);
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
+  }
+
+  // The story layer, written on the finished world: a failed or slow pass leaves the world playable as it was.
+  async dressWorld(scenario) {
+    try {
+      const dress = await this.call('dress', {
+        system: STORY_DRESS,
+        prompt: dressPrompt(scenario),
+        schema: CRAFT_SCHEMA,
+        model: this.setupModel,
+        effort: 'medium',
+        timeoutMs: 420_000,
+      });
+      this.log(`gm dress: ${applyDress(scenario, dress)} things dressed`);
+    } catch (err) {
+      this.log(`gm dress skipped: ${err.message}`);
+    }
   }
 
   // A few broken rules are patched in place; a failed or empty fix changes nothing and the draft is written again.

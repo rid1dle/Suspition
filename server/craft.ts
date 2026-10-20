@@ -115,3 +115,28 @@ export function craftIssues(s) {
   });
   return out;
 }
+
+// The dressing pass joins the world: each clue keeps its facts and gains its own words; setups, reframes and
+// rules are added; each important GM character gets a plan. Unknown ids and empty answers are left out.
+export function applyDress(s, dress) {
+  if (!s || !dress || typeof dress !== 'object') return 0;
+  let n = 0;
+  for (const d of dress.clues ?? []) {
+    const c = (s.clues ?? []).find((x) => x.id === d?.id);
+    if (!c || !String(d.text ?? '').trim()) continue;
+    Object.assign(c, { form: ARTIFACT_FORMS.includes(d.form) ? d.form : 'object', author: String(d.author ?? ''), written_at: String(d.written_at ?? ''), text: String(d.text) });
+    n += 1;
+  }
+  for (const key of ['setups', 'reframes', 'world_rules']) {
+    if (!Array.isArray(dress[key])) continue;
+    s[key] = dress[key].filter((x) => x && typeof x === 'object');
+    n += s[key].length;
+  }
+  for (const a of dress.agendas ?? []) {
+    const npc = (s.npcs ?? []).find((x) => x.id === a?.npc_id);
+    if (!npc || npc.importance !== 'important') continue;
+    npc.agenda = { wants: String(a.wants ?? ''), plan: (a.plan ?? []).filter((p) => p && String(p.does ?? '').trim()), leaves: String(a.leaves ?? '') };
+    n += 1;
+  }
+  return n;
+}
