@@ -36,7 +36,7 @@ export function metrics(game, roles) {
   const per = (fn) => Object.fromEntries(ids.map((id) => [id, fn(id)]));
   const reads = (id) => [
     ...(st.threads[id] ?? []).filter((m) => m.from === 'you' && m.read).map((m) => m.read),
-    ...qa.filter((e) => byName[e.by] === id && e.read).map((e) => e.read),
+    ...qa.filter((e) => (e.pid ?? byName[e.by]) === id && e.read).map((e) => e.read),
     ...(st.moments ?? []).filter((m) => m.player_id === id && m.readInstead).map((m) => m.readInstead),
   ];
   const playBy = per((id) => playTotal(st.play?.[id]));
@@ -44,7 +44,7 @@ export function metrics(game, roles) {
   for (const id of ids) playByRole[roles[id]] = (playByRole[roles[id]] ?? 0) + playBy[id];
   return {
     deadEnds: qa.filter((e) => /nobody knows|not known yet/i.test(e.text) && !words(e.text).some((w) => pointers.has(w))).length,
-    outLoud: per((id) => qa.filter((e) => byName[e.by] === id).length),
+    outLoud: per((id) => qa.filter((e) => (e.pid ?? byName[e.by]) === id).length),
     movesBy: per((id) => (st.threads[id] ?? []).filter((m) => m.from === 'you').length),
     playBy,
     playRaw: per((id) => (st.play?.[id] ?? []).reduce((t, x) => t + x.points, 0)),

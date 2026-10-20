@@ -108,3 +108,12 @@ describe('the story judge', () => {
     assert.match(md, /BROKE: culprit fixed \(Ravi\)/);
   });
 });
+
+describe('the judge counts out-loud questions by player id', () => {
+  test('should count a question asked out loud under a character name', async () => {
+    const { metrics } = await import('../scripts/playtest/judge.ts');
+    const game = (await playing()).app.game;
+    game.state.events.push({ at: 9, phase: 0, kind: 'qa', by: 'Character 2', pid: 'p2', q: 'Who?', text: 'Nobody.' });
+    assert.equal(metrics(game, { p1: 'fair', p2: 'fair', p3: 'fair' }).outLoud.p2, 1);
+  });
+});
