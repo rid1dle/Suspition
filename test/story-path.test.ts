@@ -20,7 +20,7 @@ const path = (s) => storyIssues(s, { players, difficulty: 'normal', rounds: 3 })
 
 describe("the culprit's whole path", () => {
   test('should ask where and who for every step of the truth, and whereabouts at each of those times', () => {
-    assert.deepEqual(Object.keys(SCENARIO_SCHEMA.properties.truth.properties.timeline.items.properties), ['time', 'event', 'location_id', 'character_ids']);
+    assert.deepEqual(Object.keys(SCENARIO_SCHEMA.properties.truth.properties.timeline.items.properties), ['id', 'time', 'event', 'location_id', 'character_ids', 'because', 'leads_to']);
     assert.match(GENERATION_SYSTEM, /say where every character was at each time in truth\.timeline/);
   });
 

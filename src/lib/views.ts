@@ -1,3 +1,4 @@
+import type { Artifact } from './artifact';
 // What the server sends to the table and to each phone (server/game.ts publicCore, tableView, playerView).
 // Fields the screens do not read yet stay loose on purpose.
 
@@ -111,7 +112,7 @@ export interface PlayerView extends PublicView {
   invites?: InviteView[];
   ties?: Record<string, string>;
   pending?: { kind: string; text: string } | null;
-  clues?: { id: string; name: string; shows: string; destroyed: boolean; told?: boolean }[];
+  clues?: { id: string; name: string; shows: string; artifact?: Artifact; destroyed: boolean; told?: boolean }[];
   myRoundVote?: number | null;
   publicPending?: string | null;
   publicError?: string | null;

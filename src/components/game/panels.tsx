@@ -1,4 +1,5 @@
 import type { GameEvent } from '@/lib/views';
+import { artifactCaption, type Artifact } from '@/lib/artifact';
 import { Label, Muted } from './label';
 import { Novel } from './novel';
 
@@ -42,14 +43,27 @@ export function News({ events }: { events: GameEvent[] }) {
   );
 }
 
-export function SharedClues({ clues }: { clues: { id?: string; name: string; by: string; shows: string }[] | null | undefined }) {
+// A clue as the thing itself: what it is and who made it, its own words, then the plain fact it shows.
+export function ClueText({ shows, artifact }: { shows: string; artifact?: Artifact }) {
+  if (!artifact) return <p className="text-sm">{shows}</p>;
+  const caption = artifactCaption(artifact);
+  return (
+    <>
+      {caption && <span className="text-xs text-muted-foreground">{caption}</span>}
+      <blockquote className="rounded-md bg-background/70 px-3 py-2 text-sm leading-relaxed">{artifact.text}</blockquote>
+      <p className="text-xs text-muted-foreground">{shows}</p>
+    </>
+  );
+}
+
+export function SharedClues({ clues }: { clues: { id?: string; name: string; by: string; shows: string; artifact?: Artifact }[] | null | undefined }) {
   if (!clues?.length) return <Muted>No clues shared yet. Find one, then tap &ldquo;Show everyone&rdquo;.</Muted>;
   return (
     <div className="flex flex-col gap-3">
       {clues.map((c, i) => (
-        <div key={c.id ?? i} className="rounded-lg bg-muted/60 p-3">
-          <b>{c.name}</b> <span className="text-xs text-muted-foreground">from {c.by}</span>
-          <p className="text-sm">{c.shows}</p>
+        <div key={c.id ?? i} className="flex flex-col gap-1 rounded-lg bg-muted/60 p-3">
+          <span><b>{c.name}</b> <span className="text-xs text-muted-foreground">from {c.by}</span></span>
+          <ClueText shows={c.shows} artifact={c.artifact} />
         </div>
       ))}
     </div>

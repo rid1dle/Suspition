@@ -2,6 +2,7 @@
 import { namesAnyOf, clueWhereErrors, isMinor, validateScenario, sameTime, resolveStoryIds, retells, nightMinutes, walkMetres } from './game.ts';
 import { walkMinutes, tripTime } from '../src/lib/geography.ts';
 import { difficultyRules, difficultyOf } from '../src/lib/difficulty.ts';
+import { craftIssues } from './craft.ts';
 
 const wordsOf = (text) => String(text ?? '').toLowerCase().match(/[a-z0-9]+/g) ?? [];
 const stem = (w) => w.replace(/(ing|ed|es|s)$/, '');
@@ -149,6 +150,7 @@ export function storyIssues(scenario, { players = [], difficulty = 'normal', rou
   });
 
   out.push(...farIssues(s));
+  out.push(...craftIssues(s));
   out.push(...clueWhereErrors(s).map((e) => `where: ${e}`));
   return out;
 }
@@ -183,16 +185,20 @@ export const issueCounts = (issues) => {
 };
 
 const STORY_PATHS = [
-  /^clues\.\d+\.(shows|does_not_prove|where|reveal_round)$/,
+  /^clues\.\d+\.(shows|does_not_prove|where|reveal_round|text|form|author|written_at|from_step)$/,
   /^players\.\d+\.(private_info|public_info|starting_knowledge|goal|goal_where|watch_threat|watch_stake)$/,
-  /^npcs\.\d+\.(knows|secrets|lies|reveals_freely|reveals_under_pressure)$/,
+  /^npcs\.\d+\.(knows|secrets|lies|reveals_freely|reveals_under_pressure|agenda)$/,
+  /^why_tonight$/,
+  /^truth\.timeline$/,
+  /^(setups|reframes|world_rules)$/,
   /^hint_ladder\.\d+\.text$/,
   /^public_timeline\.\d+\.event$/,
   /^truth\.whereabouts$/,
   /^suspects$/,
   /^red_herrings$/,
 ];
-const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings', 'truth.culprit_ids']);
+const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings', 'truth.culprit_ids', 'truth.timeline', 'setups', 'reframes', 'world_rules']);
+const OBJECT_KEYS = new Set(['agenda']);
 const INTEGER_KEYS = new Set(['reveal_round', 'answer_index']);
 
 function patchValue(path, key, value) {
@@ -200,6 +206,11 @@ function patchValue(path, key, value) {
     const list = typeof value === 'string' ? JSON.parse(value) : value;
     if (!Array.isArray(list)) throw new Error('needs a list');
     return list;
+  }
+  if (OBJECT_KEYS.has(key)) {
+    const o = typeof value === 'string' ? JSON.parse(value) : value;
+    if (!o || typeof o !== 'object' || Array.isArray(o)) throw new Error('needs an object');
+    return o;
   }
   if (INTEGER_KEYS.has(key)) {
     const n = Number(value);

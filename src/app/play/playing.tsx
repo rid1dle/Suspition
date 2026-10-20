@@ -17,7 +17,7 @@ import { OfferCard } from '@/components/game/offer';
 import { GoConfirm } from '@/components/game/go-confirm';
 import { CallBanner } from '@/components/game/call-banner';
 import { PlayChip, PlayLine } from '@/components/game/score';
-import { Timeline, Alibis, SharedClues, Recap, ScenePicture, Facts, GoalsPanel, KeyObjects } from '@/components/game/panels';
+import { Timeline, Alibis, SharedClues, ClueText, Recap, ScenePicture, Facts, GoalsPanel, KeyObjects } from '@/components/game/panels';
 import { useDraft } from '@/lib/live';
 import { storage } from '@/lib/api';
 import { chatItems, channelItems, targetsFor, unreadIn, introLines, type ChatItem, type Layout, type Target } from '@/lib/chat';
@@ -608,7 +608,7 @@ export function CluesBody({ view, onTell = () => {} }: { view: PlayerView; onTel
       {view.clues?.length ? view.clues.map((c) => (
         <div key={c.id} className="flex flex-col gap-1 rounded-xl bg-card p-4">
           <b>{c.name}{c.destroyed && <span className="ml-2 rounded bg-destructive/20 px-1.5 text-xs text-destructive">now gone</span>}</b>
-          <p className="text-sm">{c.shows}</p>
+          <ClueText shows={c.shows} artifact={c.artifact} />
           {shared.has(c.id) ? <Muted className="text-xs">Everyone can see this.</Muted>
             : c.told ? (
               <span className="flex flex-wrap items-baseline gap-x-3 text-xs text-muted-foreground">You told the room in your own words.

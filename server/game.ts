@@ -504,6 +504,14 @@ export function resolveStoryIds(s) {
     if (Array.isArray(t.character_ids)) t.character_ids = t.character_ids.map(person);
   }
   for (const c of s.clues ?? []) if (c) c.where = anywhere(c.where);
+  // Story craft names clues by name now and then; the checks want ids.
+  const clueIds = new Set((s.clues ?? []).map((c) => c?.id));
+  const clueNames = new Map((s.clues ?? []).map((c) => [key(c?.name), c?.id]));
+  const clueRef = (v) => (clueIds.has(String(v ?? '').trim()) ? String(v).trim() : clueNames.get(key(v)) ?? anywhere(v));
+  for (const x of s.setups ?? []) if (x) Object.assign(x, { shown_in: clueRef(x.shown_in), paid_by: clueRef(x.paid_by) });
+  for (const x of s.reframes ?? []) if (x) Object.assign(x, { seen_in: clueRef(x.seen_in), flipped_by: clueRef(x.flipped_by) });
+  for (const x of s.world_rules ?? []) if (x) x.shown_by = clueRef(x.shown_by);
+  for (const n of s.npcs ?? []) if (n?.agenda?.leaves) n.agenda.leaves = clueRef(n.agenda.leaves);
   for (const p of s.geography?.paths ?? []) {
     if (!p) continue;
     p.from = place(p.from);
@@ -1621,11 +1629,32 @@ export function storyStage(game, index) {
 export function nextPhaseInfo(game) {
   if (willReplay(game)) {
     const index = game.state.phaseIndex;
-    return { ...game.scenario.phases[index], again: true, stage: storyStage(game, index) };
+    return { ...game.scenario.phases[index], again: true, stage: storyStage(game, index), ...storyDue(game.scenario, index + 1) };
   }
   if (isLastPhase(game)) return null;
   const index = game.state.phaseIndex + 1;
-  return { ...game.scenario.phases[index], stage: storyStage(game, index) };
+  return { ...game.scenario.phases[index], stage: storyStage(game, index), ...storyDue(game.scenario, index + 1) };
+}
+
+// A clue that is a thing with its own words: what players read, beside the plain fact it shows.
+const artifactOf = (c) => (String(c?.text ?? '').trim() ? { artifact: { form: c.form ?? '', by: c.author ?? '', when: c.written_at ?? '', text: c.text } } : {});
+
+// The round a setup pays off in: a clue's round, a key deduction's last clue, or "round N". Null when it names nothing.
+export function setupPaidRound(s, ref) {
+  const r = String(ref ?? '').trim();
+  const clueRound = (id) => Number(s.clues?.find((c) => c.id === id)?.reveal_round) || 1;
+  if (s.clues?.some((c) => c.id === r)) return clueRound(r);
+  const k = s.key_deductions?.find((d) => d.id === r);
+  if (k) return Math.max(1, ...(k.clue_ids ?? []).filter((id) => s.clues?.some((c) => c.id === id)).map(clueRound));
+  const m = /^round\s*(\d+)$/i.exec(r);
+  return m ? Number(m[1]) : null;
+}
+
+// What the story has lined up for a round: GM characters' plan steps, and setups whose payoff opens then.
+function storyDue(s, round) {
+  const plans = (s.npcs ?? []).flatMap((n) => (n.agenda?.plan ?? []).filter((p) => Number(p?.round) === round).map((p) => `${n.name}: ${p.does}`));
+  const pay = (s.setups ?? []).filter((x) => setupPaidRound(s, x?.paid_by) === round).map((x) => x.detail);
+  return { ...(plans.length ? { plans } : {}), ...(pay.length ? { pay_now: pay } : {}) };
 }
 
 export function beginPhaseChange(game) {
@@ -3031,7 +3060,7 @@ function publicCore(game, now) {
     roundResults: st?.roundResults ?? [],
     sharedClues: st ? st.shared.map((x) => {
       const c = sc.clues.find((k) => k.id === x.clueId);
-      return { id: x.clueId, name: c.name, shows: c.shows, by: x.check ? 'a check' : nameOf(game, x.by) };
+      return { id: x.clueId, name: c.name, shows: c.shows, ...artifactOf(c), by: x.check ? 'a check' : nameOf(game, x.by) };
     }) : [],
     illustration: st?.illustration ?? null,
     calling: st ? (st.moments ?? []).filter((m) => m.status === 'called').map((m) => game.players.find((p) => p.id === m.player_id)?.name) : [],
@@ -3268,7 +3297,7 @@ export function playerView(game, playerId, now = Date.now()) {
   view.invites = game.status === 'playing' ? invitesFor(game, playerId, now) : [];
   view.clues = st.found[playerId].map((id) => {
     const c = game.scenario.clues.find((x) => x.id === id);
-    return { id, name: c.name, shows: c.shows, destroyed: st.destroyed.includes(id), told: (st.told ?? []).some((t) => t.clueId === id && t.by === playerId) };
+    return { id, name: c.name, shows: c.shows, ...artifactOf(c), destroyed: st.destroyed.includes(id), told: (st.told ?? []).some((t) => t.clueId === id && t.by === playerId) };
   });
   view.myVote = st.hintVote ? st.hintVote.votes[playerId] ?? null : null;
   view.myVoteAsk = st.voteAsk ? st.voteAsk.votes[playerId] ?? null : null;
