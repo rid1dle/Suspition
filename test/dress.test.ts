@@ -9,14 +9,15 @@ import { makeScenario } from './fixtures.ts';
 
 const dress = {
   clues: [
-    { id: 'c1', form: 'object', author: '', written_at: '', text: 'A grey glove, torn at the thumb.' },
-    { id: 'c2', form: 'ledger', author: 'The Butler', written_at: '9:10 pm', text: '9:10. Cellar keys out.' },
+    { id: 'c1', form: 'object', author: '', written_at: '', text: 'A grey glove, torn at the thumb.', pairs_with: '' },
+    { id: 'c2', form: 'ledger', author: 'The Butler', written_at: '9:10 pm', text: '9:10. Cellar keys out.', pairs_with: 'c3' },
     { id: 'c9', form: 'note', author: 'Nobody', written_at: '', text: 'Not a real clue.' },
     { id: 'c3', form: 'note', author: 'x', written_at: '', text: '   ' },
   ],
   setups: [{ id: 's1', detail: 'The dog sleeps by the door.', shown_in: 'opening_scene', shown_round: 0, paid_by: 'c2', how_paid: 'It did not bark.' }],
   reframes: [{ detail: 'The quiet dog.', seen_in: 'opening_scene', first_reading: 'Calm.', true_reading: 'It knew them.', flipped_by: 'c2' }],
   world_rules: [{ rule: 'The gate locks at ten.', cost: 'Nobody gets in after.', shown_by: 'background', used_in: 'k1' }],
+  lies_caught: [{ npc_id: 'n1', lie: 'Never left the pantry.', caught_by: 'c2' }],
   agendas: [
     { npc_id: 'n1', wants: 'Hide his drinking.', plan: [{ round: 1, does: 'Moves the bottles.' }, { round: 2, does: '' }], leaves: 'c2' },
     { npc_id: 'n2', wants: 'Grieve.', plan: [{ round: 1, does: 'Cries.' }], leaves: '' },
@@ -44,6 +45,9 @@ describe('the story layer is written on the finished world', () => {
     assert.equal(s.clues.some((c) => c.id === 'c9'), false, 'no clue is made up');
     assert.equal(s.setups.length, 1);
     assert.equal(s.world_rules[0].used_in, 'k1');
+    assert.equal(s.clues[1].pairs_with, 'c3');
+    assert.equal('pairs_with' in s.clues[0], false, 'no half for a whole thing');
+    assert.equal(s.lies_caught[0].caught_by, 'c2');
     assert.deepEqual(s.npcs[0].agenda.plan, [{ round: 1, does: 'Moves the bottles.' }]);
     assert.equal('agenda' in s.npcs[1], false);
   });

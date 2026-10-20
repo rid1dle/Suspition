@@ -409,7 +409,8 @@ export const STORY_CRAFT_WORLD = `Story craft (this makes it a story, not only a
 
 // The second pass: the finished world gets its story layer. Written apart so a ten-player draft stays inside its time.
 const CRAFT_SCHEMA_INNER = {
-  clues: { type: 'array', items: obj({ id: str, form: { type: 'string', enum: ARTIFACT_FORMS }, author: str, written_at: str, text: str }) },
+  clues: { type: 'array', items: obj({ id: str, form: { type: 'string', enum: ARTIFACT_FORMS }, author: str, written_at: str, text: str, pairs_with: str }) },
+  lies_caught: { type: 'array', items: obj({ npc_id: str, lie: str, caught_by: str }) },
   setups: { type: 'array', items: obj({ id: str, detail: str, shown_in: str, shown_round: { type: 'integer', minimum: 0, maximum: 5 }, paid_by: str, how_paid: str }) },
   reframes: { type: 'array', items: obj({ detail: str, seen_in: str, first_reading: str, true_reading: str, flipped_by: str }) },
   world_rules: { type: 'array', items: obj({ rule: str, cost: str, shown_by: str, used_in: str }) },
@@ -418,7 +419,8 @@ const CRAFT_SCHEMA_INNER = {
 export const CRAFT_SCHEMA = obj(CRAFT_SCHEMA_INNER);
 
 export const STORY_DRESS = `You dress a finished mystery as a story. Readers remember events with a cause and a consequence and get lost in a world that feels real and costs something; the best mysteries (Lord of the Mysteries, Knives Out, Return of the Obra Dinn) hide each hard fact inside a thing with a writer and a voice, plant details early that pay off late, and turn early details around at the end. Never change a fact of the world: who did what, when, where and why stays exactly as written. Use only ids that exist.
-- clues: one entry per clue id. form is what it is (${ARTIFACT_FORMS.join(', ')}). author is who wrote or made it, by name (empty for a mark or an absence). written_at is when (empty if unknown). text is what players read or see: the thing's own words in its writer's voice (a nervous clerk, a proud aunt), or exactly how it looks, 1 to 3 short lines under 40 words. Each thing exists for its own everyday reason, not to be a clue, and the clue's plain fact (shows) hides inside it without being stated outright and without adding any new fact. At least half the clues are written things (letter, diary, note, ledger, receipt, label, message, record, photo), at least one in every round. At least one clue is an absence (the dog that did not bark, a cup nobody used). Written things can name each other (a receipt names a shop, a diary names a day), so one find leads to the next.
+- clues: one entry per clue id. form is what it is (${ARTIFACT_FORMS.join(', ')}). author is who wrote or made it, by name (empty for a mark or an absence). written_at is when (empty if unknown). text is what players read or see: the thing's own words in its writer's voice (a nervous clerk, a proud aunt), or exactly how it looks, 1 to 3 short lines under 40 words. Each thing exists for its own everyday reason, not to be a clue, and the clue's plain fact (shows) hides inside it without being stated outright and without adding any new fact. At least half the clues are written things (letter, diary, note, ledger, receipt, label, message, record, photo), at least one in every round. At least one clue is an absence (the dog that did not bark, a cup nobody used). Written things can name each other (a receipt names a shop, a diary names a day), so one find leads to the next. One document is torn or split in two (a diary page and its missing half, a coded note and its key): set pairs_with on each half to the other half's clue id, the halves sit in different places or rounds, and only together do they say the whole thing. pairs_with is empty for every other clue.
+- lies_caught: for every GM character whose sheet has lies, each lie and the clue id that catches it (a statement set against a thing). Discovery is putting the two side by side.
 - setups (Chekhov's gun): at least 4 details shown on purpose that matter later, 2 or more seen by round 1 (in the background, the opening scene, a key object, a public line or an early clue). id s1, s2... shown_in is where it is seen (background, opening_scene, a clue id or a person id); shown_round is when (0 for the start). paid_by is the clue id or key deduction id where it matters, or "round N"; how_paid says how, in one line. Every key object is a setup. Nothing made to look important goes unused.
 - reframes: at least 2 details players see early that mean something else once a later clue turns them around (a kind act that was a cover, a quiet dog that knew the culprit). seen_in is where it is seen; first_reading is what it seems; true_reading is what it really means; flipped_by is the later clue id. One touches a culprit and one does not.
 - world_rules: 1 to 3 hard rules of this world already true in it, each with a cost or limit (the gate locks at 10, the dog barks at strangers, the tide covers the path at midnight, a power works only on the living). shown_by is where players learn it (background or a clue id), before it is needed; used_in is the key deduction id that uses it.
@@ -427,7 +429,7 @@ export const STORY_DRESS = `You dress a finished mystery as a story. Readers rem
 ${PLAIN_STYLE}`;
 
 export function dressPrompt(scenario) {
-  return `Dress this mystery as a story. Return the clues in their own words, the setups, reframes, world rules and the agendas of the important GM characters.
+  return `Dress this mystery as a story. Return the clues in their own words, the lies and what catches them, the setups, reframes, world rules and the agendas of the important GM characters.
 
 THE MYSTERY:
 ${JSON.stringify(scenario)}`;
@@ -824,8 +826,8 @@ patches: path uses dots and list positions from 0 (clues.3.shows). value is alwa
 - npcs.N.knows, npcs.N.secrets, npcs.N.lies, npcs.N.reveals_freely, npcs.N.reveals_under_pressure
 - hint_ladder.N.text
 - public_timeline.N.event
-- truth.whereabouts, suspects, red_herrings, truth.timeline, setups, reframes, world_rules (value is the whole new list, as JSON)
-- clues.N.text, clues.N.form, clues.N.author, clues.N.written_at, clues.N.from_step
+- truth.whereabouts, suspects, red_herrings, truth.timeline, setups, reframes, world_rules, lies_caught (value is the whole new list, as JSON)
+- clues.N.text, clues.N.form, clues.N.author, clues.N.written_at, clues.N.from_step, clues.N.pairs_with
 - npcs.N.agenda (value is the whole agenda, as JSON), why_tonight
 
 ${PLAIN_STYLE}

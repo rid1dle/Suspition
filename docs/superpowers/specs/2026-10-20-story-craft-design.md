@@ -39,6 +39,9 @@ The lesson from before still holds: a rule written as a wish is met at its cheap
 | Agendas | `npcs[].agenda {wants, plan[{round, does}], leaves}` | every important GM character has 2 or more plan steps inside the rounds |
 | World rules | `world_rules[]` | at least 1; used by a key deduction; shown before it is needed |
 | Beats | (existing) `phases[].planned_beat` | never retells an essential clue |
+| Caught lies (Ace Attorney) | `lies_caught[] {npc_id, lie, caught_by}` | every GM character with lies has a catch, and each catch is a real clue |
+| Split document (Roselle's diary, Golden Idol) | `clues[].pairs_with` | one pair of halves, set both ways, not in the same place and round |
+| Fair proof | (existing) `key_deductions`, `clues[].where` | a culprit or motive deduction never rests only on what the culprit carries |
 
 - **Two passes, not one.** Putting everything in one call pushed a 10-player world past its 21-minute limit. It timed out while writing the clues. So the first draft writes the world plus cause and effect (`because`, `leads_to`, `why_tonight`, `from_step`), which must shape the truth. A second pass (`STORY_DRESS`, `CRAFT_SCHEMA`, `applyDress`) then reads the finished world and writes:
   - each clue's form, writer, time and own words
@@ -57,4 +60,4 @@ The lesson from before still holds: a rule written as a wish is met at its cheap
 ## Not done yet
 
 - **"Things that matter"** (`key_objects`) is still shown. Every key object must now be a setup, so it pays off. Removing the list waits until playtests show the artifacts carry the picture alone.
-- **Rules ranked lower are not built yet:** a split document, contradictions per GM character lie, a public clock, capped allusions, and the reveal as an ordered chain. They are cheaper to add once the first six hold in live worlds.
+- **Rules ranked lower are not built yet:** a public clock, capped allusions, and the reveal as an ordered chain.

@@ -185,19 +185,19 @@ export const issueCounts = (issues) => {
 };
 
 const STORY_PATHS = [
-  /^clues\.\d+\.(shows|does_not_prove|where|reveal_round|text|form|author|written_at|from_step)$/,
+  /^clues\.\d+\.(shows|does_not_prove|where|reveal_round|text|form|author|written_at|from_step|pairs_with)$/,
   /^players\.\d+\.(private_info|public_info|starting_knowledge|goal|goal_where|watch_threat|watch_stake)$/,
   /^npcs\.\d+\.(knows|secrets|lies|reveals_freely|reveals_under_pressure|agenda)$/,
   /^why_tonight$/,
   /^truth\.timeline$/,
-  /^(setups|reframes|world_rules)$/,
+  /^(setups|reframes|world_rules|lies_caught)$/,
   /^hint_ladder\.\d+\.text$/,
   /^public_timeline\.\d+\.event$/,
   /^truth\.whereabouts$/,
   /^suspects$/,
   /^red_herrings$/,
 ];
-const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings', 'truth.culprit_ids', 'truth.timeline', 'setups', 'reframes', 'world_rules']);
+const LIST_PATHS = new Set(['truth.whereabouts', 'suspects', 'red_herrings', 'truth.culprit_ids', 'truth.timeline', 'setups', 'reframes', 'world_rules', 'lies_caught']);
 const OBJECT_KEYS = new Set(['agenda']);
 const INTEGER_KEYS = new Set(['reveal_round', 'answer_index']);
 

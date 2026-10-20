@@ -39,6 +39,9 @@ function craftWorld() {
   s.npcs[0].importance = 'important';
   s.npcs[0].agenda = { wants: 'Hide his drinking from the lawyer.', plan: [{ round: 1, does: 'Moves the bottles to the cellar.' }, { round: 2, does: 'Burns the old key ledger page.' }], leaves: 'c2' };
   s.npcs[1].importance = 'minor';
+  s.clues[2].pairs_with = 'c5';
+  s.clues[4].pairs_with = 'c3';
+  s.lies_caught = [];
   return s;
 }
 
@@ -248,5 +251,27 @@ describe('story craft in play', () => {
 
   test('should ask the reveal to bring back what players saw early', () => {
     assert.match(scorePrompt({ snapshot: {}, submissions: [], verdict: {} }), /setups and reframes/);
+  });
+});
+
+describe('lies that can be caught, and a document in two halves', () => {
+  test('should want every GM character lie caught by a real clue', () => {
+    const s = craftWorld();
+    s.npcs[0].lies = 'He says he never left the pantry.';
+    assert.equal(about(craftIssues(s), 'npcs[0] (n1) tells lies that nothing catches').length, 1);
+    s.lies_caught = [{ npc_id: 'n1', lie: 'Never left the pantry.', caught_by: 'c9' }];
+    assert.equal(about(craftIssues(s), 'names c9, which is not a clue id').length, 1);
+    s.lies_caught = [{ npc_id: 'n1', lie: 'Never left the pantry.', caught_by: 'c2' }];
+    assert.deepEqual(about(craftIssues(s), 'lie:'), []);
+  });
+
+  test('should want one document split in two halves, found apart', () => {
+    const s = craftWorld();
+    delete s.clues[2].pairs_with;
+    assert.equal(about(craftIssues(s), 'no document is split in two').length, 1);
+    const t = craftWorld();
+    t.clues[4].where = 'n1';
+    t.clues[4].reveal_round = 1;
+    assert.equal(about(craftIssues(t), 'c3 and c5 are halves found in the same place and round').length, 1);
   });
 });

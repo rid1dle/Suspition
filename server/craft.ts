@@ -107,6 +107,26 @@ export function craftIssues(s) {
     if (['culprit', 'motive'].includes(k.about) && own.length && own.every((id) => culprits.has(clue[id].where))) out.push(`proof: key_deductions[${i}] (${k.id}) rests only on clues the culprit carries; put one where players can find it without searching them.`);
   });
 
+  // Every lie a GM character tells can be caught by a thing players find.
+  if (Array.isArray(s.lies_caught)) {
+    (s.npcs ?? []).forEach((n, i) => {
+      if (!String(n?.lies ?? '').trim()) return;
+      const catches = s.lies_caught.filter((x) => x?.npc_id === n.id);
+      if (!catches.length) out.push(`lie: npcs[${i}] (${n.id}) tells lies that nothing catches; add lies_caught with the clue that breaks each one.`);
+      for (const x of catches) if (!clue[x.caught_by]) out.push(`lie: lies_caught for ${n.id} names ${x.caught_by ?? ''}, which is not a clue id.`);
+    });
+  }
+
+  // One document in two halves, found apart: only together do they say the whole thing.
+  if (clues.some((c) => c.text)) {
+    const pairs = clues.filter((c) => clue[c.pairs_with] && clue[c.pairs_with].pairs_with === c.id);
+    if (!pairs.length) out.push('split: no document is split in two; set pairs_with on two halves found in different places or rounds.');
+    for (const c of pairs) {
+      const o = clue[c.pairs_with];
+      if (c.id < o.id && c.where === o.where && roundOfClue(c.id) === roundOfClue(o.id)) out.push(`split: ${c.id} and ${o.id} are halves found in the same place and round; put them apart.`);
+    }
+  }
+
   // A round's beat is an event, never a clue handed to the whole room.
   (s.phases ?? []).forEach((ph, i) => {
     for (const c of clues) {
@@ -124,10 +144,10 @@ export function applyDress(s, dress) {
   for (const d of dress.clues ?? []) {
     const c = (s.clues ?? []).find((x) => x.id === d?.id);
     if (!c || !String(d.text ?? '').trim()) continue;
-    Object.assign(c, { form: ARTIFACT_FORMS.includes(d.form) ? d.form : 'object', author: String(d.author ?? ''), written_at: String(d.written_at ?? ''), text: String(d.text) });
+    Object.assign(c, { form: ARTIFACT_FORMS.includes(d.form) ? d.form : 'object', author: String(d.author ?? ''), written_at: String(d.written_at ?? ''), text: String(d.text), ...(String(d.pairs_with ?? '').trim() ? { pairs_with: String(d.pairs_with).trim() } : {}) });
     n += 1;
   }
-  for (const key of ['setups', 'reframes', 'world_rules']) {
+  for (const key of ['setups', 'reframes', 'world_rules', 'lies_caught']) {
     if (!Array.isArray(dress[key])) continue;
     s[key] = dress[key].filter((x) => x && typeof x === 'object');
     n += s[key].length;
