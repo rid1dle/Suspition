@@ -59,3 +59,21 @@ describe('moving between cards', () => {
     assert.equal(followTable(4, 2, 2), 4);
   });
 });
+
+describe('a map inside a swipeable card', () => {
+  test('should not start a card swipe from inside the map, only from the rest of the card', async () => {
+    const { swipeAllowed } = await import('../src/lib/brief');
+    const inside = { closest: (sel: string) => (sel === '[data-no-swipe]' ? {} : null) };
+    const outside = { closest: () => null };
+    assert.equal(swipeAllowed(inside), false);
+    assert.equal(swipeAllowed(outside), true);
+    assert.equal(swipeAllowed(null), true);
+  });
+
+  test('should wrap the briefing map in a no-swipe area', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../src/components/game/briefing.tsx', import.meta.url), 'utf8');
+    assert.match(src, /<div data-no-swipe><WorldMap/);
+    assert.match(src, /dragListener=\{false\}/);
+  });
+});

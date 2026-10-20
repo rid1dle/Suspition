@@ -10,3 +10,8 @@ export function swipeTo(at: number, count: number, dx: number) {
 export function followTable(at: number, prevTable: number, table: number) {
   return table !== prevTable ? table : at;
 }
+
+// A swipe never starts on something you drag inside the card (the map): that drag is yours, not the pager's.
+export function swipeAllowed(target: { closest?: (sel: string) => unknown } | null | undefined) {
+  return !target?.closest?.('[data-no-swipe]');
+}

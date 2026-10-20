@@ -1,9 +1,9 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useDragControls } from 'motion/react';
 import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { swipeTo } from '@/lib/brief';
+import { swipeTo, swipeAllowed } from '@/lib/brief';
 import { ScenePicture, CaseBox, Facts } from './panels';
 import { Label } from './label';
 import { WorldMap } from './world-map';
@@ -29,7 +29,7 @@ export function BriefStep({ view, me = null, at }: { view: BriefView; me?: strin
       </div>
     );
   } else if (step.kind === 'map') {
-    body = <>{step.lines.map((l, i) => <p key={i}>{l}</p>)}<WorldMap view={view} me={me} className={me ? "h-[50dvh]" : ""} /></>;
+    body = <>{step.lines.map((l, i) => <p key={i}>{l}</p>)}<div data-no-swipe><WorldMap view={view} me={me} className={me ? "h-[50dvh]" : ""} /></div></>;
   } else if (step.kind === 'scene') {
     body = <><ScenePicture svg={view.illustration} />{step.lines.map((l, i) => <p key={i} className="text-lg leading-relaxed">{l}</p>)}</>;
   } else if (step.kind === 'story') {
@@ -71,13 +71,15 @@ export function BriefPager({ view, me = null, at, onGo, swipe = false, tableStep
   view: BriefView; me?: string | null; at: number; onGo: (i: number) => void; swipe?: boolean; tableStep?: number;
   finish?: { label: string; onClick: () => void };
 }) {
+  const drag = useDragControls();
   const steps = view.briefing?.steps ?? [];
   if (!steps.length) return null;
   const last = at >= steps.length - 1;
   const next = steps[at + 1];
   return (
     <div className="flex flex-col gap-5">
-      <motion.div key={at} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }} drag={swipe ? 'x' : false} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.25} dragSnapToOrigin
+      <motion.div key={at} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }} drag={swipe ? 'x' : false} dragControls={drag} dragListener={false} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.25} dragSnapToOrigin
+        onPointerDown={(e) => { if (swipe && swipeAllowed(e.target as Element)) drag.start(e); }}
         onDragEnd={(_, info) => onGo(swipeTo(at, steps.length, info.offset.x))} className={swipe ? 'touch-pan-y' : undefined}>
         <BriefStep view={view} me={me} at={at} />
       </motion.div>
