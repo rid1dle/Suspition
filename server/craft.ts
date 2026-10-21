@@ -103,6 +103,13 @@ export function craftIssues(s) {
       if (built.length && breaks <= Math.max(...built.map(roundOfClue))) out.push(`false: false_solution is broken in round ${breaks}, before or with the clues that build it; break it later.`);
       const culpritDeductions = (s.key_deductions ?? []).filter((k) => k.about === 'culprit' && (k.clue_ids ?? []).some((id) => clue[id]));
       if (culpritDeductions.length && culpritDeductions.every((k) => Math.max(...k.clue_ids.filter((id) => clue[id]).map(roundOfClue)) < breaks)) out.push(`false: the case against the culprit is complete before the false solution breaks (round ${breaks}); hold one culprit clue until then or later.`);
+      // While it is believed, one round's vote offers it as a wrong answer: the room can fall for it together.
+      const from = built.length ? Math.max(...built.map(roundOfClue)) : 1;
+      const window = (s.phases ?? []).map((ph, i) => ({ ph, round: i + 1 })).filter(({ ph, round }) => ph?.question && (ph.options ?? []).length >= 2 && round >= from && round < breaks);
+      const who = [...(s.players ?? []).map((p) => ({ id: p.id, name: p.character_name })), ...(s.npcs ?? [])].find((p) => p.id === f.points_at);
+      const nameWords = wordsOf(who?.name).filter((w) => w.length >= 4);
+      const offers = (ph) => (ph.options ?? []).some((o, k) => k !== ph.answer_index && wordsOf(o).some((w) => nameWords.includes(w)));
+      if (window.length && nameWords.length && !window.some(({ ph }) => offers(ph))) out.push(`false: no round vote while the false solution is believed (rounds ${window[0].round} to ${window.at(-1).round}) offers it; make one wrong option in round ${window.at(-1).round} its claim about ${who.name}, so the room can vote for it before ${clue[f.broken_by].name} breaks it.`);
     }
   }
 
