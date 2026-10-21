@@ -67,5 +67,6 @@ describe('the case closes on something the room can hold', () => {
     const p = phasePrompt({ snapshot: {}, nextPhase: { name: 'R4', objective: 'O', planned_beat: 'B', last: true }, lastRound: null });
     assert.match(p, /something hidden is opened before the whole room/);
     assert.match(p, /never names a culprit by itself/);
+    assert.match(p, /in this public_event itself, not ordered or planned for later/);
   });
 });
