@@ -171,9 +171,8 @@ const repeatNote = (before) => (before ? `This was already asked and answered. E
 const REWRITE_ONLY = /players must be exactly|^Need exactly|culprits (among the players )?must be exactly|^Exactly \d+ culprit|is not a character|Duplicate .* ids/;
 
 export class GM {
-  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'sonnet', setupEffort, maxParallel = 4, log = () => {}, random = Math.random, hunt = false, outline = false }) {
+  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'sonnet', setupEffort, maxParallel = 4, log = () => {}, random = Math.random, outline = false }) {
     this.workDir = workDir;
-    this.hunt = hunt;
     this.outline = outline;
     this.readerModel = readerModel;
     this.random = random;
@@ -276,7 +275,7 @@ export class GM {
         if (repair) this.applyCheck(scenario, { ...repair, verdict: repair.verdict === 'ok' ? 'ok' : 'patch' }, rules);
       }
       await this.finishWorld(scenario, onProgress, issueRules);
-      if (this.hunt) await this.huntWorld(scenario, rules, issueRules);
+      await this.huntWorld(scenario, rules, issueRules);
       return placeAnswers(placeFinalChoice(scenario), this.random);
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);

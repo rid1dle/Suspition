@@ -71,7 +71,6 @@ async function main() {
     setupEffort: process.env.DETECTIVE_SETUP_EFFORT || 'medium',
     readerModel: process.env.DETECTIVE_READER_MODEL || 'sonnet',
     maxParallel,
-    hunt: true,
     log: (line) => console.log(`  [${tag}] ${line}`),
   });
   const botGm = makeGm('bots', 8);

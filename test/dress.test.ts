@@ -73,10 +73,11 @@ describe('the story layer is written on the finished world', () => {
       if (/^Design a mystery/.test(prompt)) return (order.push('write'), makeScenario(3, { phases: 3, hints: 2 }));
       if (/^Dress this mystery/.test(prompt)) return (order.push('dress'), dress);
       if (/^You check a mystery for holes/.test(prompt)) return (order.push('check'), { verdict: 'ok', problems: [], patches: [] });
+      if (/^THE WORLD:/.test(prompt)) return (order.push('hunt'), { holes: [], contradictions: [], unpaid_setups: [], unplanted_payoffs: [], dead_branches: [] });
       return (order.push('cards'), { players: [] });
     } });
     const s = await gm.generate(game());
-    assert.deepEqual(order, ['write', 'dress', 'check', 'cards']);
+    assert.deepEqual(order, ['write', 'dress', 'check', 'cards', 'hunt']);
     assert.equal(s.clues[1].form, 'ledger');
   });
 

@@ -38,22 +38,17 @@ function fakeRun({ hunt = none, repair = ok } = {}) {
 describe('a reader hunts the finished world for holes before play', () => {
   test('should read the world after the cards are written', async () => {
     const { run, calls } = fakeRun();
-    await new GM({ workDir, random: () => 0, run, hunt: true }).generate(lobby());
+    await new GM({ workDir, random: () => 0, run }).generate(lobby());
     const cards = calls.findIndex((c) => c.schema === AUDIT_SCHEMA);
     const hunt = calls.findIndex((c) => c.schema === HUNT_SCHEMA);
     assert.ok(cards >= 0 && hunt > cards, `cards at ${cards}, hunt at ${hunt}`);
     assert.equal(calls[hunt].system, HUNT_SYSTEM);
   });
 
-  test('should not hunt when the GM was not asked to', async () => {
-    const { run, calls } = fakeRun();
-    await new GM({ workDir, random: () => 0, run }).generate(lobby());
-    assert.equal(calls.filter((c) => c.schema === HUNT_SCHEMA).length, 0);
-  });
 
   test('should send every problem it found to one repair, by kind', async () => {
     const { run, calls } = fakeRun({ hunt: { ...none, holes: ['The money is never found.'], unpaid_setups: ['The elephants in the tea rows.'] } });
-    await new GM({ workDir, random: () => 0, run, hunt: true }).generate(lobby());
+    await new GM({ workDir, random: () => 0, run }).generate(lobby());
     const repairs = calls.filter((c) => c.schema === STORY_CHECK_SCHEMA && REPAIR.test(c.prompt));
     assert.equal(repairs.length, 1);
     assert.match(repairs[0].prompt, /- Hole: The money is never found\./);
@@ -66,20 +61,20 @@ describe('a reader hunts the finished world for holes before play', () => {
       hunt: { ...none, holes: ['Nothing says why the glove is wet.'] },
       repair: { verdict: 'patch', problems: [], patches: [{ path: 'clues.0.shows', value: 'A glove, wet from the well.' }] },
     });
-    const world = await new GM({ workDir, random: () => 0, run, hunt: true }).generate(lobby());
+    const world = await new GM({ workDir, random: () => 0, run }).generate(lobby());
     assert.equal(world.clues[0].shows, 'A glove, wet from the well.');
   });
 
   test('should not call a repair when the hunt finds nothing', async () => {
     const { run, calls } = fakeRun();
-    await new GM({ workDir, random: () => 0, run, hunt: true }).generate(lobby());
+    await new GM({ workDir, random: () => 0, run }).generate(lobby());
     assert.equal(calls.filter((c) => REPAIR.test(c.prompt ?? '')).length, 0);
   });
 
   test('should keep the world playable when the hunt fails', async () => {
     const logs = [];
     const { run, calls } = fakeRun({ hunt: new Error('GM took longer than 300s.') });
-    const world = await new GM({ workDir, random: () => 0, run, log: (l) => logs.push(l), hunt: true }).generate(lobby());
+    const world = await new GM({ workDir, random: () => 0, run, log: (l) => logs.push(l) }).generate(lobby());
     assert.equal(world.clues[0].shows, 'CLUE-1-SHOWS');
     assert.equal(calls.filter((c) => REPAIR.test(c.prompt ?? '')).length, 0);
     assert.ok(logs.some((l) => /gm hunt skipped/.test(l)), logs.join('\n'));
@@ -88,7 +83,7 @@ describe('a reader hunts the finished world for holes before play', () => {
   test('should log only how many problems of each kind it found, never the world', async () => {
     const logs = [];
     const { run } = fakeRun({ hunt: { ...none, holes: ['CLUE-1-SHOWS has no cause.', 'Character 1 is in two places.'] } });
-    await new GM({ workDir, random: () => 0, run, log: (l) => logs.push(l), hunt: true }).generate(lobby());
+    await new GM({ workDir, random: () => 0, run, log: (l) => logs.push(l) }).generate(lobby());
     assert.ok(logs.includes('gm hunt: holes 2'), logs.join('\n'));
     assert.ok(!logs.some((l) => /CLUE-|Character 1/.test(l)), 'logs never carry the world');
   });
