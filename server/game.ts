@@ -1572,6 +1572,15 @@ export function addRound(game, round, now = Date.now(), { next = false } = {}) {
   sc.phases.splice(at, 0, ph);
   for (const c of sc.clues ?? []) if (Number.isInteger(c.reveal_round) && c.reveal_round >= at + 1) c.reveal_round += 1;
   for (const t of sc.public_timeline ?? []) if (Number(t.reveal_round) >= at + 1) t.reveal_round = Number(t.reveal_round) + 1;
+  // Plans, secrets cracking and round payoffs after the new round move with the rounds they were written for.
+  for (const n of sc.npcs ?? []) {
+    for (const p of n.agenda?.plan ?? []) if (Number(p?.round) >= at + 1) p.round = Number(p.round) + 1;
+    if (Number(n.agenda?.cracks?.round) >= at + 1) n.agenda.cracks.round += 1;
+  }
+  for (const x of sc.setups ?? []) {
+    const m = /^round\s*(\d+)$/i.exec(String(x?.paid_by ?? '').trim());
+    if (m && Number(m[1]) >= at + 1) x.paid_by = `round ${Number(m[1]) + 1}`;
+  }
   if (round.lead) ph.lead = true;
   st.addedRounds = (st.addedRounds ?? 0) + 1;
   st.roundsVersion = (st.roundsVersion ?? 0) + 1;
