@@ -40,3 +40,38 @@ describe('a vote can fall for the false solution', () => {
     assert.deepEqual(flagged(s), []);
   });
 });
+
+// Story runs 1 to 7: by the middle round, as many or more open clues pointed at the culprit as at the false solution's
+// target (3 to 1 in run 7), so the room went to the culprit by round 2 every time.
+describe('the false trail is the stronger one by the middle', () => {
+  const early = (s) => craftIssues(s).filter((i) => /^false: by round/.test(i));
+  const built = () => {
+    const s = world();
+    s.clues.push({ id: 'c4', name: 'Bangle chip', where: 'l1', shows: 'A red chip.', does_not_prove: '', importance: 'essential', can_be_destroyed: false, reveal_round: 1 });
+    s.clues.push({ id: 'c5', name: 'Print', where: 'l1', shows: 'Two women in red bangles.', does_not_prove: '', importance: 'useful', can_be_destroyed: true, reveal_round: 2 });
+    s.suspects[0].pointer_clue_ids = ['c1', 'c4', 'c5'];
+    s.suspects[1].pointer_clue_ids = ['c3'];
+    return s;
+  };
+
+  test('should flag a culprit with as many early clues as the false target', () => {
+    const issues = early(built());
+    assert.equal(issues.length, 1, issues.join('\n'));
+    assert.match(issues[0], /by round 2, 2 clues point at culprit p1 alone and 2 at the false solution's target p2/);
+  });
+
+  test('should pass when the culprit\'s clues open after the middle', () => {
+    const s = built();
+    s.clues.find((c) => c.id === 'c4').reveal_round = 3;
+    s.clues.find((c) => c.id === 'c5').reveal_round = 3;
+    assert.deepEqual(early(s), []);
+  });
+});
+
+describe('a clue that fits both trails', () => {
+  test('should not count toward the culprit', () => {
+    const s = world();
+    s.suspects[0].pointer_clue_ids = ['c1'];
+    assert.deepEqual(craftIssues(s).filter((i) => /^false: by round/.test(i)), []);
+  });
+});

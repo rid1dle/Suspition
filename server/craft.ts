@@ -103,6 +103,16 @@ export function craftIssues(s) {
       if (built.length && breaks <= Math.max(...built.map(roundOfClue))) out.push(`false: false_solution is broken in round ${breaks}, before or with the clues that build it; break it later.`);
       const culpritDeductions = (s.key_deductions ?? []).filter((k) => k.about === 'culprit' && (k.clue_ids ?? []).some((id) => clue[id]));
       if (culpritDeductions.length && culpritDeductions.every((k) => Math.max(...k.clue_ids.filter((id) => clue[id]).map(roundOfClue)) < breaks)) out.push(`false: the case against the culprit is complete before the false solution breaks (round ${breaks}); hold one culprit clue until then or later.`);
+      // By the middle the false trail is the stronger one: more open clues point at its target than at any culprit.
+      const pointers = (id) => (s.suspects ?? []).find((x) => x.character_id === id)?.pointer_clue_ids ?? [];
+      const openBy = (ids) => [...new Set(ids)].filter((id) => clue[id] && roundOfClue(id) <= mid);
+      const falseSet = new Set(openBy([...pointers(f.points_at), ...built]));
+      const falseEarly = falseSet.size;
+      for (const id of s.truth?.culprit_ids ?? []) {
+        // A clue that fits both does not tell the room which one it is.
+        const mine = openBy(pointers(id)).filter((c) => !falseSet.has(c));
+        if (mine.length && mine.length >= falseEarly) out.push(`false: by round ${mid}, ${mine.length} clue${mine.length === 1 ? '' : 's'} point at culprit ${id} alone and ${falseEarly} at the false solution's target ${f.points_at}, so the room goes to the culprit early; open ${mine.join(', ')} later than round ${mid} where you can, or point more early clues at ${f.points_at}.`);
+      }
       // While it is believed, one round's vote offers it as a wrong answer: the room can fall for it together.
       const from = built.length ? Math.max(...built.map(roundOfClue)) : 1;
       const window = (s.phases ?? []).map((ph, i) => ({ ph, round: i + 1 })).filter(({ ph, round }) => ph?.question && (ph.options ?? []).length >= 2 && round >= from && round < breaks);
