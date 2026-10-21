@@ -1,7 +1,7 @@
 // @ts-nocheck -- same shapes as story.ts
 // Story craft: the checks that make a world a story, not only a fair puzzle. Each wanted thing has a field
 // the world writer fills and a check here; problems go to the story check with the rest, one plain line each.
-import { retells, setupPaidRound } from './game.ts';
+import { retells, setupPaidRound, namesCulprit } from './game.ts';
 import { ARTIFACT_FORMS, WRITTEN_FORMS } from './prompts.ts';
 
 export { ARTIFACT_FORMS, WRITTEN_FORMS };
@@ -202,6 +202,13 @@ export function craftIssues(s) {
 export function applyDress(s, dress) {
   if (!s || !dress || typeof dress !== 'object') return 0;
   let n = 0;
+  // The room's last vote is a real decision; it comes before the culprit is named, so it never names one.
+  const fc = dress.final_choice;
+  const opts = Array.isArray(fc?.options) ? fc.options.filter((o) => String(o?.choice ?? '').trim() && String(o?.then ?? '').trim()) : [];
+  if (String(fc?.question ?? '').trim() && opts.length >= 2 && opts.length <= 4 && ![fc.question, ...opts.map((o) => o.choice)].some((t) => namesCulprit(s, [], t))) {
+    s.final_choice = { question: String(fc.question).trim(), options: opts.map((o) => ({ choice: String(o.choice).trim(), then: String(o.then).trim() })) };
+    n += 1;
+  }
   for (const d of dress.clues ?? []) {
     const c = (s.clues ?? []).find((x) => x.id === d?.id);
     if (!c || !String(d.text ?? '').trim()) continue;
@@ -228,4 +235,12 @@ export function applyDress(s, dress) {
     n += 1;
   }
   return n;
+}
+
+// The final choice is the last round's vote. The last round stays last when rounds are cut or added.
+export function placeFinalChoice(s) {
+  const last = s?.phases?.at(-1);
+  if (!last || !s.final_choice?.options?.length) return s;
+  Object.assign(last, { vote_kind: 'choice', choice_question: s.final_choice.question, choice_options: s.final_choice.options.map((o) => o.choice), final_choice: true });
+  return s;
 }

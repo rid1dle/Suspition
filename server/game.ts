@@ -1657,7 +1657,8 @@ function planRound(game, index, result, replay) {
   const safe = sayable(game);
   const name = safe(result.round_name, 60);
   if (name) ph.name = name;
-  const v = result.vote;
+  // The world's planned final choice is the last vote; a round change never replaces it.
+  const v = ph.final_choice ? null : result.vote;
   // A planned quiz keeps its reward and its second try; only a story choice replaces it.
   if (v?.kind === 'spotlight' && (game.setup?.roundStyle === 'hotseats' || !roundQuestion(game, index))) ph.vote_kind = 'spotlight';
   const options = (Array.isArray(v?.options) ? v.options : []).map((o) => safe(o, 80)).filter(Boolean).slice(0, 3);
@@ -3209,6 +3210,15 @@ export function quietPlayers(game) {
   return game.players.map((p) => p.id).filter((pid) => !(st.threads[pid] ?? []).some((m) => m.from === 'you' && m.at >= since));
 }
 
+// What the room chose at the end and what the world planned that choice to lead to, for the ending.
+function finalChoiceMade(game) {
+  const fc = game.scenario?.final_choice;
+  const r = fc && [...(game.state.roundResults ?? [])].reverse().find((x) => x.kind === 'choice' && x.question === fc.question);
+  if (!r) return {};
+  const picked = fc.options.find((o) => o.choice === r.pickedText);
+  return { final_choice_made: { question: fc.question, chose: r.pickedText ?? 'nothing: the room was split', then: picked?.then ?? '' } };
+}
+
 export function snapshotForGM(game) {
   const st = game.state;
   const open = openClues(game);
@@ -3228,6 +3238,7 @@ export function snapshotForGM(game) {
     clues_kept: keptClues(game),
     where_everyone_is: st.positions,
     round_results: st.roundResults,
+    ...finalChoiceMade(game),
     round_question: (() => { const q = st.phaseIndex >= 0 ? roundQuestion(game, st.phaseIndex) : null; return q && !resultsThisRound(game).length ? { question: q.question, options: q.options, answer: q.options[q.answer] ?? null } : null; })(),
     moments_so_far: (st.moments ?? []).map((m) => ({ player_id: m.player_id, line: m.line, round: m.round, result: m.status, ...(m.saidInstead ? { said_instead: m.readInstead ? playerWords(m.readInstead, m.saidInstead, 'said') : m.saidInstead } : {}) })),
     overrides_left: st.overridesLeft,
