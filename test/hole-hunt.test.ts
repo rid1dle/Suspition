@@ -103,6 +103,7 @@ describe('what the hunt reads', () => {
   test('should ask for things set up and never used, and payoffs nothing planted', () => {
     assert.match(HUNT_SYSTEM, /unpaid_setups/);
     assert.match(HUNT_SYSTEM, /unplanted_payoffs/);
+    assert.match(HUNT_SYSTEM, /right option can be picked from its wording alone/);
     assert.deepEqual(Object.keys(HUNT_SCHEMA.properties).sort(), ['contradictions', 'dead_branches', 'holes', 'unpaid_setups', 'unplanted_payoffs']);
   });
 });

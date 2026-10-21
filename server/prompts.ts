@@ -890,7 +890,7 @@ export const HUNT_LEAD = 'These problems were found and are not fixed yet. When 
 export const HUNT_KINDS = { holes: 'Hole', contradictions: 'Contradiction', unpaid_setups: 'Set up and never used', unplanted_payoffs: 'Used and never planted', dead_branches: 'Leads nowhere' };
 
 export const HUNT_SYSTEM = `You are a strict story editor. You read a party mystery world before anyone plays it, the way a reviewer will read it after play, and list every flaw a careful reader would find. Plain, simple English, one line per item.
-- holes: an event with no cause, a thing whose route is never explained (where money, an object or a page went, why someone carried something), a plan that cannot work with another plan, a person's night that does not add up.
+- holes: an event with no cause, a thing whose route is never explained (where money, an object or a page went, why someone carried something), a plan that cannot work with another plan, a person's night that does not add up, a round question whose right option can be picked from its wording alone (the only detailed one, or the only one that fits the question's own words).
 - contradictions: two parts of the world that disagree (quote both).
 - unpaid_setups: anything the world makes look important (an object, a code word, a line in a clue, a person, a place, a threat, an animal or a coming arrival) that no clue, deduction, reveal or round plan ever uses.
 - unplanted_payoffs: a fact the solution or the reveal uses that no clue or card lets players see.
