@@ -80,3 +80,22 @@ describe('what the world writer is told about options', () => {
     assert.match(GENERATION_SYSTEM, /Each wrong option is a theory the room could really hold/);
   });
 });
+
+describe('a round rewritten in play still hides where its answer is', () => {
+  test('should draw the answer\'s place again when play rewrites a round\'s options', async () => {
+    const { applyContinuity } = await import('../server/continuity.ts');
+    const { gameInReading } = await import('./fixtures.ts');
+    const G = await import('../server/game.ts');
+    const empty = { problems: [], canon_add: [], corrections: [], patches: [], offers: [], extra_rounds: [], solvable: true, missing: [] };
+    const places = new Set();
+    for (let i = 0; i < 40; i += 1) {
+      const game = gameInReading(4, 1_000, { questions: true });
+      G.startPlay(game, 1_000);
+      applyContinuity(game, { ...empty, patches: [{ path: 'phases.2.options', value: '["The cook","The maid","The guard","The purser shut it on himself"]' }, { path: 'phases.2.answer_index', value: '3' }] }, 2_000);
+      const ph = game.scenario.phases[2];
+      assert.equal(ph.options[ph.answer_index], 'The purser shut it on himself');
+      places.add(ph.answer_index);
+    }
+    assert.ok(places.size > 1, `always at ${[...places]}`);
+  });
+});

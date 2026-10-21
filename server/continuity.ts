@@ -1,6 +1,6 @@
 // @ts-nocheck -- legacy JS, typed file by file later
 import { roundNumber, totalRounds, roundCap, addRound, namesCulprit, mentions, dropPuppeting, validateScenario, clueWhereErrors, playerWords, eventForGM, offerToPlayer, playerFacts, roomKnows } from './game.ts';
-import { applyPatches, guardedPatches } from './story.ts';
+import { applyPatches, guardedPatches, placeAnswers } from './story.ts';
 import { CONTINUITY_RULES, FAIR_PLAY, PLAIN_STYLE } from './prompts.ts';
 
 export const CANON_MAX = 60;
@@ -79,7 +79,11 @@ function patchPlan(game, patches, now) {
       return { applied: 0, skipped: [`clues.+: ${err.message}`] };
     }
   };
-  return guardedPatches(target, patches, apply, () => structural(game));
+  const out = guardedPatches(target, patches, apply, () => structural(game));
+  // A round whose right answer play rewrote gets the answer's place drawn again: a model puts it in the same place every time.
+  const rewritten = new Set((Array.isArray(patches) ? patches : []).map((p) => /^phases\.(\d+)\.answer_index$/.exec(String(p?.path ?? '').trim())?.[1]).filter(Boolean).map(Number));
+  for (const i of rewritten) if (game.scenario.phases[i]) placeAnswers({ phases: [game.scenario.phases[i]] });
+  return out;
 }
 
 const GAME_TALK = /can'?t happen|\bvot(e|ed|es|ing)\b|\b(extra|another|new|added)\s+round\b|\bround\s+\d|\brounds?\s+(was|were)\s+added\b/i;
