@@ -1610,6 +1610,15 @@ export function paceStory(game, now = Date.now()) {
     sc.phases.splice(next, sc.phases.length - 1 - next);
     for (const c of sc.clues ?? []) if (Number.isInteger(c.reveal_round) && c.reveal_round > closing) c.reveal_round = closing;
     for (const t of sc.public_timeline ?? []) if (Number(t.reveal_round) > closing) t.reveal_round = closing;
+    // What was planned for the rounds cut still happens, in the closing round: plans, secrets cracking, payoffs.
+    for (const n of sc.npcs ?? []) {
+      for (const p of n.agenda?.plan ?? []) if (Number(p?.round) > closing) p.round = closing;
+      if (Number(n.agenda?.cracks?.round) > closing) n.agenda.cracks.round = closing;
+    }
+    for (const x of sc.setups ?? []) {
+      const m = /^round\s*(\d+)$/i.exec(String(x?.paid_by ?? '').trim());
+      if (m && Number(m[1]) > closing) x.paid_by = `round ${closing}`;
+    }
     st.closedSooner = true;
     st.roundsVersion = (st.roundsVersion ?? 0) + 1;
     addEvent(game, 'The room is closing in. The next round is the last.', 'phase', now);
