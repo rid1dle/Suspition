@@ -56,3 +56,16 @@ describe('the ending closes the human threads', () => {
     assert.match(p, /reveal_story \(100 to 200 words/);
   });
 });
+
+describe('the case closes on something the room can hold', () => {
+  test('should ask for a thing of the culprit\'s own that ties them to the act', async () => {
+    const { GENERATION_SYSTEM } = await import('../server/prompts.ts');
+    assert.match(GENERATION_SYSTEM, /one of them is a thing of the culprit's own/);
+  });
+
+  test('should open something hidden before the whole room in the last round', () => {
+    const p = phasePrompt({ snapshot: {}, nextPhase: { name: 'R4', objective: 'O', planned_beat: 'B', last: true }, lastRound: null });
+    assert.match(p, /something hidden is opened before the whole room/);
+    assert.match(p, /never names a culprit by itself/);
+  });
+});
