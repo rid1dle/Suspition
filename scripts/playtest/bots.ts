@@ -18,6 +18,7 @@ export const BOT_SCHEMA = obj({
   gm_in: { type: 'boolean' },
   invite_id: str,
   yes: { type: 'boolean' },
+  table_talk: str,
 });
 
 export const FINAL_BOT_SCHEMA = obj({ culprit_ids: { type: 'array', items: str }, how: str, why: str, goal: str });
@@ -51,7 +52,9 @@ Each turn you see your own phone screen and pick ONE action:
 - vote: vote in the round vote (choice: the option number, starting at 0).
 - moment: answer the moment you are called for (moment: said, own or quiet; text: your own words if own).
 - wait: do nothing this turn.
-Talking and acting in private are both free (ask someone something, ask about yourself, search, look closely, take, hide, follow). Unused fields: empty string, 0 or false.`;
+Talking and acting in private are both free (ask someone something, ask about yourself, search, look closely, take, hide, follow).
+table_talk: one line you say out loud to the room this turn, beside your action, as people at a party talk all the time (under 25 words): what you found or saw, a theory, a question to someone, a lie. Tell what you found in private when it helps you or the case; keep back what would hurt you. Empty when you would stay quiet.
+Unused fields: empty string, 0 or false.`;
 }
 
 const pick = (o, keys) => Object.fromEntries(keys.filter((k) => o?.[k] !== undefined).map((k) => [k, o[k]]));
@@ -105,6 +108,15 @@ function personId(view, name, { playersOnly = false } = {}) {
 }
 
 export async function applyBotAction(app, token, view, a) {
+  // Table talk goes with any action, the way people talk while they play; a say action is already talk.
+  const talk = String(a?.table_talk ?? '').trim();
+  if (talk && a?.action !== 'say' && view?.status === 'playing') {
+    try {
+      await app.say(token, { text: talk, to: null });
+    } catch {
+      // The room may be mid-vote or between rounds; the action still happens.
+    }
+  }
   try {
     switch (a?.action) {
       case 'private': await app.ask(token, { kind: 'chat', text: a.text }); break;
