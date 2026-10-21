@@ -409,18 +409,34 @@ export class GM {
       model: this.playModel,
     });
     if (result && Array.isArray(result.lines)) result.lines = await this.checkVoices(game, result.lines, playerWords(ask?.read, ask?.text), placeOf(game, playerId));
+    if (result && Array.isArray(result.messages_to_players)) result.messages_to_players = await this.checkMessages(game, playerId, result.messages_to_players, result.player_location);
     return result;
   }
 
+  // What one player's move does, told to another player, must fit where that player is ("right beside you").
+  // The mover is where this move took them.
+  async checkMessages(game, playerId, messages, movedTo) {
+    const placeName = (id) => game.scenario.locations.find((l) => l.id === id)?.name;
+    const moved = placeName(movedTo) ? { [playerId]: placeName(movedTo) } : {};
+    const out = await Promise.all(messages.map(async (m) => {
+      if (!m || m.player_id === playerId || !String(m.text ?? '').trim()) return m;
+      // One message is one scene: if any of it cannot happen where they are, none of it reaches them.
+      const kept = await this.checkVoices(game, [{ speaker: '', text: m.text }], '', placeOf(game, m.player_id), moved);
+      return kept.length === 1 && kept[0].text === m.text ? m : null;
+    }));
+    return out.filter(Boolean);
+  }
+
   // Before GM characters speak: a short check that sees only what each can know drops what they could not.
-  // A failed or slow check lets the lines through as they were.
-  async checkVoices(game, lines, heard = '', here = '') {
-    const ids = speakingCharacters(game, lines, { named: true });
+  // A failed or slow check lets the lines through as they were. places overrides where someone is now.
+  async checkVoices(game, lines, heard = '', here = '', places = {}) {
+    const ids = speakingCharacters(game, lines, { named: true, players: true });
     if (!ids.length) return lines;
     try {
+      const sheets = voiceSheets(game, ids).map((sh, i) => (places[ids[i]] ? { ...sh, is_now_at: places[ids[i]] } : sh));
       const out = await this.call('voices', {
         system: VOICE_CHECK_SYSTEM,
-        prompt: voiceCheckPrompt({ sheets: voiceSheets(game, ids), everyone: publicKnowledge(game), heard, lines, here }),
+        prompt: voiceCheckPrompt({ sheets, everyone: publicKnowledge(game), heard, lines, here }),
         schema: VOICE_CHECK_SCHEMA,
         model: this.readerModel,
         effort: 'low',

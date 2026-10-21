@@ -39,7 +39,7 @@ describe('a missed clue reaches a player in a way the story can explain', () => 
     const game = storyGame();
     stand(game, ['n1'], 'l1');
     changeRound(game);
-    assert.equal(game.state.at?.n1 ?? game.state.positions.n1, 'l2');
+    assert.equal(game.state.positions.n1, 'l2');
   });
 
   test('should let a player who stands where the clue is find it alone', () => {

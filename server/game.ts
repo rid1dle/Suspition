@@ -2628,7 +2628,7 @@ function carrierNote(game, clue, to) {
   const free = (sc.npcs ?? []).filter((n) => placed(n) && !pointed.has(n.id));
   const npc = free.find((n) => at(n.id) === here) ?? free.find((n) => n.id === clue.where) ?? free[0];
   if (!npc) return [];
-  st.at = { ...(st.at ?? {}), [npc.id]: at(to) };
+  st.positions[npc.id] = at(to);
   const place = sc.locations.find((l) => l.id === here)?.name;
   return [{ player_id: to, text: `${npc.name} comes over with something for you${place ? `, picked up in the ${place}` : ''}.` }];
 }
@@ -3013,6 +3013,11 @@ export function voiceSheets(game, ids) {
   const placeName = (id) => sc.locations.find((l) => l.id === id)?.name ?? '';
   return ids.map((id) => {
     const n = sc.npcs.find((x) => x.id === id);
+    // A player's character is checked only for where narration puts them.
+    if (!n) {
+      const c = sc.players.find((x) => x.id === id);
+      return { name: c?.character_name ?? id, player_character: true, is_now_at: placeName(st.at?.[id] ?? st.positions?.[id]) };
+    }
     return {
       name: n.name,
       role: n.role_title,
@@ -3033,10 +3038,11 @@ export function voiceSheets(game, ids) {
   });
 }
 
-// GM characters speaking in an answer's lines, by id (speaker is an id or a name); with narration, also those it names.
-export function speakingCharacters(game, lines, { named = false } = {}) {
+// GM characters speaking in an answer's lines, by id (speaker is an id or a name); with narration, also those it names,
+// and with players, the player characters it names (for where it puts them).
+export function speakingCharacters(game, lines, { named = false, players = false } = {}) {
   const sc = game.scenario;
-  const npcs = new Set(sc.npcs.map((n) => n.id));
+  const npcs = new Set([...sc.npcs.map((n) => n.id), ...(players ? sc.players.map((p) => p.id) : [])]);
   const ids = new Set();
   for (const l of Array.isArray(lines) ? lines : []) {
     const who = String(l?.speaker ?? '').trim().toLowerCase();
@@ -3054,7 +3060,7 @@ export function dropSpoken(game, lines, flagged) {
   if (!bad.length) return { lines, dropped: 0 };
   let dropped = 0;
   const out = (lines ?? []).flatMap((l) => {
-    if (!speakingCharacters(game, [l], { named: true }).length) return [l];
+    if (!speakingCharacters(game, [l], { named: true, players: true }).length) return [l];
     const kept = sentences(l.text).filter((t) => {
       const hit = bad.some((b) => norm(t).includes(b) || b.includes(norm(t)));
       if (hit) dropped += 1;
