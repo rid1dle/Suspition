@@ -884,6 +884,47 @@ THE MYSTERY:
 ${JSON.stringify(scenario)}`;
 }
 
+// The design comes first, while it is cheap to change: an outline, an editor's review of it, then the world.
+export const OUTLINE_SCHEMA = obj({
+  premise: str,
+  culprits_play: str,
+  who_stays_hidden: strArr,
+  false_solution: str,
+  layers: strArr,
+  planted_early_paid_late: strArr,
+  final_choice: str,
+  rounds: { type: 'array', items: obj({ round: { type: 'integer' }, beat: str, question: str, wrong_theories: strArr, atmosphere: str }) },
+});
+
+export const OUTLINE_ASK = `Before the world is written, write only its design, in plain short lines. The world will be written from it next.
+- premise: the crime, why tonight, and the turn that makes it more than a puzzle, in 2 or 3 sentences.
+- culprits_play: each culprit's cover story and the move they make during play (hide, plant, steer someone), so the culprit side has something to play. For a culprit who does not know, what makes them doubt themselves.
+- who_stays_hidden: each thing that points at a culprit (a trait, a key, a skill, a sighting, a time) and who else it fits, so no one person alone fits anything until the last round. Name the people.
+- false_solution: what the room will believe by the middle, built from what, and the later find that breaks it.
+- layers: 2 or 3 secrets of other people that recast what the room saw when they come out, and when they come out.
+- planted_early_paid_late: details shown in round 1 that mean something only in the last round, and what they turn out to mean.
+- final_choice: beyond who did it, a real decision the room faces at the end (mercy or justice, a secret to keep or tell, who to save).
+- rounds: for each round, the beat that changes the situation, the question the room votes on, 2 or 3 wrong theories the room could really hold from what it has seen by then, and one sensory beat of atmosphere.`;
+
+export const OUTLINE_REVIEW_SCHEMA = obj({ interest: { type: 'integer' }, lotm: { type: 'integer' }, notes: strArr });
+
+export const OUTLINE_REVIEW_SYSTEM = `You are a strict story editor. You read the design of a party mystery before it is written out, and judge it as if it were played well by real people.
+- interest (narrative transportation, Green and Brock): 1 to 10, how gripping it would be.
+- lotm (the Lord of the Mysteries standard): 1 to 10, for foreshadowing paid off late, a layered mystery, documents and objects building a clean picture, characters with their own agendas, and atmosphere.
+- notes: what this design must change to score 10 on both, most important first, each one concrete (which person, clue or round, and what to do). Look hardest at whether the "who" is plain early (one person alone fits a trait, a key, a sighting), whether the culprit has something to play, whether every vote is a real choice, whether the layers truly recast what came before, and whether the end leaves the room a real decision.
+Plain, simple English.`;
+
+export function withOutline(base, outline, review = null) {
+  const notes = Array.isArray(review?.notes) ? review.notes.map((n) => String(n ?? '').trim()).filter(Boolean) : [];
+  return `${base}
+
+THE DESIGN TO BUILD (follow it: who stays hidden and how, the culprit's play, the false solution, the layers, what is planted early and paid late, the final choice, and each round's question with its wrong theories as options):
+${JSON.stringify(outline)}${notes.length ? `
+
+AN EDITOR'S NOTES ON THIS DESIGN (fix each one as you write the world):
+- ${notes.join('\n- ')}` : ''}`;
+}
+
 // A reader who only hunts: it reads the finished world the way a reviewer reads it after play, and fixes nothing.
 export const HUNT_SCHEMA = obj({ holes: strArr, contradictions: strArr, unpaid_setups: strArr, unplanted_payoffs: strArr, dead_branches: strArr });
 export const HUNT_LEAD = 'These problems were found and are not fixed yet. When a fix changes a fact, change every place that states it in the same answer: a clue\'s shows and text, the cards, the GM characters\' sheets and the truth.';

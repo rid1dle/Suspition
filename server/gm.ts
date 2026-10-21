@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile, unlink } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { randomBytes } from 'node:crypto';
-import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, worldFixPrompt, HUNT_SCHEMA, HUNT_SYSTEM, HUNT_KINDS, HUNT_LEAD, huntPrompt, CRAFT_SCHEMA, STORY_DRESS, dressPrompt, VOICE_CHECK_SCHEMA, VOICE_CHECK_SYSTEM, voiceCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
+import { SOUNDTRACK_SCHEMA, COMPOSE_SYSTEM, composePrompt, SEATS_SCHEMA, seatsPrompt, PUBLIC_ANSWER_SCHEMA, ILLUSTRATION_SCHEMA, publicSystem, illustrationPrompt, LENGTHS, pickTwists, planCulprits, planWatchers, SCENARIO_SCHEMA, ASK_SCHEMA, PHASE_SCHEMA, SCORE_SCHEMA, GENERATION_SYSTEM, generationPrompt, playSystem, askPrompt, phasePrompt, scorePrompt, AUDIT_SCHEMA, auditPrompt, STORY_CHECK_SCHEMA, storyCheckPrompt, worldFixPrompt, HUNT_SCHEMA, HUNT_SYSTEM, HUNT_KINDS, HUNT_LEAD, huntPrompt, OUTLINE_SCHEMA, OUTLINE_ASK, OUTLINE_REVIEW_SCHEMA, OUTLINE_REVIEW_SYSTEM, withOutline, CRAFT_SCHEMA, STORY_DRESS, dressPrompt, VOICE_CHECK_SCHEMA, VOICE_CHECK_SYSTEM, voiceCheckPrompt, CONTINUITY_SCHEMA, pickStoryType, THEORY_SCHEMA, BEND_SCHEMA, mapArtPrompt } from './prompts.ts';
 import { theoryPrompt } from './theory.ts';
 import { bendPrompt } from './bend.ts';
 import { continuityPrompt } from './continuity.ts';
@@ -171,9 +171,10 @@ const repeatNote = (before) => (before ? `This was already asked and answered. E
 const REWRITE_ONLY = /players must be exactly|^Need exactly|culprits (among the players )?must be exactly|^Exactly \d+ culprit|is not a character|Duplicate .* ids/;
 
 export class GM {
-  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'sonnet', setupEffort, maxParallel = 4, log = () => {}, random = Math.random, hunt = false }) {
+  constructor({ workDir, run = runClaude, setupModel, playModel, readerModel = 'sonnet', setupEffort, maxParallel = 4, log = () => {}, random = Math.random, hunt = false, outline = false }) {
     this.workDir = workDir;
     this.hunt = hunt;
+    this.outline = outline;
     this.readerModel = readerModel;
     this.random = random;
     this.run = run;
@@ -210,10 +211,12 @@ export class GM {
     const storyType = pickStoryType(this.random);
     this.log(`gm twists: ${twists.map((t) => t.id).join(', ')}`);
     const watchers = planWatchers({ players: game.players.length, culprits, unaware: plan.unaware, npcs: game.setup.npcs ?? 3, goalWatch: game.setup.goalWatch ?? 'gm' }, this.random);
-    let prompt = generationPrompt(game, twists, culprits, storyType, plan, watchers);
+    const plain = generationPrompt(game, twists, culprits, storyType, plan, watchers);
+    const base = this.outline ? await this.outlineWorld(plain) : plain;
+    let prompt = base;
     let errors = [];
     const issueRules = { players: game.players, difficulty: game.setup.difficulty, rounds: rules.phases };
-    const retryWith = (problems) => `${generationPrompt(game, twists, culprits, storyType, plan, watchers)}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
+    const retryWith = (problems) => `${base}\n\nA previous draft broke these rules, avoid them:\n- ${problems.join('\n- ')}`;
     let effort = this.setupEffort;
     for (let attempt = 1; attempt <= 2; attempt += 1) {
       onProgress({ kind: 'attempt', attempt, broke: errors.length });
@@ -277,6 +280,27 @@ export class GM {
       return placeAnswers(scenario, this.random);
     }
     throw new GMError(`The GM could not write a valid world: ${errors.join(' ')}`);
+  }
+
+  // The design, planned and reviewed before the world is written: an outline, then an editor's notes on it.
+  // A failed outline writes the world as before; a failed review writes it from the outline alone.
+  async outlineWorld(plain) {
+    let outline;
+    try {
+      outline = await this.call('outline', { system: GENERATION_SYSTEM, prompt: `${plain}\n\n${OUTLINE_ASK}`, schema: OUTLINE_SCHEMA, model: this.setupModel, effort: 'medium', timeoutMs: 420_000 });
+    } catch (err) {
+      this.log(`gm outline skipped: ${err.message}`);
+      return plain;
+    }
+    let review = null;
+    try {
+      review = await this.call('outline review', { system: OUTLINE_REVIEW_SYSTEM, prompt: `THE DESIGN:\n${JSON.stringify(outline)}`, schema: OUTLINE_REVIEW_SCHEMA, model: this.setupModel, effort: 'low', timeoutMs: 240_000 });
+      const n = Array.isArray(review?.notes) ? review.notes.length : 0;
+      this.log(`gm outline review: interest ${review?.interest}, lotm ${review?.lotm}, ${n} note${n === 1 ? '' : 's'}`);
+    } catch (err) {
+      this.log(`gm outline review skipped: ${err.message}`);
+    }
+    return withOutline(plain, outline, review);
   }
 
   // The story layer, written on the finished world: a failed or slow pass leaves the world playable as it was.
