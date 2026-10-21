@@ -75,6 +75,17 @@ export function applyBend(game, playerId, read, verdict, now = Date.now()) {
   return 'bent';
 }
 
+// What the GM told players in private about the same things the find names (a search of that pocket, that drawer):
+// known to someone, so a bend never contradicts it.
+const KEY = (t) => [...new Set((String(t ?? '').toLowerCase().match(/[a-z]+/g) ?? []).filter((w) => w.length >= 4 && !['that', 'this', 'there', 'with', 'from', 'into', 'your', 'they', 'them', 'have', 'what', 'when', 'find', 'finds', 'found'].includes(w)).map((w) => w.replace(/(ing|ed|es|s)$/, '')))];
+function privateScenes(game, finds) {
+  const want = new Set(KEY(finds.join(' ')));
+  if (want.size < 2) return [];
+  return Object.values(game.state.threads ?? {}).flat()
+    .filter((m) => m.from === 'gm' && KEY(m.text).filter((w) => want.has(w)).length >= 2)
+    .slice(-8).map((m) => m.text);
+}
+
 export function bendPrompt(game, playerId, read) {
   const sc = game.scenario;
   const st = game.state;
@@ -98,6 +109,7 @@ ${JSON.stringify({
     said_and_seen: (st.events ?? []).map((e) => e.text),
     timeline: publicTimeline(game),
     canon: (st.canon ?? []).map((c) => c.fact),
+    seen_in_private: privateScenes(game, read?.finds ?? []),
     found_clues: sc.clues.filter((c) => found.has(c.id)).map((c) => ({ id: c.id, name: c.name, shows: c.shows })),
     players: Object.fromEntries(game.players.map((p) => [p.id, playerFacts(game, p.id, { forGM: true })])),
     nights: Object.fromEntries(sc.players.map((p) => [p.id, rememberedNight(sc, st.awakened, p)])),
